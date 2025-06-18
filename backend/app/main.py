@@ -1,14 +1,12 @@
 from fastapi import FastAPI
-from backend.app.api.clientes import router as clientes_router
-from backend.app.api.productos import router as productos_router
-from backend.app.api.proveedores import router as proveedores_router
-from backend.app.database import Base, engine
+from backend.app.api import clientes, productos, proveedores, albaranes, presupuestos, movimientos
 
 app = FastAPI()
 
-app.include_router(clientes_router, prefix="/api", tags=["clientes"])
-app.include_router(productos_router, prefix="/api", tags=["productos"])
-app.include_router(proveedores_router, prefix="/api", tags=["proveedores"])
-
-# Crear las tablas en la base de datos
-Base.metadata.create_all(bind=engine)
+# Incluye todas las rutas
+app.include_router(clientes.router, prefix="/api")
+app.include_router(productos.router, prefix="/api")
+app.include_router(proveedores.router, prefix="/api")
+app.include_router(albaranes.router, prefix="/api")
+app.include_router(presupuestos.router, prefix="/api")
+app.include_router(movimientos.router, prefix="/api")
