@@ -8,7 +8,7 @@ class ClienteDB(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String, index=True)
-    email = Column(String, unique=True, index=True)
+    email = Column(String, index=True)
 
 # Esquemas Pydantic
 class Cliente(BaseModel):
@@ -17,7 +17,7 @@ class Cliente(BaseModel):
     email: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class ClienteCreate(BaseModel):
     nombre: str

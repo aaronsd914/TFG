@@ -14,7 +14,7 @@ def get_db():
     finally:
         db.close()
 
-@router.post("/clientes", response_model=Cliente)
+@router.post("/clientes/post", response_model=Cliente)
 def crear_cliente(cliente: ClienteCreate, db: Session = Depends(get_db)):
     db_cliente = ClienteDB(nombre=cliente.nombre, email=cliente.email)
     db.add(db_cliente)
@@ -22,18 +22,18 @@ def crear_cliente(cliente: ClienteCreate, db: Session = Depends(get_db)):
     db.refresh(db_cliente)
     return db_cliente
 
-@router.get("/clientes", response_model=List[Cliente])
+@router.get("/clientes/get", response_model=List[Cliente])
 def obtener_clientes(db: Session = Depends(get_db)):
     return db.query(ClienteDB).all()
 
-@router.get("/clientes/{cliente_id}", response_model=Cliente)
+@router.get("/clientes/get/{cliente_id}", response_model=Cliente)
 def obtener_cliente(cliente_id: int, db: Session = Depends(get_db)):
     cliente = db.query(ClienteDB).filter(ClienteDB.id == cliente_id).first()
     if cliente is None:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
     return cliente
 
-@router.put("/clientes/{cliente_id}", response_model=Cliente)
+@router.put("/clientes/put/{cliente_id}", response_model=Cliente)
 def actualizar_cliente(cliente_id: int, cliente_actualizado: ClienteCreate, db: Session = Depends(get_db)):
     cliente_db = db.query(ClienteDB).filter(ClienteDB.id == cliente_id).first()
     if cliente_db is None:
@@ -44,7 +44,7 @@ def actualizar_cliente(cliente_id: int, cliente_actualizado: ClienteCreate, db: 
     db.refresh(cliente_db)
     return cliente_db
 
-@router.delete("/clientes/{cliente_id}")
+@router.delete("/clientes/delete/{cliente_id}")
 def eliminar_cliente(cliente_id: int, db: Session = Depends(get_db)):
     cliente_db = db.query(ClienteDB).filter(ClienteDB.id == cliente_id).first()
     if cliente_db is None:
