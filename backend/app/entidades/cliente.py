@@ -12,7 +12,6 @@ class ClienteDB(Base):
     email = Column(String, index=True)
 
     albaranes = relationship("AlbaranDB", back_populates="cliente", cascade="all, delete")
-    presupuestos = relationship("PresupuestoDB", back_populates="cliente", cascade="all, delete")
 
 # Esquemas Pydantic
 class Cliente(BaseModel):

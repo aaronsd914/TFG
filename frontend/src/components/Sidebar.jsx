@@ -1,25 +1,36 @@
-import './Sidebar.css';
+import { Link, useLocation } from 'react-router-dom';
 
 export default function Sidebar() {
+  const { pathname } = useLocation();
+
   const items = [
-    { icon: '🏠', label: 'Dashboard' },
-    { icon: '🛒', label: 'Ventas' },
-    { icon: '📦', label: 'Inventario' },
-    { icon: '💰', label: 'Finanzas' },
-    { icon: '📈', label: 'Reportes' },
-    { icon: '⚙️', label: 'Configuración' }
+    { icon: '🏠', label: 'Dashboard', to: '/' },
+    { icon: '➕', label: 'Nueva venta', to: '/ventas/nueva' }, // ← nuevo
+    { icon: '🛒', label: 'Ventas', to: '/ventas' },
+    { icon: '📦', label: 'Inventario', to: '/inventario' },
+    { icon: '💰', label: 'Finanzas', to: '/finanzas' },
+    { icon: '📈', label: 'Reportes', to: '/reportes' },
+    { icon: '⚙️', label: 'Configuración', to: '/config' },
   ];
 
   return (
-    <aside className="sidebar">
-      <h2 className="title">Financias</h2>
-      <nav>
-        {items.map((item) => (
-          <div key={item.label} className="nav-item">
-            <span>{item.icon}</span>
-            <span>{item.label}</span>
-          </div>
-        ))}
+    <aside className="w-[220px] bg-[#f5f1e8] p-6 h-[calc(100vh-32px)] m-4 rounded-2xl shadow-md flex flex-col">
+      <h2 className="text-xl mb-8 font-semibold">Financias</h2>
+      <nav className="flex flex-col gap-2">
+        {items.map((item) => {
+          const active = pathname === item.to;
+          return (
+            <Link
+              key={item.label}
+              to={item.to}
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-300
+                ${active ? 'bg-[#e0dcd3] text-black' : 'text-gray-600 hover:bg-[#e0dcd3] hover:text-black'}`}
+            >
+              <span>{item.icon}</span>
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
       </nav>
     </aside>
   );

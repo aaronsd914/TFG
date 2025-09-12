@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Float, ForeignKey
 from sqlalchemy.orm import relationship
 from backend.app.database import Base
 from pydantic import BaseModel
+from typing import Optional
 
 class ProductoDB(Base):
     __tablename__ = "productos"
@@ -11,7 +12,8 @@ class ProductoDB(Base):
     descripcion = Column(String)
     precio = Column(Float)
 
-    proveedor_id = Column(Integer, ForeignKey("proveedores.id"))
+    # ahora requerimos proveedor (nullable=False) porque lo vamos a seedear
+    proveedor_id = Column(Integer, ForeignKey("proveedores.id"), nullable=False)
     proveedor = relationship("ProveedorDB", back_populates="productos")
 
 class Producto(BaseModel):

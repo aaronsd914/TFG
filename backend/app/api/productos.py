@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from backend.app.entidades.producto import Producto, ProductoCreate, ProductoDB
 from backend.app.database import SessionLocal
 from typing import List
+import unicodedata
 
 router = APIRouter()
 
@@ -51,3 +52,23 @@ def eliminar_producto(producto_id: int, db: Session = Depends(get_db)):
     db.delete(producto)
     db.commit()
     return {"message": f"Producto {producto_id} eliminado"}
+
+
+def _norm(s: str) -> str:
+    # quita tildes/diacríticos y pasa a minúsculas
+    s = s or ""
+    nfkd = unicodedata.normalize("NFD", s)
+    return "".join(ch for ch in nfkd if not unicodedata.combining(ch)).lower()
+
+@router.get("/productos/search", response_model=List[Producto])
+def buscar_productos(
+    q: str = Query(..., min_length=1),
+    limit: int = 20,
+    db: Session = Depends(get_db),
+):
+    qn = _norm(q)
+    # Traemos y filtramos en Python (rápido para catálogos pequeños/medios)
+    productos = db.query(ProductoDB).all()
+    res = [p for p in productos if qn in _norm(p.nombre)]
+    return res[:limit]
+
