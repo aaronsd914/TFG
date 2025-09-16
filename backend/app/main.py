@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.app.api import clientes, productos, proveedores, albaranes, movimientos
 from contextlib import asynccontextmanager
+import logging
 
 from backend.app.database import Base, engine, SessionLocal
 from backend.app.seed import seed
@@ -35,3 +36,12 @@ app.include_router(productos.router, prefix="/api")
 app.include_router(proveedores.router, prefix="/api")
 app.include_router(albaranes.router, prefix="/api")
 app.include_router(movimientos.router, prefix="/api")
+
+logging.basicConfig(
+    level=logging.INFO,  # pon DEBUG si quieres más ruido
+    format="%(levelname)s %(name)s:%(lineno)d - %(message)s"
+)
+
+# Opcional: más verboso aún para nuestras utilidades
+logging.getLogger("emailer").setLevel(logging.DEBUG)
+logging.getLogger("albaran_pdf").setLevel(logging.DEBUG)

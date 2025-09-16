@@ -5,11 +5,13 @@ export default function Sidebar() {
 
   const items = [
     { icon: '🏠', label: 'Dashboard', to: '/' },
-    { icon: '➕', label: 'Nueva venta', to: '/ventas/nueva' }, // ← nuevo
+    { icon: '➕', label: 'Nueva venta', to: '/ventas/nueva' },
     { icon: '🛒', label: 'Ventas', to: '/ventas' },
     { icon: '📦', label: 'Inventario', to: '/inventario' },
     { icon: '💰', label: 'Finanzas', to: '/finanzas' },
     { icon: '📈', label: 'Reportes', to: '/reportes' },
+    { icon: '👥', label: 'Clientes', to: '/clientes' },
+    { icon: '🧾', label: 'Albaranes', to: '/albaranes' },
     { icon: '⚙️', label: 'Configuración', to: '/config' },
   ];
 

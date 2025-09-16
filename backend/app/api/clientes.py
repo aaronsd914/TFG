@@ -1,12 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from typing import List
 from backend.app.entidades.cliente import Cliente, ClienteCreate, ClienteDB
 from backend.app.database import SessionLocal
-from typing import List
 
 router = APIRouter()
 
-# Dependencia para obtener la sesión de la BBDD
 def get_db():
     db = SessionLocal()
     try:
@@ -15,12 +14,28 @@ def get_db():
         db.close()
 
 @router.post("/clientes/post", response_model=Cliente)
-def crear_cliente(cliente: ClienteCreate, db: Session = Depends(get_db)):
-    db_cliente = ClienteDB(nombre=cliente.nombre, email=cliente.email)
-    db.add(db_cliente)
+def crear_cliente(payload: ClienteCreate, db: Session = Depends(get_db)):
+    # si viene DNI o email, intenta evitar duplicados
+    existing = None
+    if payload.dni:
+        existing = db.query(ClienteDB).filter(ClienteDB.dni == payload.dni).first()
+    if not existing and payload.email:
+        existing = db.query(ClienteDB).filter(ClienteDB.email == payload.email).first()
+
+    if existing:
+        # actualiza datos que vengan (upsert ligero)
+        for field, value in payload.dict().items():
+            if value is not None:
+                setattr(existing, field, value)
+        db.commit()
+        db.refresh(existing)
+        return existing
+
+    nuevo = ClienteDB(**payload.dict())
+    db.add(nuevo)
     db.commit()
-    db.refresh(db_cliente)
-    return db_cliente
+    db.refresh(nuevo)
+    return nuevo
 
 @router.get("/clientes/get", response_model=List[Cliente])
 def obtener_clientes(db: Session = Depends(get_db)):
@@ -34,12 +49,12 @@ def obtener_cliente(cliente_id: int, db: Session = Depends(get_db)):
     return cliente
 
 @router.put("/clientes/put/{cliente_id}", response_model=Cliente)
-def actualizar_cliente(cliente_id: int, cliente_actualizado: ClienteCreate, db: Session = Depends(get_db)):
+def actualizar_cliente(cliente_id: int, payload: ClienteCreate, db: Session = Depends(get_db)):
     cliente_db = db.query(ClienteDB).filter(ClienteDB.id == cliente_id).first()
     if cliente_db is None:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
-    cliente_db.nombre = cliente_actualizado.nombre
-    cliente_db.email = cliente_actualizado.email
+    for field, value in payload.dict().items():
+        setattr(cliente_db, field, value)
     db.commit()
     db.refresh(cliente_db)
     return cliente_db
