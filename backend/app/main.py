@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.app.api import clientes, productos, proveedores, albaranes, movimientos
+from backend.app.api import clientes, productos, proveedores, albaranes, movimientos, analytics, ai
 from contextlib import asynccontextmanager
 import logging
 
@@ -36,6 +36,9 @@ app.include_router(productos.router, prefix="/api")
 app.include_router(proveedores.router, prefix="/api")
 app.include_router(albaranes.router, prefix="/api")
 app.include_router(movimientos.router, prefix="/api")
+app.include_router(analytics.router, prefix="/api")
+app.include_router(ai.router, prefix="/api")
+
 
 logging.basicConfig(
     level=logging.INFO,  # pon DEBUG si quieres más ruido

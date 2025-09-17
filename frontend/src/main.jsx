@@ -6,6 +6,8 @@ import Dashboard from './components/Dashboard.jsx';
 import NuevaVenta from './components/NuevaVenta.jsx';
 import ClientesPage from './components/ClientesPage.jsx';
 import AlbaranesPage from './components/AlbaranesPage.jsx';
+import Tendencias from './components/Tendencias.jsx';
+import ProductosPage from './components/ProductosPage.jsx';
 import './index.css';
 
 const router = createBrowserRouter([
@@ -17,6 +19,9 @@ const router = createBrowserRouter([
       { path: 'ventas/nueva', element: <NuevaVenta /> },
       { path: 'clientes', element: <ClientesPage /> },
       { path: 'albaranes', element: <AlbaranesPage /> },
+      { path: 'tendencias', element: <Tendencias /> },
+       { path: 'productos', element: <ProductosPage /> },
+
     ],
   },
 ]);
