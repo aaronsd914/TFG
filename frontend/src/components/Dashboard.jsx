@@ -25,31 +25,54 @@ function fmtDate(d) {
 export default function Dashboard() {
   const [movs, setMovs] = useState([]);
   const [albaranes, setAlbaranes] = useState([]);
-  const [enAlmacen, setEnAlmacen] = useState([]);
+  const [almacen, setAlmacen] = useState([]);
+  const [ruta, setRuta] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
+  const [savingIds, setSavingIds] = useState(new Set());
+
+  async function reloadAlmacen() {
+    try {
+      const r = await fetch(`${API_URL}transporte/almacen`);
+      if (r.ok) setAlmacen(await r.json());
+    } catch {}
+  }
+  async function reloadRuta() {
+    try {
+      const r = await fetch(`${API_URL}transporte/ruta`);
+      if (r.ok) setRuta(await r.json());
+    } catch {}
+  }
+  async function reloadAlbaranes() {
+    try {
+      const r = await fetch(`${API_URL}albaranes/get`);
+      if (r.ok) setAlbaranes(await r.json());
+    } catch {}
+  }
 
   useEffect(() => {
     (async () => {
       try {
         setLoading(true);
         setErr(null);
-        const [rMovs, rAlbs, rAlmacen, rClientes] = await Promise.all([
+        const [rMovs, rAlbs, rAlmacen, rRuta, rClientes] = await Promise.all([
           fetch(`${API_URL}movimientos/get`),
           fetch(`${API_URL}albaranes/get`),
           fetch(`${API_URL}transporte/almacen`),
+          fetch(`${API_URL}transporte/ruta`),
           fetch(`${API_URL}clientes/get`),
         ]);
         if (!rMovs.ok) throw new Error(`Movimientos HTTP ${rMovs.status}`);
         if (!rAlbs.ok) throw new Error(`Albaranes HTTP ${rAlbs.status}`);
-        // /transporte/almacen podría ser 404 en builds antiguos: tratamos como []
         const almacenData = rAlmacen.ok ? await rAlmacen.json() : [];
+        const rutaData = rRuta.ok ? await rRuta.json() : [];
         if (!rClientes.ok) throw new Error(`Clientes HTTP ${rClientes.status}`);
 
         setMovs(await rMovs.json());
         setAlbaranes(await rAlbs.json());
-        setEnAlmacen(Array.isArray(almacenData) ? almacenData : []);
+        setAlmacen(Array.isArray(almacenData) ? almacenData : []);
+        setRuta(Array.isArray(rutaData) ? rutaData : []);
         setClientes(await rClientes.json());
       } catch (e) {
         setErr(e.message);
@@ -91,7 +114,7 @@ export default function Dashboard() {
     return n;
   }, [albaranes, currY, currM]);
 
-  const pedidosAlmacen = enAlmacen.length;
+  const pedidosAlmacen = almacen.length;
 
   // Serie 6 meses (ingresos/egresos)
   const lineSeries = useMemo(() => {
@@ -126,14 +149,14 @@ export default function Dashboard() {
 
   // Pie de estados de albaranes
   const pieData = useMemo(() => {
-    const counts = { FIANZA: 0, ALMACEN: 0, TRANSPORTE: 0, ENTREGADO: 0 };
+    const counts = { FIANZA: 0, ALMACEN: 0, RUTA: 0, ENTREGADO: 0 };
     for (const a of albaranes) {
       const e = (a.estado || 'FIANZA').toUpperCase();
       if (counts[e] === undefined) counts[e] = 0;
       counts[e] += 1;
     }
-    const labels = ['Fianza', 'Almacén', 'Transporte', 'Entregado'];
-    const data = [counts.FIANZA || 0, counts.ALMACEN || 0, counts.TRANSPORTE || 0, counts.ENTREGADO || 0];
+    const labels = ['Fianza', 'Almacén', 'Ruta', 'Entregado'];
+    const data = [counts.FIANZA || 0, counts.ALMACEN || 0, counts.RUTA || 0, counts.ENTREGADO || 0];
     const backgroundColor = ['#d7e8cf', '#f3e3c8', '#cbd5e1', '#e2e8f0'];
     return { labels, datasets: [{ data, backgroundColor }] };
   }, [albaranes]);
@@ -144,19 +167,44 @@ export default function Dashboard() {
     return sorted.slice(0, 8);
   }, [movs]);
 
-  // Albaranes en almacén (pendientes): ya lo trae /transporte/almacen
-  // Mostramos los 8 más cercanos por fecha (ascendente, ya vienen así del backend normalmente)
-  const enAlmacenTop = useMemo(() => {
-    const list = [...enAlmacen];
+  const almacenTop = useMemo(() => {
+    const list = [...almacen];
     list.sort((a, b) => new Date(a.fecha) - new Date(b.fecha) || a.id - b.id);
     return list.slice(0, 8);
-  }, [enAlmacen]);
+  }, [almacen]);
+
+  const rutaTop = useMemo(() => {
+    const list = [...ruta];
+    list.sort((a, b) => new Date(a.fecha) - new Date(b.fecha) || a.id - b.id);
+    return list.slice(0, 8);
+  }, [ruta]);
 
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: { legend: { position: 'top' } },
   };
+
+  async function marcarEntregado(id) {
+    setSavingIds(prev => new Set(prev).add(id));
+    try {
+      const res = await fetch(`${API_URL}albaranes/${id}/estado`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado: 'ENTREGADO' }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(()=>({}));
+        alert(`No se pudo marcar entregado: ${j.detail || res.statusText}`);
+        return;
+      }
+      await Promise.all([reloadAlmacen(), reloadRuta(), reloadAlbaranes()]);
+    } catch (e) {
+      alert(`Error de red: ${e.message}`);
+    } finally {
+      setSavingIds(prev => { const n = new Set(prev); n.delete(id); return n; });
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -174,7 +222,6 @@ export default function Dashboard() {
       {/* Gráficas */}
       {!loading && !err && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-          {/* Line */}
           <div className="bg-white p-4 rounded-xl shadow-sm self-start">
             <h3 className="mb-3 text-base font-semibold">Ingresos vs Egresos (6 meses)</h3>
             <div className="h-56 md:h-64">
@@ -182,7 +229,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Pie */}
           <div className="bg-white p-4 rounded-xl shadow-sm self-start">
             <h3 className="mb-3 text-base font-semibold">Estado de los albaranes</h3>
             <div className="h-56 md:h-64">
@@ -192,7 +238,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Tabla: Últimos movimientos */}
+      {/* Últimos movimientos */}
       <div className="bg-white p-4 rounded-xl shadow-sm">
         <h3 className="mb-3 text-base font-semibold">Últimos movimientos</h3>
         <table className="w-full border-collapse">
@@ -221,45 +267,79 @@ export default function Dashboard() {
         </table>
       </div>
 
-      {/* Tabla: Albaranes en almacén (pendientes de entrega) */}
+      {/* Almacén (ALMACEN) */}
       <div className="bg-white p-4 rounded-xl shadow-sm">
-        <h3 className="mb-3 text-base font-semibold">Almacén · Pendientes de entrega</h3>
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="text-left border-b border-gray-200">
-              <th className="p-2 w-24">ID</th>
-              <th className="p-2 w-32">Fecha</th>
-              <th className="p-2">Cliente</th>
-              <th className="p-2 w-32">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {enAlmacenTop.length === 0 && (
-              <tr><td colSpan={4} className="p-3 text-sm text-gray-500">No hay pedidos en almacén.</td></tr>
-            )}
-            {enAlmacenTop.map(a => {
-              const c = clientesMap.get(a.cliente_id);
-              return (
-                <tr key={a.id} className="border-b border-gray-200">
-                  <td className="p-2">#{a.id}</td>
-                  <td className="p-2">{fmtDate(a.fecha)}</td>
-                  <td className="p-2">
-                    {c ? `${c.nombre} ${c.apellidos}` : `Cliente #${a.cliente_id}`}
-                  </td>
-                  <td className="p-2">{eur(a.total)}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-        {/* Enlace rápido */}
+        <h3 className="mb-3 text-base font-semibold">Almacén · Pendientes de salida</h3>
+        <TablaPedidos
+          rows={almacenTop}
+          clientesMap={clientesMap}
+          onEntregar={marcarEntregado}
+          savingIds={savingIds}
+          showRutaBadge={false}
+        />
         <div className="mt-3 text-sm">
-          <a href="/albaranes" className="text-blue-600 hover:underline">Ver todos los albaranes</a>
-          <span className="mx-2">·</span>
           <a href="/transporte" className="text-blue-600 hover:underline">Organizar transporte</a>
         </div>
       </div>
+
+      {/* En ruta (RUTA) */}
+      <div className="bg-white p-4 rounded-xl shadow-sm">
+        <h3 className="mb-3 text-base font-semibold">En ruta</h3>
+        <TablaPedidos
+          rows={rutaTop}
+          clientesMap={clientesMap}
+          onEntregar={marcarEntregado}
+          savingIds={savingIds}
+          showRutaBadge
+        />
+      </div>
     </div>
+  );
+}
+
+function TablaPedidos({ rows, clientesMap, onEntregar, savingIds, showRutaBadge }) {
+  return (
+    <table className="w-full border-collapse">
+      <thead>
+        <tr className="text-left border-b border-gray-200">
+          <th className="p-2 w-20">ID</th>
+          <th className="p-2 w-32">Fecha</th>
+          <th className="p-2">Cliente</th>
+          <th className="p-2 w-28">Total</th>
+          <th className="p-2 w-48">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.length === 0 && (
+          <tr><td colSpan={5} className="p-3 text-sm text-gray-500">No hay pedidos.</td></tr>
+        )}
+        {rows.map(a => {
+          const c = clientesMap.get(a.cliente_id);
+          const saving = savingIds.has(a.id);
+          return (
+            <tr key={a.id} className="border-b border-gray-200">
+              <td className="p-2">#{a.id}</td>
+              <td className="p-2">{fmtDate(a.fecha)}</td>
+              <td className="p-2">
+                {c ? `${c.nombre} ${c.apellidos}` : `Cliente #${a.cliente_id}`}
+                {showRutaBadge && <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">Ruta</span>}
+              </td>
+              <td className="p-2">{eur(a.total)}</td>
+              <td className="p-2">
+                <button
+                  className={`px-3 py-1 rounded-lg border text-sm ${saving ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}`}
+                  onClick={() => onEntregar(a.id)}
+                  disabled={saving}
+                  title="Marcar como ENTREGADO"
+                >
+                  ✓ Entregado
+                </button>
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
   );
 }
 

@@ -13,7 +13,7 @@ TARGET_CLIENTS = 100
 YEARS_BACK_FOR_ORDERS = 2
 clientes_con_multiples_albaranes = []  # <<=== lista de clientes con > 1 albarán
 
-ESTADOS = ["FIANZA", "ALMACEN", "TRANSPORTE", "ENTREGADO"]
+ESTADOS = ["FIANZA", "ALMACEN", "RUTA", "ENTREGADO"]
 
 def _email_slug(nombre: str, apellidos: str) -> str:
     return f"{nombre}.{apellidos}".lower().replace(" ", "")

@@ -42,7 +42,7 @@ class AlbaranLinea(BaseModel):
     class Config:
         from_attributes = True
 
-OneWordEstado = Literal["FIANZA", "ALMACEN", "TRANSPORTE", "ENTREGADO"]
+OneWordEstado = Literal["FIANZA", "ALMACEN", "RUTA", "ENTREGADO"]
 
 class Albaran(BaseModel):
     id: int
