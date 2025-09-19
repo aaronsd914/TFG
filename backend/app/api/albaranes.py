@@ -8,6 +8,7 @@ from backend.app.entidades.albaran import (
 from backend.app.entidades.linea_albaran import LineaAlbaranDB
 from backend.app.entidades.cliente import ClienteDB, ClienteCreate
 from backend.app.entidades.producto import ProductoDB
+from backend.app.entidades.movimiento import MovimientoDB  # ← NUEVO: para registrar la fianza como movimiento
 
 from backend.app.utils.emailer import send_email_with_pdf
 from backend.app.utils.albaran_pdf import generar_pdf_albaran
@@ -36,6 +37,10 @@ class AlbaranCreateFull(BaseModel):
     cliente: Optional[ClienteCreate] = None
     items: List[AlbaranLineaCreate]
     estado: OneWordEstado = "FIANZA"
+    # ---- NUEVO: fianza -> movimiento automático ----
+    registrar_fianza: bool = False
+    # Si es None y registrar_fianza=True, el backend calculará el 30% del total automáticamente
+    fianza_cantidad: Optional[float] = None
 
 class EstadoUpdate(BaseModel):
     estado: OneWordEstado
@@ -173,6 +178,20 @@ def crear_albaran(
     db.commit()
     db.refresh(albaran)
 
+    # 3.1) NUEVO: registrar movimiento de fianza si procede (INGRESO)
+    if payload.registrar_fianza:
+        fianza = payload.fianza_cantidad
+        if fianza is None:
+            fianza = round((albaran.total or 0) * 0.30, 2)  # 30% automático
+        mov = MovimientoDB(
+            fecha=albaran.fecha,
+            concepto=f"Fianza albarán #{albaran.id}",
+            cantidad=float(fianza),
+            tipo="INGRESO",
+        )
+        db.add(mov)
+        db.commit()
+
     # 4) ← agenda email
     background_tasks.add_task(_send_albaran_email_task, albaran.id)
 
@@ -264,6 +283,7 @@ def generar_factura_transporte(payload: TransporteFacturaIn, db: Session = Depen
             if y < 20 * mm:
                 c.showPage()
                 y = height - 20 * mm
+                c.setFont("Helvetica", 10)
             c.drawString(25 * mm, y, f"- Albarán #{a.id} · Fecha {a.fecha.strftime('%d/%m/%Y')} · Total {a.total:.2f} €")
             y -= 5 * mm
 

@@ -9,7 +9,8 @@ import AlbaranesPage from './components/AlbaranesPage.jsx';
 import Tendencias from './components/Tendencias.jsx';
 import ProductosPage from './components/ProductosPage.jsx';
 import BancoPage from './components/BancoPage.jsx';
-import TransportePage from './components/TransportePage.jsx'; // NUEVO
+import TransportePage from './components/TransportePage.jsx';
+import MovimientosPage from './components/MovimientosPage.jsx'; // NUEVO
 import './index.css';
 
 const router = createBrowserRouter([
@@ -21,7 +22,8 @@ const router = createBrowserRouter([
       { path: 'ventas/nueva', element: <NuevaVenta /> },
       { path: 'clientes', element: <ClientesPage /> },
       { path: 'albaranes', element: <AlbaranesPage /> },
-      { path: 'transporte', element: <TransportePage /> }, // NUEVO
+      { path: 'transporte', element: <TransportePage /> },
+      { path: 'movimientos', element: <MovimientosPage /> }, // NUEVO
       { path: 'tendencias', element: <Tendencias /> },
       { path: 'productos', element: <ProductosPage /> },
       { path: 'banco', element: <BancoPage /> },

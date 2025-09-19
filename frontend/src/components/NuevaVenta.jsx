@@ -38,6 +38,15 @@ export default function NuevaVenta() {
   const listRef = useRef(null);
   const [items, setItems] = useState([]); // {producto, cantidad, precio_unitario}
 
+  // ---- Fianza (nuevo) ----
+  const [registrarFianza, setRegistrarFianza] = useState(false);
+  const total = useMemo(
+    () => items.reduce((acc, it) => acc + it.cantidad * (it.precio_unitario ?? it.producto.precio), 0),
+    [items]
+  );
+  const fianzaPorDefecto = useMemo(() => Number((total * 0.30).toFixed(2)), [total]);
+  const [fianzaCantidad, setFianzaCantidad] = useState(''); // vacío = usar 30% auto
+
   // ====== Helpers ======
   function Highlight({ text, query }) {
     const q = query.trim();
@@ -172,11 +181,6 @@ export default function NuevaVenta() {
     else if (e.key === 'Escape') { setSugerencias([]); setActiveIdx(-1); }
   }
 
-  const total = useMemo(
-    () => items.reduce((acc, it) => acc + it.cantidad * (it.precio_unitario ?? it.producto.precio), 0),
-    [items]
-  );
-
   // ====== Submit ======
   async function handleSubmit(e) {
     e.preventDefault();
@@ -194,7 +198,18 @@ export default function NuevaVenta() {
         cantidad: it.cantidad,
         precio_unitario: it.precio_unitario ?? it.producto.precio,
       })),
+      // Si quisieras permitir elegir estado inicial desde la UI, podrías añadirlo aquí.
+      // estado: "FIANZA",
     };
+
+    // Fianza
+    if (registrarFianza) {
+      payloadBase.registrar_fianza = true;
+      // Si el input está vacío, enviamos null para que el backend calcule el 30% automático
+      payloadBase.fianza_cantidad = (fianzaCantidad === '' ? null : Number(fianzaCantidad));
+    } else {
+      payloadBase.registrar_fianza = false;
+    }
 
     let payload;
     if (useExisting) {
@@ -242,6 +257,8 @@ export default function NuevaVenta() {
     setItems([]);
     setDescripcion('');
     setFecha(new Date().toISOString().slice(0, 10));
+    setRegistrarFianza(false);
+    setFianzaCantidad('');
     if (useExisting) {
       clearSelectedClient();
     } else {
@@ -481,7 +498,35 @@ export default function NuevaVenta() {
             </table>
           </div>
 
-          <div className="flex justify-end mt-4">
+          {/* Totales + Fianza */}
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white border border-gray-200 rounded-xl p-3">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={registrarFianza}
+                  onChange={e => setRegistrarFianza(e.target.checked)}
+                />
+                Registrar fianza (30% por defecto)
+              </label>
+              {registrarFianza && (
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="text-sm text-gray-600">Importe:</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={fianzaCantidad}
+                    onChange={e => setFianzaCantidad(e.target.value)}
+                    placeholder={fianzaPorDefecto.toFixed(2)}
+                    className="w-32 border rounded-lg px-2 py-1"
+                  />
+                  <span className="text-xs text-gray-500">
+                    (vacío = {fianzaPorDefecto.toFixed(2)} €)
+                  </span>
+                </div>
+              )}
+            </div>
+
             <div className="text-right">
               <div className="text-sm text-gray-600">Total</div>
               <div className="text-2xl font-bold">{total.toFixed(2)} €</div>
