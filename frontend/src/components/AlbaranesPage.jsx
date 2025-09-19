@@ -50,6 +50,13 @@ function formatDate(d) {
   return Number.isNaN(dt.getTime()) ? '—' : dt.toLocaleDateString();
 }
 
+const ESTADO_META = {
+  FIANZA: { label: 'Fianza',   className: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
+  ALMACEN: { label: 'Almacén', className: 'bg-blue-100 text-blue-800 border-blue-300' },
+  TRANSPORTE: { label: 'Ruta', className: 'bg-purple-100 text-purple-800 border-purple-300' },
+  ENTREGADO: { label: 'Entregado', className: 'bg-green-100 text-green-800 border-green-300' },
+};
+
 // ===== Página =====
 export default function AlbaranesPage() {
   const [albaranes, setAlbaranes] = useState([]);
@@ -68,6 +75,7 @@ export default function AlbaranesPage() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [selectedDomains, setSelectedDomains] = useState([]);
+  const [selectedEstados, setSelectedEstados] = useState([]); // NUEVO
 
   // detalle centrado
   const [detailOpen, setDetailOpen] = useState(false);
@@ -161,6 +169,9 @@ export default function AlbaranesPage() {
         return selectedDomains.includes(dom);
       });
     }
+    if (selectedEstados.length) {
+      list = list.filter(a => selectedEstados.includes(a.estado));
+    }
     switch (sort) {
       case 'fecha_desc': list.sort((a,b)=> new Date(b.fecha) - new Date(a.fecha)); break;
       case 'fecha_asc':  list.sort((a,b)=> new Date(a.fecha) - new Date(b.fecha)); break;
@@ -169,7 +180,7 @@ export default function AlbaranesPage() {
       default: break;
     }
     return list;
-  }, [albaranes, clientesById, q, totalMin, totalMax, dateFrom, dateTo, selectedDomains, sort]);
+  }, [albaranes, clientesById, q, totalMin, totalMax, dateFrom, dateTo, selectedDomains, selectedEstados, sort]);
 
   const activeChips = [
     ...(q ? [{ key:'q', label:`Buscar: "${q}"`, onRemove:()=>setQuery('') }] : []),
@@ -182,6 +193,7 @@ export default function AlbaranesPage() {
       onRemove:()=>{ setTotalMin(0); setTotalMax(9999999); }
     }] : []),
     ...selectedDomains.map(dom => ({ key:`dom-${dom}`, label:`Dominio: ${dom}`, onRemove:()=> setSelectedDomains(prev => prev.filter(d => d !== dom)) })),
+    ...selectedEstados.map(es => ({ key:`est-${es}`, label:`Estado: ${ESTADO_META[es]?.label || es}`, onRemove:()=> setSelectedEstados(prev => prev.filter(x => x !== es)) })),
     ...(sort !== 'fecha_desc' ? [{ key:'sort', label:{fecha_desc:'Fecha ↓', fecha_asc:'Fecha ↑', total_desc:'Total ↓', total_asc:'Total ↑'}[sort], onRemove:()=>setSort('fecha_desc') }] : []),
   ];
 
@@ -189,6 +201,7 @@ export default function AlbaranesPage() {
     setQuery('');
     setSort('fecha_desc');
     setSelectedDomains([]);
+    setSelectedEstados([]);
     setDateFrom('');
     setDateTo('');
     setTotalMin(0);
@@ -254,9 +267,10 @@ export default function AlbaranesPage() {
       <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
         <div className="grid grid-cols-12 px-4 py-2 text-sm font-medium text-gray-600 border-b">
           <div className="col-span-2">ID</div>
-          <div className="col-span-3">Fecha</div>
+          <div className="col-span-2">Fecha</div>
           <div className="col-span-3">Cliente</div>
           <div className="col-span-2">Total</div>
+          <div className="col-span-1">Estado</div> {/* NUEVO */}
           <div className="col-span-2">Descripción</div>
         </div>
         <ul>
@@ -267,6 +281,7 @@ export default function AlbaranesPage() {
           )}
           {filtered.map(a => {
             const cli = clientesById.get(a.cliente_id);
+            const meta = ESTADO_META[a.estado] || { label: a.estado, className: 'bg-gray-100 text-gray-700 border-gray-300' };
             return (
               <li
                 key={a.id}
@@ -274,12 +289,17 @@ export default function AlbaranesPage() {
                 onClick={() => openDetail(a)}
               >
                 <div className="col-span-2">#{a.id}</div>
-                <div className="col-span-3">{formatDate(a.fecha)}</div>
+                <div className="col-span-2">{formatDate(a.fecha)}</div>
                 <div className="col-span-3">
                   <div className="font-medium">{cli?.nombre} {cli?.apellidos}</div>
                   <div className="text-xs text-gray-500 truncate">{cli?.dni ? `${cli.dni} · ` : ''}{cli?.email}</div>
                 </div>
                 <div className="col-span-2">{formatEUR(a.total)}</div>
+                <div className="col-span-1">
+                  <span className={`inline-block border px-2 py-1 rounded-lg text-xs text-center ${meta.className}`}>
+                    {meta.label}
+                  </span>
+                </div>
                 <div className="col-span-2 truncate" title={a.descripcion || ''}>{a.descripcion || '—'}</div>
               </li>
             );
@@ -345,6 +365,29 @@ export default function AlbaranesPage() {
               })}
             </div>
           </div>
+
+          {/* NUEVO: Filtro por estado */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Estados</label>
+            <div className="flex flex-wrap gap-2">
+              {Object.keys(ESTADO_META).map(es => {
+                const active = selectedEstados.includes(es);
+                return (
+                  <button
+                    key={es}
+                    onClick={() =>
+                      setSelectedEstados(prev => prev.includes(es) ? prev.filter(x => x !== es) : [...prev, es])
+                    }
+                    className={`px-3 py-1 rounded-full border ${
+                      active ? 'bg-black text-white border-black' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {ESTADO_META[es].label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </section>
 
         <div className="mt-8 flex items-center justify-between">
@@ -365,7 +408,7 @@ export default function AlbaranesPage() {
         ) : (
           <div className="space-y-4">
             {/* Ficha albarán */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
               <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
                 <div className="text-xs text-gray-500">ID</div>
                 <div className="font-medium">#{selected.id}</div>
@@ -378,9 +421,19 @@ export default function AlbaranesPage() {
                 <div className="text-xs text-gray-500">Total</div>
                 <div className="font-medium">{formatEUR(selected.total)}</div>
               </div>
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 md:col-span-1">
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
                 <div className="text-xs text-gray-500">Cliente ID</div>
                 <div className="font-medium">#{selected.cliente_id}</div>
+              </div>
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
+                <div className="text-xs text-gray-500">Estado</div>
+                <div className="font-medium">
+                  <span className={`inline-block border px-2 py-1 rounded-lg text-xs ${
+                    ESTADO_META[selected.estado]?.className || 'bg-gray-100 text-gray-700 border-gray-300'
+                  }`}>
+                    {ESTADO_META[selected.estado]?.label || selected.estado}
+                  </span>
+                </div>
               </div>
             </div>
 

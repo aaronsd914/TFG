@@ -49,6 +49,13 @@ function formatDate(d) {
   return Number.isNaN(dt.getTime()) ? '—' : dt.toLocaleDateString();
 }
 
+const ESTADO_META = {
+  FIANZA: { label: 'Fianza',   className: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
+  ALMACEN: { label: 'Almacén', className: 'bg-blue-100 text-blue-800 border-blue-300' },
+  TRANSPORTE: { label: 'Ruta', className: 'bg-purple-100 text-purple-800 border-purple-300' },
+  ENTREGADO: { label: 'Entregado', className: 'bg-green-100 text-green-800 border-green-300' },
+};
+
 // ===== Página =====
 export default function ClientesPage() {
   // base
@@ -167,13 +174,11 @@ export default function ClientesPage() {
     setOrdersLoading(true);
     setOrdersError(null);
     try {
-      // intenta endpoint dedicado
       let res = await fetch(`${API_URL}albaranes/by-cliente/${clienteId}`);
       let data;
       if (res.ok) {
         data = await res.json();
       } else {
-        // fallback: carga todos y filtra
         const resAll = await fetch(`${API_URL}albaranes/get`);
         if (!resAll.ok) throw new Error(`HTTP ${resAll.status}`);
         const all = await resAll.json();
@@ -217,7 +222,6 @@ export default function ClientesPage() {
       setExpanded(prev => ({ ...prev, [id]: { ...prev[id], open: false } }));
       return;
     }
-    // abrir y si no hay líneas, fetch
     setExpanded(prev => ({ ...prev, [id]: { ...(prev[id]||{}), open: true, loading: true, error: null } }));
     try {
       const res = await fetch(`${API_URL}albaranes/get/${id}`);
@@ -441,6 +445,7 @@ export default function ClientesPage() {
                             <th className="p-2 w-24">ID</th>
                             <th className="p-2 w-36">Fecha</th>
                             <th className="p-2">Descripción</th>
+                            <th className="p-2 w-28">Estado</th>
                             <th className="p-2 w-32">Total</th>
                             <th className="p-2 w-24"></th>
                           </tr>
@@ -451,12 +456,18 @@ export default function ClientesPage() {
                             const isLoading = !!expanded[alb.id]?.loading;
                             const err = expanded[alb.id]?.error;
                             const lineas = expanded[alb.id]?.lineas || [];
+                            const meta = ESTADO_META[alb.estado] || { label: alb.estado, className: 'bg-gray-100 text-gray-700 border-gray-300' };
                             return (
                               <React.Fragment key={alb.id}>
                                 <tr className="border-b">
                                   <td className="p-2">#{alb.id}</td>
                                   <td className="p-2">{formatDate(alb.fecha)}</td>
                                   <td className="p-2 truncate" title={alb.descripcion || ''}>{alb.descripcion || '—'}</td>
+                                  <td className="p-2">
+                                    <span className={`inline-block border px-2 py-1 rounded-lg text-xs ${meta.className}`}>
+                                      {meta.label}
+                                    </span>
+                                  </td>
                                   <td className="p-2">{formatEUR(alb.total)}</td>
                                   <td className="p-2">
                                     <button
@@ -469,7 +480,7 @@ export default function ClientesPage() {
                                 </tr>
                                 {isOpen && (
                                   <tr className="border-b bg-gray-50">
-                                    <td colSpan={5} className="p-0">
+                                    <td colSpan={6} className="p-0">
                                       <div className="p-3">
                                         {isLoading && <div className="text-sm text-gray-500">Cargando líneas…</div>}
                                         {err && <div className="text-sm text-red-600">Error: {err}</div>}

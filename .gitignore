@@ -1,2 +1,3 @@
 backend/app/ia_settings.py
 backend/app/settings_email.py
+backend/app/bank_settings.py

@@ -3,9 +3,14 @@ from sqlalchemy.orm import relationship
 from backend.app.database import Base
 from pydantic import BaseModel
 from datetime import date
-from typing import List, Optional
+from typing import List, Optional, Literal
 
-# SQLAlchemy model
+# Estados internos (valores en DB)
+# FIANZA -> "Fianza"
+# ALMACEN -> "Almacén"
+# TRANSPORTE -> "Ruta"
+# ENTREGADO -> "Entregado"
+
 class AlbaranDB(Base):
     __tablename__ = "albaranes"
 
@@ -14,10 +19,14 @@ class AlbaranDB(Base):
     descripcion = Column(String)
     total = Column(Float, default=0.0)
 
+    # NUEVO: estado
+    # valores esperados: FIANZA | ALMACEN | TRANSPORTE | ENTREGADO
+    estado = Column(String, default="FIANZA", nullable=False)
+
     cliente_id = Column(Integer, ForeignKey("clientes.id"))
     cliente = relationship("ClienteDB", back_populates="albaranes")
 
-    # NUEVO: líneas del albarán
+    # líneas del albarán
     lineas = relationship(
         "LineaAlbaranDB",
         back_populates="albaran",
@@ -33,12 +42,15 @@ class AlbaranLinea(BaseModel):
     class Config:
         from_attributes = True
 
+OneWordEstado = Literal["FIANZA", "ALMACEN", "TRANSPORTE", "ENTREGADO"]
+
 class Albaran(BaseModel):
     id: int
     fecha: date
     descripcion: Optional[str] = None
     total: float
     cliente_id: int
+    estado: OneWordEstado
     lineas: List[AlbaranLinea] = []
     class Config:
         from_attributes = True
@@ -53,3 +65,4 @@ class AlbaranCreate(BaseModel):
     fecha: date
     descripcion: Optional[str] = None
     cliente_id: int  # si prefieres crear cliente “en línea”, abajo hay otra variante
+    estado: OneWordEstado = "FIANZA"

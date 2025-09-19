@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session, selectinload
 from typing import List, Optional
 from backend.app.database import SessionLocal
-from backend.app.entidades.albaran import Albaran, AlbaranCreate, AlbaranDB, AlbaranLineaCreate
+from backend.app.entidades.albaran import (
+    Albaran, AlbaranCreate, AlbaranDB, AlbaranLineaCreate, OneWordEstado
+)
 from backend.app.entidades.linea_albaran import LineaAlbaranDB
 from backend.app.entidades.cliente import ClienteDB, ClienteCreate
 from backend.app.entidades.producto import ProductoDB
@@ -12,7 +14,8 @@ from backend.app.utils.albaran_pdf import generar_pdf_albaran
 from backend.app.utils.templates import render
 
 from pydantic import BaseModel
-from datetime import date
+from datetime import date, datetime
+from pathlib import Path
 import logging
 
 router = APIRouter()
@@ -32,6 +35,21 @@ class AlbaranCreateFull(BaseModel):
     cliente_id: Optional[int] = None
     cliente: Optional[ClienteCreate] = None
     items: List[AlbaranLineaCreate]
+    estado: OneWordEstado = "FIANZA"
+
+class EstadoUpdate(BaseModel):
+    estado: OneWordEstado
+
+class TransporteFacturaIn(BaseModel):
+    albaran_ids: List[int]
+
+class TransporteFacturaOut(BaseModel):
+    ok: bool
+    n_pedidos: int
+    base_total: float
+    porcentaje: float
+    importe: float
+    path: str
 
 # ---- Tarea que construye y envía el email ----
 def _send_albaran_email_task(albaran_id: int):
@@ -130,7 +148,8 @@ def crear_albaran(
         fecha=payload.fecha,
         descripcion=payload.descripcion or "",
         cliente_id=cliente_id,
-        total=0.0
+        total=0.0,
+        estado=payload.estado or "FIANZA",
     )
     db.add(albaran); db.flush()
 
@@ -154,7 +173,7 @@ def crear_albaran(
     db.commit()
     db.refresh(albaran)
 
-    # 4) ← Aquí se agenda el envío del email (no bloquea la respuesta)
+    # 4) ← agenda email
     background_tasks.add_task(_send_albaran_email_task, albaran.id)
 
     return albaran
@@ -179,3 +198,94 @@ def albaranes_por_cliente(cliente_id: int, db: Session = Depends(get_db)):
         .order_by(AlbaranDB.fecha.desc(), AlbaranDB.id.desc())
     )
     return q.all()
+
+# ---- NUEVO: actualizar estado ----
+@router.patch("/albaranes/{albaran_id}/estado", response_model=Albaran)
+def actualizar_estado(albaran_id: int, payload: EstadoUpdate, db: Session = Depends(get_db)):
+    alb = db.query(AlbaranDB).filter(AlbaranDB.id == albaran_id).first()
+    if not alb:
+        raise HTTPException(404, "Albarán no encontrado")
+    alb.estado = payload.estado
+    db.commit()
+    db.refresh(alb)
+    return alb
+
+# ---- NUEVO: pedidos en almacén (para Transporte) ----
+@router.get("/transporte/almacen", response_model=List[Albaran])
+def pedidos_en_almacen(db: Session = Depends(get_db)):
+    return (
+        db.query(AlbaranDB)
+        .filter(AlbaranDB.estado == "ALMACEN")
+        .order_by(AlbaranDB.fecha.asc(), AlbaranDB.id.asc())
+        .all()
+    )
+
+# ---- NUEVO: generar factura de transporte (7%) ----
+@router.post("/transporte/factura", response_model=TransporteFacturaOut)
+def generar_factura_transporte(payload: TransporteFacturaIn, db: Session = Depends(get_db)):
+    if not payload.albaran_ids:
+        raise HTTPException(status_code=400, detail="Debes indicar al menos un albarán.")
+    albs = (
+        db.query(AlbaranDB)
+        .filter(AlbaranDB.id.in_(payload.albaran_ids))
+        .all()
+    )
+    if not albs:
+        raise HTTPException(status_code=404, detail="No se encontraron albaranes con esos IDs.")
+
+    base_total = round(sum(a.total or 0 for a in albs), 2)
+    porcentaje = 0.07
+    importe = round(base_total * porcentaje, 2)
+
+    # generar PDF
+    hoy = datetime.now().strftime("%d-%m-%Y")
+    carpeta = Path("transportes")
+    carpeta.mkdir(parents=True, exist_ok=True)
+    filename = carpeta / f"Transporte {hoy}.pdf"
+
+    try:
+        from reportlab.lib.pagesizes import A4
+        from reportlab.pdfgen import canvas
+        from reportlab.lib.units import mm
+
+        c = canvas.Canvas(str(filename), pagesize=A4)
+        width, height = A4
+
+        y = height - 30 * mm
+        c.setFont("Helvetica-Bold", 16)
+        c.drawString(20 * mm, y, f"Factura de Transporte - {hoy}")
+
+        y -= 12 * mm
+        c.setFont("Helvetica", 10)
+        c.drawString(20 * mm, y, "Pedidos incluidos:")
+        y -= 6 * mm
+
+        for a in albs:
+            if y < 20 * mm:
+                c.showPage()
+                y = height - 20 * mm
+            c.drawString(25 * mm, y, f"- Albarán #{a.id} · Fecha {a.fecha.strftime('%d/%m/%Y')} · Total {a.total:.2f} €")
+            y -= 5 * mm
+
+        y -= 8 * mm
+        c.setFont("Helvetica-Bold", 11)
+        c.drawString(20 * mm, y, f"Base total: {base_total:.2f} €")
+        y -= 6 * mm
+        c.drawString(20 * mm, y, f"Porcentaje transportista: 7%")
+        y -= 6 * mm
+        c.drawString(20 * mm, y, f"Importe a pagar: {importe:.2f} €")
+
+        c.showPage()
+        c.save()
+    except Exception as e:
+        # si falta reportlab u otro error
+        raise HTTPException(status_code=500, detail=f"No fue posible generar el PDF: {e}")
+
+    return TransporteFacturaOut(
+        ok=True,
+        n_pedidos=len(albs),
+        base_total=base_total,
+        porcentaje=7.0,
+        importe=importe,
+        path=str(filename.resolve()),
+    )

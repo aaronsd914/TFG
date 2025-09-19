@@ -9,6 +9,7 @@ export default function Sidebar() {
     { icon: '➕', label: 'Nueva venta', to: '/ventas/nueva' },
     { icon: '👥', label: 'Clientes', to: '/clientes' },
     { icon: '🧾', label: 'Albaranes', to: '/albaranes' },
+    { icon: '🚚', label: 'Transporte', to: '/transporte' }, // NUEVO
     { icon: '🧰', label: 'Productos', to: '/productos' },
     { icon: '🏦', label: 'Banco', to: '/banco' },
     { icon: '📊', label: 'Tendencias', to: '/tendencias' },

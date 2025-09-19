@@ -8,20 +8,18 @@ from backend.app.entidades.producto import ProductoDB
 from backend.app.entidades.albaran import AlbaranDB
 from backend.app.entidades.linea_albaran import LineaAlbaranDB
 
-
 TARGET_PRODUCTS = 90
 TARGET_CLIENTS = 100
 YEARS_BACK_FOR_ORDERS = 2
 clientes_con_multiples_albaranes = []  # <<=== lista de clientes con > 1 albarán
 
+ESTADOS = ["FIANZA", "ALMACEN", "TRANSPORTE", "ENTREGADO"]
 
 def _email_slug(nombre: str, apellidos: str) -> str:
     return f"{nombre}.{apellidos}".lower().replace(" ", "")
 
-
 def _gen_email(base: str, dominio="example.com", dedup=0) -> str:
     return f"{base}{dedup if dedup else ''}@{dominio}"
-
 
 def _gen_dni(existing: set[str]) -> str:
     letras = "TRWAGMYFPDXBNJZSQVHLCKE"
@@ -31,7 +29,6 @@ def _gen_dni(existing: set[str]) -> str:
         if dni not in existing:
             existing.add(dni)
             return dni
-
 
 def _ensure_providers(db: Session):
     if db.query(func.count(ProveedorDB.id)).scalar() == 0:
@@ -43,9 +40,7 @@ def _ensure_providers(db: Session):
         db.add_all(proveedores)
         db.commit()
 
-
 def _ensure_products(db: Session):
-    # Productos base “bonitos”
     base = [
         ("Sofá de cuero Milano", "Sofá 3 plazas en cuero marrón", 1200.0),
         ("Mesa de comedor Oslo", "Mesa extensible de madera maciza", 850.0),
@@ -83,7 +78,6 @@ def _ensure_products(db: Session):
     existing_names = set(p.nombre for p in db.query(ProductoDB).all())
     to_add = []
 
-    # Añade base sin duplicar
     for (n, d, pr) in base:
         if n not in existing_names:
             to_add.append(ProductoDB(
@@ -93,7 +87,6 @@ def _ensure_products(db: Session):
                 proveedor_id=random.choice(prov_ids),
             ))
 
-    # Completa hasta TARGET_PRODUCTS con sintéticos
     count_now = (db.query(func.count(ProductoDB.id)).scalar() or 0) + len(to_add)
     idx = 1
     while count_now < TARGET_PRODUCTS:
@@ -113,26 +106,24 @@ def _ensure_products(db: Session):
         db.add_all(to_add)
         db.commit()
 
-
 def _ensure_clients(db: Session):
-    # Catálogo de nombres
     first_names = [
-        "María", "Juan", "Ana", "Carlos", "Lucía", "Miguel", "Sofía", "Alejandro", "Paula", "Javier", "Marta", "Diego",
-        "Irene", "Pablo", "Elena", "Sergio", "Noelia", "Hugo", "Nerea", "David", "Laura", "Raúl", "Clara", "Rubén",
-        "Alicia", "Guillermo", "Nicolás", "Beatriz", "Tomás", "Patricia", "Adrián", "Silvia", "Jaime", "Teresa",
-        "Víctor", "Rocío", "Gonzalo", "Eva", "Andrés", "Álvaro", "Carmen", "Luciano", "Valeria", "Marcos", "Julia",
-        "Elisa", "Daniel", "Ángela", "Cristina", "Óscar", "Santiago", "Héctor", "Noa", "Aitor", "Olga", "Bruno",
-        "Ariadna", "Eduardo", "Sonia", "Hugo", "Aina", "Leo", "Carla", "Claudia", "Mario", "Nora", "Gabriel"
+        "María","Juan","Ana","Carlos","Lucía","Miguel","Sofía","Alejandro","Paula","Javier","Marta","Diego",
+        "Irene","Pablo","Elena","Sergio","Noelia","Hugo","Nerea","David","Laura","Raúl","Clara","Rubén",
+        "Alicia","Guillermo","Nicolás","Beatriz","Tomás","Patricia","Adrián","Silvia","Jaime","Teresa",
+        "Víctor","Rocío","Gonzalo","Eva","Andrés","Álvaro","Carmen","Luciano","Valeria","Marcos","Julia",
+        "Elisa","Daniel","Ángela","Cristina","Óscar","Santiago","Héctor","Noa","Aitor","Olga","Bruno",
+        "Ariadna","Eduardo","Sonia","Aina","Leo","Carla","Claudia","Mario","Nora","Gabriel"
     ]
     last_names = [
-        "González", "Pérez", "López", "Sánchez", "Martínez", "Fernández", "García", "Rodríguez", "Hernández", "Ruiz",
-        "Díaz", "Moreno", "Alonso", "Romero", "Navarro", "Torres", "Vargas", "Castro", "Santos", "Iglesias", "Cano",
-        "Méndez", "Serrano", "Delgado", "Ortega", "Campos", "Vega", "Cruz", "Guerrero", "Soler", "Blanco", "Marín",
-        "Lorenzo", "Flores", "Sáez", "Rey", "Suárez", "Aguilar", "Núñez", "Ramos", "Cortés", "Peña", "León", "Silva",
-        "Ibáñez", "Vicente", "Calvo", "Cuevas", "Parra", "Moya", "Vidal", "Redondo", "Estevez", "Garrido"
+        "González","Pérez","López","Sánchez","Martínez","Fernández","García","Rodríguez","Hernández","Ruiz",
+        "Díaz","Moreno","Alonso","Romero","Navarro","Torres","Vargas","Castro","Santos","Iglesias","Cano",
+        "Méndez","Serrano","Delgado","Ortega","Campos","Vega","Cruz","Guerrero","Soler","Blanco","Marín",
+        "Lorenzo","Flores","Sáez","Rey","Suárez","Aguilar","Núñez","Ramos","Cortés","Peña","León","Silva",
+        "Ibáñez","Vicente","Calvo","Cuevas","Parra","Moya","Vidal","Redondo","Estevez","Garrido"
     ]
-    cities = ["Madrid", "Barcelona", "Valencia", "Sevilla", "Zaragoza", "Málaga", "Murcia", "Valladolid", "Bilbao", "Alicante"]
-    streets = ["Mayor", "Gran Vía", "Alcalá", "Colón", "Serrano", "Velázquez", "Castellana", "Diagonal", "Princesa", "Atocha"]
+    cities = ["Madrid","Barcelona","Valencia","Sevilla","Zaragoza","Málaga","Murcia","Valladolid","Bilbao","Alicante"]
+    streets = ["Mayor","Gran Vía","Alcalá","Colón","Serrano","Velázquez","Castellana","Diagonal","Princesa","Atocha"]
 
     existing_emails = {c.email for c in db.query(ClienteDB).all() if c.email}
     existing_dnis = {c.dni for c in db.query(ClienteDB).all() if c.dni}
@@ -154,8 +145,8 @@ def _ensure_clients(db: Session):
 
         c = ClienteDB(
             nombre=nombre,
-            apellidos=apellidos,                    # NOT NULL
-            dni=dni,                                # SIEMPRE relleno
+            apellidos=apellidos,
+            dni=dni,
             email=email,
             telefono1=f"6{random.randint(10,99)}{random.randint(100000,999999)}",
             telefono2=None if random.random() < 0.5 else f"7{random.randint(10,99)}{random.randint(100000,999999)}",
@@ -171,15 +162,7 @@ def _ensure_clients(db: Session):
         db.add_all(clients_to_add)
         db.commit()
 
-
 def _ensure_orders(db: Session):
-    """
-    Crea al menos 1 albarán por cliente que no tenga ninguno.
-    Para repartir 2–3 albaranes en algunos clientes:
-      - ~30% de clientes: 2 albaranes
-      - ~10% de clientes: 3 albaranes
-    Si el cliente ya tiene N albaranes >= el deseado, no crea más.
-    """
     clients = db.query(ClienteDB).order_by(ClienteDB.id).all()
     products = db.query(ProductoDB).order_by(ProductoDB.id).all()
     if not clients or not products:
@@ -188,17 +171,33 @@ def _ensure_orders(db: Session):
     two_count_goal = max(1, int(len(clients) * 0.30))
     three_count_goal = max(1, int(len(clients) * 0.10))
 
-    # elegimos subconjuntos sin solapar
+    # no duplicar si ya hay suficientes albaranes
+    def already_saturated(cli: ClienteDB, desired: int) -> bool:
+        existing_n = db.query(func.count(AlbaranDB.id)).filter(AlbaranDB.cliente_id == cli.id).scalar() or 0
+        return existing_n >= desired
+
     shuffled = clients[:]
     random.shuffle(shuffled)
     three_set = set(c.id for c in shuffled[:three_count_goal])
     rest = [c for c in shuffled if c.id not in three_set]
     two_set = set(c.id for c in rest[:two_count_goal])
 
-    # función auxiliar
     def create_order_for_client(cli: ClienteDB):
         days = random.randint(0, 365 * YEARS_BACK_FOR_ORDERS)
         f = date.today() - timedelta(days=days)
+
+        # bias para tener suficientes en ALMACEN
+        # 40% ALMACEN, 25% FIANZA, 20% TRANSPORTE, 15% ENTREGADO
+        r = random.random()
+        if r < 0.40:
+            est = "ALMACEN"
+        elif r < 0.65:
+            est = "FIANZA"
+        elif r < 0.85:
+            est = "TRANSPORTE"
+        else:
+            est = "ENTREGADO"
+
         alb = AlbaranDB(
             fecha=f,
             descripcion=random.choice([
@@ -206,7 +205,8 @@ def _ensure_orders(db: Session):
                 "Artículos varios", "Pedido online", "Reposición", "Promoción estacional"
             ]),
             cliente_id=cli.id,
-            total=0.0
+            total=0.0,
+            estado=est,
         )
         db.add(alb); db.flush()
 
@@ -215,7 +215,6 @@ def _ensure_orders(db: Session):
         total = 0.0
         for _ in range(n_lineas):
             prod = random.choice(products)
-            # evita repetir el mismo producto demasiadas veces
             if prod.id in usados and len(usados) < len(products):
                 continue
             usados.add(prod.id)
@@ -231,7 +230,6 @@ def _ensure_orders(db: Session):
 
         alb.total = round(total, 2)
 
-    # crear albaranes
     for cli in clients:
         existing_n = db.query(func.count(AlbaranDB.id)).filter(AlbaranDB.cliente_id == cli.id).scalar() or 0
 
@@ -247,14 +245,12 @@ def _ensure_orders(db: Session):
             if (to_create > 1):
                 clientes_con_multiples_albaranes.append(f" ({cli.id})")
 
-
     db.commit()
-
 
 def seed(db: Session):
     _ensure_providers(db)
     _ensure_products(db)
     _ensure_clients(db)
     _ensure_orders(db)
-    print("✅ Seed ejecutado (objetivos: 3 proveedores, 90 productos, 100 clientes, 1–3 albaranes por cliente)")
+    print("✅ Seed ejecutado (idempotente): objetivos 3 proveedores, 90 productos, 100 clientes, 1–3 albaranes/cliente")
     print(clientes_con_multiples_albaranes)
