@@ -194,7 +194,7 @@ def _ensure_orders(db: Session):
         elif r < 0.65:
             est = "FIANZA"
         elif r < 0.85:
-            est = "TRANSPORTE"
+            est = "RUTA"
         else:
             est = "ENTREGADO"
 

@@ -76,17 +76,35 @@ def build_metrics(db: Session, dfrom: date, dto: date) -> Dict[str, Any]:
 
 def call_llm(question: str, metrics: Dict[str, Any]) -> tuple[str, List[Dict[str, Any]]]:
     provider = (LLM_PROVIDER or "").lower()
+
+    # --- 1. PREPARACIÓN DE DATOS ---
+    rfm_raw = metrics.get("rfm", {})
+    rfm_clean = rfm_raw["summary"] if (isinstance(rfm_raw, dict) and "summary" in rfm_raw) else "Sin datos"
+
+    metrics_for_llm = {
+        "range": metrics.get("range"),
+        "top_products": (metrics.get("top_products") or [])[:5],
+        "averages": metrics.get("averages"),
+        "basket_pairs": (metrics.get("basket_pairs") or [])[:3],
+        "rfm_summary": rfm_clean, 
+        "note": "Datos diarios omitidos. Usa los agregados."
+    }
+    
+    metrics_json = json.dumps(metrics_for_llm, ensure_ascii=False)
+    
     system_msg = (
-        "Eres analista de datos retail. Responde en español, claro y accionable. "
-        "Usa solo el JSON. Si procede, añade un bloque ```json con "
-        "{\"charts\":[{\"type\":\"line|bar\",\"title\":\"...\",\"xKey\":\"...\",\"yKey\":\"...\",\"data\":[...]}]}."
+        "Eres analista de datos retail. Responde en español. "
+        "IMPORTANTE: Si generas un gráfico, devuélvelo SOLO en formato JSON estricto: {\"charts\": [...]}. "
+        "Para listar datos, usa listas de texto o tablas markdown, evita bloques JSON para datos."
     )
+    
     user_msg = (
         f"Rango: {metrics['range']['from']} → {metrics['range']['to']}\n"
         f"Pregunta: {question}\n\n"
-        f"DATOS:\n{json.dumps(metrics, ensure_ascii=False)}"
+        f"DATOS:\n{metrics_json}"
     )
 
+    # --- 2. LLAMADA A LA API ---
     if provider == "groq":
         if not GROQ_API_KEY: raise RuntimeError("GROQ_API_KEY no configurado")
         url = f"{GROQ_BASE_URL.rstrip('/')}/chat/completions"
@@ -116,15 +134,71 @@ def call_llm(question: str, metrics: Dict[str, Any]) -> tuple[str, List[Dict[str
         r = requests.post(url, headers=headers, json=payload, timeout=REQUEST_TIMEOUT)
         r.raise_for_status()
         answer = r.json()["choices"][0]["message"]["content"].strip()
-
+    
     else:
         raise RuntimeError(f"Proveedor LLM no soportado: {provider}")
 
+    # --- 3. PROCESAMIENTO INTELIGENTE DE LA RESPUESTA ---
     charts: List[Dict[str, Any]] = []
-    parsed = json_from_text(answer)
-    if isinstance(parsed, dict) and isinstance(parsed.get("charts"), list):
-        charts = parsed["charts"]
-        answer = re.sub(r"```json.*?```", "", answer, flags=re.S).strip()
+
+    # PASO A: Extraer gráficos "desnudos" o en bloques
+    # Buscamos cualquier cosa que parezca {"charts": [...]} incluso si no tiene ```json
+    def extract_charts(match):
+        text = match.group(0)
+        # Intentamos limpiar un poco por si atrapó comillas de markdown
+        clean_text = text.replace("```json", "").replace("```", "").strip()
+        try:
+            data = json.loads(clean_text)
+            if isinstance(data, dict) and "charts" in data and isinstance(data["charts"], list):
+                charts.extend(data["charts"])
+                return "" # Lo borramos del texto
+        except:
+            pass
+        return text # Si falla, lo dejamos como estaba
+
+    # Regex: Busca {"charts": ... hasta el cierre de llave }
+    # Nota: Esta regex es básica, asume que el JSON de charts no tiene llaves anidadas complejas, 
+    # lo cual suele ser cierto para estos gráficos simples.
+    answer = re.sub(r'(\{ ?"charts":\s*\[.*?\]\s*\})', extract_charts, answer, flags=re.S)
+
+
+    # PASO B: Formatear otros bloques JSON (datos) a Texto Bonito
+    def format_data_blocks(match):
+        content = match.group(1) # Lo de dentro de ```json ... ```
+        try:
+            data = json.loads(content)
+            # Si por casualidad es un chart que se nos escapó en el Paso A
+            if isinstance(data, dict) and "charts" in data:
+                charts.extend(data["charts"])
+                return ""
+            
+            # Si son datos normales, los convertimos a lista markdown
+            text_out = "\n"
+            if isinstance(data, list):
+                for item in data:
+                    # Si es un objeto simple (ej: producto)
+                    if isinstance(item, dict):
+                        line = ", ".join([f"{k}: {v}" for k,v in item.items() if k != 'product_id'])
+                        text_out += f"- {line}\n"
+                    else:
+                        text_out += f"- {item}\n"
+            elif isinstance(data, dict):
+                for k, v in data.items():
+                    text_out += f"- **{k}**: {v}\n"
+            return text_out
+        except:
+            return match.group(0)
+
+    # Reemplazamos los bloques de código restantes
+    answer = re.sub(r"```json\s*(.*?)\s*```", format_data_blocks, answer, flags=re.S)
+    
+    # PASO C: Limpieza final de basura
+    # A veces quedan líneas como "* **Productos más vendidos**: " vacías porque borramos el JSON de al lado.
+    # Borramos líneas que terminan en dos puntos y no tienen nada después (opcional, estético).
+    lines = [line for line in answer.split('\n') if not line.strip().endswith(':')]
+    # O simplemente limpiamos saltos de línea dobles
+    answer = re.sub(r"\n\s*\n", "\n\n", answer).strip()
+
     return answer, charts
 
 # -------- endpoint --------
