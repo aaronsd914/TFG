@@ -98,6 +98,9 @@ export default function ClientesPage() {
   const [orders, setOrders] = useState([]);
   const [expanded, setExpanded] = useState({}); // { [albaranId]: { open, loading, error, lineas } }
 
+  // ✅ ID pendiente para abrir detalle (desde Albaranes)
+  const [pendingOpenClienteId, setPendingOpenClienteId] = useState(null);
+
   // Carga inicial de clientes
   useEffect(() => {
     (async () => {
@@ -121,6 +124,31 @@ export default function ClientesPage() {
       }
     })();
   }, []);
+
+  // ✅ Leer localStorage para abrir cliente automáticamente
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('cliente_open_id');
+      if (stored) setPendingOpenClienteId(Number(stored));
+    } catch {}
+  }, []);
+
+  // ✅ Cuando ya tengo la lista de clientes, abro el detalle
+  useEffect(() => {
+    if (!pendingOpenClienteId) return;
+    if (!data || data.length === 0) return;
+
+    const c = data.find((x) => x.id === Number(pendingOpenClienteId));
+    if (!c) return;
+
+    openDetail(c);
+
+    try {
+      localStorage.removeItem('cliente_open_id');
+    } catch {}
+    setPendingOpenClienteId(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingOpenClienteId, data]);
 
   // Dominios únicos
   const domains = useMemo(() => {
@@ -322,7 +350,7 @@ export default function ClientesPage() {
         </div>
       )}
 
-      {/* Tabla de clientes (sin efecto “botón”) */}
+      {/* Tabla de clientes */}
       <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
         <div className="grid grid-cols-12 px-4 py-2 text-sm font-medium text-gray-600 border-b">
           <div className="col-span-2">ID</div>
@@ -440,7 +468,7 @@ export default function ClientesPage() {
         </div>
       </ModalCenter>
 
-      {/* Modal Detalle Cliente (tabla albaranes como antes) */}
+      {/* Modal Detalle Cliente */}
       <ModalCenter isOpen={detailOpen} onClose={closeDetail} maxWidth="max-w-4xl">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">Detalle de cliente</h2>
