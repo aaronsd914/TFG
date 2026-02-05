@@ -1,0 +1,1 @@
+Usar stripe.txt
