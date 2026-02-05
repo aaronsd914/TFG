@@ -14,7 +14,6 @@ from reportlab.platypus import (
     Table,
     TableStyle,
 )
-from reportlab.pdfbase.pdfmetrics import stringWidth
 
 log = logging.getLogger("albaran_pdf")
 
@@ -31,7 +30,6 @@ def _fmt_fecha(value) -> str:
         return ""
     if isinstance(value, (datetime, date)):
         return value.strftime("%d/%m/%Y")
-    # fallback (string)
     try:
         return str(value)
     except Exception:
@@ -44,25 +42,31 @@ def _safe(s) -> str:
     return str(s).strip()
 
 
-def _build_header_footer(canvas, doc, title: str, subtitle: str):
+def _build_header_footer(canvas, doc, tienda_nombre: str, right_text: str):
     """
     Header + footer en todas las páginas.
+    - Izquierda: nombre de tienda
+    - Derecha: #albaran · fecha
     """
     canvas.saveState()
 
-    # Header line
+    # Separación superior: bajamos un poco todo el header para que no quede pegado
+    header_y = doc.height + doc.topMargin - 16  # antes estaba prácticamente pegado
+
+    # Línea del header
     canvas.setStrokeColor(colors.HexColor("#E5E7EB"))
     canvas.setLineWidth(1)
-    canvas.line(doc.leftMargin, doc.height + doc.topMargin - 8, doc.pagesize[0] - doc.rightMargin, doc.height + doc.topMargin - 8)
+    canvas.line(doc.leftMargin, header_y - 8, doc.pagesize[0] - doc.rightMargin, header_y - 8)
 
-    # Header text
+    # Texto header (izq: tienda)
     canvas.setFillColor(colors.HexColor("#111827"))
-    canvas.setFont("Helvetica-Bold", 10)
-    canvas.drawString(doc.leftMargin, doc.height + doc.topMargin - 4, title)
+    canvas.setFont("Helvetica-Bold", 11)
+    canvas.drawString(doc.leftMargin, header_y, tienda_nombre)
 
+    # Texto header (dcha)
     canvas.setFillColor(colors.HexColor("#6B7280"))
     canvas.setFont("Helvetica", 9)
-    canvas.drawRightString(doc.pagesize[0] - doc.rightMargin, doc.height + doc.topMargin - 4, subtitle)
+    canvas.drawRightString(doc.pagesize[0] - doc.rightMargin, header_y, right_text)
 
     # Footer
     canvas.setStrokeColor(colors.HexColor("#E5E7EB"))
@@ -83,22 +87,24 @@ def _build_header_footer(canvas, doc, title: str, subtitle: str):
 
 def generar_pdf_albaran(albaran, cliente, lineas_con_nombre):
     """
-    Genera un PDF más profesional usando ReportLab Platypus.
-    Mantiene la misma firma para no romper tu código.
+    PDF profesional:
+    - Header con nombre de tienda ("Tienda")
+    - Más separación arriba para que no se pise con el título
     """
     log.info("[pdf] Generando PDF para albarán #%s", getattr(albaran, "id", "?"))
 
     buffer = BytesIO()
 
+    # ✅ Aumentamos margen superior para que haya más aire bajo el header
     doc = SimpleDocTemplate(
         buffer,
         pagesize=A4,
         leftMargin=18 * mm,
         rightMargin=18 * mm,
-        topMargin=18 * mm,
+        topMargin=26 * mm,     # antes 18mm
         bottomMargin=18 * mm,
         title=f"Albarán {getattr(albaran, 'id', '')}",
-        author="Sistema de Gestión",
+        author="Tienda",
     )
 
     styles = getSampleStyleSheet()
@@ -163,20 +169,22 @@ def generar_pdf_albaran(albaran, cliente, lineas_con_nombre):
     ]
     direccion = " ".join([p for p in dir_parts if p]).strip()
 
-    # ---- Calcular totales
+    # ---- Calcular total
     total = 0.0
     for ln in lineas_con_nombre:
         total += float(ln.get("subtotal", 0) or 0)
 
-    # ---- Story (contenido)
     story = []
+
+    # ✅ Más aire antes del título para evitar que quede pegado al header
+    story.append(Spacer(1, 10))
 
     # Cabecera principal
     story.append(Paragraph(f"Albarán #{albaran_id}", styles["H1"]))
     story.append(Paragraph(f"Fecha: {fecha}", styles["Muted"]))
-    story.append(Spacer(1, 10))
+    story.append(Spacer(1, 12))
 
-    # Bloques superiores (datos del cliente + resumen)
+    # Bloques superiores (cliente + resumen)
     left_block = [
         [Paragraph("Cliente", styles["Label"])],
         [Paragraph(_safe(c_nombre) or "-", styles["Body"])],
@@ -184,7 +192,7 @@ def generar_pdf_albaran(albaran, cliente, lineas_con_nombre):
     if c_dni:
         left_block.append([Paragraph(f"DNI: {_safe(c_dni)}", styles["Body"])])
     if c_email:
-        left_block.append([Paragraph(f"Email: {_safe(c_email)}", styles["Body"])])
+        left_block.append([Paragraph(f"Email: {c_email}", styles["Body"])])
     if c_tel1:
         extra = f"Tel: {c_tel1}" + (f" · {c_tel2}" if c_tel2 else "")
         left_block.append([Paragraph(extra, styles["Body"])])
@@ -264,8 +272,6 @@ def generar_pdf_albaran(albaran, cliente, lineas_con_nombre):
 
     col_widths = [doc.width * 0.52, doc.width * 0.16, doc.width * 0.16, doc.width * 0.16]
     tbl = Table(data, colWidths=col_widths, repeatRows=1)
-
-    # Estilo: cabecera gris, filas alternas, líneas suaves
     table_style = [
         ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#F3F4F6")),
         ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#111827")),
@@ -286,11 +292,9 @@ def generar_pdf_albaran(albaran, cliente, lineas_con_nombre):
     story.append(tbl)
     story.append(Spacer(1, 12))
 
-    # Total final alineado a la derecha (bloque)
+    # Total final
     total_tbl = Table(
-        [
-            [Paragraph("TOTAL", styles["Label"]), Paragraph(f"<b>{eur(total)}</b>", styles["Body"])],
-        ],
+        [[Paragraph("TOTAL", styles["Label"]), Paragraph(f"<b>{eur(total)}</b>", styles["Body"])]],
         colWidths=[doc.width * 0.80, doc.width * 0.20],
     )
     total_tbl.setStyle(
@@ -306,7 +310,7 @@ def generar_pdf_albaran(albaran, cliente, lineas_con_nombre):
     )
     story.append(total_tbl)
 
-    # Observaciones (si existe)
+    # Observaciones
     descripcion = _safe(getattr(albaran, "descripcion", ""))
     if descripcion:
         story.append(Spacer(1, 10))
@@ -329,13 +333,13 @@ def generar_pdf_albaran(albaran, cliente, lineas_con_nombre):
         story.append(obs_tbl)
 
     # Header/footer en cada página
-    header_title = "Albarán"
-    header_subtitle = f"#{albaran_id} · {fecha}"
+    tienda_nombre = "Tienda"  # ✅ nombre de la tienda por ahora
+    right_text = f"#{albaran_id} · {fecha}"
 
     doc.build(
         story,
-        onFirstPage=lambda canv, d: _build_header_footer(canv, d, header_title, header_subtitle),
-        onLaterPages=lambda canv, d: _build_header_footer(canv, d, header_title, header_subtitle),
+        onFirstPage=lambda canv, d: _build_header_footer(canv, d, tienda_nombre, right_text),
+        onLaterPages=lambda canv, d: _build_header_footer(canv, d, tienda_nombre, right_text),
     )
 
     pdf = buffer.getvalue()

@@ -30,7 +30,7 @@ function Chip({ label, onRemove }) {
   return (
     <span className="inline-flex items-center gap-2 bg-gray-100 border border-gray-200 px-3 py-1 rounded-full text-sm">
       {label}
-      <button className="text-gray-500 hover:text-gray-700" onClick={onRemove}>×</button>
+      <button className="text-gray-500 hover:text-gray-700" onClick={onRemove} type="button">×</button>
     </span>
   );
 }
@@ -75,13 +75,16 @@ export default function AlbaranesPage() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [selectedDomains, setSelectedDomains] = useState([]);
-  const [selectedEstados, setSelectedEstados] = useState([]); // NUEVO
+  const [selectedEstados, setSelectedEstados] = useState([]);
 
   // detalle centrado
   const [detailOpen, setDetailOpen] = useState(false);
   const [selected, setSelected] = useState(null);
   const [selectedClient, setSelectedClient] = useState(null);
   const [detailError, setDetailError] = useState(null);
+
+  // ✅ ID pendiente para abrir desde Clientes
+  const [pendingOpenId, setPendingOpenId] = useState(null);
 
   // carga inicial
   useEffect(() => {
@@ -225,12 +228,48 @@ export default function AlbaranesPage() {
     }
     setDetailOpen(true);
   }
+
   function closeDetail() {
     setDetailOpen(false);
     setSelected(null);
     setSelectedClient(null);
     setDetailError(null);
   }
+
+  // ✅ 1) Leer una vez el localStorage y guardarlo como pendiente (NO borrar aquí)
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('albaran_open_id');
+      if (stored) setPendingOpenId(Number(stored));
+    } catch {}
+  }, []);
+
+  // ✅ 2) Si hay pendiente y ya tenemos albaranes, abrirlo y entonces borrar localStorage
+  useEffect(() => {
+    if (!pendingOpenId) return;
+    if (!albaranes || albaranes.length === 0) return;
+
+    const a = albaranes.find(x => x.id === Number(pendingOpenId));
+    if (!a) return;
+
+    openDetail(a);
+
+    try {
+      localStorage.removeItem('albaran_open_id');
+    } catch {}
+    setPendingOpenId(null);
+  }, [pendingOpenId, albaranes]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ✅ 3) (opcional) Si llega un evento en esta misma página, también abrir
+  useEffect(() => {
+    const handler = (ev) => {
+      const id = ev?.detail?.id;
+      if (!id) return;
+      setPendingOpenId(Number(id));
+    };
+    window.addEventListener('open-albaran', handler);
+    return () => window.removeEventListener('open-albaran', handler);
+  }, []);
 
   return (
     <div className="p-6">
@@ -239,6 +278,7 @@ export default function AlbaranesPage() {
         <button
           onClick={()=>setFiltersOpen(true)}
           className="rounded-xl border border-gray-300 px-4 py-2 bg-white hover:bg-gray-50"
+          type="button"
         >
           Filtros
         </button>
@@ -259,7 +299,7 @@ export default function AlbaranesPage() {
       {activeChips.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 mb-4">
           {activeChips.map(ch => <Chip key={ch.key} label={ch.label} onRemove={ch.onRemove} />)}
-          <button className="text-sm text-gray-600 underline ml-2" onClick={clearAll}>Limpiar todo</button>
+          <button className="text-sm text-gray-600 underline ml-2" onClick={clearAll} type="button">Limpiar todo</button>
         </div>
       )}
 
@@ -270,7 +310,7 @@ export default function AlbaranesPage() {
           <div className="col-span-2">Fecha</div>
           <div className="col-span-3">Cliente</div>
           <div className="col-span-2">Total</div>
-          <div className="col-span-1">Estado</div> {/* NUEVO */}
+          <div className="col-span-1">Estado</div>
           <div className="col-span-2">Descripción</div>
         </div>
         <ul>
@@ -311,7 +351,7 @@ export default function AlbaranesPage() {
       <ModalCenter isOpen={filtersOpen} onClose={()=>setFiltersOpen(false)} maxWidth="max-w-lg">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">Filtros</h2>
-          <button onClick={()=>setFiltersOpen(false)} className="text-gray-500 hover:text-gray-700">Cerrar</button>
+          <button onClick={()=>setFiltersOpen(false)} className="text-gray-500 hover:text-gray-700" type="button">Cerrar</button>
         </div>
 
         <section className="space-y-6">
@@ -358,6 +398,7 @@ export default function AlbaranesPage() {
                     className={`px-3 py-1 rounded-full border ${
                       active ? 'bg-black text-white border-black' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                     }`}
+                    type="button"
                   >
                     {dom}
                   </button>
@@ -366,7 +407,6 @@ export default function AlbaranesPage() {
             </div>
           </div>
 
-          {/* NUEVO: Filtro por estado */}
           <div>
             <label className="block text-sm font-medium mb-2">Estados</label>
             <div className="flex flex-wrap gap-2">
@@ -381,6 +421,7 @@ export default function AlbaranesPage() {
                     className={`px-3 py-1 rounded-full border ${
                       active ? 'bg-black text-white border-black' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                     }`}
+                    type="button"
                   >
                     {ESTADO_META[es].label}
                   </button>
@@ -391,8 +432,8 @@ export default function AlbaranesPage() {
         </section>
 
         <div className="mt-8 flex items-center justify-between">
-          <button onClick={clearAll} className="text-gray-600 underline">Limpiar filtros</button>
-          <button onClick={()=>setFiltersOpen(false)} className="px-4 py-2 rounded-xl bg-black text-white">Aplicar</button>
+          <button onClick={clearAll} className="text-gray-600 underline" type="button">Limpiar filtros</button>
+          <button onClick={()=>setFiltersOpen(false)} className="px-4 py-2 rounded-xl bg-black text-white" type="button">Aplicar</button>
         </div>
       </ModalCenter>
 
@@ -400,14 +441,13 @@ export default function AlbaranesPage() {
       <ModalCenter isOpen={detailOpen} onClose={closeDetail} maxWidth="max-w-3xl">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">Detalle de albarán</h2>
-          <button onClick={closeDetail} className="text-gray-500 hover:text-gray-700">Cerrar</button>
+          <button onClick={closeDetail} className="text-gray-500 hover:text-gray-700" type="button">Cerrar</button>
         </div>
 
         {!selected ? (
           <p className="text-gray-500">Cargando…</p>
         ) : (
           <div className="space-y-4">
-            {/* Ficha albarán */}
             <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
               <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
                 <div className="text-xs text-gray-500">ID</div>
@@ -442,7 +482,6 @@ export default function AlbaranesPage() {
               <div className="font-medium break-words">{selected.descripcion || '—'}</div>
             </div>
 
-            {/* Cliente (resumen) */}
             <div className="bg-white border border-gray-200 rounded-xl p-4">
               <h3 className="font-semibold mb-2">Cliente</h3>
               {selectedClient ? (
@@ -465,7 +504,6 @@ export default function AlbaranesPage() {
               )}
             </div>
 
-            {/* Líneas */}
             <div className="bg-white border border-gray-200 rounded-xl p-4">
               <h3 className="font-semibold mb-3">Líneas</h3>
               {detailError && <p className="text-red-600 mb-2">Error: {detailError}</p>}
