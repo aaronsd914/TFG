@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.app.api import clientes, productos, proveedores, albaranes, movimientos, analytics, ai, bank
+from backend.app.api import clientes, productos, proveedores, albaranes, movimientos, analytics, ai, bank, transportes
 from contextlib import asynccontextmanager
 import logging
 
@@ -9,10 +9,8 @@ from backend.app.seed import seed
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 1) CREA tablas si no existen (NO borra datos)
     Base.metadata.create_all(bind=engine)
 
-    # 2) SEED idempotente
     with SessionLocal() as db:
         seed(db)
 
@@ -20,7 +18,6 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-# CORS para Vite
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
@@ -29,7 +26,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Incluye todas las rutas
 app.include_router(clientes.router, prefix="/api")
 app.include_router(productos.router, prefix="/api")
 app.include_router(proveedores.router, prefix="/api")
@@ -37,6 +33,7 @@ app.include_router(albaranes.router, prefix="/api")
 app.include_router(movimientos.router, prefix="/api")
 app.include_router(analytics.router, prefix="/api")
 app.include_router(ai.router, prefix="/api")
+app.include_router(transportes.router, prefix="/api")   # ✅ IMPORTANTE
 app.include_router(bank.router)
 
 logging.basicConfig(
