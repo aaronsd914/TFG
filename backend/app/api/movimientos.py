@@ -23,7 +23,11 @@ def crear_movimiento(movimiento: MovimientoCreate, db: Session = Depends(get_db)
 
 @router.get("/movimientos/get", response_model=List[Movimiento])
 def obtener_movimientos(db: Session = Depends(get_db)):
-    return db.query(MovimientoDB).all()
+    return (
+        db.query(MovimientoDB)
+        .order_by(MovimientoDB.fecha.desc(), MovimientoDB.id.desc())
+        .all()
+    )
 
 @router.get("/movimientos/get/{movimiento_id}", response_model=Movimiento)
 def obtener_movimiento(movimiento_id: int, db: Session = Depends(get_db)):

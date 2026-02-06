@@ -39,7 +39,8 @@ class AlbaranCreateFull(BaseModel):
     items: List[AlbaranLineaCreate]
     estado: OneWordEstado = "FIANZA"
     # NUEVO: movimiento de fianza
-    registrar_fianza: bool = False
+    # (compatibilidad) antes era opcional; ahora se registra SIEMPRE.
+    registrar_fianza: bool = True
     fianza_cantidad: Optional[float] = None
 
 class EstadoUpdate(BaseModel):
@@ -178,14 +179,25 @@ def crear_albaran(
     db.commit()
     db.refresh(albaran)
 
-    # 3.1) Movimiento de fianza si procede (INGRESO)
-    if payload.registrar_fianza:
+    # 3.1) Movimiento de fianza (INGRESO) — SIEMPRE
+    # Evitamos duplicados por reintentos del cliente.
+    concepto_fianza = f"Fianza albarán #{albaran.id}"
+    ya = (
+        db.query(MovimientoDB)
+        .filter(
+            MovimientoDB.tipo == "INGRESO",
+            MovimientoDB.fecha == albaran.fecha,
+            MovimientoDB.concepto == concepto_fianza,
+        )
+        .first()
+    )
+    if not ya:
         fianza = payload.fianza_cantidad
         if fianza is None:
             fianza = round((albaran.total or 0) * 0.30, 2)
         mov = MovimientoDB(
             fecha=albaran.fecha,
-            concepto=f"Fianza albarán #{albaran.id}",
+            concepto=concepto_fianza,
             cantidad=float(fianza),
             tipo="INGRESO",
         )

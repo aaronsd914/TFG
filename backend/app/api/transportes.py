@@ -10,6 +10,7 @@ from backend.app.database import SessionLocal
 from backend.app.entidades.albaran import AlbaranDB, Albaran
 from backend.app.entidades.cliente import ClienteDB
 from backend.app.entidades.albaran_ruta import AlbaranRutaDB
+from backend.app.entidades.movimiento import MovimientoDB
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
@@ -209,6 +210,15 @@ class QuitarRutaBody(BaseModel):
 class PendienteBody(BaseModel):
     albaran_ids: List[int]
 
+class LiquidarCamionOut(BaseModel):
+    ok: bool
+    camion_id: int
+    n_albaranes: int
+    base_total: float
+    porcentaje: float
+    importe: float
+    movimiento_id: int
+
 
 @router.post("/ruta/asignar")
 def asignar_ruta(body: AsignarRutaBody, db: Session = Depends(get_db)):
@@ -291,6 +301,68 @@ def poner_pendiente(body: PendienteBody, db: Session = Depends(get_db)):
 
     db.commit()
     return {"ok": True, "n": len(albs)}
+
+
+# -----------------------
+# NUEVO: Liquidar camión (registrar gasto 7%)
+# -----------------------
+@router.post("/ruta/{camion_id}/liquidar", response_model=LiquidarCamionOut)
+def liquidar_camion(camion_id: int, db: Session = Depends(get_db)):
+    if camion_id <= 0:
+        raise HTTPException(status_code=400, detail="camion_id inválido")
+
+    albs = (
+        db.query(AlbaranDB)
+        .join(AlbaranRutaDB, AlbaranRutaDB.albaran_id == AlbaranDB.id)
+        .filter(AlbaranDB.estado == "RUTA", AlbaranRutaDB.camion_id == camion_id)
+        .order_by(AlbaranDB.id.asc())
+        .all()
+    )
+
+    if not albs:
+        raise HTTPException(status_code=404, detail="No hay albaranes en ese camión.")
+
+    base_total = round(sum(float(a.total or 0) for a in albs), 2)
+    porcentaje = 0.07
+    importe = round(base_total * porcentaje, 2)
+
+    concepto_prefix = f"Transporte camión {camion_id}"
+    hoy = date.today()
+
+    # Evitar duplicados si el usuario liquida varias veces en el mismo día.
+    existente = (
+        db.query(MovimientoDB)
+        .filter(
+            MovimientoDB.tipo == "EGRESO",
+            MovimientoDB.fecha == hoy,
+            MovimientoDB.concepto.like(f"{concepto_prefix}%"),
+        )
+        .order_by(MovimientoDB.id.desc())
+        .first()
+    )
+
+    if existente:
+        mov = existente
+    else:
+        mov = MovimientoDB(
+            fecha=hoy,
+            concepto=f"{concepto_prefix} (7% de {base_total:.2f} € · {len(albs)} pedidos)",
+            cantidad=float(importe),
+            tipo="EGRESO",
+        )
+        db.add(mov)
+        db.commit()
+        db.refresh(mov)
+
+    return LiquidarCamionOut(
+        ok=True,
+        camion_id=camion_id,
+        n_albaranes=len(albs),
+        base_total=base_total,
+        porcentaje=7.0,
+        importe=float(importe),
+        movimiento_id=int(mov.id),
+    )
 
 
 @router.get("/ruta/{camion_id}/factura")
