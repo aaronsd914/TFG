@@ -5,6 +5,8 @@ from backend.app.database import SessionLocal
 from typing import List
 import unicodedata
 
+from sqlalchemy.exc import IntegrityError  # ✅ NUEVO
+
 router = APIRouter()
 
 def get_db():
@@ -49,13 +51,20 @@ def eliminar_producto(producto_id: int, db: Session = Depends(get_db)):
     producto = db.query(ProductoDB).filter(ProductoDB.id == producto_id).first()
     if not producto:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
-    db.delete(producto)
-    db.commit()
-    return {"message": f"Producto {producto_id} eliminado"}
 
+    try:
+        db.delete(producto)
+        db.commit()
+        return {"message": f"Producto {producto_id} eliminado"}
+    except IntegrityError:
+        db.rollback()
+        # ✅ No lo borramos porque hay líneas de albarán que lo referencian
+        raise HTTPException(
+            status_code=409,
+            detail="No se puede eliminar este producto porque está referenciado en albaranes (líneas de albarán).",
+        )
 
 def _norm(s: str) -> str:
-    # quita tildes/diacríticos y pasa a minúsculas
     s = s or ""
     nfkd = unicodedata.normalize("NFD", s)
     return "".join(ch for ch in nfkd if not unicodedata.combining(ch)).lower()
@@ -67,8 +76,6 @@ def buscar_productos(
     db: Session = Depends(get_db),
 ):
     qn = _norm(q)
-    # Traemos y filtramos en Python (rápido para catálogos pequeños/medios)
     productos = db.query(ProductoDB).all()
     res = [p for p in productos if qn in _norm(p.nombre)]
     return res[:limit]
-
