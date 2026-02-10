@@ -1,68 +1,131 @@
 # backend/app/api/ai.py
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from typing import Optional, Dict, Any, List
-from datetime import date
-import json, re, logging, requests
+from typing import Optional, Dict, Any, List, Literal
+from datetime import date, datetime
+import json, re, logging
 
 from backend.app.database import SessionLocal
 from backend.app.api.analytics import (
-    sales_by_day, top_products, averages, basket_pairs, rfm_segments,
-    daterange_defaults, to_iso
+    sales_by_day,
+    top_products,
+    averages,
+    basket_pairs,
+    rfm_segments,
+    daterange_defaults,
+    to_iso,
 )
-from backend.app.ia_settings import (
-    LLM_PROVIDER,
-    GROQ_API_KEY, GROQ_BASE_URL, GROQ_MODEL,
-    GITHUB_TOKEN, GITHUB_MODELS_BASE, GITHUB_MODEL,
-    OPENAI_API_KEY, OPENAI_BASE_URL, OPENAI_MODEL,
-    REQUEST_TIMEOUT
-)
+from backend.app.utils.groq_llm import groq_chat
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 log = logging.getLogger("ai")
 
-# -------- infra --------
+
 def get_db():
     db = SessionLocal()
-    try: yield db
-    finally: db.close()
+    try:
+        yield db
+    finally:
+        db.close()
+
 
 class AskPayload(BaseModel):
     question: str
     date_from: Optional[date] = None
     date_to: Optional[date] = None
 
+
 class AskResponse(BaseModel):
     answer: str
     charts: List[Dict[str, Any]]
     metrics: Dict[str, Any]
 
-# -------- helpers --------
-def json_from_text(s: str) -> Optional[dict]:
-    m = re.search(r"```json\s*(\{.*\})\s*```", s, re.S)
-    if m:
-        try: return json.loads(m.group(1))
-        except Exception: return None
-    try: return json.loads(s)
-    except Exception: return None
+
+class ChatMessage(BaseModel):
+    role: Literal["system", "user", "assistant"]
+    content: str
+
+
+class ChatPayload(BaseModel):
+    messages: List[ChatMessage]
+    mode: Literal["general", "analytics"] = "general"
+    date_from: Optional[date] = None
+    date_to: Optional[date] = None
+    temperature: float = 0.2
+
+
+class ChatResponse(BaseModel):
+    answer: str
+
+
+def _json_compact(obj: Any) -> str:
+    return json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
+
+
+def _aggregate_sales_weekly(sales: list[dict]) -> list[dict]:
+    if not sales:
+        return []
+    buckets: dict[str, dict] = {}
+    for r in sales:
+        ds = r.get("date")
+        try:
+            dt = datetime.fromisoformat(ds).date()
+        except Exception:
+            continue
+        year, week, _ = dt.isocalendar()
+        key = f"{year}-W{week:02d}"
+        b = buckets.get(key)
+        if not b:
+            b = {"week": key, "orders": 0, "revenue": 0.0}
+            buckets[key] = b
+        b["orders"] += int(r.get("orders") or 0)
+        b["revenue"] += float(r.get("revenue") or 0.0)
+    out = list(buckets.values())
+    out.sort(key=lambda x: x["week"])
+    return out
+
+
+def _metrics_for_llm(metrics: Dict[str, Any]) -> Dict[str, Any]:
+    avg = metrics.get("averages") or {}
+    top = (metrics.get("top_products") or [])[:10]
+    pairs = (metrics.get("basket_pairs") or [])[:10]
+    rfm_summary = (metrics.get("rfm") or {}).get("summary", {})
+
+    sales = metrics.get("sales_by_day") or []
+    if len(sales) > 120:
+        sales_compact = {"mode": "weekly", "series": _aggregate_sales_weekly(sales)}
+    else:
+        sales_compact = {"mode": "daily", "series": sales[-120:]}
+
+    return {
+        "range": metrics.get("range"),
+        "averages": avg,
+        "sales": sales_compact,
+        "top_products": top,
+        "basket_pairs": pairs,
+        "rfm_summary": rfm_summary,
+    }
+
 
 def default_charts(metrics: Dict[str, Any]) -> List[Dict[str, Any]]:
     return [
         {"type": "line", "title": "Ingresos por día", "xKey": "date", "yKey": "revenue", "data": metrics.get("sales_by_day", [])},
-        {"type": "bar",  "title": "Top productos por facturación", "xKey": "name", "yKey": "revenue", "data": metrics.get("top_products", [])},
+        {"type": "bar", "title": "Top productos por facturación", "xKey": "name", "yKey": "revenue", "data": metrics.get("top_products", [])},
     ]
+
 
 def fallback_answer(metrics: Dict[str, Any], question: str) -> str:
     avg = metrics["averages"]
-    top = metrics["top_products"][:3]
+    top = metrics.get("top_products", [])[:3]
     tops = ", ".join([f"{t['name']} ({t['revenue']:.2f}€)" for t in top]) or "—"
     return (
-        f"Resumen (básico):\n"
+        "Resumen (fallback):\n"
         f"- Ingresos: {avg['revenue']:.2f} € en {avg['orders']} pedidos. AOV: {avg['aov']:.2f} €.\n"
         f"- Top productos: {tops}.\n"
         f"- Pregunta: “{question}”."
     )
+
 
 def build_metrics(db: Session, dfrom: date, dto: date) -> Dict[str, Any]:
     return {
@@ -74,143 +137,86 @@ def build_metrics(db: Session, dfrom: date, dto: date) -> Dict[str, Any]:
         "rfm": rfm_segments(db, dto),
     }
 
-def call_llm(question: str, metrics: Dict[str, Any]) -> tuple[str, List[Dict[str, Any]]]:
-    provider = (LLM_PROVIDER or "").lower()
 
-    # --- 1. PREPARACIÓN DE DATOS ---
-    rfm_raw = metrics.get("rfm", {})
-    rfm_clean = rfm_raw["summary"] if (isinstance(rfm_raw, dict) and "summary" in rfm_raw) else "Sin datos"
+def call_llm_ask(question: str, metrics_full: Dict[str, Any]) -> tuple[str, List[Dict[str, Any]]]:
+    metrics_small = _metrics_for_llm(metrics_full)
 
-    metrics_for_llm = {
-        "range": metrics.get("range"),
-        "top_products": (metrics.get("top_products") or [])[:5],
-        "averages": metrics.get("averages"),
-        "basket_pairs": (metrics.get("basket_pairs") or [])[:3],
-        "rfm_summary": rfm_clean, 
-        "note": "Datos diarios omitidos. Usa los agregados."
-    }
-    
-    metrics_json = json.dumps(metrics_for_llm, ensure_ascii=False)
-    
     system_msg = (
-        "Eres analista de datos retail. Responde en español. "
-        "IMPORTANTE: Si generas un gráfico, devuélvelo SOLO en formato JSON estricto: {\"charts\": [...]}. "
-        "Para listar datos, usa listas de texto o tablas markdown, evita bloques JSON para datos."
+        "Eres analista de datos retail de una tienda de muebles. Responde en español, claro y accionable. "
+        "Si propones un gráfico, devuelve SOLO JSON estricto válido: {\"charts\":[...]} "
+        "y usa números con punto decimal, sin separador de miles."
     )
-    
+
     user_msg = (
-        f"Rango: {metrics['range']['from']} → {metrics['range']['to']}\n"
+        f"Rango: {metrics_small['range']['from']} → {metrics_small['range']['to']}\n"
         f"Pregunta: {question}\n\n"
-        f"DATOS:\n{metrics_json}"
+        f"MÉTRICAS JSON (compacto):\n{_json_compact(metrics_small)}"
     )
 
-    # --- 2. LLAMADA A LA API ---
-    if provider == "groq":
-        if not GROQ_API_KEY: raise RuntimeError("GROQ_API_KEY no configurado")
-        url = f"{GROQ_BASE_URL.rstrip('/')}/chat/completions"
-        headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
-        payload = {"model": GROQ_MODEL, "temperature": 0.2,
-                   "messages":[{"role":"system","content":system_msg},{"role":"user","content":user_msg}]}
-        r = requests.post(url, headers=headers, json=payload, timeout=REQUEST_TIMEOUT)
-        r.raise_for_status()
-        answer = r.json()["choices"][0]["message"]["content"].strip()
+    answer = groq_chat(
+        [{"role": "system", "content": system_msg}, {"role": "user", "content": user_msg}],
+        temperature=0.2,
+    )
 
-    elif provider == "github":
-        if not GITHUB_TOKEN: raise RuntimeError("GITHUB_TOKEN no configurado")
-        url = f"{GITHUB_MODELS_BASE.rstrip('/')}/chat/completions"
-        headers = {"Authorization": f"Bearer {GITHUB_TOKEN}", "Content-Type": "application/json"}
-        payload = {"model": GITHUB_MODEL, "temperature": 0.2,
-                   "messages":[{"role":"system","content":system_msg},{"role":"user","content":user_msg}]}
-        r = requests.post(url, headers=headers, json=payload, timeout=REQUEST_TIMEOUT)
-        r.raise_for_status()
-        answer = r.json()["choices"][0]["message"]["content"].strip()
-
-    elif provider == "openai":
-        if not OPENAI_API_KEY: raise RuntimeError("OPENAI_API_KEY no configurado")
-        url = f"{OPENAI_BASE_URL.rstrip('/')}/chat/completions"
-        headers = {"Authorization": f"Bearer {OPENAI_API_KEY}", "Content-Type": "application/json"}
-        payload = {"model": OPENAI_MODEL, "temperature": 0.2,
-                   "messages":[{"role":"system","content":system_msg},{"role":"user","content":user_msg}]}
-        r = requests.post(url, headers=headers, json=payload, timeout=REQUEST_TIMEOUT)
-        r.raise_for_status()
-        answer = r.json()["choices"][0]["message"]["content"].strip()
-    
-    else:
-        raise RuntimeError(f"Proveedor LLM no soportado: {provider}")
-
-    # --- 3. PROCESAMIENTO INTELIGENTE DE LA RESPUESTA ---
     charts: List[Dict[str, Any]] = []
 
-    # PASO A: Extraer gráficos "desnudos" o en bloques
-    # Buscamos cualquier cosa que parezca {"charts": [...]} incluso si no tiene ```json
     def extract_charts(match):
         text = match.group(0)
-        # Intentamos limpiar un poco por si atrapó comillas de markdown
-        clean_text = text.replace("```json", "").replace("```", "").strip()
+        clean = text.replace("```json", "").replace("```", "").strip()
         try:
-            data = json.loads(clean_text)
-            if isinstance(data, dict) and "charts" in data and isinstance(data["charts"], list):
-                charts.extend(data["charts"])
-                return "" # Lo borramos del texto
-        except:
-            pass
-        return text # Si falla, lo dejamos como estaba
-
-    # Regex: Busca {"charts": ... hasta el cierre de llave }
-    # Nota: Esta regex es básica, asume que el JSON de charts no tiene llaves anidadas complejas, 
-    # lo cual suele ser cierto para estos gráficos simples.
-    answer = re.sub(r'(\{ ?"charts":\s*\[.*?\]\s*\})', extract_charts, answer, flags=re.S)
-
-
-    # PASO B: Formatear otros bloques JSON (datos) a Texto Bonito
-    def format_data_blocks(match):
-        content = match.group(1) # Lo de dentro de ```json ... ```
-        try:
-            data = json.loads(content)
-            # Si por casualidad es un chart que se nos escapó en el Paso A
-            if isinstance(data, dict) and "charts" in data:
+            data = json.loads(clean)
+            if isinstance(data, dict) and isinstance(data.get("charts"), list):
                 charts.extend(data["charts"])
                 return ""
-            
-            # Si son datos normales, los convertimos a lista markdown
-            text_out = "\n"
-            if isinstance(data, list):
-                for item in data:
-                    # Si es un objeto simple (ej: producto)
-                    if isinstance(item, dict):
-                        line = ", ".join([f"{k}: {v}" for k,v in item.items() if k != 'product_id'])
-                        text_out += f"- {line}\n"
-                    else:
-                        text_out += f"- {item}\n"
-            elif isinstance(data, dict):
-                for k, v in data.items():
-                    text_out += f"- **{k}**: {v}\n"
-            return text_out
-        except:
-            return match.group(0)
+        except Exception:
+            pass
+        return text
 
-    # Reemplazamos los bloques de código restantes
-    answer = re.sub(r"```json\s*(.*?)\s*```", format_data_blocks, answer, flags=re.S)
-    
-    # PASO C: Limpieza final de basura
-    # A veces quedan líneas como "* **Productos más vendidos**: " vacías porque borramos el JSON de al lado.
-    # Borramos líneas que terminan en dos puntos y no tienen nada después (opcional, estético).
-    lines = [line for line in answer.split('\n') if not line.strip().endswith(':')]
-    # O simplemente limpiamos saltos de línea dobles
+    answer = re.sub(r"(\{\s*\"charts\"\s*:\s*\[.*?\]\s*\})", extract_charts, answer, flags=re.S)
+    answer = re.sub(r"```json\s*(.*?)\s*```", lambda m: extract_charts(m), answer, flags=re.S)
     answer = re.sub(r"\n\s*\n", "\n\n", answer).strip()
 
     return answer, charts
 
-# -------- endpoint --------
+
 @router.post("/ask", response_model=AskResponse)
 def ask_ai(payload: AskPayload, db: Session = Depends(get_db)):
     dfrom, dto = daterange_defaults(payload.date_from, payload.date_to)
     metrics = build_metrics(db, dfrom, dto)
     try:
-        answer_text, charts = call_llm(payload.question, metrics)
-        if not charts: charts = default_charts(metrics)
+        answer_text, charts = call_llm_ask(payload.question, metrics)
+        if not charts:
+            charts = default_charts(metrics)
     except Exception as e:
         log.warning("IA no disponible (%s). Fallback básico.", e)
         answer_text = fallback_answer(metrics, payload.question)
         charts = default_charts(metrics)
     return {"answer": answer_text, "charts": charts, "metrics": metrics}
+
+
+@router.post("/chat", response_model=ChatResponse)
+def chat(payload: ChatPayload, db: Session = Depends(get_db)):
+    if not payload.messages:
+        raise HTTPException(400, "messages no puede estar vacío")
+
+    msgs = [{"role": m.role, "content": m.content} for m in payload.messages]
+
+    if payload.mode == "analytics":
+        dfrom, dto = daterange_defaults(payload.date_from, payload.date_to)
+        m_full = build_metrics(db, dfrom, dto)
+        m = _metrics_for_llm(m_full)
+
+        avg = m.get("averages", {})
+        top = (m.get("top_products") or [])[:5]
+        top_txt = ", ".join([f"{t.get('name')} ({float(t.get('revenue') or 0):.2f}€)" for t in top]) or "—"
+        ctx = (
+            "Contexto Tendencias (tienda de muebles):\n"
+            f"- Rango: {m['range']['from']} → {m['range']['to']}\n"
+            f"- Ingresos: {float(avg.get('revenue') or 0):.2f}€ | Pedidos: {int(avg.get('orders') or 0)} | AOV: {float(avg.get('aov') or 0):.2f}€\n"
+            f"- Top productos: {top_txt}\n"
+            "Responde en español, claro y accionable."
+        )
+        msgs = [{"role": "system", "content": ctx}, *msgs]
+
+    answer = groq_chat(msgs, temperature=payload.temperature)
+    return {"answer": answer}

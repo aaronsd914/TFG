@@ -7,6 +7,10 @@ import logging
 from backend.app.database import Base, engine, SessionLocal
 from backend.app.seed import seed
 
+# ✅ Cargar variables desde .env (busca hacia arriba desde el cwd)
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv())
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
