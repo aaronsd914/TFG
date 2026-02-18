@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { sileo, Toaster } from 'sileo';
 
 const API_URL = 'http://localhost:8000/api/';
 
@@ -117,6 +118,7 @@ export default function AlbaranesPage() {
       try {
         setLoading(true);
         setError(null);
+
         const [resAlb, resCli] = await Promise.all([
           fetch(`${API_URL}albaranes/get`),
           fetch(`${API_URL}clientes/get`),
@@ -145,7 +147,14 @@ export default function AlbaranesPage() {
         setDateFrom('');
         setDateTo('');
       } catch (e) {
-        setError(e.message);
+        const msg = e?.message || 'Error desconocido';
+        setError(msg);
+
+        // ✅ Toast Sileo (error de carga principal)
+        sileo.error({
+          title: 'Error cargando albaranes',
+          description: msg,
+        });
       } finally {
         setLoading(false);
       }
@@ -308,11 +317,29 @@ export default function AlbaranesPage() {
         fetch(`${API_URL}albaranes/get/${a.id}`),
         fetch(`${API_URL}clientes/get/${a.cliente_id}`),
       ]);
+
       if (resA.ok) setSelected(await resA.json());
       if (resC.ok) setSelectedClient(await resC.json());
-      if (!resA.ok && !resC.ok) setDetailError('No se pudo cargar el detalle.');
+
+      if (!resA.ok && !resC.ok) {
+        const msg = 'No se pudo cargar el detalle.';
+        setDetailError(msg);
+
+        // ✅ Toast Sileo (warning: no se pudo cargar detalle)
+        sileo.warning({
+          title: 'Detalle no disponible',
+          description: msg,
+        });
+      }
     } catch (e) {
-      setDetailError(e.message);
+      const msg = e?.message || 'Error desconocido';
+      setDetailError(msg);
+
+      // ✅ Toast Sileo (error: excepción al cargar detalle)
+      sileo.error({
+        title: 'Error cargando el detalle',
+        description: msg,
+      });
     }
 
     setDetailOpen(true);
@@ -360,352 +387,392 @@ export default function AlbaranesPage() {
   }, []);
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-semibold">Albaranes</h1>
-      </div>
+    <>
+      {/* ✅ Para que los toasts funcionen aunque aún no lo tengas en App.jsx */}
+      <Toaster position="top-right" />
 
-      {/* ✅ Buscador + Filtros en la misma línea */}
-      <div className="flex items-center gap-2 mb-3">
-        <div className="relative flex-1">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar por id, descripción, cliente, DNI o email…"
-            className="w-full rounded-xl border border-gray-300 px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-gray-300"
-          />
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">⌕</span>
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-semibold">Albaranes</h1>
         </div>
 
-        <button
-          onClick={() => setFiltersOpen(true)}
-          className="rounded-xl border border-gray-300 px-4 py-2 bg-white hover:bg-gray-50"
-          type="button"
-        >
-          Filtros
-        </button>
-      </div>
+        {/* ✅ Buscador + Filtros en la misma línea */}
+        <div className="flex items-center gap-2 mb-3">
+          <div className="relative flex-1">
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar por id, descripción, cliente, DNI o email…"
+              className="w-full rounded-xl border border-gray-300 px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-gray-300"
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">⌕</span>
+          </div>
 
-      {/* Chips */}
-      {activeChips.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 mb-4">
-          {activeChips.map((ch) => (
-            <Chip key={ch.key} label={ch.label} onRemove={ch.onRemove} />
-          ))}
-          <button className="text-sm text-gray-600 underline ml-2" onClick={clearAll} type="button">
-            Limpiar todo
+          <button
+            onClick={() => setFiltersOpen(true)}
+            className="rounded-xl border border-gray-300 px-4 py-2 bg-white hover:bg-gray-50"
+            type="button"
+          >
+            Filtros
           </button>
         </div>
-      )}
 
-      {/* Tabla */}
-      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-        <div className="grid grid-cols-12 px-4 py-2 text-sm font-medium text-gray-600 border-b">
-          <div className="col-span-2">ID</div>
-          <div className="col-span-2">Fecha</div>
-          <div className="col-span-3">Cliente</div>
-          <div className="col-span-2">Total</div>
-          <div className="col-span-1">Estado</div>
-          <div className="col-span-2">Descripción</div>
-        </div>
+        {/* Chips */}
+        {activeChips.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            {activeChips.map((ch) => (
+              <Chip key={ch.key} label={ch.label} onRemove={ch.onRemove} />
+            ))}
+            <button className="text-sm text-gray-600 underline ml-2" onClick={clearAll} type="button">
+              Limpiar todo
+            </button>
+          </div>
+        )}
 
-        <ul>
-          {loading && <li className="p-6 text-gray-500">Cargando albaranes…</li>}
-          {error && <li className="p-6 text-red-600">{error}</li>}
-          {!loading && !error && filtered.length === 0 && <li className="p-6 text-gray-500">Sin resultados</li>}
+        {/* Tabla */}
+        <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+          <div className="grid grid-cols-12 px-4 py-2 text-sm font-medium text-gray-600 border-b">
+            <div className="col-span-2">ID</div>
+            <div className="col-span-2">Fecha</div>
+            <div className="col-span-3">Cliente</div>
+            <div className="col-span-2">Total</div>
+            <div className="col-span-1">Estado</div>
+            <div className="col-span-2">Descripción</div>
+          </div>
 
-          {filtered.map((a) => {
-            const cli = clientesById.get(a.cliente_id);
-            const meta =
-              ESTADO_META[a.estado] || { label: a.estado, className: 'bg-gray-100 text-gray-700 border-gray-300' };
-            return (
-              <li
-                key={a.id}
-                className="grid grid-cols-12 px-4 py-3 border-t hover:bg-gray-50 cursor-pointer"
-                onClick={() => openDetail(a)}
-              >
-                <div className="col-span-2">#{a.id}</div>
-                <div className="col-span-2">{formatDate(a.fecha)}</div>
+          <ul>
+            {loading && <li className="p-6 text-gray-500">Cargando albaranes…</li>}
 
-                <div className="col-span-3">
-                  <div className="font-medium">
-                    {cli?.nombre} {cli?.apellidos}
-                  </div>
-                  <div className="text-xs text-gray-500 truncate">
-                    {cli?.dni ? `${cli.dni} · ` : ''}
-                    {cli?.email}
-                  </div>
-                </div>
-
-                <div className="col-span-2">{formatEUR(a.total)}</div>
-
-                <div className="col-span-1">
-                  <span className={`inline-block border px-2 py-1 rounded-lg text-xs text-center ${meta.className}`}>
-                    {meta.label}
-                  </span>
-                </div>
-
-                <div className="col-span-2 truncate" title={a.descripcion || ''}>
-                  {a.descripcion || '—'}
-                </div>
+            {/* ✅ En vez de “notificación” inline con todo el texto, dejamos un aviso suave aquí
+                y el detalle ya va por toast (Sileo). */}
+            {error && (
+              <li className="p-6 text-gray-700">
+                No se pudieron cargar los albaranes.
+                <div className="text-xs text-gray-500 mt-1">{error}</div>
               </li>
-            );
-          })}
-        </ul>
-      </div>
+            )}
 
-      {/* Modal filtros */}
-      <ModalCenter isOpen={filtersOpen} onClose={() => setFiltersOpen(false)} maxWidth="max-w-lg">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">Filtros</h2>
-          <button onClick={() => setFiltersOpen(false)} className="text-gray-500 hover:text-gray-700" type="button">
-            Cerrar
-          </button>
+            {!loading && !error && filtered.length === 0 && <li className="p-6 text-gray-500">Sin resultados</li>}
+
+            {filtered.map((a) => {
+              const cli = clientesById.get(a.cliente_id);
+              const meta =
+                ESTADO_META[a.estado] || { label: a.estado, className: 'bg-gray-100 text-gray-700 border-gray-300' };
+              return (
+                <li
+                  key={a.id}
+                  className="grid grid-cols-12 px-4 py-3 border-t hover:bg-gray-50 cursor-pointer"
+                  onClick={() => openDetail(a)}
+                >
+                  <div className="col-span-2">#{a.id}</div>
+                  <div className="col-span-2">{formatDate(a.fecha)}</div>
+
+                  <div className="col-span-3">
+                    <div className="font-medium">
+                      {cli?.nombre} {cli?.apellidos}
+                    </div>
+                    <div className="text-xs text-gray-500 truncate">
+                      {cli?.dni ? `${cli.dni} · ` : ''}
+                      {cli?.email}
+                    </div>
+                  </div>
+
+                  <div className="col-span-2">{formatEUR(a.total)}</div>
+
+                  <div className="col-span-1">
+                    <span className={`inline-block border px-2 py-1 rounded-lg text-xs text-center ${meta.className}`}>
+                      {meta.label}
+                    </span>
+                  </div>
+
+                  <div className="col-span-2 truncate" title={a.descripcion || ''}>
+                    {a.descripcion || '—'}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         </div>
 
-        <section className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium mb-2">Orden</label>
-            <select value={sort} onChange={(e) => setSort(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2">
-              <option value="fecha_desc">Fecha ↓</option>
-              <option value="fecha_asc">Fecha ↑</option>
-              <option value="total_desc">Total ↓</option>
-              <option value="total_asc">Total ↑</option>
-            </select>
+        {/* Modal filtros */}
+        <ModalCenter isOpen={filtersOpen} onClose={() => setFiltersOpen(false)} maxWidth="max-w-lg">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">Filtros</h2>
+            <button onClick={() => setFiltersOpen(false)} className="text-gray-500 hover:text-gray-700" type="button">
+              Cerrar
+            </button>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-2">Rango de fechas</label>
-            <div className="flex items-center gap-3">
-              <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="border border-gray-300 rounded-lg px-3 py-2" />
-              <span>—</span>
-              <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="border border-gray-300 rounded-lg px-3 py-2" />
+          <section className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium mb-2">Orden</label>
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              >
+                <option value="fecha_desc">Fecha ↓</option>
+                <option value="fecha_asc">Fecha ↑</option>
+                <option value="total_desc">Total ↓</option>
+                <option value="total_asc">Total ↑</option>
+              </select>
             </div>
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-2">Rango de total (€)</label>
-            <div className="flex items-center gap-3">
-              <input
-                type="number"
-                min={0}
-                value={totalRange[0]}
-                onChange={(e) => setTotalRangeSafe(e.target.value, totalRange[1])}
-                className="w-32 border border-gray-300 rounded-lg px-3 py-2"
-              />
-              <span>—</span>
-              <input
-                type="number"
-                min={0}
-                value={totalRange[1]}
-                onChange={(e) => setTotalRangeSafe(totalRange[0], e.target.value)}
-                className="w-32 border border-gray-300 rounded-lg px-3 py-2"
-              />
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              Rango disponible: {defaultMinTotal}–{defaultMaxTotal} €
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Dominios de cliente</label>
-            <div className="flex flex-wrap gap-2">
-              {domains.length === 0 && <span className="text-sm text-gray-500">No hay dominios detectados.</span>}
-              {domains.map((dom) => {
-                const active = selectedDomains.includes(dom);
-                return (
-                  <button
-                    key={dom}
-                    onClick={() =>
-                      setSelectedDomains((prev) => (prev.includes(dom) ? prev.filter((d) => d !== dom) : [...prev, dom]))
-                    }
-                    className={`px-3 py-1 rounded-full border ${
-                      active ? 'bg-black text-white border-black' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                    }`}
-                    type="button"
-                  >
-                    {dom}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Estados</label>
-            <div className="flex flex-wrap gap-2">
-              {Object.keys(ESTADO_META).map((es) => {
-                const active = selectedEstados.includes(es);
-                return (
-                  <button
-                    key={es}
-                    onClick={() =>
-                      setSelectedEstados((prev) => (prev.includes(es) ? prev.filter((x) => x !== es) : [...prev, es]))
-                    }
-                    className={`px-3 py-1 rounded-full border ${
-                      active ? 'bg-black text-white border-black' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                    }`}
-                    type="button"
-                  >
-                    {ESTADO_META[es].label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        <div className="mt-8 flex items-center justify-between">
-          <button onClick={clearAll} className="px-4 py-2 rounded-xl bg-gray-200 text-gray-900 hover:bg-gray-300" type="button">
-            Limpiar filtros
-          </button>
-          <button onClick={() => setFiltersOpen(false)} className="px-4 py-2 rounded-xl bg-black text-white" type="button">
-            Aplicar
-          </button>
-        </div>
-      </ModalCenter>
-
-      {/* ✅ Modal detalle albarán */}
-      <ModalCenter isOpen={detailOpen} onClose={closeDetail} maxWidth="max-w-3xl">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">Detalle de albarán</h2>
-          <button onClick={closeDetail} className="text-gray-500 hover:text-gray-700" type="button">
-            Cerrar
-          </button>
-        </div>
-
-        {!selected ? (
-          <p className="text-gray-500">Cargando…</p>
-        ) : (
-          <div className="space-y-4">
-            {/* cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-                <div className="text-xs text-gray-500">ID</div>
-                <div className="font-medium">#{selected.id}</div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Rango de fechas</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="border border-gray-300 rounded-lg px-3 py-2"
+                />
+                <span>—</span>
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="border border-gray-300 rounded-lg px-3 py-2"
+                />
               </div>
+            </div>
 
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-                <div className="text-xs text-gray-500">Fecha</div>
-                <div className="font-medium">{formatDate(selected.fecha)}</div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Rango de total (€)</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="number"
+                  min={0}
+                  value={totalRange[0]}
+                  onChange={(e) => setTotalRangeSafe(e.target.value, totalRange[1])}
+                  className="w-32 border border-gray-300 rounded-lg px-3 py-2"
+                />
+                <span>—</span>
+                <input
+                  type="number"
+                  min={0}
+                  value={totalRange[1]}
+                  onChange={(e) => setTotalRangeSafe(totalRange[0], e.target.value)}
+                  className="w-32 border border-gray-300 rounded-lg px-3 py-2"
+                />
               </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Rango disponible: {defaultMinTotal}–{defaultMaxTotal} €
+              </p>
+            </div>
 
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-                <div className="text-xs text-gray-500">Total</div>
-                <div className="font-medium">{formatEUR(selected.total)}</div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Dominios de cliente</label>
+              <div className="flex flex-wrap gap-2">
+                {domains.length === 0 && <span className="text-sm text-gray-500">No hay dominios detectados.</span>}
+                {domains.map((dom) => {
+                  const active = selectedDomains.includes(dom);
+                  return (
+                    <button
+                      key={dom}
+                      onClick={() =>
+                        setSelectedDomains((prev) => (prev.includes(dom) ? prev.filter((d) => d !== dom) : [...prev, dom]))
+                      }
+                      className={`px-3 py-1 rounded-full border ${
+                        active ? 'bg-black text-white border-black' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                      }`}
+                      type="button"
+                    >
+                      {dom}
+                    </button>
+                  );
+                })}
               </div>
+            </div>
 
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-                <div className="text-xs text-gray-500">Estado</div>
-                <div className="font-medium">
-                  <span
-                    className={`inline-block border px-2 py-1 rounded-lg text-xs ${
-                      ESTADO_META[selected.estado]?.className || 'bg-gray-100 text-gray-700 border-gray-300'
-                    }`}
-                  >
-                    {ESTADO_META[selected.estado]?.label || selected.estado}
-                  </span>
+            <div>
+              <label className="block text-sm font-medium mb-2">Estados</label>
+              <div className="flex flex-wrap gap-2">
+                {Object.keys(ESTADO_META).map((es) => {
+                  const active = selectedEstados.includes(es);
+                  return (
+                    <button
+                      key={es}
+                      onClick={() =>
+                        setSelectedEstados((prev) => (prev.includes(es) ? prev.filter((x) => x !== es) : [...prev, es]))
+                      }
+                      className={`px-3 py-1 rounded-full border ${
+                        active ? 'bg-black text-white border-black' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                      }`}
+                      type="button"
+                    >
+                      {ESTADO_META[es].label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+
+          <div className="mt-8 flex items-center justify-between">
+            <button
+              onClick={clearAll}
+              className="px-4 py-2 rounded-xl bg-gray-200 text-gray-900 hover:bg-gray-300"
+              type="button"
+            >
+              Limpiar filtros
+            </button>
+            <button
+              onClick={() => setFiltersOpen(false)}
+              className="px-4 py-2 rounded-xl bg-black text-white"
+              type="button"
+            >
+              Aplicar
+            </button>
+          </div>
+        </ModalCenter>
+
+        {/* ✅ Modal detalle albarán */}
+        <ModalCenter isOpen={detailOpen} onClose={closeDetail} maxWidth="max-w-3xl">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">Detalle de albarán</h2>
+            <button onClick={closeDetail} className="text-gray-500 hover:text-gray-700" type="button">
+              Cerrar
+            </button>
+          </div>
+
+          {!selected ? (
+            <p className="text-gray-500">Cargando…</p>
+          ) : (
+            <div className="space-y-4">
+              {/* cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
+                  <div className="text-xs text-gray-500">ID</div>
+                  <div className="font-medium">#{selected.id}</div>
+                </div>
+
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
+                  <div className="text-xs text-gray-500">Fecha</div>
+                  <div className="font-medium">{formatDate(selected.fecha)}</div>
+                </div>
+
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
+                  <div className="text-xs text-gray-500">Total</div>
+                  <div className="font-medium">{formatEUR(selected.total)}</div>
+                </div>
+
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
+                  <div className="text-xs text-gray-500">Estado</div>
+                  <div className="font-medium">
+                    <span
+                      className={`inline-block border px-2 py-1 rounded-lg text-xs ${
+                        ESTADO_META[selected.estado]?.className || 'bg-gray-100 text-gray-700 border-gray-300'
+                      }`}
+                    >
+                      {ESTADO_META[selected.estado]?.label || selected.estado}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-              <div className="text-xs text-gray-500">Descripción</div>
-              <div className="font-medium break-words">{selected.descripcion || '—'}</div>
-            </div>
-
-            <div className="bg-white border border-gray-200 rounded-xl p-4">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-semibold">Cliente</h3>
-
-                {/* ✅ Botón claro */}
-                {selectedClient?.id && (
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 active:scale-[0.98] text-sm"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      goToCliente(selectedClient.id);
-                    }}
-                    title="Ver cliente en Clientes"
-                  >
-                    Ver cliente <span aria-hidden="true">→</span>
-                  </button>
-                )}
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
+                <div className="text-xs text-gray-500">Descripción</div>
+                <div className="font-medium break-words">{selected.descripcion || '—'}</div>
               </div>
 
-              {selectedClient ? (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-                    <div className="text-xs text-gray-500">Nombre</div>
-                    {/* ✅ Ahora es “pill button” en vez de subrayado */}
+              <div className="bg-white border border-gray-200 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold">Cliente</h3>
+
+                  {/* ✅ Botón claro */}
+                  {selectedClient?.id && (
                     <button
                       type="button"
-                      className="mt-1 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black text-white hover:bg-gray-800 active:scale-[0.98] text-sm"
+                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 active:scale-[0.98] text-sm"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         goToCliente(selectedClient.id);
                       }}
-                      title="Ir a Clientes"
+                      title="Ver cliente en Clientes"
                     >
-                      {selectedClient.nombre} {selectedClient.apellidos}
-                      <span aria-hidden="true">↗</span>
+                      Ver cliente <span aria-hidden="true">→</span>
                     </button>
-                  </div>
-                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-                    <div className="text-xs text-gray-500">DNI</div>
-                    <div className="font-medium">{selectedClient.dni || '—'}</div>
-                  </div>
-                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-                    <div className="text-xs text-gray-500">Email</div>
-                    <div className="font-medium break-all">{selectedClient.email || '—'}</div>
-                  </div>
+                  )}
                 </div>
-              ) : (
-                <p className="text-gray-500">Cargando cliente…</p>
-              )}
-            </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl p-4">
-              <h3 className="font-semibold mb-3">Líneas</h3>
-              {detailError && <p className="text-red-600 mb-2">Error: {detailError}</p>}
-              <div className="border rounded-xl overflow-hidden">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="text-left border-b">
-                      <th className="p-2 w-24">ID línea</th>
-                      <th className="p-2 w-28">Producto</th>
-                      <th className="p-2 w-24">Cantidad</th>
-                      <th className="p-2 w-28">P. Unitario</th>
-                      <th className="p-2 w-28">Subtotal</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(selected.lineas || []).map((ln) => (
-                      <tr key={ln.id} className="border-b">
-                        <td className="p-2">#{ln.id}</td>
-                        <td className="p-2">{ln.producto_id}</td>
-                        <td className="p-2">{ln.cantidad}</td>
-                        <td className="p-2">{formatEUR(ln.precio_unitario)}</td>
-                        <td className="p-2">{formatEUR(ln.cantidad * ln.precio_unitario)}</td>
+                {selectedClient ? (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
+                      <div className="text-xs text-gray-500">Nombre</div>
+                      {/* ✅ “pill button” */}
+                      <button
+                        type="button"
+                        className="mt-1 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black text-white hover:bg-gray-800 active:scale-[0.98] text-sm"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          goToCliente(selectedClient.id);
+                        }}
+                        title="Ir a Clientes"
+                      >
+                        {selectedClient.nombre} {selectedClient.apellidos}
+                        <span aria-hidden="true">↗</span>
+                      </button>
+                    </div>
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
+                      <div className="text-xs text-gray-500">DNI</div>
+                      <div className="font-medium">{selectedClient.dni || '—'}</div>
+                    </div>
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
+                      <div className="text-xs text-gray-500">Email</div>
+                      <div className="font-medium break-all">{selectedClient.email || '—'}</div>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-gray-500">Cargando cliente…</p>
+                )}
+              </div>
+
+              <div className="bg-white border border-gray-200 rounded-xl p-4">
+                <h3 className="font-semibold mb-3">Líneas</h3>
+
+                {/* Mantengo este inline porque es “feedback de contexto” dentro del modal,
+                   pero el aviso principal ya va por toast también */}
+                {detailError && <p className="text-red-600 mb-2">Error: {detailError}</p>}
+
+                <div className="border rounded-xl overflow-hidden">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="text-left border-b">
+                        <th className="p-2 w-24">ID línea</th>
+                        <th className="p-2 w-28">Producto</th>
+                        <th className="p-2 w-24">Cantidad</th>
+                        <th className="p-2 w-28">P. Unitario</th>
+                        <th className="p-2 w-28">Subtotal</th>
                       </tr>
-                    ))}
-                    {(!selected.lineas || selected.lineas.length === 0) && (
-                      <tr>
-                        <td className="p-3 text-sm text-gray-500" colSpan={5}>
-                          Este albarán no tiene líneas.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {(selected.lineas || []).map((ln) => (
+                        <tr key={ln.id} className="border-b">
+                          <td className="p-2">#{ln.id}</td>
+                          <td className="p-2">{ln.producto_id}</td>
+                          <td className="p-2">{ln.cantidad}</td>
+                          <td className="p-2">{formatEUR(ln.precio_unitario)}</td>
+                          <td className="p-2">{formatEUR(ln.cantidad * ln.precio_unitario)}</td>
+                        </tr>
+                      ))}
+                      {(!selected.lineas || selected.lineas.length === 0) && (
+                        <tr>
+                          <td className="p-3 text-sm text-gray-500" colSpan={5}>
+                            Este albarán no tiene líneas.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
-          </div>
-        )}
-      </ModalCenter>
-    </div>
+          )}
+        </ModalCenter>
+      </div>
+    </>
   );
 }

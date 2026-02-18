@@ -1,7 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { sileo } from 'sileo';
 
 const API_URL = 'http://localhost:8000/api/';
 const LS_KEY = 'tfg_transportes_camiones_extra';
+const LS_KEY_HIDDEN = 'tfg_transportes_camiones_hidden';
+const LS_KEY_ACCEPTED = 'tfg_transportes_camiones_accepted';
 
 function eur(n) {
   const v = Number(n || 0);
@@ -59,6 +62,20 @@ function DropZoneHeader({ title, subtitle, right, isOver }) {
   );
 }
 
+function ModalCenter({ isOpen, onClose, children, maxWidth = 'max-w-xl' }) {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-50">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="absolute inset-0 flex items-center justify-center p-4">
+        <div className={`w-full ${maxWidth} bg-white rounded-2xl shadow-2xl p-6 overflow-y-auto max-h-[90vh]`}>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function TransportePage() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
@@ -73,6 +90,10 @@ export default function TransportePage() {
   const [camionesExtra, setCamionesExtra] = useState([]);
   const [nuevoCamion, setNuevoCamion] = useState('');
   const [camionesOcultos, setCamionesOcultos] = useState([]);
+
+  const [camionesAceptados, setCamionesAceptados] = useState({});
+
+  const [camionesModalOpen, setCamionesModalOpen] = useState(false);
 
   const [dragging, setDragging] = useState(null);
   const [overZone, setOverZone] = useState(null);
@@ -90,8 +111,37 @@ export default function TransportePage() {
   }, []);
 
   useEffect(() => {
+    try {
+      const raw = localStorage.getItem(LS_KEY_HIDDEN);
+      if (!raw) return;
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) {
+        const cleaned = arr.map(Number).filter(n => Number.isInteger(n) && n > 0);
+        setCamionesOcultos(Array.from(new Set(cleaned)).sort((a, b) => a - b));
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(LS_KEY_ACCEPTED);
+      if (!raw) return;
+      const obj = JSON.parse(raw);
+      if (obj && typeof obj === 'object') setCamionesAceptados(obj);
+    } catch { /* ignore */ }
+  }, []);
+
+  useEffect(() => {
     try { localStorage.setItem(LS_KEY, JSON.stringify(camionesExtra)); } catch { /* ignore */ }
   }, [camionesExtra]);
+
+  useEffect(() => {
+    try { localStorage.setItem(LS_KEY_HIDDEN, JSON.stringify(camionesOcultos)); } catch { /* ignore */ }
+  }, [camionesOcultos]);
+
+  useEffect(() => {
+    try { localStorage.setItem(LS_KEY_ACCEPTED, JSON.stringify(camionesAceptados)); } catch { /* ignore */ }
+  }, [camionesAceptados]);
 
   const clientesMap = useMemo(() => {
     const m = new Map();
@@ -124,11 +174,37 @@ export default function TransportePage() {
       if (!rRut.ok) throw new Error(`Rutas HTTP ${rRut.status}`);
       if (!rCli.ok) throw new Error(`Clientes HTTP ${rCli.status}`);
 
-      setAlmacen(await rAlm.json());
-      setRutas(await rRut.json());
-      setClientes(await rCli.json());
+      const [alm, rut, cli] = await Promise.all([
+        rAlm.json(),
+        rRut.json(),
+        rCli.json(),
+      ]);
+
+      setAlmacen(alm);
+      setRutas(rut);
+      setClientes(cli);
+
+      // ✅ Persistimos camiones “vistos” (para que no desaparezcan cuando queden vacíos)
+      try {
+        const idsServer = (rut?.camiones || []).map(x => Number(x.camion_id)).filter(Boolean);
+        if (idsServer.length) {
+          setCamionesExtra(prev => {
+            const merged = new Set([...(prev || []), ...idsServer]);
+            const filtered = Array.from(merged)
+              .map(Number)
+              .filter(n => Number.isInteger(n) && n > 0)
+              .filter(cid => !(camionesOcultos || []).includes(cid));
+            return filtered.sort((a, b) => a - b);
+          });
+        }
+      } catch { /* ignore */ }
     } catch (e) {
       setErr(e.message);
+
+      sileo.error({
+        title: 'Error cargando Transporte',
+        description: e?.message || 'Error desconocido',
+      });
     } finally {
       setLoading(false);
     }
@@ -146,13 +222,26 @@ export default function TransportePage() {
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
-        alert(j.detail || res.statusText);
+        sileo.error({
+          title: 'No se pudo asignar',
+          description: j.detail || res.statusText,
+        });
         return;
       }
       setCamionesOcultos(prev => prev.filter(x => x !== Number(camion_id)));
+      // Aseguramos que el camión quede persistido.
+      setCamionesExtra(prev => Array.from(new Set([...(prev || []), Number(camion_id)])).sort((a, b) => a - b));
       await fetchAll();
+
+      sileo.success({
+        title: `Asignado al camión ${camion_id}`,
+        description: `Albarán #${albaran_id} añadido a la ruta.`,
+      });
     } catch (e) {
-      alert(`Error de red: ${e.message}`);
+      sileo.error({
+        title: 'Error de red',
+        description: e?.message || 'No se pudo conectar con el servidor.',
+      });
     } finally {
       setProcessing(false);
     }
@@ -168,12 +257,23 @@ export default function TransportePage() {
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
-        alert(j.detail || res.statusText);
+        sileo.error({
+          title: 'No se pudo volver a Almacén',
+          description: j.detail || res.statusText,
+        });
         return;
       }
       await fetchAll();
+
+      sileo.success({
+        title: 'Devuelto a Almacén',
+        description: `Albarán #${albaran_id} vuelto a ALMACÉN.`,
+      });
     } catch (e) {
-      alert(`Error de red: ${e.message}`);
+      sileo.error({
+        title: 'Error de red',
+        description: e?.message || 'No se pudo conectar con el servidor.',
+      });
     } finally {
       setProcessing(false);
     }
@@ -189,12 +289,23 @@ export default function TransportePage() {
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
-        alert(j.detail || res.statusText);
+        sileo.error({
+          title: 'No se pudo poner en ruta',
+          description: j.detail || res.statusText,
+        });
         return;
       }
       await fetchAll();
+
+      sileo.success({
+        title: 'En ruta',
+        description: `Albarán #${albaran_id} movido a “En ruta (pendiente camión)”.`,
+      });
     } catch (e) {
-      alert(`Error de red: ${e.message}`);
+      sileo.error({
+        title: 'Error de red',
+        description: e?.message || 'No se pudo conectar con el servidor.',
+      });
     } finally {
       setProcessing(false);
     }
@@ -210,12 +321,23 @@ export default function TransportePage() {
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
-        alert(j.detail || res.statusText);
+        sileo.error({
+          title: 'No se pudo marcar como entregado',
+          description: j.detail || res.statusText,
+        });
         return;
       }
       await fetchAll();
+
+      sileo.success({
+        title: 'Entregado',
+        description: `Albarán #${id} marcado como ENTREGADO.`,
+      });
     } catch (e) {
-      alert(`Error de red: ${e.message}`);
+      sileo.error({
+        title: 'Error de red',
+        description: e?.message || 'No se pudo conectar con el servidor.',
+      });
     } finally {
       setProcessing(false);
     }
@@ -234,9 +356,15 @@ export default function TransportePage() {
       const txt = await res.text().catch(() => '');
       try {
         const j = JSON.parse(txt);
-        alert(j.detail || res.statusText);
+        sileo.error({
+          title: 'No se pudo descargar la factura',
+          description: j.detail || res.statusText,
+        });
       } catch {
-        alert(txt || res.statusText);
+        sileo.error({
+          title: 'No se pudo descargar la factura',
+          description: txt || res.statusText,
+        });
       }
       return;
     }
@@ -257,9 +385,21 @@ export default function TransportePage() {
       setProcessing(true);
       const liq = await liquidarCamion(camion_id);
       await descargarFactura(camion_id);
-      alert(`Gasto de transporte registrado: ${eur(liq.importe)} (7%)`);
+
+      setCamionesAceptados(prev => ({
+        ...(prev || {}),
+        [String(camion_id)]: new Date().toISOString(),
+      }));
+
+      sileo.success({
+        title: `Ruta aceptada (Camión ${camion_id})`,
+        description: `Gasto registrado: ${eur(liq.importe)} (7%) · Factura descargada.`,
+      });
     } catch (e) {
-      alert(e.message);
+      sileo.error({
+        title: 'No se pudo aceptar la ruta',
+        description: e?.message || 'Error desconocido',
+      });
     } finally {
       setProcessing(false);
     }
@@ -294,8 +434,9 @@ export default function TransportePage() {
       setDragging(null);
       if (!payload) return;
 
-      // Solo movemos desde "sin_camion" al camión (los de almacen van con botón/atajo, o si quieres también lo añadimos)
-      if (payload.from === 'sin_camion') {
+      // ✅ Flujo lógico: Almacén -> En ruta -> Camión
+      // (y también permitimos atajo Almacén -> Camión)
+      if (payload.from === 'sin_camion' || payload.from === 'almacen') {
         await asignarA(camion_id, payload.id);
       }
     };
@@ -308,7 +449,7 @@ export default function TransportePage() {
     const payload = dragging;
     setDragging(null);
     if (!payload) return;
-    if (payload.from && payload.from.startsWith('camion:')) {
+    if (payload.from === 'sin_camion' || (payload.from && payload.from.startsWith('camion:'))) {
       await volverAlmacen(payload.id);
     }
   }
@@ -320,20 +461,48 @@ export default function TransportePage() {
     const payload = dragging;
     setDragging(null);
     if (!payload) return;
-    if (payload.from && payload.from.startsWith('camion:')) {
+    // Desde almacén → En ruta, o desde camión → En ruta
+    if (payload.from === 'almacen' || (payload.from && payload.from.startsWith('camion:'))) {
       await ponerPendiente(payload.id);
     }
   }
 
   function addCamionExtra() {
     const n = Number(nuevoCamion);
-    if (!Number.isInteger(n) || n <= 0) return;
-    setCamionesExtra(prev => Array.from(new Set([...prev, n])).sort((a, b) => a - b));
+    if (!Number.isInteger(n) || n <= 0) {
+      sileo.warning({
+        title: 'Número inválido',
+        description: 'El camión debe ser un número entero mayor que 0.',
+      });
+      return;
+    }
+
+    setCamionesExtra(prev => {
+      const next = Array.from(new Set([...(prev || []), n])).sort((a, b) => a - b);
+      return next;
+    });
+
+    setCamionesOcultos(prev => prev.filter(x => x !== n));
     setNuevoCamion('');
+
+    sileo.success({
+      title: 'Camión añadido',
+      description: `Camión ${n} creado.`,
+    });
   }
   function quitarCamion(cid) {
     setCamionesExtra(prev => prev.filter(x => x !== cid));
-    setCamionesOcultos(prev => prev.filter(x => x !== cid));
+    setCamionesOcultos(prev => Array.from(new Set([...(prev || []), cid])).sort((a, b) => a - b));
+    setCamionesAceptados(prev => {
+      const copy = { ...(prev || {}) };
+      delete copy[String(cid)];
+      return copy;
+    });
+
+    sileo.success({
+      title: 'Camión eliminado',
+      description: `Camión ${cid} eliminado.`,
+    });
   }
 
   const camionesMap = useMemo(() => {
@@ -352,6 +521,38 @@ export default function TransportePage() {
     return all.filter(cid => !camionesOcultos.includes(cid));
   }, [camionesIdsServer, camionesExtra, camionesOcultos]);
 
+  function camionStyle(cid, albs) {
+    const isEmpty = (albs || []).length === 0;
+    const accepted = Boolean(camionesAceptados?.[String(cid)]);
+
+    // vacío: otro color (y no desaparece)
+    if (isEmpty) {
+      return {
+        box: 'bg-white',
+        header: 'bg-gray-100',
+        border: 'border-gray-200',
+        badge: 'Vacío',
+        badgeClass: 'bg-gray-100 border-gray-200 text-gray-700',
+      };
+    }
+    if (accepted) {
+      return {
+        box: 'bg-green-50',
+        header: 'bg-green-100',
+        border: 'border-green-200',
+        badge: 'Aceptada',
+        badgeClass: 'bg-green-100 border-green-200 text-green-800',
+      };
+    }
+    return {
+      box: 'bg-gray-50',
+      header: 'bg-gray-50',
+      border: 'border-gray-200',
+      badge: null,
+      badgeClass: '',
+    };
+  }
+
   if (loading) {
     return <div className="p-6 text-gray-600">Cargando…</div>;
   }
@@ -360,54 +561,48 @@ export default function TransportePage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">Transporte</h1>
-        <button
-          onClick={fetchAll}
-          className="px-3 py-2 rounded-xl border border-gray-300 bg-white hover:bg-gray-50"
-          disabled={processing}
-        >
-          Actualizar
-        </button>
-      </div>
-
-      <div className="bg-white border border-gray-200 rounded-2xl p-4">
-        <div className="flex flex-col md:flex-row gap-3 md:items-end">
-          <div className="flex-1">
-            <div className="text-sm text-gray-600 mb-1">Buscar</div>
-            <input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="ID o cliente…"
-              className="w-full border rounded-lg px-3 py-2"
-            />
-          </div>
-
-          <div className="flex items-end gap-2">
-            <div>
-              <div className="text-sm text-gray-600 mb-1">Añadir camión</div>
-              <input
-                value={nuevoCamion}
-                onChange={e => setNuevoCamion(e.target.value)}
-                type="number"
-                min={1}
-                className="border rounded-lg px-3 py-2 w-32"
-                placeholder="Nº"
-              />
-            </div>
+    <>
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-2xl font-semibold">Transporte</h1>
+          <div className="flex items-center gap-2">
             <button
-              onClick={addCamionExtra}
-              className="px-3 py-2 rounded-xl bg-black text-white hover:opacity-90 disabled:opacity-50"
+              onClick={() => setCamionesModalOpen(true)}
+              className="px-3 py-2 rounded-xl border border-gray-300 bg-white hover:bg-gray-50"
               disabled={processing}
+              type="button"
             >
-              Añadir
+              Camiones
+            </button>
+            <button
+              onClick={fetchAll}
+              className="px-3 py-2 rounded-xl border border-gray-300 bg-white hover:bg-gray-50"
+              disabled={processing}
+              type="button"
+            >
+              Actualizar
             </button>
           </div>
         </div>
-      </div>
 
-      <div className="flex gap-4 overflow-x-auto pb-2">
+        <div className="bg-white border border-gray-200 rounded-2xl p-4">
+          <div className="flex flex-col md:flex-row gap-3 md:items-end">
+            <div className="flex-1">
+              <div className="text-sm text-gray-600 mb-1">Buscar</div>
+              <input
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="ID o cliente…"
+                className="w-full border rounded-lg px-3 py-2"
+              />
+              <div className="text-xs text-gray-500 mt-2">
+                Flujo recomendado: <span className="font-medium">Almacén → En ruta → Camión</span>.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-4 overflow-x-auto pb-2">
         {/* ALMACÉN */}
         <div
           className={`min-w-[320px] max-w-[360px] flex-shrink-0 rounded-2xl border overflow-hidden bg-gray-50 ${
@@ -435,11 +630,11 @@ export default function TransportePage() {
                 <div className="flex gap-2">
                   <button
                     className="flex-1 px-3 py-2 rounded-lg border bg-black text-white hover:opacity-90 disabled:opacity-50 text-sm"
-                    onClick={() => asignarA(1, a.id)}
+                    onClick={() => ponerPendiente(a.id)}
                     disabled={processing}
-                    title="Asignar al camión 1 rápido (arrastrar para otros)"
+                    title="Pasa el pedido a EN RUTA (pendiente de camión)"
                   >
-                    → Ruta
+                    → En ruta
                   </button>
                 </div>
               </AlbaranCard>
@@ -499,21 +694,27 @@ export default function TransportePage() {
           const zoneKey = `camion:${cid}`;
           const albs = camionesMap.get(cid) || [];
           const puedeQuitar = albs.length === 0;
+          const st = camionStyle(cid, albs);
 
           return (
             <div
               key={cid}
-              className={`min-w-[320px] max-w-[360px] flex-shrink-0 rounded-2xl border overflow-hidden bg-gray-50 ${
-                overZone === zoneKey ? 'border-black ring-2 ring-black/20' : 'border-gray-200'
+              className={`min-w-[320px] max-w-[360px] flex-shrink-0 rounded-2xl border overflow-hidden ${st.box} ${
+                overZone === zoneKey ? 'border-black ring-2 ring-black/20' : st.border
               }`}
               onDragOver={allowDrop(zoneKey)}
               onDragEnter={allowDrop(zoneKey)}
               onDrop={onDropToCamion(cid)}
             >
-              <div className={`px-4 py-3 border-b ${overZone === zoneKey ? "bg-black/5" : ""}`}>
+              <div className={`px-4 py-3 border-b ${st.header} ${overZone === zoneKey ? "bg-black/5" : ""}`}>
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <div className="font-semibold">Camión {cid}</div>
+                    <div className="flex items-center gap-2">
+                      <div className="font-semibold">Camión {cid}</div>
+                      {st.badge ? (
+                        <span className={`text-[11px] px-2 py-0.5 rounded-full border ${st.badgeClass}`}>{st.badge}</span>
+                      ) : null}
+                    </div>
                     <div className="text-xs text-gray-600">
                       {albs.length} · {eur(sumTotal(albs))}
                     </div>
@@ -535,7 +736,16 @@ export default function TransportePage() {
                       className={`text-xs px-2 py-1 rounded-lg border ${
                         puedeQuitar ? 'hover:bg-white/60' : 'opacity-40 cursor-not-allowed'
                       }`}
-                      onClick={() => quitarCamion(cid)}
+                      onClick={() => {
+                        if (!puedeQuitar) {
+                          sileo.warning({
+                            title: 'No se puede eliminar',
+                            description: 'Vacía el camión para poder eliminarlo.',
+                          });
+                          return;
+                        }
+                        quitarCamion(cid);
+                      }}
                       disabled={processing || !puedeQuitar}
                       title={puedeQuitar ? "Eliminar camión (solo si está vacío)" : "Vacía el camión para eliminarlo"}
                     >
@@ -578,7 +788,108 @@ export default function TransportePage() {
             </div>
           );
         })}
+        </div>
+
+        {/* Modal camiones */}
+        <ModalCenter isOpen={camionesModalOpen} onClose={() => setCamionesModalOpen(false)} maxWidth="max-w-lg">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">Camiones</h2>
+            <button
+              onClick={() => setCamionesModalOpen(false)}
+              className="text-gray-500 hover:text-gray-700"
+              type="button"
+            >
+              Cerrar
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4">
+              <div className="text-sm font-medium mb-2">Añadir camión</div>
+              <div className="flex items-end gap-2">
+                <input
+                  value={nuevoCamion}
+                  onChange={e => setNuevoCamion(e.target.value)}
+                  type="number"
+                  min={1}
+                  className="border rounded-lg px-3 py-2 w-40"
+                  placeholder="Nº"
+                />
+                <button
+                  onClick={addCamionExtra}
+                  className="px-3 py-2 rounded-xl bg-black text-white hover:opacity-90 disabled:opacity-50"
+                  disabled={processing}
+                  type="button"
+                >
+                  Añadir
+                </button>
+              </div>
+              <div className="text-xs text-gray-500 mt-2">
+                Los camiones que aparezcan en rutas también se guardan, para que no desaparezcan cuando queden vacíos.
+              </div>
+            </div>
+
+            <div>
+              <div className="text-sm font-medium mb-2">Listado</div>
+              <div className="border border-gray-200 rounded-2xl overflow-hidden">
+                {(allCamiones || []).length === 0 ? (
+                  <div className="p-4 text-sm text-gray-600">No hay camiones aún.</div>
+                ) : (
+                  <ul>
+                    {allCamiones.map((cid) => {
+                      const albs = camionesMap.get(cid) || [];
+                      const puedeQuitar = albs.length === 0;
+                      const accepted = Boolean(camionesAceptados?.[String(cid)]);
+                      return (
+                        <li key={cid} className="flex items-center justify-between gap-3 px-4 py-3 border-t first:border-t-0">
+                          <div className="min-w-0">
+                            <div className="font-medium flex items-center gap-2">
+                              Camión {cid}
+                              {accepted ? (
+                                <span className="text-[11px] px-2 py-0.5 rounded-full border bg-green-50 border-green-200 text-green-800">
+                                  Aceptada
+                                </span>
+                              ) : null}
+                              {albs.length === 0 ? (
+                                <span className="text-[11px] px-2 py-0.5 rounded-full border bg-gray-50 border-gray-200 text-gray-700">
+                                  Vacío
+                                </span>
+                              ) : null}
+                            </div>
+                            <div className="text-xs text-gray-600 truncate">
+                              {albs.length} pedidos · {eur(sumTotal(albs))}
+                            </div>
+                          </div>
+
+                          <button
+                            className={`text-xs px-3 py-2 rounded-xl border ${
+                              puedeQuitar ? 'hover:bg-gray-50' : 'opacity-40 cursor-not-allowed'
+                            }`}
+                            onClick={() => {
+                              if (!puedeQuitar) {
+                                sileo.warning({
+                                  title: 'No se puede eliminar',
+                                  description: 'Vacía el camión para poder eliminarlo.',
+                                });
+                                return;
+                              }
+                              quitarCamion(cid);
+                            }}
+                            disabled={processing || !puedeQuitar}
+                            type="button"
+                          >
+                            Eliminar
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </div>
+        </ModalCenter>
       </div>
-    </div>
+    </>
   );
 }

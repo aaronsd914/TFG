@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { sileo } from 'sileo';
 
 const API_URL = 'http://localhost:8000/api/';
 
@@ -101,6 +102,24 @@ export default function ClientesPage() {
   // ✅ ID pendiente para abrir detalle (desde Albaranes)
   const [pendingOpenClienteId, setPendingOpenClienteId] = useState(null);
 
+  function toastError(title, errLike) {
+    const description =
+      typeof errLike === 'string'
+        ? errLike
+        : errLike?.message
+        ? errLike.message
+        : 'Ha ocurrido un error inesperado.';
+    try {
+      sileo.error({ title, description });
+    } catch {}
+  }
+
+  function toastWarning(title, description) {
+    try {
+      sileo.warning({ title, description });
+    } catch {}
+  }
+
   // Carga inicial de clientes
   useEffect(() => {
     (async () => {
@@ -119,6 +138,7 @@ export default function ClientesPage() {
         }
       } catch (e) {
         setError(e.message);
+        toastError('Error cargando clientes', e);
       } finally {
         setLoading(false);
       }
@@ -138,8 +158,17 @@ export default function ClientesPage() {
     if (!pendingOpenClienteId) return;
     if (!data || data.length === 0) return;
 
-    const c = data.find((x) => x.id === Number(pendingOpenClienteId));
-    if (!c) return;
+    const wanted = Number(pendingOpenClienteId);
+    const c = data.find((x) => x.id === wanted);
+
+    if (!c) {
+      toastWarning('Cliente no encontrado', `No se ha encontrado el cliente #${wanted} en la lista.`);
+      try {
+        localStorage.removeItem('cliente_open_id');
+      } catch {}
+      setPendingOpenClienteId(null);
+      return;
+    }
 
     openDetail(c);
 
@@ -181,27 +210,35 @@ export default function ClientesPage() {
 
     const t = q.trim().toLowerCase();
     if (t) {
-      list = list.filter((c) =>
-        `${c.nombre || ''} ${c.apellidos || ''}`.toLowerCase().includes(t) ||
-        (c.email || '').toLowerCase().includes(t) ||
-        (c.dni || '').toLowerCase().includes(t)
+      list = list.filter(
+        (c) =>
+          `${c.nombre || ''} ${c.apellidos || ''}`.toLowerCase().includes(t) ||
+          (c.email || '').toLowerCase().includes(t) ||
+          (c.dni || '').toLowerCase().includes(t)
       );
     }
 
     list = list.filter((c) => c.id >= idRange[0] && c.id <= idRange[1]);
 
     if (selectedDomains.length) {
-      list = list.filter((c) =>
-        selectedDomains.includes((c.email?.split('@')[1] || '').toLowerCase())
-      );
+      list = list.filter((c) => selectedDomains.includes((c.email?.split('@')[1] || '').toLowerCase()));
     }
 
     switch (sort) {
-      case 'az': list.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '')); break;
-      case 'za': list.sort((a, b) => (b.nombre || '').localeCompare(a.nombre || '')); break;
-      case 'id_up': list.sort((a, b) => a.id - b.id); break;
-      case 'id_down': list.sort((a, b) => b.id - a.id); break;
-      default: break;
+      case 'az':
+        list.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
+        break;
+      case 'za':
+        list.sort((a, b) => (b.nombre || '').localeCompare(a.nombre || ''));
+        break;
+      case 'id_up':
+        list.sort((a, b) => a.id - b.id);
+        break;
+      case 'id_down':
+        list.sort((a, b) => b.id - a.id);
+        break;
+      default:
+        break;
     }
 
     return list;
@@ -210,16 +247,22 @@ export default function ClientesPage() {
   // Chips de filtros activos
   const activeChips = [
     ...(q ? [{ key: 'q', label: `Buscar: "${q}"`, onRemove: () => setQuery('') }] : []),
-    ...((idRange[0] !== defaultMin || idRange[1] !== defaultMax)
+    ...(idRange[0] !== defaultMin || idRange[1] !== defaultMax
       ? [{ key: 'id', label: `ID ${idRange[0]}–${idRange[1]}`, onRemove: () => setIdRange([defaultMin, defaultMax]) }]
       : []),
     ...selectedDomains.map((dom) => ({
       key: `dom-${dom}`,
       label: `Dominio: ${dom}`,
-      onRemove: () => setSelectedDomains((prev) => prev.filter((d) => d !== dom))
+      onRemove: () => setSelectedDomains((prev) => prev.filter((d) => d !== dom)),
     })),
     ...(sort !== 'az'
-      ? [{ key: 'sort', label: `Orden: ${({ az:'A→Z', za:'Z→A', id_up:'ID↑', id_down:'ID↓' })[sort]}`, onRemove: () => setSort('az') }]
+      ? [
+          {
+            key: 'sort',
+            label: `Orden: ${({ az: 'A→Z', za: 'Z→A', id_up: 'ID↑', id_down: 'ID↓' })[sort]}`,
+            onRemove: () => setSort('az'),
+          },
+        ]
       : []),
   ];
 
@@ -248,6 +291,7 @@ export default function ClientesPage() {
     } catch (e) {
       setOrders([]);
       setOrdersError(e.message);
+      toastError('Error cargando albaranes del cliente', e);
     } finally {
       setOrdersLoading(false);
     }
@@ -258,8 +302,9 @@ export default function ClientesPage() {
     try {
       const resCli = await fetch(`${API_URL}clientes/get/${c.id}`);
       setSelected(resCli.ok ? await resCli.json() : c);
-    } catch {
+    } catch (e) {
       setSelected(c);
+      // aquí no meto toast: seguimos con fallback y no es un fallo crítico
     }
     await loadOrders(c.id);
     setExpanded({});
@@ -291,6 +336,7 @@ export default function ClientesPage() {
       setExpanded((prev) => ({ ...prev, [id]: { ...prev[id], open: true, loading: false, lineas: full.lineas || [] } }));
     } catch (e) {
       setExpanded((prev) => ({ ...prev, [id]: { ...prev[id], open: true, loading: false, error: e.message } }));
+      toastError('Error cargando líneas del albarán', e);
     }
   }
 
@@ -370,7 +416,9 @@ export default function ClientesPage() {
               onClick={() => openDetail(c)}
             >
               <div className="col-span-2">{c.id}</div>
-              <div className="col-span-4">{c.nombre} {c.apellidos || ''}</div>
+              <div className="col-span-4">
+                {c.nombre} {c.apellidos || ''}
+              </div>
               <div className="col-span-3">{c.dni || '—'}</div>
               <div className="col-span-3 truncate">{c.email || '—'}</div>
             </li>
@@ -390,11 +438,7 @@ export default function ClientesPage() {
         <section className="space-y-6">
           <div>
             <label className="block text-sm font-medium mb-2">Orden</label>
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2"
-            >
+            <select value={sort} onChange={(e) => setSort(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2">
               <option value="az">Nombre A→Z</option>
               <option value="za">Nombre Z→A</option>
               <option value="id_up">ID ascendente</option>
@@ -433,9 +477,7 @@ export default function ClientesPage() {
                   <button
                     key={dom}
                     onClick={() =>
-                      setSelectedDomains((prev) =>
-                        prev.includes(dom) ? prev.filter((d) => d !== dom) : [...prev, dom]
-                      )
+                      setSelectedDomains((prev) => (prev.includes(dom) ? prev.filter((d) => d !== dom) : [...prev, dom]))
                     }
                     className={`px-3 py-1 rounded-full border ${
                       active ? 'bg-black text-white border-black' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
@@ -451,18 +493,10 @@ export default function ClientesPage() {
         </section>
 
         <div className="mt-8 flex items-center justify-between">
-          <button
-            onClick={clearAll}
-            className="px-4 py-2 rounded-xl bg-gray-200 text-gray-900 hover:bg-gray-300"
-            type="button"
-          >
+          <button onClick={clearAll} className="px-4 py-2 rounded-xl bg-gray-200 text-gray-900 hover:bg-gray-300" type="button">
             Limpiar filtros
           </button>
-          <button
-            onClick={() => setFiltersOpen(false)}
-            className="px-4 py-2 rounded-xl bg-black text-white"
-            type="button"
-          >
+          <button onClick={() => setFiltersOpen(false)} className="px-4 py-2 rounded-xl bg-black text-white" type="button">
             Aplicar
           </button>
         </div>
@@ -486,14 +520,20 @@ export default function ClientesPage() {
               <button
                 type="button"
                 onClick={() => setDetailTab('info')}
-                className={`px-4 py-2 rounded-xl border ${detailTab === 'info' ? 'bg-black text-white border-black' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                className={`px-4 py-2 rounded-xl border ${
+                  detailTab === 'info' ? 'bg-black text-white border-black' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
               >
                 Información
               </button>
               <button
                 type="button"
                 onClick={() => setDetailTab('albaranes')}
-                className={`px-4 py-2 rounded-xl border ${detailTab === 'albaranes' ? 'bg-black text-white border-black' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                className={`px-4 py-2 rounded-xl border ${
+                  detailTab === 'albaranes'
+                    ? 'bg-black text-white border-black'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
               >
                 Albaranes
               </button>
@@ -507,7 +547,9 @@ export default function ClientesPage() {
                 </div>
                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
                   <div className="text-xs text-gray-500">Nombre</div>
-                  <div className="font-medium">{selected.nombre} {selected.apellidos || ''}</div>
+                  <div className="font-medium">
+                    {selected.nombre} {selected.apellidos || ''}
+                  </div>
                 </div>
                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
                   <div className="text-xs text-gray-500">DNI</div>
@@ -520,7 +562,8 @@ export default function ClientesPage() {
                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
                   <div className="text-xs text-gray-500">Teléfonos</div>
                   <div className="font-medium break-all">
-                    {selected.telefono1 || '—'}{selected.telefono2 ? ` · ${selected.telefono2}` : ''}
+                    {selected.telefono1 || '—'}
+                    {selected.telefono2 ? ` · ${selected.telefono2}` : ''}
                   </div>
                 </div>
                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 md:col-span-3">
@@ -531,8 +574,10 @@ export default function ClientesPage() {
                       selected.numero_vivienda,
                       selected.piso_portal ? `(${selected.piso_portal})` : null,
                       selected.codigo_postal,
-                      selected.ciudad
-                    ].filter(Boolean).join(' · ') || '—'}
+                      selected.ciudad,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ') || '—'}
                   </div>
                 </div>
               </div>
@@ -578,7 +623,9 @@ export default function ClientesPage() {
                                   <tr className="border-b hover:bg-gray-50">
                                     <td className="p-2">#{alb.id}</td>
                                     <td className="p-2">{formatDate(alb.fecha)}</td>
-                                    <td className="p-2 truncate" title={alb.descripcion || ''}>{alb.descripcion || '—'}</td>
+                                    <td className="p-2 truncate" title={alb.descripcion || ''}>
+                                      {alb.descripcion || '—'}
+                                    </td>
                                     <td className="p-2">
                                       <span className={`inline-block border px-2 py-1 rounded-lg text-xs ${meta.className}`}>
                                         {meta.label}
@@ -627,7 +674,11 @@ export default function ClientesPage() {
                                                 </thead>
                                                 <tbody>
                                                   {lineas.length === 0 && (
-                                                    <tr><td className="p-3 text-sm text-gray-500" colSpan={5}>No hay líneas para este albarán.</td></tr>
+                                                    <tr>
+                                                      <td className="p-3 text-sm text-gray-500" colSpan={5}>
+                                                        No hay líneas para este albarán.
+                                                      </td>
+                                                    </tr>
                                                   )}
                                                   {lineas.map((ln) => (
                                                     <tr key={ln.id} className="border-b">

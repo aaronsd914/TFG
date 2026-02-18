@@ -13,7 +13,6 @@ export default function Sidebar() {
     { icon: '🧰', label: 'Productos', to: '/productos' },
     { icon: '🏦', label: 'Banco', to: '/banco' },
     { icon: '📊', label: 'Tendencias', to: '/tendencias' },
-    { icon: '⚙️', label: 'Configuración', to: '/config' },
   ];
 
   return (

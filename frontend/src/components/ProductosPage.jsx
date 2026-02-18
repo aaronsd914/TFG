@@ -1,5 +1,6 @@
 // frontend/src/components/ProductosPage.jsx
 import React, { useEffect, useMemo, useState } from 'react';
+import { sileo } from 'sileo';
 
 const API_URL = 'http://localhost:8000/api/';
 
@@ -79,54 +80,6 @@ function Modal({ open, onClose, title, children, maxWidth = 'max-w-3xl' }) {
   );
 }
 
-function Notice({ type = 'success', title, children, onClose }) {
-  const styles = {
-    success: {
-      wrap: 'border-green-200 bg-green-50',
-      dot: 'bg-green-600',
-      title: 'text-green-900',
-      text: 'text-green-800',
-      btn: 'hover:bg-green-100',
-    },
-    error: {
-      wrap: 'border-red-200 bg-red-50',
-      dot: 'bg-red-600',
-      title: 'text-red-900',
-      text: 'text-red-800',
-      btn: 'hover:bg-red-100',
-    },
-    info: {
-      wrap: 'border-gray-200 bg-gray-50',
-      dot: 'bg-gray-600',
-      title: 'text-gray-900',
-      text: 'text-gray-700',
-      btn: 'hover:bg-gray-100',
-    },
-  }[type];
-
-  return (
-    <div className={`border rounded-2xl p-4 flex items-start justify-between gap-3 ${styles.wrap}`}>
-      <div className="flex items-start gap-3">
-        <span className={`mt-1 inline-block w-2.5 h-2.5 rounded-full ${styles.dot}`} />
-        <div>
-          {title ? <div className={`font-semibold ${styles.title}`}>{title}</div> : null}
-          <div className={`text-sm mt-1 ${styles.text}`}>{children}</div>
-        </div>
-      </div>
-      {onClose ? (
-        <button
-          type="button"
-          onClick={onClose}
-          className={`w-9 h-9 rounded-xl flex items-center justify-center ${styles.btn}`}
-          aria-label="Cerrar aviso"
-        >
-          ×
-        </button>
-      ) : null}
-    </div>
-  );
-}
-
 function useLocalStorageState(key, initialValue) {
   const [state, setState] = useState(() => {
     try {
@@ -199,7 +152,6 @@ export default function ProductosPage() {
   // validación alta
   const [createTouched, setCreateTouched] = useState(false);
   const [createErrors, setCreateErrors] = useState({});
-  const [createBanner, setCreateBanner] = useState(null);
 
   // editar (gestion)
   const [selectedId, setSelectedId] = useState(null);
@@ -212,7 +164,6 @@ export default function ProductosPage() {
   // validación edición
   const [editTouched, setEditTouched] = useState(false);
   const [editErrors, setEditErrors] = useState({});
-  const [editBanner, setEditBanner] = useState(null);
 
   // borrar
   const [delBusyId, setDelBusyId] = useState(null);
@@ -220,7 +171,6 @@ export default function ProductosPage() {
   // ✅ modal confirmación borrado
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null); // {id,nombre}
-  const [deleteModalMsg, setDeleteModalMsg] = useState(null); // {type,title,content}
 
   const provName = (id) => proveedores.find((x) => x.id === id)?.nombre || `#${id}`;
 
@@ -238,6 +188,9 @@ export default function ProductosPage() {
       setProveedores(prs);
     } catch (e) {
       setErr(e.message);
+      try {
+        sileo.error({ title: '❌ Error cargando productos', description: e.message });
+      } catch {}
     } finally {
       setLoading(false);
     }
@@ -245,7 +198,6 @@ export default function ProductosPage() {
 
   useEffect(() => {
     fetchData();
-     
   }, []);
 
   useEffect(() => {
@@ -371,7 +323,6 @@ export default function ProductosPage() {
 
   const selectedProduct = useMemo(() => productos.find((p) => p.id === selectedId) || null, [productos, selectedId]);
 
-  // ✅ FIX: NO borramos el banner aquí (antes se iba al actualizar porque cambiaba el objeto del producto)
   useEffect(() => {
     if (!selectedProduct) return;
     setEditNombre(selectedProduct.nombre ?? '');
@@ -380,7 +331,6 @@ export default function ProductosPage() {
     setEditProveedor(String(selectedProduct.proveedor_id ?? ''));
     setEditTouched(false);
     setEditErrors({});
-    // NO: setEditBanner(null);
   }, [selectedProduct]);
 
   // ===== Validaciones =====
@@ -445,17 +395,14 @@ export default function ProductosPage() {
     e?.preventDefault?.();
 
     setCreateTouched(true);
-    setCreateBanner(null);
-
     const v = validateCreate();
     setCreateErrors(v.errors);
 
     if (!v.ok) {
-      setCreateBanner({
-        type: 'error',
-        title: 'Faltan campos obligatorios',
-        content: `Completa: ${v.missing.join(', ')}.`,
-      });
+      const msg = `Completa: ${v.missing.join(', ')}.`;
+      try {
+        sileo.warning({ title: '⚠️ Faltan campos obligatorios', description: msg });
+      } catch {}
       return;
     }
 
@@ -479,11 +426,12 @@ export default function ProductosPage() {
       const nuevo = await res.json();
       setProductos((prev) => [nuevo, ...prev]);
 
-      setCreateBanner({
-        type: 'success',
-        title: 'Producto creado',
-        content: `Se ha creado “${nuevo.nombre}” (${eur(nuevo.precio)}) con proveedor ${provName(nuevo.proveedor_id)}.`,
-      });
+      try {
+        sileo.success({
+          title: '📦 Producto creado',
+          description: `“${nuevo.nombre}” · ${eur(nuevo.precio)} · Proveedor: ${provName(nuevo.proveedor_id)}`,
+        });
+      } catch {}
 
       setFNombre('');
       setFDesc('');
@@ -492,11 +440,9 @@ export default function ProductosPage() {
       setCreateTouched(false);
       setCreateErrors({});
     } catch (e2) {
-      setCreateBanner({
-        type: 'error',
-        title: 'No se pudo crear el producto',
-        content: e2.message,
-      });
+      try {
+        sileo.error({ title: '❌ No se pudo crear el producto', description: e2.message });
+      } catch {}
     } finally {
       setSaving(false);
     }
@@ -504,11 +450,11 @@ export default function ProductosPage() {
 
   async function actualizarProducto() {
     setEditTouched(true);
-    // NO limpiamos el banner al empezar: queda lo anterior hasta que haya resultado nuevo
-    // setEditBanner(null);
 
     if (!selectedProduct) {
-      setEditBanner({ type: 'error', title: 'Selecciona un producto', content: 'Elige un producto de la lista para actualizar.' });
+      try {
+        sileo.warning({ title: '⚠️ Selecciona un producto', description: 'Elige un producto de la lista para actualizar.' });
+      } catch {}
       return;
     }
 
@@ -516,11 +462,10 @@ export default function ProductosPage() {
     setEditErrors(v.errors);
 
     if (!v.ok) {
-      setEditBanner({
-        type: 'error',
-        title: 'Faltan campos obligatorios',
-        content: `Completa: ${v.missing.join(', ')}.`,
-      });
+      const msg = `Completa: ${v.missing.join(', ')}.`;
+      try {
+        sileo.warning({ title: '⚠️ Faltan campos obligatorios', description: msg });
+      } catch {}
       return;
     }
 
@@ -545,21 +490,16 @@ export default function ProductosPage() {
       const updated = await res.json();
       setProductos((prev) => prev.map((p) => (p.id === id ? updated : p)));
 
-      // ✅ persiste: ya NO se borra por el useEffect de selectedProduct
-      setEditBanner({
-        type: 'success',
-        title: 'Producto actualizado',
-        content: `Cambios guardados en “${updated.nombre}”.`,
-      });
+      try {
+        sileo.success({ title: '✏️ Producto actualizado', description: `Cambios guardados en “${updated.nombre}”.` });
+      } catch {}
 
       setEditTouched(false);
       setEditErrors({});
     } catch (e2) {
-      setEditBanner({
-        type: 'error',
-        title: 'No se pudo actualizar',
-        content: e2.message,
-      });
+      try {
+        sileo.error({ title: '❌ No se pudo actualizar', description: e2.message });
+      } catch {}
     } finally {
       setUpdating(false);
     }
@@ -567,7 +507,6 @@ export default function ProductosPage() {
 
   function abrirModalBorrar(producto) {
     setDeleteTarget(producto ? { id: producto.id, nombre: producto.nombre } : null);
-    setDeleteModalMsg(null);
     setDeleteModalOpen(true);
   }
 
@@ -575,14 +514,12 @@ export default function ProductosPage() {
     if (!deleteTarget?.id) return;
     const id = deleteTarget.id;
 
-    setDeleteModalMsg(null);
     setDelBusyId(id);
 
     try {
       const res = await fetch(`${API_URL}productos/delete/${id}`, { method: 'DELETE' });
 
       if (!res.ok) {
-        // backend ahora devuelve 409 con detail si está referenciado
         const txt = await res.text();
         let msg = txt;
         try {
@@ -594,28 +531,19 @@ export default function ProductosPage() {
         throw new Error(msg);
       }
 
-      // ok
       setProductos((prev) => prev.filter((p) => p.id !== id));
       if (selectedId === id) setSelectedId(null);
 
-      setDeleteModalMsg({
-        type: 'success',
-        title: 'Producto eliminado',
-        content: `Se ha eliminado “${deleteTarget.nombre}”.`,
-      });
+      try {
+        sileo.success({ title: '🗑️ Producto eliminado', description: `Se ha eliminado “${deleteTarget.nombre}”.` });
+      } catch {}
 
-      // cerramos tras éxito con un pequeño delay (opcional). Si quieres, lo quito.
-      setTimeout(() => {
-        setDeleteModalOpen(false);
-        setDeleteTarget(null);
-        setDeleteModalMsg(null);
-      }, 700);
+      setDeleteModalOpen(false);
+      setDeleteTarget(null);
     } catch (e2) {
-      setDeleteModalMsg({
-        type: 'error',
-        title: 'No se pudo eliminar',
-        content: e2.message,
-      });
+      try {
+        sileo.error({ title: '⛔ No se pudo eliminar', description: e2.message });
+      } catch {}
     } finally {
       setDelBusyId(null);
     }
@@ -955,7 +883,6 @@ export default function ProductosPage() {
                           setTab('gestion');
                           setSelectedId(p.id);
                           setGestionQuery(String(p.id));
-                          setEditBanner(null);
                         }}
                         type="button"
                       >
@@ -1045,7 +972,6 @@ export default function ProductosPage() {
                                       setTab('gestion');
                                       setSelectedId(p.id);
                                       setGestionQuery(String(p.id));
-                                      setEditBanner(null);
                                     }}
                                     type="button"
                                   >
@@ -1091,12 +1017,6 @@ export default function ProductosPage() {
                 Campos con <span className="text-red-600 font-semibold">*</span> obligatorios
               </div>
             </div>
-
-            {createBanner ? (
-              <Notice type={createBanner.type} title={createBanner.title} onClose={() => setCreateBanner(null)}>
-                {createBanner.content}
-              </Notice>
-            ) : null}
 
             <form
               onSubmit={crearProducto}
@@ -1179,7 +1099,6 @@ export default function ProductosPage() {
                     setFProveedor('');
                     setCreateTouched(false);
                     setCreateErrors({});
-                    setCreateBanner(null);
                   }}
                   disabled={saving}
                 >
@@ -1236,7 +1155,6 @@ export default function ProductosPage() {
                               type="button"
                               onClick={() => {
                                 setSelectedId(p.id);
-                                // no tocamos editBanner aquí para que no desaparezca al pasar el ratón
                               }}
                               className={btnClass}
                             >
@@ -1286,12 +1204,6 @@ export default function ProductosPage() {
                         Eliminar
                       </Button>
                     </div>
-
-                    {editBanner ? (
-                      <Notice type={editBanner.type} title={editBanner.title} onClose={() => setEditBanner(null)}>
-                        {editBanner.content}
-                      </Notice>
-                    ) : null}
 
                     <div
                       className="grid md:grid-cols-2 gap-3"
@@ -1394,7 +1306,6 @@ export default function ProductosPage() {
               if (delBusyId) return;
               setDeleteModalOpen(false);
               setDeleteTarget(null);
-              setDeleteModalMsg(null);
             }}
             title="Confirmar eliminación"
             maxWidth="max-w-xl"
@@ -1402,25 +1313,10 @@ export default function ProductosPage() {
             <div className="space-y-3">
               <div className="text-gray-800">
                 ¿Seguro que quieres eliminar{' '}
-                <b>
-                  {deleteTarget ? `#${deleteTarget.id} · ${deleteTarget.nombre}` : 'este producto'}
-                </b>
-                ?
+                <b>{deleteTarget ? `#${deleteTarget.id} · ${deleteTarget.nombre}` : 'este producto'}</b>?
               </div>
 
-              <div className="text-sm text-gray-600">
-                Si el producto está usado en albaranes, no se podrá borrar.
-              </div>
-
-              {deleteModalMsg ? (
-                <Notice
-                  type={deleteModalMsg.type}
-                  title={deleteModalMsg.title}
-                  onClose={deleteModalMsg.type === 'error' ? () => setDeleteModalMsg(null) : null}
-                >
-                  {deleteModalMsg.content}
-                </Notice>
-              ) : null}
+              <div className="text-sm text-gray-600">Si el producto está usado en albaranes, no se podrá borrar.</div>
 
               <div className="flex justify-end gap-2 pt-2">
                 <Button
@@ -1430,18 +1326,12 @@ export default function ProductosPage() {
                     if (delBusyId) return;
                     setDeleteModalOpen(false);
                     setDeleteTarget(null);
-                    setDeleteModalMsg(null);
                   }}
                   disabled={!!delBusyId}
                 >
                   Cancelar
                 </Button>
-                <Button
-                  variant="danger"
-                  type="button"
-                  onClick={confirmarBorrado}
-                  disabled={!deleteTarget?.id || !!delBusyId}
-                >
+                <Button variant="danger" type="button" onClick={confirmarBorrado} disabled={!deleteTarget?.id || !!delBusyId}>
                   {delBusyId ? 'Eliminando…' : 'Eliminar'}
                 </Button>
               </div>

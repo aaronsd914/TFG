@@ -1,5 +1,6 @@
 // components/NuevaVenta.jsx
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { sileo } from 'sileo';
 
 const API_URL = 'http://localhost:8000/api/';
 
@@ -89,29 +90,6 @@ function Section({ title, subtitle, right, error, children }) {
   );
 }
 
-function Toast({ show, message, onClose }) {
-  if (!show) return null;
-  return (
-    <div className="fixed bottom-6 right-6 z-50">
-      <div className="flex items-start gap-3 rounded-2xl border border-green-200 bg-green-50 px-4 py-3 shadow-lg">
-        <div className="mt-0.5 h-2.5 w-2.5 rounded-full bg-green-500" />
-        <div className="min-w-0">
-          <div className="text-sm font-semibold text-green-800">Operación completada</div>
-          <div className="text-sm text-green-700">{message}</div>
-        </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="ml-2 rounded-lg px-2 py-1 text-sm font-semibold text-green-800 hover:bg-green-100"
-          aria-label="Cerrar"
-        >
-          ✕
-        </button>
-      </div>
-    </div>
-  );
-}
-
 export default function NuevaVenta() {
   // ---- Modo cliente ----
   const [useExisting, setUseExisting] = useState(true);
@@ -159,15 +137,6 @@ export default function NuevaVenta() {
   // ---- Validación UI (errores) ----
   const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState('');
-
-  // ---- Mensaje de confirmación (toast) ----
-  const [toast, setToast] = useState({ show: false, message: '' });
-
-  function showToast(message) {
-    setToast({ show: true, message });
-    window.clearTimeout(showToast._t);
-    showToast._t = window.setTimeout(() => setToast({ show: false, message: '' }), 3500);
-  }
 
   function clearError(key) {
     setErrors((prev) => {
@@ -398,8 +367,16 @@ export default function NuevaVenta() {
 
     const firstErrorKey = Object.keys(nextErrors)[0];
     if (firstErrorKey) {
+      const msg = `${requiredLabels[firstErrorKey]} es obligatorio`;
       setErrors(nextErrors);
-      setFormError(`${requiredLabels[firstErrorKey]} es obligatorio`);
+      setFormError(msg);
+
+      try {
+        sileo.warning({
+          title: '⚠️ Revisa el formulario',
+          description: msg,
+        });
+      } catch {}
       return;
     }
 
@@ -442,44 +419,70 @@ export default function NuevaVenta() {
       };
     }
 
-    const res = await fetch(`${API_URL}albaranes/post`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+    try {
+      const res = await fetch(`${API_URL}albaranes/post`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      setFormError(`Error al crear albarán: ${err.detail || res.statusText}`);
-      return;
+      const body = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        const msg = `Error al crear albarán: ${body?.detail || res.statusText}`;
+        setFormError(msg);
+        try {
+          sileo.error({
+            title: '❌ No se pudo crear el albarán',
+            description: body?.detail || res.statusText,
+          });
+        } catch {}
+        return;
+      }
+
+      // Limpieza
+      setItems([]);
+      setDescripcion('');
+      setFecha(new Date().toISOString().slice(0, 10));
+      setRegistrarFianza(false);
+      setFianzaCantidad('');
+      setErrors({});
+      setFormError('');
+
+      if (useExisting) {
+        clearSelectedClient();
+      } else {
+        setClienteNombre('');
+        setClienteApellidos('');
+        setClienteDni('');
+        setClienteEmail('');
+        setTelefono1('');
+        setTelefono2('');
+        setCalle('');
+        setNumeroVivienda('');
+        setPisoPortal('');
+        setCiudad('');
+        setCodigoPostal('');
+      }
+
+      // ✅ Notificación Sileo con icono (correo)
+      try {
+        const albId = body?.id ? `#${body.id}` : '';
+        sileo.success({
+          title: `📧 Albarán creado ${albId}`.trim(),
+          description: 'Se ha enviado al cliente por correo electrónico.',
+        });
+      } catch {}
+    } catch (e) {
+      const msg = `Error de red: ${e?.message || 'desconocido'}`;
+      setFormError(msg);
+      try {
+        sileo.error({
+          title: '🌐 Error de red',
+          description: e?.message || 'No se pudo conectar con el servidor.',
+        });
+      } catch {}
     }
-
-    // Limpieza
-    setItems([]);
-    setDescripcion('');
-    setFecha(new Date().toISOString().slice(0, 10));
-    setRegistrarFianza(false);
-    setFianzaCantidad('');
-    setErrors({});
-    setFormError('');
-
-    if (useExisting) {
-      clearSelectedClient();
-    } else {
-      setClienteNombre('');
-      setClienteApellidos('');
-      setClienteDni('');
-      setClienteEmail('');
-      setTelefono1('');
-      setTelefono2('');
-      setCalle('');
-      setNumeroVivienda('');
-      setPisoPortal('');
-      setCiudad('');
-      setCodigoPostal('');
-    }
-
-    showToast('El albarán se ha creado correctamente y se ha enviado al cliente por correo electrónico.');
   }
 
   const totalItems = useMemo(() => items.reduce((acc, it) => acc + (Number(it.cantidad) || 0), 0), [items]);
@@ -490,11 +493,11 @@ export default function NuevaVenta() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
-      <Toast show={toast.show} message={toast.message} onClose={() => setToast({ show: false, message: '' })} />
-
       <div className="mb-6 flex flex-col gap-2">
         <h1 className="text-2xl font-bold text-gray-900">Nueva venta</h1>
-        <p className="text-sm text-gray-600">Crea un albarán seleccionando cliente y productos. Opcionalmente puedes registrar una fianza.</p>
+        <p className="text-sm text-gray-600">
+          Crea un albarán seleccionando cliente y productos. Opcionalmente puedes registrar una fianza.
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-12">
@@ -572,7 +575,9 @@ export default function NuevaVenta() {
                                     {c.email || 'sin email'}
                                   </div>
                                 </div>
-                                <span className="shrink-0 rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600">ID {c.id}</span>
+                                <span className="shrink-0 rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600">
+                                  ID {c.id}
+                                </span>
                               </div>
                             </button>
                           ))
@@ -674,7 +679,12 @@ export default function NuevaVenta() {
                     error={Boolean(errors.telefono1)}
                   />
 
-                  <Field label="Teléfono 2" value={telefono2} onChange={(e) => setTelefono2(e.target.value)} placeholder="Otro teléfono" />
+                  <Field
+                    label="Teléfono 2"
+                    value={telefono2}
+                    onChange={(e) => setTelefono2(e.target.value)}
+                    placeholder="Otro teléfono"
+                  />
                 </div>
 
                 <Field
@@ -702,7 +712,12 @@ export default function NuevaVenta() {
                     error={Boolean(errors.numeroVivienda)}
                   />
 
-                  <Field label="Piso/Portal" value={pisoPortal} onChange={(e) => setPisoPortal(e.target.value)} placeholder="2A" />
+                  <Field
+                    label="Piso/Portal"
+                    value={pisoPortal}
+                    onChange={(e) => setPisoPortal(e.target.value)}
+                    placeholder="2A"
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -735,7 +750,13 @@ export default function NuevaVenta() {
 
             <div className="mt-5 grid grid-cols-1 gap-3">
               <Field label="Fecha" required type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
-              <TextArea label="Descripción" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} rows={3} placeholder="Observaciones…" />
+              <TextArea
+                label="Descripción"
+                value={descripcion}
+                onChange={(e) => setDescripcion(e.target.value)}
+                rows={3}
+                placeholder="Observaciones…"
+              />
             </div>
           </Section>
         </div>
@@ -754,7 +775,10 @@ export default function NuevaVenta() {
               />
 
               {query ? (
-                <div ref={listRef} className="absolute z-10 mt-2 w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg">
+                <div
+                  ref={listRef}
+                  className="absolute z-10 mt-2 w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg"
+                >
                   <div className="max-h-72 overflow-auto p-1">
                     {sugerencias.length === 0 ? (
                       <div className="px-3 py-3 text-sm text-gray-500">Sin resultados</div>
@@ -902,7 +926,9 @@ export default function NuevaVenta() {
           </Section>
         </div>
 
-        <div className="lg:col-span-12">{formError ? <div className="text-sm font-semibold text-red-600">{formError}</div> : null}</div>
+        <div className="lg:col-span-12">
+          {formError ? <div className="text-sm font-semibold text-red-600">{formError}</div> : null}
+        </div>
       </form>
     </div>
   );

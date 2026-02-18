@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Line, Pie } from 'react-chartjs-2';
 import 'chart.js/auto';
+import { sileo } from 'sileo';
 
 const API_URL = 'http://localhost:8000/api/';
 
@@ -277,14 +278,34 @@ export default function Dashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ estado: 'ENTREGADO' }),
       });
+
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        alert(`No se pudo marcar entregado: ${j.detail || res.statusText}`);
+        const msg = j?.detail || res.statusText || 'No se pudo marcar como entregado.';
+        try {
+          sileo.error({
+            title: 'No se pudo marcar entregado',
+            description: msg,
+          });
+        } catch {}
         return;
       }
+
       await Promise.all([reloadAlmacen(), reloadRuta(), reloadAlbaranes()]);
+
+      try {
+        sileo.success({
+          title: 'Pedido entregado',
+          description: `Albarán #${id} ha sido marcado como entregado.`,
+        });
+      } catch {}
     } catch (e) {
-      alert(`Error de red: ${e.message}`);
+      try {
+        sileo.error({
+          title: 'Error de red',
+          description: e?.message || 'No se pudo conectar con el servidor.',
+        });
+      } catch {}
     } finally {
       setSavingIds(prev => {
         const n = new Set(prev);

@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { sileo } from 'sileo';
 
 const API_URL = 'http://localhost:8000/api/';
 
 const TIPO_META = {
-  INGRESO:  { label: 'Ingreso', className: 'bg-green-100 text-green-800 border-green-300' },
-  EGRESO:   { label: 'Egreso',  className: 'bg-red-100 text-red-800 border-red-300' },
+  INGRESO: { label: 'Ingreso', className: 'bg-green-100 text-green-800 border-green-300' },
+  EGRESO: { label: 'Egreso', className: 'bg-red-100 text-red-800 border-red-300' },
 };
 
 function formatEUR(n) {
@@ -28,7 +29,7 @@ export default function MovimientosPage() {
   const [hasta, setHasta] = useState('');
 
   // formulario nuevo movimiento
-  const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0,10));
+  const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0, 10));
   const [concepto, setConcepto] = useState('');
   const [cantidad, setCantidad] = useState('');
   const [tipo, setTipo] = useState('INGRESO');
@@ -48,11 +49,24 @@ export default function MovimientosPage() {
     }
   }
 
-  useEffect(() => { fetchMovs(); }, []);
+  // ✅ Se actualiza siempre que entras en la página
+  useEffect(() => {
+    fetchMovs();
+  }, []);
 
   async function addMovimiento(e) {
     e.preventDefault();
-    if (!fecha || !concepto || !cantidad) return;
+
+    if (!fecha || !concepto || !cantidad || !tipo) {
+      try {
+        sileo.warning({
+          title: 'Campos obligatorios',
+          description: 'Rellena fecha, concepto, cantidad y tipo.',
+        });
+      } catch {}
+      return;
+    }
+
     try {
       setPosting(true);
       const payload = {
@@ -68,12 +82,18 @@ export default function MovimientosPage() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json?.detail || 'No se pudo crear el movimiento');
-      setMovs(prev => [json, ...prev]);
+
+      setMovs((prev) => [json, ...prev]);
       setConcepto('');
       setCantidad('');
       setTipo('INGRESO');
     } catch (e) {
-      alert(e.message);
+      try {
+        sileo.error({
+          title: 'No se pudo crear el movimiento',
+          description: e?.message || 'Error desconocido',
+        });
+      } catch {}
     } finally {
       setPosting(false);
     }
@@ -84,7 +104,7 @@ export default function MovimientosPage() {
     const dFrom = desde ? new Date(desde) : null;
     const dTo = hasta ? new Date(hasta) : null;
 
-    return (movs || []).filter(mv => {
+    return (movs || []).filter((mv) => {
       if (tipoFiltro !== 'TODOS' && mv.tipo !== tipoFiltro) return false;
 
       const d = new Date(mv.fecha);
@@ -117,51 +137,107 @@ export default function MovimientosPage() {
       }
     }
     const balance = ingresos - egresos;
-    return { ingresos, egresos, balance, y, m: m+1 };
+    return { ingresos, egresos, balance, y, m: m + 1 };
   }, [movs]);
 
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Movimientos</h1>
-        <button
-          onClick={fetchMovs}
-          className="px-3 py-2 rounded-xl border border-gray-300 bg-white hover:bg-gray-50"
-          disabled={loading}
-        >
-          {loading ? 'Actualizando…' : 'Actualizar'}
-        </button>
+        {/* ✅ Botón de actualizar eliminado */}
       </div>
 
       {/* Resumen mensual */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white border border-gray-200 rounded-2xl p-4">
-          <div className="text-sm text-gray-500">Ingresos ({resumen.m}/{resumen.y})</div>
+          <div className="text-sm text-gray-500">
+            Ingresos ({resumen.m}/{resumen.y})
+          </div>
           <div className="text-2xl font-semibold">{formatEUR(resumen.ingresos)}</div>
         </div>
         <div className="bg-white border border-gray-200 rounded-2xl p-4">
-          <div className="text-sm text-gray-500">Egresos ({resumen.m}/{resumen.y})</div>
+          <div className="text-sm text-gray-500">
+            Egresos ({resumen.m}/{resumen.y})
+          </div>
           <div className="text-2xl font-semibold">{formatEUR(resumen.egresos)}</div>
         </div>
         <div className={`bg-white border rounded-2xl p-4 ${resumen.balance >= 0 ? 'border-green-200' : 'border-red-200'}`}>
-          <div className="text-sm text-gray-500">Balance ({resumen.m}/{resumen.y})</div>
-          <div className={`text-2xl font-semibold ${resumen.balance >= 0 ? 'text-green-700' : 'text-red-700'}`}>{formatEUR(resumen.balance)}</div>
+          <div className="text-sm text-gray-500">
+            Balance ({resumen.m}/{resumen.y})
+          </div>
+          <div className={`text-2xl font-semibold ${resumen.balance >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+            {formatEUR(resumen.balance)}
+          </div>
         </div>
       </div>
 
       {/* Alta rápida */}
       <div className="bg-white border border-gray-200 rounded-2xl p-4">
         <h2 className="font-semibold mb-3">Añadir movimiento manual</h2>
+
         <form onSubmit={addMovimiento} className="grid grid-cols-1 md:grid-cols-6 gap-3">
-          <input type="date" value={fecha} onChange={e=>setFecha(e.target.value)} className="border rounded-lg px-3 py-2 md:col-span-1" />
-          <input type="text" placeholder="Concepto" value={concepto} onChange={e=>setConcepto(e.target.value)} className="border rounded-lg px-3 py-2 md:col-span-3" />
-          <input type="number" step="0.01" placeholder="Cantidad (€)" value={cantidad} onChange={e=>setCantidad(e.target.value)} className="border rounded-lg px-3 py-2 md:col-span-1" />
-          <select value={tipo} onChange={e=>setTipo(e.target.value)} className="border rounded-lg px-3 py-2 md:col-span-1">
-            <option value="INGRESO">Ingreso</option>
-            <option value="EGRESO">Egreso</option>
-          </select>
+          <div className="md:col-span-1">
+            <label className="block text-sm text-gray-700 mb-1">
+              Fecha <span className="text-red-600">*</span>
+            </label>
+            <input
+              type="date"
+              value={fecha}
+              onChange={(e) => setFecha(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2"
+              required
+            />
+          </div>
+
+          <div className="md:col-span-3">
+            <label className="block text-sm text-gray-700 mb-1">
+              Concepto <span className="text-red-600">*</span>
+            </label>
+            <input
+              type="text"
+              placeholder="Concepto"
+              value={concepto}
+              onChange={(e) => setConcepto(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2"
+              required
+            />
+          </div>
+
+          <div className="md:col-span-1">
+            <label className="block text-sm text-gray-700 mb-1">
+              Cantidad (€) <span className="text-red-600">*</span>
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              placeholder="Cantidad (€)"
+              value={cantidad}
+              onChange={(e) => setCantidad(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2"
+              required
+            />
+          </div>
+
+          <div className="md:col-span-1">
+            <label className="block text-sm text-gray-700 mb-1">
+              Tipo <span className="text-red-600">*</span>
+            </label>
+            <select
+              value={tipo}
+              onChange={(e) => setTipo(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2"
+              required
+            >
+              <option value="INGRESO">Ingreso</option>
+              <option value="EGRESO">Egreso</option>
+            </select>
+          </div>
+
           <div className="md:col-span-6">
-            <button disabled={posting} className={`mt-1 px-4 py-2 rounded-xl text-white ${posting ? 'bg-gray-400' : 'bg-black hover:opacity-90'}`}>
+            <button
+              disabled={posting}
+              className={`mt-1 px-4 py-2 rounded-xl text-white ${posting ? 'bg-gray-400' : 'bg-black hover:opacity-90'}`}
+            >
               {posting ? 'Guardando…' : 'Guardar'}
             </button>
           </div>
@@ -175,7 +251,7 @@ export default function MovimientosPage() {
             <div className="text-sm text-gray-600 mb-1">Buscar</div>
             <input
               value={q}
-              onChange={e => setQ(e.target.value)}
+              onChange={(e) => setQ(e.target.value)}
               placeholder="Concepto, tipo, cantidad…"
               className="w-full border rounded-lg px-3 py-2"
             />
@@ -184,7 +260,7 @@ export default function MovimientosPage() {
             <div className="text-sm text-gray-600 mb-1">Tipo</div>
             <select
               value={tipoFiltro}
-              onChange={e => setTipoFiltro(e.target.value)}
+              onChange={(e) => setTipoFiltro(e.target.value)}
               className="border rounded-lg px-3 py-2"
             >
               <option value="TODOS">Todos</option>
@@ -194,11 +270,11 @@ export default function MovimientosPage() {
           </div>
           <div>
             <div className="text-sm text-gray-600 mb-1">Desde</div>
-            <input type="date" value={desde} onChange={e => setDesde(e.target.value)} className="border rounded-lg px-3 py-2" />
+            <input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} className="border rounded-lg px-3 py-2" />
           </div>
           <div>
             <div className="text-sm text-gray-600 mb-1">Hasta</div>
-            <input type="date" value={hasta} onChange={e => setHasta(e.target.value)} className="border rounded-lg px-3 py-2" />
+            <input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} className="border rounded-lg px-3 py-2" />
           </div>
           <div>
             <button
@@ -229,7 +305,7 @@ export default function MovimientosPage() {
           {!loading && !err && movs.length === 0 && (
             <li className="p-6 text-gray-500">No hay movimientos aún.</li>
           )}
-          {movsFiltrados.map(mv => {
+          {movsFiltrados.map((mv) => {
             const meta = TIPO_META[mv.tipo] || { label: mv.tipo, className: 'bg-gray-100 text-gray-700 border-gray-300' };
             return (
               <li key={mv.id} className="grid grid-cols-12 px-4 py-3 border-t">

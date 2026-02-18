@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { sileo } from "sileo";
 
 // ✅ Chart.js render (ya lo tienes en package.json)
 import {
@@ -36,12 +37,14 @@ export default function TendenciasPage() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
   const [summary, setSummary] = useState(null);
+  const summaryAbortRef = useRef(null);
 
   // --- Comparativa ---
   const [compareEnabled, setCompareEnabled] = useState(false);
   const [compareLoading, setCompareLoading] = useState(false);
   const [compareErr, setCompareErr] = useState(null);
   const [compare, setCompare] = useState(null);
+  const compareAbortRef = useRef(null);
 
   // --- Chat ---
   const [chatMode, setChatMode] = useState("analytics"); // analytics | general
@@ -59,25 +62,79 @@ export default function TendenciasPage() {
 
   // Cargar summary
   useEffect(() => {
+    // Cancelar petición anterior si el usuario cambia el rango rápido
+    try {
+      summaryAbortRef.current?.abort?.();
+    } catch {}
+    const controller = new AbortController();
+    summaryAbortRef.current = controller;
+
+    const toastId = "tendencias-summary";
+    const rangeLabel = `${range.from || "inicio"} → ${range.to || "hoy"}`;
+
     const load = async () => {
       setLoading(true);
       setErr(null);
+
+      // Loading toast (Sileo)
+      try {
+        sileo.show({
+          id: toastId,
+          state: "loading",
+          title: "Cargando tendencias…",
+          description: `Rango: ${rangeLabel}`,
+          duration: null,
+        });
+      } catch {}
+
       try {
         const params = new URLSearchParams();
         if (range.from) params.set("date_from", range.from);
         if (range.to) params.set("date_to", range.to);
 
-        const res = await fetch(`${API_URL}/analytics/summary?${params.toString()}`);
+        const res = await fetch(`${API_URL}/analytics/summary?${params.toString()}`, {
+          signal: controller.signal,
+        });
         if (!res.ok) throw new Error(`${res.status} ${res.statusText} – ${await res.text()}`);
         setSummary(await res.json());
+
+        try {
+          sileo.success({
+            id: toastId,
+            title: "Tendencias actualizadas",
+            description: `Rango: ${rangeLabel}`,
+            duration: 1400,
+          });
+        } catch {}
       } catch (e) {
+        // Abort = cambio de rango, no mostramos error
+        if (e?.name === "AbortError") {
+          try {
+            sileo.dismiss(toastId);
+          } catch {}
+          return;
+        }
         setSummary(null);
         setErr(e?.message || String(e));
+
+        try {
+          sileo.error({
+            id: toastId,
+            title: "Error cargando tendencias",
+            description: e?.message || String(e),
+          });
+        } catch {}
       } finally {
         setLoading(false);
       }
     };
     load();
+
+    return () => {
+      try {
+        controller.abort();
+      } catch {}
+    };
   }, [range.from, range.to]);
 
   // Cargar compare si está activo
@@ -86,21 +143,75 @@ export default function TendenciasPage() {
       if (!compareEnabled) {
         setCompare(null);
         setCompareErr(null);
+        try {
+          compareAbortRef.current?.abort?.();
+        } catch {}
+        try {
+          sileo.dismiss("tendencias-compare");
+        } catch {}
         return;
       }
+
+      // Cancelar petición anterior si el usuario cambia el rango rápido
+      try {
+        compareAbortRef.current?.abort?.();
+      } catch {}
+      const controller = new AbortController();
+      compareAbortRef.current = controller;
+
+      const toastId = "tendencias-compare";
+      const rangeLabel = `${range.from || "inicio"} → ${range.to || "hoy"}`;
+
       setCompareLoading(true);
       setCompareErr(null);
+
+      // Loading toast (Sileo)
+      try {
+        sileo.show({
+          id: toastId,
+          state: "loading",
+          title: "Cargando comparativa…",
+          description: `Rango: ${rangeLabel}`,
+          duration: null,
+        });
+      } catch {}
+
       try {
         const params = new URLSearchParams();
         if (range.from) params.set("date_from", range.from);
         if (range.to) params.set("date_to", range.to);
 
-        const res = await fetch(`${API_URL}/analytics/compare?${params.toString()}`);
+        const res = await fetch(`${API_URL}/analytics/compare?${params.toString()}`, {
+          signal: controller.signal,
+        });
         if (!res.ok) throw new Error(`${res.status} ${res.statusText} – ${await res.text()}`);
         setCompare(await res.json());
+
+        try {
+          sileo.success({
+            id: toastId,
+            title: "Comparativa lista",
+            description: `Rango: ${rangeLabel}`,
+            duration: 1400,
+          });
+        } catch {}
       } catch (e) {
+        if (e?.name === "AbortError") {
+          try {
+            sileo.dismiss(toastId);
+          } catch {}
+          return;
+        }
         setCompare(null);
         setCompareErr(e?.message || String(e));
+
+        try {
+          sileo.error({
+            id: toastId,
+            title: "Error cargando comparativa",
+            description: e?.message || String(e),
+          });
+        } catch {}
       } finally {
         setCompareLoading(false);
       }
@@ -137,6 +248,16 @@ export default function TendenciasPage() {
   };
 
   const exportPdf = async (includeCompare) => {
+    const toastId = "tendencias-export";
+    try {
+      sileo.show({
+        id: toastId,
+        state: "loading",
+        title: includeCompare ? "Generando PDF + comparativa…" : "Generando PDF…",
+        duration: null,
+      });
+    } catch {}
+
     try {
       const params = new URLSearchParams();
       if (range.from) params.set("date_from", range.from);
@@ -157,8 +278,23 @@ export default function TendenciasPage() {
       a.remove();
 
       window.URL.revokeObjectURL(url);
+
+      try {
+        sileo.success({
+          id: toastId,
+          title: "Descarga iniciada",
+          description: includeCompare ? "PDF con comparativa" : "PDF de tendencias",
+          duration: 1600,
+        });
+      } catch {}
     } catch (e) {
-      alert(e?.message || String(e));
+      try {
+        sileo.error({
+          id: toastId,
+          title: "No se pudo exportar",
+          description: e?.message || String(e),
+        });
+      } catch {}
     }
   };
 
@@ -176,6 +312,17 @@ export default function TendenciasPage() {
     e?.preventDefault?.();
     const text = input.trim();
     if (!text || sending) return;
+
+    const toastId = "tendencias-ai";
+    let ok = false;
+    try {
+      sileo.show({
+        id: toastId,
+        state: "loading",
+        title: chatMode === "analytics" ? "IA analizando tendencias…" : "IA respondiendo…",
+        duration: null,
+      });
+    } catch {}
 
     const userMsg = { id: crypto.randomUUID(), role: "user", content: text };
     setMessages((m) => [...m, userMsg]);
@@ -204,6 +351,7 @@ export default function TendenciasPage() {
             content: json.answer || "(sin respuesta)",
           },
         ]);
+        ok = true;
       } else {
         // Chat general con historial
         const trimmed = (arr) => arr.slice(-12);
@@ -229,14 +377,28 @@ export default function TendenciasPage() {
           ...m,
           { id: crypto.randomUUID(), role: "assistant", content: json.answer || "(sin respuesta)" },
         ]);
+        ok = true;
       }
     } catch (e2) {
       setMessages((m) => [
         ...m,
         { id: crypto.randomUUID(), role: "assistant", content: `Error: ${e2?.message || String(e2)}` },
       ]);
+
+      try {
+        sileo.error({
+          id: toastId,
+          title: "Error en la IA",
+          description: e2?.message || String(e2),
+        });
+      } catch {}
     } finally {
       setSending(false);
+      if (ok) {
+        try {
+          sileo.dismiss(toastId);
+        } catch {}
+      }
     }
   }
 
@@ -337,7 +499,6 @@ export default function TendenciasPage() {
                 <div className="rounded-2xl border bg-white p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold">Comparativa</h3>
-                    {compareLoading && <span className="text-sm text-gray-600">Cargando comparativa…</span>}
                   </div>
 
                   {compareErr ? (
@@ -465,11 +626,6 @@ export default function TendenciasPage() {
                     </ChatBubble>
                   ))}
 
-                  {sending && (
-                    <ChatBubble role="assistant">
-                      <div className="text-sm text-gray-600">Pensando…</div>
-                    </ChatBubble>
-                  )}
                   <div ref={chatEndRef} />
                 </div>
               </div>
