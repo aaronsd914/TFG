@@ -1,213 +1,272 @@
 // frontend/src/components/BancoPage.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from 'react';
+import { sileo } from 'sileo';
 
-const API = "http://localhost:8000/api";
+const API = 'http://localhost:8000/api';
+
+function eur(n) {
+  const v = Number(n || 0);
+  return v.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 });
+}
 
 export default function BancoPage() {
-  const [status, setStatus] = useState({ linked: false, provider: 'caixabank' });
-  const [accounts, setAccounts] = useState([]);
-  const [accId, setAccId] = useState("");
-  const [txs, setTxs] = useState([]);
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState("");
+  // ===== Stripe =====
+  const [stripeStatus, setStripeStatus] = useState({ configured: false, currency: 'eur' });
+  const [stripeAmount, setStripeAmount] = useState('');
+  const [stripeDesc, setStripeDesc] = useState('Cobro tienda');
+  const [stripeCheckouts, setStripeCheckouts] = useState([]);
+  const [stripeBusy, setStripeBusy] = useState(false);
 
-  // si volvemos del callback con ?linked=ok, refresca estado
-  useEffect(()=>{
-    const p = new URLSearchParams(window.location.search);
-    if (p.get("linked")==="ok") {
-      window.history.replaceState({}, "", "/banco");
-    }
-  },[]);
+  const stripeCanCreate = useMemo(() => {
+    const a = Number(stripeAmount);
+    return stripeStatus.configured && Number.isFinite(a) && a > 0;
+  }, [stripeAmount, stripeStatus.configured]);
 
-  async function loadStatus() {
-    setErr("");
+  // ========= Helpers de carga =========
+  async function loadStripeStatus() {
     try {
-      const r = await fetch(`${API}/bank/caixa/status`);
+      const r = await fetch(`${API}/stripe/status`);
       const j = await r.json();
-      setStatus(j);
+      setStripeStatus(j);
     } catch (e) {
-      setErr(String(e));
-    }
-  }
-  async function loadAccounts() {
-    setErr("");
-    try {
-      const r = await fetch(`${API}/bank/caixa/accounts`);
-      if (!r.ok) throw new Error(`HTTP ${r.status} – ${await r.text()}`);
-      const j = await r.json();
-      setAccounts(j.accounts || []);
-      if (!accId && j.accounts?.length) setAccId(j.accounts[0].id);
-    } catch (e) {
-      setErr(String(e));
-    }
-  }
-  async function loadTxs() {
-    if (!accId) return;
-    setErr(""); setLoading(true);
-    try {
-      const q = new URLSearchParams();
-      q.set("account_id", accId);
-      if (from) q.set("from", from);
-      if (to) q.set("to", to);
-      const r = await fetch(`${API}/bank/caixa/transactions?${q.toString()}`);
-      if (!r.ok) throw new Error(`HTTP ${r.status} – ${await r.text()}`);
-      const j = await r.json();
-      setTxs(j.transactions || []);
-    } catch (e) {
-      setErr(String(e));
-    } finally {
-      setLoading(false);
+      setStripeStatus({ configured: false, currency: 'eur' });
     }
   }
 
-  useEffect(()=>{
-    (async()=>{
-      setLoading(true);
-      await loadStatus();
-      await loadAccounts();
-      setLoading(false);
+  async function loadStripeCheckouts() {
+    try {
+      const r = await fetch(`${API}/stripe/checkouts?limit=25`);
+      const j = await r.json();
+      setStripeCheckouts(Array.isArray(j) ? j : []);
+    } catch {
+      setStripeCheckouts([]);
+    }
+  }
+
+  // ========= Carga inicial =========
+  useEffect(() => {
+    (async () => {
+      await loadStripeStatus();
+      await loadStripeCheckouts();
     })();
-  },[]);
+     
+  }, []);
 
-  useEffect(()=>{
-    loadTxs();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accId, from, to]);
+  // ========= Stripe: manejar retorno success/cancel =========
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    const stripeResult = p.get('stripe');
+    const sessionId = p.get('session_id');
+    if (!stripeResult) return;
 
-  async function connect() {
-    setErr("");
-    try {
-      const r = await fetch(`${API}/bank/caixa/link`, { method: "POST" });
-      const j = await r.json();
-      if (!j.redirect_url) throw new Error("No hay redirect_url");
-      window.location.href = j.redirect_url;
-    } catch (e) {
-      setErr(String(e));
+    // limpiar URL
+    window.history.replaceState({}, '', '/banco');
+
+    if (stripeResult === 'cancel') {
+      sileo.warning({
+        title: 'Pago cancelado',
+        description: 'El cliente canceló el pago en Stripe.',
+      });
+      return;
     }
-  }
 
-  async function syncNow() {
-    setErr("");
+    if (stripeResult === 'success') {
+      if (!sessionId) {
+        sileo.success({ title: 'Pago completado', description: 'Stripe confirmó el pago.' });
+        loadStripeCheckouts();
+        return;
+      }
+
+      (async () => {
+        try {
+          await sileo.promise(
+            async () => {
+              const r = await fetch(`${API}/stripe/confirm`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: sessionId }),
+              });
+              const data = await r.json().catch(() => ({}));
+              if (!r.ok) throw new Error(data?.detail || `HTTP ${r.status}`);
+              return data;
+            },
+            {
+              loading: { title: 'Confirmando pago…' },
+              success: (data) => ({
+                title: data.created ? 'Cobro registrado' : 'Cobro ya registrado',
+                description: `${eur(data.amount)} · ${data.description || 'Stripe'}`,
+              }),
+              error: (e) => ({
+                title: 'No se pudo confirmar el pago',
+                description: e?.message || 'Error desconocido',
+              }),
+            }
+          );
+          await loadStripeCheckouts();
+        } catch {
+          // Error ya mostrado por sileo.promise
+        }
+      })();
+    }
+     
+  }, []);
+
+  // ========= Acciones Stripe =========
+  async function createStripeCheckout() {
+    if (!stripeCanCreate) {
+      sileo.warning({
+        title: 'Importe inválido',
+        description: 'Introduce un importe mayor que 0 y asegúrate de configurar Stripe en el backend.',
+      });
+      return;
+    }
+    setStripeBusy(true);
     try {
-      const r = await fetch(`${API}/bank/caixa/sync`, { method: "POST" });
-      if (!r.ok) throw new Error(`HTTP ${r.status} – ${await r.text()}`);
-      await loadAccounts();
-      await loadTxs();
-    } catch (e) {
-      setErr(String(e));
+      const data = await sileo.promise(
+        async () => {
+          const r = await fetch(`${API}/stripe/checkout`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              amount: Number(stripeAmount),
+              description: stripeDesc || 'Cobro tienda',
+            }),
+          });
+          const j = await r.json().catch(() => ({}));
+          if (!r.ok) throw new Error(j?.detail || `HTTP ${r.status}`);
+          if (!j.url) throw new Error('Stripe no devolvió URL de checkout');
+          return j;
+        },
+        {
+          loading: { title: 'Creando checkout…' },
+          success: { title: 'Redirigiendo a Stripe…', description: 'Se abrirá la pantalla de pago.' },
+          error: (e) => ({ title: 'No se pudo crear el cobro', description: e?.message || 'Error' }),
+        }
+      );
+      window.location.href = data.url;
+    } catch {
+      // Error ya mostrado por sileo.promise
+    } finally {
+      setStripeBusy(false);
     }
   }
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Banco (CaixaBank)</h1>
-        <div className="flex items-center gap-3">
-          {!status.linked ? (
-            <button onClick={connect} className="px-4 py-2 rounded-xl bg-black text-white">
-              Conectar con CaixaBank
-            </button>
-          ) : (
-            <button onClick={syncNow} className="px-4 py-2 rounded-xl border">
-              Sincronizar ahora
-            </button>
-          )}
-        </div>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <h1 className="text-2xl font-semibold">Banco</h1>
+        <button
+          onClick={async () => {
+            await loadStripeStatus();
+            await loadStripeCheckouts();
+            sileo.success({ title: 'Actualizado', description: 'Stripe refrescado.' });
+          }}
+          className="px-4 py-2 rounded-xl border bg-white hover:bg-gray-50 text-sm"
+        >
+          Refrescar
+        </button>
       </div>
 
-      {err && <div className="text-red-600">{err}</div>}
-
-      {/* Estado */}
       <div className="bg-white border rounded-2xl p-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-sm text-gray-600">Estado de enlace</div>
-            <div className="text-lg font-semibold">
-              {status.linked ? "Conectado" : "No conectado"}
-            </div>
-            {status.last_sync && (
-              <div className="text-sm text-gray-500">Última sync: {new Date(status.last_sync).toLocaleString()}</div>
-            )}
+            <div className="text-sm text-gray-600">Estado Stripe</div>
+            <div className="text-lg font-semibold">{stripeStatus.configured ? 'Configurado' : 'No configurado'}</div>
+            <div className="text-sm text-gray-500">Moneda: {(stripeStatus.currency || 'eur').toUpperCase()}</div>
           </div>
         </div>
+
+        {!stripeStatus.configured ? (
+          <div className="mt-3 text-sm text-gray-700">
+            <p className="font-medium">Te falta configurar Stripe en el backend.</p>
+            <p className="text-gray-600">
+              Rellena <code className="px-1 rounded bg-gray-100">backend/app/stripe_config.py</code>:
+            </p>
+            <pre className="mt-2 text-xs bg-gray-50 border rounded-xl p-3 overflow-auto">
+STRIPE_SECRET_KEY = "sk_test_..."
+STRIPE_PUBLISHABLE_KEY = "pk_test_..."
+            </pre>
+          </div>
+        ) : null}
       </div>
 
-      {/* Cuentas */}
-      <section className="bg-white border rounded-2xl p-4 space-y-3">
-        <h3 className="font-semibold">Cuentas</h3>
-        {!accounts.length && (
-          <p className="text-gray-600">
-            {status.linked
-              ? "No se han encontrado cuentas (prueba sincronizar)."
-              : "Conéctate para listar cuentas; en demo verás datos ficticios."}
-          </p>
-        )}
-        {accounts.length>0 && (
-          <div className="flex items-center gap-3">
-            <label className="text-sm">Cuenta:</label>
-            <select
-              className="border rounded-lg px-3 py-2"
-              value={accId}
-              onChange={(e)=>setAccId(e.target.value)}
-            >
-              {accounts.map(a=>(
-                <option key={a.id} value={a.id}>
-                  {a.name || a.iban} · {a.currency} · Saldo: {a.balance?.toFixed?.(2)} 
-                </option>
-              ))}
-            </select>
+      <section className="bg-white border rounded-2xl p-4 space-y-4">
+        <h3 className="font-semibold">Crear cobro (Stripe Checkout)</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">Importe (€)</label>
+            <input
+              type="number"
+              step="0.01"
+              value={stripeAmount}
+              onChange={(e) => setStripeAmount(e.target.value)}
+              className="w-full border rounded-xl px-3 py-2"
+              placeholder="Ej: 49.99"
+            />
           </div>
-        )}
+          <div className="md:col-span-2">
+            <label className="block text-sm text-gray-600 mb-1">Descripción</label>
+            <input
+              type="text"
+              value={stripeDesc}
+              onChange={(e) => setStripeDesc(e.target.value)}
+              className="w-full border rounded-xl px-3 py-2"
+              placeholder="Ej: Cobro tienda"
+            />
+          </div>
+        </div>
+
+        <button
+          disabled={!stripeCanCreate || stripeBusy}
+          onClick={createStripeCheckout}
+          className={`px-4 py-2 rounded-xl text-white ${!stripeCanCreate || stripeBusy ? 'bg-gray-400' : 'bg-black hover:opacity-90'}`}
+        >
+          {stripeBusy ? 'Creando…' : 'Cobrar con Stripe'}
+        </button>
       </section>
 
-      {/* Movimientos */}
       <section className="bg-white border rounded-2xl p-4 space-y-3">
-        <div className="flex items-end gap-3">
-          <div>
-            <label className="block text-sm">Desde</label>
-            <input type="date" value={from} onChange={(e)=>setFrom(e.target.value)} className="border rounded px-3 py-2"/>
-          </div>
-          <div>
-            <label className="block text-sm">Hasta</label>
-            <input type="date" value={to} onChange={(e)=>setTo(e.target.value)} className="border rounded px-3 py-2"/>
-          </div>
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold">Últimos cobros Stripe</h3>
+          <span className="text-xs text-gray-500">Se registran al volver del pago</span>
         </div>
 
-        {loading ? (
-          <div>Cargando…</div>
-        ) : (
-          <div className="border rounded-xl overflow-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50">
-                <tr className="border-b">
-                  <th className="text-left p-2">Fecha</th>
-                  <th className="text-left p-2">Concepto</th>
-                  <th className="text-left p-2">Contraparte</th>
-                  <th className="text-right p-2">Importe</th>
-                  <th className="text-right p-2">Saldo</th>
+        <div className="border rounded-xl overflow-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50">
+              <tr className="border-b">
+                <th className="text-left p-2">Fecha</th>
+                <th className="text-left p-2">Descripción</th>
+                <th className="text-left p-2">Session</th>
+                <th className="text-right p-2">Importe</th>
+                <th className="text-left p-2">Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stripeCheckouts.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="p-4 text-gray-500">
+                    Aún no hay cobros registrados.
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {txs.length===0 && (
-                  <tr><td colSpan={5} className="p-4 text-gray-500">Sin movimientos en el rango.</td></tr>
-                )}
-                {txs.map((t,i)=>(
-                  <tr key={i} className="border-b">
-                    <td className="p-2">{t.bookingDate || t.valueDate}</td>
-                    <td className="p-2">{t.remittanceInformationUnstructured || t.description}</td>
-                    <td className="p-2">{t.counterparty || '—'}</td>
-                    <td className={`p-2 text-right ${Number(t.amount)<0?'text-red-600':'text-green-700'}`}>
-                      {Number(t.amount).toFixed(2)} {t.currency}
+              ) : (
+                stripeCheckouts.map((c) => (
+                  <tr key={c.session_id} className="border-b">
+                    <td className="p-2">{c.created_at ? new Date(c.created_at).toLocaleString() : '—'}</td>
+                    <td className="p-2">{c.description || '—'}</td>
+                    <td className="p-2 font-mono text-xs">{c.session_id}</td>
+                    <td className="p-2 text-right">{eur(c.amount)}</td>
+                    <td className="p-2">
+                      <span className="inline-flex items-center px-2 py-1 rounded-lg border text-xs bg-green-50 border-green-200 text-green-800">
+                        {c.status || 'paid'}
+                      </span>
                     </td>
-                    <td className="p-2 text-right">{t.balanceAfterTx!=null ? `${Number(t.balanceAfterTx).toFixed(2)} ${t.currency}` : '—'}</td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </section>
     </div>
   );

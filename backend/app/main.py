@@ -1,15 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.app.api import clientes, productos, proveedores, albaranes, movimientos, analytics, ai, bank, transportes
+from backend.app.api import clientes, productos, proveedores, albaranes, movimientos, analytics, ai, bank, transportes, stripe_payments
 from contextlib import asynccontextmanager
 import logging
 
 from backend.app.database import Base, engine, SessionLocal
 from backend.app.seed import seed
 
-# ✅ Cargar variables desde .env (busca hacia arriba desde el cwd)
-from dotenv import load_dotenv, find_dotenv
-load_dotenv(find_dotenv())
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -20,8 +17,10 @@ async def lifespan(app: FastAPI):
 
     yield
 
+
 app = FastAPI(lifespan=lifespan)
 
+# CORS para Vite
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
@@ -39,6 +38,7 @@ app.include_router(analytics.router, prefix="/api")
 app.include_router(ai.router, prefix="/api")
 app.include_router(transportes.router, prefix="/api")   # ✅ IMPORTANTE
 app.include_router(bank.router)
+app.include_router(stripe_payments.router)
 
 logging.basicConfig(
     level=logging.INFO,
