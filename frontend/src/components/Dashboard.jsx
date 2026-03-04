@@ -2,8 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Line, Pie } from 'react-chartjs-2';
 import 'chart.js/auto';
 import { sileo } from 'sileo';
-
-const API_URL = 'http://localhost:8000/api/';
+import { API_URL } from '../config.js';
 
 function eur(n) {
   const v = Number(n || 0);

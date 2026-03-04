@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import func
 from typing import List, Dict, Any
 from io import BytesIO
 from datetime import datetime, date
+from pydantic import BaseModel
 
-from backend.app.database import SessionLocal
+from backend.app.database import get_db
 from backend.app.entidades.albaran import AlbaranDB, Albaran
 from backend.app.entidades.cliente import ClienteDB
 from backend.app.entidades.albaran_ruta import AlbaranRutaDB
@@ -20,24 +20,19 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 
 router = APIRouter(prefix="/transporte", tags=["Transporte"])
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 
 # -----------------------
 # Helpers PDF
 # -----------------------
 def _eur(n: float) -> str:
+    """Formatea un número como cadena de euros con dos decimales."""
     try:
         return f"{float(n):.2f} €"
     except Exception:
         return "0.00 €"
 
 def _fmt_fecha(value) -> str:
+    """Convierte un objeto date/datetime a cadena 'dd/mm/yyyy'. Devuelve '—' si es None."""
     if value is None:
         return "—"
     if isinstance(value, (datetime, date)):
@@ -45,6 +40,7 @@ def _fmt_fecha(value) -> str:
     return str(value)
 
 def generar_pdf_factura_ruta(camion_id: int, albaranes: List[AlbaranDB], clientes_map: Dict[int, ClienteDB]) -> bytes:
+    """Genera un PDF con el listado de albaranes asignados a un camión, incluyendo cliente, total y datos del pedido."""
     buf = BytesIO()
     doc = SimpleDocTemplate(
         buf,
@@ -157,19 +153,13 @@ def generar_pdf_factura_ruta(camion_id: int, albaranes: List[AlbaranDB], cliente
 # Endpoints
 # -----------------------
 
-@router.get("/almacen", response_model=List[Albaran])
-def get_almacen(db: Session = Depends(get_db)):
-    albs = (
-        db.query(AlbaranDB)
-        .filter(AlbaranDB.estado == "ALMACEN")
-        .order_by(AlbaranDB.id.desc())
-        .all()
-    )
-    return albs
-
 
 @router.get("/rutas")
 def get_rutas(db: Session = Depends(get_db)) -> Dict[str, Any]:
+    """
+    Devuelve todos los albaranes en estado RUTA agrupados por camión.
+    Los que aún no tienen camión asignado aparecen en la lista 'sin_camion'.
+    """
     rows = (
         db.query(AlbaranDB, AlbaranRutaDB.camion_id)
         .outerjoin(AlbaranRutaDB, AlbaranRutaDB.albaran_id == AlbaranDB.id)
@@ -198,8 +188,6 @@ def get_rutas(db: Session = Depends(get_db)) -> Dict[str, Any]:
     }
 
 
-from pydantic import BaseModel
-
 class AsignarRutaBody(BaseModel):
     camion_id: int
     albaran_ids: List[int]
@@ -222,6 +210,10 @@ class LiquidarCamionOut(BaseModel):
 
 @router.post("/ruta/asignar")
 def asignar_ruta(body: AsignarRutaBody, db: Session = Depends(get_db)):
+    """
+    Asigna uno o varios albaranes a un camión concreto. Los albaranes en
+    estado ALMACEN pasan a RUTA. También admite reasignar albaranes ya en RUTA.
+    """
     if not body.albaran_ids:
         raise HTTPException(status_code=400, detail="albaran_ids vacío")
     if body.camion_id <= 0:
@@ -261,6 +253,10 @@ def asignar_ruta(body: AsignarRutaBody, db: Session = Depends(get_db)):
 
 @router.post("/ruta/quitar")
 def quitar_ruta(body: QuitarRutaBody, db: Session = Depends(get_db)):
+    """
+    Retira albaranes de su camión y los devuelve a estado ALMACEN,
+    eliminando también su entrada en la tabla de rutas.
+    """
     if not body.albaran_ids:
         raise HTTPException(status_code=400, detail="albaran_ids vacío")
 
@@ -281,6 +277,10 @@ def quitar_ruta(body: QuitarRutaBody, db: Session = Depends(get_db)):
 
 @router.post("/ruta/pendiente")
 def poner_pendiente(body: PendienteBody, db: Session = Depends(get_db)):
+    """
+    Marca albaranes como 'en ruta sin camión asignado' (conservan estado RUTA
+    pero se elimina su asignación de camión para poder reasignarlos más tarde).
+    """
     if not body.albaran_ids:
         raise HTTPException(status_code=400, detail="albaran_ids vacío")
 
@@ -303,11 +303,12 @@ def poner_pendiente(body: PendienteBody, db: Session = Depends(get_db)):
     return {"ok": True, "n": len(albs)}
 
 
-# -----------------------
-# NUEVO: Liquidar camión (registrar gasto 7%)
-# -----------------------
 @router.post("/ruta/{camion_id}/liquidar", response_model=LiquidarCamionOut)
 def liquidar_camion(camion_id: int, db: Session = Depends(get_db)):
+    """
+    Liquida un camión: calcula el 7 % del valor total de sus albaranes y registra
+    un movimiento de EGRESO. Evita duplicados si se llama varias veces el mismo día.
+    """
     if camion_id <= 0:
         raise HTTPException(status_code=400, detail="camion_id inválido")
 
@@ -367,6 +368,10 @@ def liquidar_camion(camion_id: int, db: Session = Depends(get_db)):
 
 @router.get("/ruta/{camion_id}/factura")
 def factura_ruta(camion_id: int, db: Session = Depends(get_db)):
+    """
+    Genera y descarga el PDF de la hoja de ruta de un camión con todos
+    sus albaranes en curso.
+    """
     if camion_id <= 0:
         raise HTTPException(status_code=400, detail="camion_id inválido")
 

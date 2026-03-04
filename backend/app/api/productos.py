@@ -1,24 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from backend.app.entidades.producto import Producto, ProductoCreate, ProductoDB
-from backend.app.database import SessionLocal
+from backend.app.database import get_db
 from typing import List
 import unicodedata
 
-from sqlalchemy.exc import IntegrityError  # ✅ NUEVO
+from sqlalchemy.exc import IntegrityError
 
 router = APIRouter()
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 @router.post("/productos/post", response_model=Producto)
 def crear_producto(producto: ProductoCreate, db: Session = Depends(get_db)):
-    db_producto = ProductoDB(**producto.dict())
+    db_producto = ProductoDB(**producto.model_dump())
     db.add(db_producto)
     db.commit()
     db.refresh(db_producto)
@@ -40,7 +33,7 @@ def actualizar_producto(producto_id: int, actualizado: ProductoCreate, db: Sessi
     producto = db.query(ProductoDB).filter(ProductoDB.id == producto_id).first()
     if not producto:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
-    for key, value in actualizado.dict().items():
+    for key, value in actualizado.model_dump().items():
         setattr(producto, key, value)
     db.commit()
     db.refresh(producto)

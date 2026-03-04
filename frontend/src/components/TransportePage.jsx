@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { sileo } from 'sileo';
 
-const API_URL = 'http://localhost:8000/api/';
+import { API_URL } from '../config.js';
 const LS_KEY = 'tfg_transportes_camiones_extra';
 const LS_KEY_HIDDEN = 'tfg_transportes_camiones_hidden';
 const LS_KEY_ACCEPTED = 'tfg_transportes_camiones_accepted';

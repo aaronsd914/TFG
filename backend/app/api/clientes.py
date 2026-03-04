@@ -2,20 +2,16 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from backend.app.entidades.cliente import Cliente, ClienteCreate, ClienteDB
-from backend.app.database import SessionLocal
+from backend.app.database import get_db
 
 router = APIRouter()
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 @router.post("/clientes/post", response_model=Cliente)
 def crear_cliente(payload: ClienteCreate, db: Session = Depends(get_db)):
-    # si viene DNI o email, intenta evitar duplicados
+    """
+    Crea un cliente nuevo. Si ya existe uno con el mismo DNI o email,
+    actualiza sus datos en lugar de crear un duplicado (upsert).
+    """
     existing = None
     if payload.dni:
         existing = db.query(ClienteDB).filter(ClienteDB.dni == payload.dni).first()
@@ -23,15 +19,14 @@ def crear_cliente(payload: ClienteCreate, db: Session = Depends(get_db)):
         existing = db.query(ClienteDB).filter(ClienteDB.email == payload.email).first()
 
     if existing:
-        # actualiza datos que vengan (upsert ligero)
-        for field, value in payload.dict().items():
+        for field, value in payload.model_dump().items():
             if value is not None:
                 setattr(existing, field, value)
         db.commit()
         db.refresh(existing)
         return existing
 
-    nuevo = ClienteDB(**payload.dict())
+    nuevo = ClienteDB(**payload.model_dump())
     db.add(nuevo)
     db.commit()
     db.refresh(nuevo)
@@ -50,10 +45,11 @@ def obtener_cliente(cliente_id: int, db: Session = Depends(get_db)):
 
 @router.put("/clientes/put/{cliente_id}", response_model=Cliente)
 def actualizar_cliente(cliente_id: int, payload: ClienteCreate, db: Session = Depends(get_db)):
+    """Sobreescribe todos los campos del cliente con los datos recibidos."""
     cliente_db = db.query(ClienteDB).filter(ClienteDB.id == cliente_id).first()
     if cliente_db is None:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
-    for field, value in payload.dict().items():
+    for field, value in payload.model_dump().items():
         setattr(cliente_db, field, value)
     db.commit()
     db.refresh(cliente_db)

@@ -2,20 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from backend.app.entidades.movimiento import Movimiento, MovimientoCreate, MovimientoDB
-from backend.app.database import SessionLocal
+from backend.app.database import get_db
 
 router = APIRouter()
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 @router.post("/movimientos/post", response_model=Movimiento)
 def crear_movimiento(movimiento: MovimientoCreate, db: Session = Depends(get_db)):
-    nuevo = MovimientoDB(**movimiento.dict())
+    nuevo = MovimientoDB(**movimiento.model_dump())
     db.add(nuevo)
     db.commit()
     db.refresh(nuevo)
@@ -41,7 +34,7 @@ def actualizar_movimiento(movimiento_id: int, actualizado: MovimientoCreate, db:
     movimiento = db.query(MovimientoDB).filter(MovimientoDB.id == movimiento_id).first()
     if not movimiento:
         raise HTTPException(status_code=404, detail="Movimiento no encontrado")
-    for key, value in actualizado.dict().items():
+    for key, value in actualizado.model_dump().items():
         setattr(movimiento, key, value)
     db.commit()
     db.refresh(movimiento)

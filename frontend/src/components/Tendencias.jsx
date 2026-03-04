@@ -1,7 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { sileo } from "sileo";
-
-// ✅ Chart.js render (ya lo tienes en package.json)
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -14,10 +12,9 @@ import {
   Legend,
 } from "chart.js";
 import { Bar, Line } from "react-chartjs-2";
+import { API_URL } from '../config.js';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
-
-const API_URL = "http://localhost:8000/api";
 
 function eur(n) {
   const v = Number(n || 0);
@@ -92,7 +89,7 @@ export default function TendenciasPage() {
         if (range.from) params.set("date_from", range.from);
         if (range.to) params.set("date_to", range.to);
 
-        const res = await fetch(`${API_URL}/analytics/summary?${params.toString()}`, {
+        const res = await fetch(`${API_URL}analytics/summary?${params.toString()}`, {
           signal: controller.signal,
         });
         if (!res.ok) throw new Error(`${res.status} ${res.statusText} – ${await res.text()}`);
@@ -181,7 +178,7 @@ export default function TendenciasPage() {
         if (range.from) params.set("date_from", range.from);
         if (range.to) params.set("date_to", range.to);
 
-        const res = await fetch(`${API_URL}/analytics/compare?${params.toString()}`, {
+        const res = await fetch(`${API_URL}analytics/compare?${params.toString()}`, {
           signal: controller.signal,
         });
         if (!res.ok) throw new Error(`${res.status} ${res.statusText} – ${await res.text()}`);
@@ -264,7 +261,7 @@ export default function TendenciasPage() {
       if (range.to) params.set("date_to", range.to);
       params.set("include_compare", includeCompare ? "true" : "false");
 
-      const res = await fetch(`${API_URL}/analytics/export/pdf?${params.toString()}`);
+      const res = await fetch(`${API_URL}analytics/export/pdf?${params.toString()}`);
       if (!res.ok) throw new Error(`${res.status} ${res.statusText} – ${await res.text()}`);
 
       const blob = await res.blob();
@@ -331,7 +328,7 @@ export default function TendenciasPage() {
 
     try {
       if (chatMode === "analytics") {
-        const res = await fetch(`${API_URL}/ai/ask`, {
+        const res = await fetch(`${API_URL}ai/ask`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -365,7 +362,7 @@ export default function TendenciasPage() {
           ),
         };
 
-        const res = await fetch(`${API_URL}/ai/chat`, {
+        const res = await fetch(`${API_URL}ai/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),

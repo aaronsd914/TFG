@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sileo, Toaster } from 'sileo';
 
-const API_URL = 'http://localhost:8000/api/';
+import { API_URL } from '../config.js';
 
 // ===== Helpers =====
 function useDebouncedValue(value, delay = 200) {

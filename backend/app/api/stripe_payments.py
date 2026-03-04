@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from backend.app.database import SessionLocal
+from backend.app.database import get_db
 from backend.app.entidades.movimiento import MovimientoDB
 from backend.app.entidades.stripe_checkout import StripeCheckoutDB
 from backend.app.stripe_settings import (
@@ -26,14 +26,6 @@ log = logging.getLogger("stripe")
 router = APIRouter(prefix="/api/stripe", tags=["stripe"])
 
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
 class CheckoutIn(BaseModel):
     amount: float
     description: str = "Cobro"
@@ -47,6 +39,7 @@ class ConfirmIn(BaseModel):
 
 @router.get("/status")
 def stripe_status():
+    """Devuelve la configuración activa de Stripe: moneda, clave pública y URLs de retorno."""
     return {
         "configured": bool(STRIPE_SECRET_KEY),
         "currency": STRIPE_CURRENCY,
@@ -59,6 +52,10 @@ def stripe_status():
 
 @router.post("/checkout")
 def create_checkout(payload: CheckoutIn):
+    """
+    Crea una Stripe Checkout Session con el importe indicado y devuelve
+    su id y URL. El frontend redirige al usuario a esa URL para completar el pago.
+    """
     if not STRIPE_SECRET_KEY:
         raise HTTPException(500, "Stripe no está configurado (STRIPE_SECRET_KEY)")
 
@@ -98,7 +95,7 @@ def create_checkout(payload: CheckoutIn):
         log.exception("Error creando Checkout Session: %s", e)
         raise HTTPException(502, f"Stripe error creando checkout: {e}")
 
-    # Puedes redirigir directo al session.url (más simple, sin stripe-js)
+    # Devuelve el id y la URL de redirección para que el frontend lleve al usuario a pagar
     return {"id": session.id, "url": session.url}
 
 
@@ -197,6 +194,7 @@ def confirm_checkout(payload: ConfirmIn, db: Session = Depends(get_db)):
 
 @router.get("/checkouts")
 def list_checkouts(limit: int = 25, db: Session = Depends(get_db)):
+    """Devuelve los últimos pagos confirmados vía Stripe, ordenados del más reciente al más antiguo."""
     limit = max(1, min(int(limit or 25), 200))
     rows = (
         db.query(StripeCheckoutDB)

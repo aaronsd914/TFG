@@ -7,7 +7,7 @@ from datetime import date, datetime, timedelta
 from typing import Optional, Dict, Any, Tuple
 import json, logging
 
-from backend.app.database import SessionLocal
+from backend.app.database import get_db
 from backend.app.entidades.albaran import AlbaranDB
 from backend.app.entidades.linea_albaran import LineaAlbaranDB
 from backend.app.entidades.producto import ProductoDB
@@ -18,15 +18,6 @@ from backend.app.utils.tendencias_pdf import generar_pdf_tendencias
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 log = logging.getLogger("analytics")
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 
 # ---------- Utilidades ----------
 def daterange_defaults(dfrom: Optional[date], dto: Optional[date]) -> Tuple[date, date]:

@@ -1,14 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session, selectinload
 from typing import List, Optional
-from backend.app.database import SessionLocal
+from backend.app.database import get_db, SessionLocal
 from backend.app.entidades.albaran import (
-    Albaran, AlbaranCreate, AlbaranDB, AlbaranLineaCreate, OneWordEstado
+    Albaran, AlbaranDB, AlbaranLineaCreate, OneWordEstado
 )
 from backend.app.entidades.linea_albaran import LineaAlbaranDB
 from backend.app.entidades.cliente import ClienteDB, ClienteCreate
 from backend.app.entidades.producto import ProductoDB
-from backend.app.entidades.movimiento import MovimientoDB  # ← movimientos
+from backend.app.entidades.movimiento import MovimientoDB
 from sqlalchemy import func
 
 from backend.app.utils.emailer import send_email_with_pdf
@@ -17,48 +17,34 @@ from backend.app.utils.templates import render
 
 from pydantic import BaseModel
 from datetime import date, datetime
-from pathlib import Path
 import logging
 
 router = APIRouter()
 log = logging.getLogger("albaranes")
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-# ---- Payload único (elimina la duplicación) ----
 class AlbaranCreateFull(BaseModel):
+    """
+    Payload completo para crear un albarán. Admite cliente nuevo (objeto)
+    o cliente existente (cliente_id). El campo fianza_cantidad es opcional:
+    si no se indica, se calcula automáticamente como el 30% del total.
+    """
     fecha: date
     descripcion: Optional[str] = None
     cliente_id: Optional[int] = None
     cliente: Optional[ClienteCreate] = None
     items: List[AlbaranLineaCreate]
     estado: OneWordEstado = "FIANZA"
-    # NUEVO: movimiento de fianza
-    # (compatibilidad) antes era opcional; ahora se registra SIEMPRE.
     registrar_fianza: bool = True
     fianza_cantidad: Optional[float] = None
 
 class EstadoUpdate(BaseModel):
-    estado: OneWordEstado  # Sólo aceptaremos ENTREGADO en el endpoint
+    estado: OneWordEstado
 
-class TransporteFacturaIn(BaseModel):
-    albaran_ids: List[int]
-
-class TransporteFacturaOut(BaseModel):
-    ok: bool
-    n_pedidos: int
-    base_total: float
-    porcentaje: float
-    importe: float
-    path: str
-
-# ---- Tarea que construye y envía el email ----
 def _send_albaran_email_task(albaran_id: int):
+    """
+    Tarea de fondo: genera el PDF del albarán y lo envía por email al cliente.
+    Abre su propia sesión de BD porque se ejecuta fuera del contexto de la petición HTTP.
+    """
     db = SessionLocal()
     try:
         log.info("[email] Preparando envío para albarán #%s", albaran_id)
@@ -118,14 +104,18 @@ def _send_albaran_email_task(albaran_id: int):
     finally:
         db.close()
 
-# ---- Endpoint crear: añade BackgroundTasks y dispara la tarea ----
 @router.post("/albaranes/post", response_model=Albaran)
 def crear_albaran(
     payload: AlbaranCreateFull,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db)
 ):
-    # 1) Cliente
+    """
+    Crea un albarán completo: cliente (nuevo o existente), líneas de pedido y
+    movimiento de fianza (30 % del total por defecto). Envía el PDF por email
+    al cliente en segundo plano.
+    """
+    # 1) Resolver o crear el cliente
     if payload.cliente_id:
         cliente = db.query(ClienteDB).filter(ClienteDB.id == payload.cliente_id).first()
         if not cliente:
@@ -138,12 +128,12 @@ def crear_albaran(
         if not c and payload.cliente.email:
             c = db.query(ClienteDB).filter(ClienteDB.email == payload.cliente.email).first()
         if c:
-            for k, v in payload.cliente.dict().items():
+            for k, v in payload.cliente.model_dump().items():
                 if v is not None:
                     setattr(c, k, v)
             cliente_id = c.id
         else:
-            c = ClienteDB(**payload.cliente.dict())
+            c = ClienteDB(**payload.cliente.model_dump())
             db.add(c); db.flush()
             cliente_id = c.id
     else:
@@ -230,9 +220,13 @@ def albaranes_por_cliente(cliente_id: int, db: Session = Depends(get_db)):
     )
     return q.all()
 
-# ---- Actualizar estado (sólo ENTREGADO). Al marcar ENTREGADO → registrar INGRESO pendiente
 @router.patch("/albaranes/{albaran_id}/estado", response_model=Albaran)
 def actualizar_estado(albaran_id: int, payload: EstadoUpdate, db: Session = Depends(get_db)):
+    """
+    Marca un albarán como ENTREGADO (único cambio de estado permitido).
+    Si queda importe pendiente tras descontar la fianza, registra automáticamente
+    un movimiento de INGRESO con la diferencia.
+    """
     if (payload.estado or "").upper() != "ENTREGADO":
         raise HTTPException(status_code=400, detail="Sólo se permite cambiar a ENTREGADO.")
 
@@ -268,9 +262,10 @@ def actualizar_estado(albaran_id: int, payload: EstadoUpdate, db: Session = Depe
 
     return alb
 
-# ---- Pedidos en almacén (para Transporte)
+
 @router.get("/transporte/almacen", response_model=List[Albaran])
 def pedidos_en_almacen(db: Session = Depends(get_db)):
+    """Devuelve los albaranes en estado ALMACEN, ordenados por fecha de entrada."""
     return (
         db.query(AlbaranDB)
         .filter(AlbaranDB.estado == "ALMACEN")
@@ -278,97 +273,13 @@ def pedidos_en_almacen(db: Session = Depends(get_db)):
         .all()
     )
 
-# ---- NUEVO: Pedidos en ruta
+
 @router.get("/transporte/ruta", response_model=List[Albaran])
 def pedidos_en_ruta(db: Session = Depends(get_db)):
+    """Devuelve los albaranes en estado RUTA (ya asignados a un camión)."""
     return (
         db.query(AlbaranDB)
         .filter(AlbaranDB.estado == "RUTA")
         .order_by(AlbaranDB.fecha.asc(), AlbaranDB.id.asc())
         .all()
-    )
-
-# ---- Generar factura de transporte (7%): pasa a RUTA + registra EGRESO de transporte
-@router.post("/transporte/factura", response_model=TransporteFacturaOut)
-def generar_factura_transporte(payload: TransporteFacturaIn, db: Session = Depends(get_db)):
-    if not payload.albaran_ids:
-        raise HTTPException(status_code=400, detail="Debes indicar al menos un albarán.")
-    albs = (
-        db.query(AlbaranDB)
-        .filter(AlbaranDB.id.in_(payload.albaran_ids))
-        .all()
-    )
-    if not albs:
-        raise HTTPException(status_code=404, detail="No se encontraron albaranes con esos IDs.")
-
-    base_total = round(sum(a.total or 0 for a in albs), 2)
-    porcentaje = 0.07
-    importe = round(base_total * porcentaje, 2)
-
-    # generar PDF
-    hoy = datetime.now().strftime("%d-%m-%Y")
-    carpeta = Path("transportes")
-    carpeta.mkdir(parents=True, exist_ok=True)
-    filename = carpeta / f"Transporte {hoy}.pdf"
-
-    try:
-        from reportlab.lib.pagesizes import A4
-        from reportlab.pdfgen import canvas
-        from reportlab.lib.units import mm
-
-        c = canvas.Canvas(str(filename), pagesize=A4)
-        width, height = A4
-
-        y = height - 30 * mm
-        c.setFont("Helvetica-Bold", 16)
-        c.drawString(20 * mm, y, f"Factura de Transporte - {hoy}")
-
-        y -= 12 * mm
-        c.setFont("Helvetica", 10)
-        c.drawString(20 * mm, y, "Pedidos incluidos:")
-        y -= 6 * mm
-
-        for a in albs:
-            if y < 20 * mm:
-                c.showPage()
-                y = height - 20 * mm
-                c.setFont("Helvetica", 10)
-            c.drawString(25 * mm, y, f"- Albarán #{a.id} · Fecha {a.fecha.strftime('%d/%m/%Y')} · Total {a.total:.2f} €")
-            y -= 5 * mm
-
-        y -= 8 * mm
-        c.setFont("Helvetica-Bold", 11)
-        c.drawString(20 * mm, y, f"Base total: {base_total:.2f} €")
-        y -= 6 * mm
-        c.drawString(20 * mm, y, f"Porcentaje transportista: 7%")
-        y -= 6 * mm
-        c.drawString(20 * mm, y, f"Importe a pagar: {importe:.2f} €")
-
-        c.showPage()
-        c.save()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"No fue posible generar el PDF: {e}")
-
-    # 1) Pasar pedidos a estado RUTA
-    for a in albs:
-        a.estado = "RUTA"
-    db.commit()
-
-    # 2) Registrar EGRESO por el coste de transporte
-    mov = MovimientoDB(
-        fecha=date.today(),
-        concepto=f"Transporte ({len(albs)} pedidos) - {hoy}",
-        cantidad=float(importe),
-        tipo="EGRESO",
-    )
-    db.add(mov)
-    db.commit()
-
-    return TransporteFacturaOut(
-        ok=True,
-        n_pedidos=len(albs),
-        base_total=base_total,
-        porcentaje=7.0,
-        importe=importe,
-        path=str(filename.resolve()),
     )

@@ -1,8 +1,7 @@
 // frontend/src/components/BancoPage.jsx
 import React, { useEffect, useMemo, useState } from 'react';
 import { sileo } from 'sileo';
-
-const API = 'http://localhost:8000/api';
+import { API_URL } from '../config.js';
 
 function eur(n) {
   const v = Number(n || 0);
@@ -25,7 +24,7 @@ export default function BancoPage() {
   // ========= Helpers de carga =========
   async function loadStripeStatus() {
     try {
-      const r = await fetch(`${API}/stripe/status`);
+      const r = await fetch(`${API_URL}stripe/status`);
       const j = await r.json();
       setStripeStatus(j);
     } catch (e) {
@@ -35,7 +34,7 @@ export default function BancoPage() {
 
   async function loadStripeCheckouts() {
     try {
-      const r = await fetch(`${API}/stripe/checkouts?limit=25`);
+      const r = await fetch(`${API_URL}stripe/checkouts?limit=25`);
       const j = await r.json();
       setStripeCheckouts(Array.isArray(j) ? j : []);
     } catch {
@@ -81,7 +80,7 @@ export default function BancoPage() {
         try {
           await sileo.promise(
             async () => {
-              const r = await fetch(`${API}/stripe/confirm`, {
+              const r = await fetch(`${API_URL}stripe/confirm`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ session_id: sessionId }),
@@ -124,7 +123,7 @@ export default function BancoPage() {
     try {
       const data = await sileo.promise(
         async () => {
-          const r = await fetch(`${API}/stripe/checkout`, {
+          const r = await fetch(`${API_URL}stripe/checkout`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

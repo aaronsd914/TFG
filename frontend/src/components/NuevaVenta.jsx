@@ -1,8 +1,7 @@
 // components/NuevaVenta.jsx
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { sileo } from 'sileo';
-
-const API_URL = 'http://localhost:8000/api/';
+import { API_URL } from '../config.js';
 
 function formatEUR(n) {
   const num = Number(n || 0);

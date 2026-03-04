@@ -1,8 +1,7 @@
 // frontend/src/components/ProductosPage.jsx
 import React, { useEffect, useMemo, useState } from 'react';
 import { sileo } from 'sileo';
-
-const API_URL = 'http://localhost:8000/api/';
+import { API_URL } from '../config.js';
 
 // ===== Helpers =====
 function useDebouncedValue(value, delay = 200) {

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { sileo } from 'sileo';
 
-const API_URL = 'http://localhost:8000/api/';
+import { API_URL } from '../config.js';
 
 const TIPO_META = {
   INGRESO: { label: 'Ingreso', className: 'bg-green-100 text-green-800 border-green-300' },

@@ -36,7 +36,7 @@ app.include_router(albaranes.router, prefix="/api")
 app.include_router(movimientos.router, prefix="/api")
 app.include_router(analytics.router, prefix="/api")
 app.include_router(ai.router, prefix="/api")
-app.include_router(transportes.router, prefix="/api")   # ✅ IMPORTANTE
+app.include_router(transportes.router, prefix="/api")
 app.include_router(bank.router)
 app.include_router(stripe_payments.router)
 

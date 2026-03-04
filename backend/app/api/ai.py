@@ -6,7 +6,7 @@ from typing import Optional, Dict, Any, List, Literal
 from datetime import date, datetime
 import json, re, logging
 
-from backend.app.database import SessionLocal
+from backend.app.database import get_db
 from backend.app.api.analytics import (
     sales_by_day,
     top_products,
@@ -20,14 +20,6 @@ from backend.app.utils.groq_llm import groq_chat
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 log = logging.getLogger("ai")
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 class AskPayload(BaseModel):
