@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { sileo, Toaster } from 'sileo';
+import { sileo } from 'sileo';
 
 import { API_URL } from '../config.js';
 
@@ -388,9 +388,6 @@ export default function AlbaranesPage() {
 
   return (
     <>
-      {/* ✅ Para que los toasts funcionen aunque aún no lo tengas en App.jsx */}
-      <Toaster position="top-right" />
-
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-semibold">Albaranes</h1>
