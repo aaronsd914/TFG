@@ -40,12 +40,40 @@ jobs:
           touch backend/app/bank_settings.py
           touch backend/app/stripe_settings.py
           touch backend/app/stripe_config.py
+          
           echo "EMAIL_HOST=''" > backend/app/settings_email.py
           echo "EMAIL_PORT=587" >> backend/app/settings_email.py
           echo "EMAIL_USER=''" >> backend/app/settings_email.py
-          echo "EMAIL_PASS=''" >> backend/app/settings_email.py
+          echo "EMAIL_PASSWORD=''" >> backend/app/settings_email.py
+          echo "EMAIL_FROM='test@test.com'" >> backend/app/settings_email.py
+          echo "EMAIL_SENDER_NAME='Test'" >> backend/app/settings_email.py
+          
           echo "GROQ_API_KEY=''" > backend/app/ia_settings.py
-          echo "BANCO_API_KEY=''" > backend/app/bank_settings.py
+          echo "GROQ_BASE_URL=''" >> backend/app/ia_settings.py
+          echo "GROQ_MODEL=''" >> backend/app/ia_settings.py
+          echo "REQUEST_TIMEOUT=60" >> backend/app/ia_settings.py
+          
+          echo "CAIXA_ENV=''" > backend/app/bank_settings.py
+          echo "HUB_OAUTH_BASE=''" >> backend/app/bank_settings.py
+          echo "HUB_API_BASE=''" >> backend/app/bank_settings.py
+          echo "CAIXA_CLIENT_ID=''" >> backend/app/bank_settings.py
+          echo "CAIXA_CLIENT_SECRET=''" >> backend/app/bank_settings.py
+          echo "CAIXA_REDIRECT_URI=''" >> backend/app/bank_settings.py
+          echo "ASPSP_CODE=''" >> backend/app/bank_settings.py
+          echo "REQUEST_TIMEOUT=30" >> backend/app/bank_settings.py
+          echo "DEMO=True" >> backend/app/bank_settings.py
+          
+          echo "STRIPE_SECRET_KEY=''" > backend/app/stripe_config.py
+          echo "STRIPE_PUBLISHABLE_KEY=''" >> backend/app/stripe_config.py
+          echo "STRIPE_CURRENCY='eur'" >> backend/app/stripe_config.py
+          echo "STRIPE_SUCCESS_URL=''" >> backend/app/stripe_config.py
+          echo "STRIPE_CANCEL_URL=''" >> backend/app/stripe_config.py
+          
+          echo "STRIPE_SECRET_KEY=''" > backend/app/stripe_settings.py
+          echo "STRIPE_PUBLISHABLE_KEY=''" >> backend/app/stripe_settings.py
+          echo "STRIPE_CURRENCY='eur'" >> backend/app/stripe_settings.py
+          echo "STRIPE_SUCCESS_URL=''" >> backend/app/stripe_settings.py
+          echo "STRIPE_CANCEL_URL=''" >> backend/app/stripe_settings.py
 
       - name: Ejecutar tests con cobertura
         run: |
