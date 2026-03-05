@@ -1,0 +1,17 @@
+# Dependencias (se instalan en el build)
+node_modules
+
+# Archivos de build anteriores
+dist
+
+# Tests y CI
+test/
+coverage/
+
+# Editores
+.vscode/
+*.DS_Store
+
+# Configs de desarrollo
+*.local
+.env

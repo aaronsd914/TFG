@@ -1,0 +1,49 @@
+name: Deploy — Producción
+
+on:
+  push:
+    branches: [main, master]
+    paths-ignore:
+      - '**.md'
+  workflow_dispatch:
+
+jobs:
+  # ────────────────────────────────────────────────────────────
+  # JOB 1: Deploy del backend en Railway
+  # ────────────────────────────────────────────────────────────
+  deploy-backend:
+    name: Deploy Backend (Railway)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Instalar Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy en Railway
+        run: railway up --service backend --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+  # ────────────────────────────────────────────────────────────
+  # JOB 2: Deploy del frontend en Vercel
+  # ────────────────────────────────────────────────────────────
+  deploy-frontend:
+    name: Deploy Frontend (Vercel)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Instalar Vercel CLI
+        run: npm install -g vercel
+
+      - name: Deploy en Vercel
+        working-directory: frontend
+        run: vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}

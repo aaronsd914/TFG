@@ -1,0 +1,29 @@
+# Control de versiones
+.git
+.gitignore
+
+# Entorno virtual Python
+.venv
+__pycache__
+**/__pycache__
+**/*.pyc
+**/*.pyo
+
+# Tests y CI
+test/
+.github/
+coverage*.xml
+.pytest_cache
+
+# Frontend (se construye en su propio contenedor)
+frontend/
+
+# Archivos de desarrollo
+*.md
+.env
+.env.*
+!.env.example
+
+# Editores
+.vscode/
+*.DS_Store
