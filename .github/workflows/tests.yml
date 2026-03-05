@@ -33,6 +33,20 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Create dummy config files for CI
+        run: |
+          touch backend/app/ia_settings.py
+          touch backend/app/settings_email.py
+          touch backend/app/bank_settings.py
+          touch backend/app/stripe_settings.py
+          touch backend/app/stripe_config.py
+          echo "EMAIL_HOST=''" > backend/app/settings_email.py
+          echo "EMAIL_PORT=587" >> backend/app/settings_email.py
+          echo "EMAIL_USER=''" >> backend/app/settings_email.py
+          echo "EMAIL_PASS=''" >> backend/app/settings_email.py
+          echo "GROQ_API_KEY=''" > backend/app/ia_settings.py
+          echo "BANCO_API_KEY=''" > backend/app/bank_settings.py
+
       - name: Ejecutar tests con cobertura
         run: |
           pytest test/backend/ \
