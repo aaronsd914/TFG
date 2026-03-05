@@ -16,8 +16,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiar el código
 COPY . .
 
-# Puerto que expone uvicorn
+# Puerto que expone uvicorn (Railway inyecta $PORT dinámicamente)
 EXPOSE 8000
 
 # Arrancar la app
-CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["bash", "backend/start.sh"]
