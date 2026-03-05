@@ -3,7 +3,10 @@ from sqlalchemy.orm import Session, selectinload
 from typing import List, Optional
 from backend.app.database import get_db, SessionLocal
 from backend.app.entidades.albaran import (
-    Albaran, AlbaranDB, AlbaranLineaCreate, OneWordEstado
+    Albaran,
+    AlbaranDB,
+    AlbaranLineaCreate,
+    OneWordEstado,
 )
 from backend.app.entidades.linea_albaran import LineaAlbaranDB
 from backend.app.entidades.cliente import ClienteDB, ClienteCreate
@@ -22,12 +25,14 @@ import logging
 router = APIRouter()
 log = logging.getLogger("albaranes")
 
+
 class AlbaranCreateFull(BaseModel):
     """
     Payload completo para crear un albarán. Admite cliente nuevo (objeto)
     o cliente existente (cliente_id). El campo fianza_cantidad es opcional:
     si no se indica, se calcula automáticamente como el 30% del total.
     """
+
     fecha: date
     descripcion: Optional[str] = None
     cliente_id: Optional[int] = None
@@ -37,8 +42,10 @@ class AlbaranCreateFull(BaseModel):
     registrar_fianza: bool = True
     fianza_cantidad: Optional[float] = None
 
+
 class EstadoUpdate(BaseModel):
     estado: OneWordEstado
+
 
 def _send_albaran_email_task(albaran_id: int):
     """
@@ -55,10 +62,16 @@ def _send_albaran_email_task(albaran_id: int):
 
         cliente = db.query(ClienteDB).filter(ClienteDB.id == albaran.cliente_id).first()
         if not cliente or not cliente.email:
-            log.warning("[email] Cliente inexistente o sin email para albarán %s", albaran_id)
+            log.warning(
+                "[email] Cliente inexistente o sin email para albarán %s", albaran_id
+            )
             return
 
-        lineas = db.query(LineaAlbaranDB).filter(LineaAlbaranDB.albaran_id == albaran.id).all()
+        lineas = (
+            db.query(LineaAlbaranDB)
+            .filter(LineaAlbaranDB.albaran_id == albaran.id)
+            .all()
+        )
         prods = {}
         if lineas:
             prod_ids = {ln.producto_id for ln in lineas}
@@ -70,15 +83,21 @@ def _send_albaran_email_task(albaran_id: int):
         for ln in lineas:
             subtotal = (ln.cantidad or 0) * (ln.precio_unitario or 0.0)
             total += subtotal
-            nombre = prods.get(ln.producto_id).nombre if prods.get(ln.producto_id) else f"Producto {ln.producto_id}"
-            lineas_ext.append({
-                "producto_nombre": nombre,
-                "cantidad": ln.cantidad,
-                "precio_unitario": ln.precio_unitario,
-                "p_unit_eur": f"{ln.precio_unitario:.2f} €",
-                "subtotal": subtotal,
-                "subtotal_eur": f"{subtotal:.2f} €",
-            })
+            nombre = (
+                prods.get(ln.producto_id).nombre
+                if prods.get(ln.producto_id)
+                else f"Producto {ln.producto_id}"
+            )
+            lineas_ext.append(
+                {
+                    "producto_nombre": nombre,
+                    "cantidad": ln.cantidad,
+                    "precio_unitario": ln.precio_unitario,
+                    "p_unit_eur": f"{ln.precio_unitario:.2f} €",
+                    "subtotal": subtotal,
+                    "subtotal_eur": f"{subtotal:.2f} €",
+                }
+            )
 
         html = render(
             "albaran_email.html",
@@ -86,7 +105,7 @@ def _send_albaran_email_task(albaran_id: int):
             cliente=cliente,
             lineas=lineas_ext,
             fecha_humana=albaran.fecha.strftime("%d/%m/%Y"),
-            total_eur=f"{(albaran.total or total):.2f} €"
+            total_eur=f"{(albaran.total or total):.2f} €",
         )
 
         pdf_bytes = generar_pdf_albaran(albaran, cliente, lineas_ext)
@@ -98,19 +117,22 @@ def _send_albaran_email_task(albaran_id: int):
             subject=subject,
             html_body=html,
             pdf_bytes=pdf_bytes,
-            pdf_filename=filename
+            pdf_filename=filename,
         )
-        log.info("[email] Envío OK al cliente %s para albarán #%s", cliente.email, albaran.id)
+        log.info(
+            "[email] Envío OK al cliente %s para albarán #%s", cliente.email, albaran.id
+        )
     except Exception as e:
         log.exception("[email] Error enviando albarán #%s: %s", albaran_id, e)
     finally:
         db.close()
 
+
 @router.post("/albaranes/post", response_model=Albaran)
 def crear_albaran(
     payload: AlbaranCreateFull,
     background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Crea un albarán completo: cliente (nuevo o existente), líneas de pedido y
@@ -128,7 +150,11 @@ def crear_albaran(
         if payload.cliente.dni:
             c = db.query(ClienteDB).filter(ClienteDB.dni == payload.cliente.dni).first()
         if not c and payload.cliente.email:
-            c = db.query(ClienteDB).filter(ClienteDB.email == payload.cliente.email).first()
+            c = (
+                db.query(ClienteDB)
+                .filter(ClienteDB.email == payload.cliente.email)
+                .first()
+            )
         if c:
             for k, v in payload.cliente.model_dump().items():
                 if v is not None:
@@ -159,12 +185,14 @@ def crear_albaran(
         prod = db.query(ProductoDB).filter(ProductoDB.id == it.producto_id).first()
         if not prod:
             raise HTTPException(404, f"Producto {it.producto_id} no existe")
-        precio_unitario = it.precio_unitario if it.precio_unitario is not None else prod.precio
+        precio_unitario = (
+            it.precio_unitario if it.precio_unitario is not None else prod.precio
+        )
         linea = LineaAlbaranDB(
             albaran_id=albaran.id,
             producto_id=it.producto_id,
             cantidad=it.cantidad,
-            precio_unitario=precio_unitario
+            precio_unitario=precio_unitario,
         )
         total += precio_unitario * it.cantidad
         db.add(linea)
@@ -203,9 +231,11 @@ def crear_albaran(
 
     return albaran
 
+
 @router.get("/albaranes/get", response_model=List[Albaran])
 def listar_albaranes(db: Session = Depends(get_db)):
     return db.query(AlbaranDB).all()
+
 
 @router.get("/albaranes/get/{albaran_id}", response_model=Albaran)
 def obtener_albaran(albaran_id: int, db: Session = Depends(get_db)):
@@ -213,6 +243,7 @@ def obtener_albaran(albaran_id: int, db: Session = Depends(get_db)):
     if not albaran:
         raise HTTPException(404, "Albarán no encontrado")
     return albaran
+
 
 @router.get("/albaranes/by-cliente/{cliente_id}", response_model=List[Albaran])
 def albaranes_por_cliente(cliente_id: int, db: Session = Depends(get_db)):
@@ -224,15 +255,20 @@ def albaranes_por_cliente(cliente_id: int, db: Session = Depends(get_db)):
     )
     return q.all()
 
+
 @router.patch("/albaranes/{albaran_id}/estado", response_model=Albaran)
-def actualizar_estado(albaran_id: int, payload: EstadoUpdate, db: Session = Depends(get_db)):
+def actualizar_estado(
+    albaran_id: int, payload: EstadoUpdate, db: Session = Depends(get_db)
+):
     """
     Marca un albarán como ENTREGADO (único cambio de estado permitido).
     Si queda importe pendiente tras descontar la fianza, registra automáticamente
     un movimiento de INGRESO con la diferencia.
     """
     if (payload.estado or "").upper() != "ENTREGADO":
-        raise HTTPException(status_code=400, detail="Sólo se permite cambiar a ENTREGADO.")
+        raise HTTPException(
+            status_code=400, detail="Sólo se permite cambiar a ENTREGADO."
+        )
 
     alb = db.query(AlbaranDB).filter(AlbaranDB.id == albaran_id).first()
     if not alb:
@@ -247,7 +283,7 @@ def actualizar_estado(albaran_id: int, payload: EstadoUpdate, db: Session = Depe
         db.query(func.coalesce(func.sum(MovimientoDB.cantidad), 0.0))
         .filter(
             MovimientoDB.tipo == "INGRESO",
-            MovimientoDB.concepto == f"Fianza albarán #{alb.id}"
+            MovimientoDB.concepto == f"Fianza albarán #{alb.id}",
         )
         .scalar()
         or 0.0

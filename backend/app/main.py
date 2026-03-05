@@ -1,6 +1,17 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.app.api import clientes, productos, proveedores, albaranes, movimientos, analytics, ai, bank, transportes, stripe_payments
+from backend.app.api import (
+    clientes,
+    productos,
+    proveedores,
+    albaranes,
+    movimientos,
+    analytics,
+    ai,
+    bank,
+    transportes,
+    stripe_payments,
+)
 from contextlib import asynccontextmanager
 import logging
 
@@ -24,9 +35,9 @@ app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",   # Vite dev server
+        "http://localhost:5173",  # Vite dev server
         "http://127.0.0.1:5173",
-        "http://localhost",        # Docker / Nginx (puerto 80)
+        "http://localhost",  # Docker / Nginx (puerto 80)
         "http://localhost:80",
         "http://127.0.0.1",
     ],
@@ -47,8 +58,7 @@ app.include_router(bank.router)
 app.include_router(stripe_payments.router)
 
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(levelname)s %(name)s:%(lineno)d - %(message)s"
+    level=logging.INFO, format="%(levelname)s %(name)s:%(lineno)d - %(message)s"
 )
 
 logging.getLogger("emailer").setLevel(logging.DEBUG)

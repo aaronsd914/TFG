@@ -11,6 +11,7 @@ from typing import List, Optional, Literal
 # TRANSPORTE -> "Ruta"
 # ENTREGADO -> "Entregado"
 
+
 class AlbaranDB(Base):
     __tablename__ = "albaranes"
 
@@ -33,16 +34,20 @@ class AlbaranDB(Base):
         cascade="all, delete-orphan",
     )
 
+
 # ---- Pydantic (respuestas) ----
 class AlbaranLinea(BaseModel):
     id: int
     producto_id: int
     cantidad: int
     precio_unitario: float
+
     class Config:
         from_attributes = True
 
+
 OneWordEstado = Literal["FIANZA", "ALMACEN", "RUTA", "ENTREGADO"]
+
 
 class Albaran(BaseModel):
     id: int
@@ -52,14 +57,17 @@ class Albaran(BaseModel):
     cliente_id: int
     estado: OneWordEstado
     lineas: List[AlbaranLinea] = []
+
     class Config:
         from_attributes = True
+
 
 # ---- Pydantic (creación) ----
 class AlbaranLineaCreate(BaseModel):
     producto_id: int
     cantidad: int
     precio_unitario: float | None = None  # si no llega, usamos el precio del producto
+
 
 class AlbaranCreate(BaseModel):
     fecha: date

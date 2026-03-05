@@ -6,7 +6,14 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer,
+    Table,
+    TableStyle,
+    PageBreak,
+)
 
 
 log = logging.getLogger("tendencias_pdf")
@@ -40,7 +47,9 @@ def _header_footer(canvas, doc, tienda_nombre: str, right_text: str):
 
     canvas.setStrokeColor(colors.HexColor("#E5E7EB"))
     canvas.setLineWidth(1)
-    canvas.line(doc.leftMargin, header_y - 8, doc.pagesize[0] - doc.rightMargin, header_y - 8)
+    canvas.line(
+        doc.leftMargin, header_y - 8, doc.pagesize[0] - doc.rightMargin, header_y - 8
+    )
 
     canvas.setFillColor(colors.HexColor("#111827"))
     canvas.setFont("Helvetica-Bold", 11)
@@ -52,12 +61,23 @@ def _header_footer(canvas, doc, tienda_nombre: str, right_text: str):
 
     canvas.setStrokeColor(colors.HexColor("#E5E7EB"))
     canvas.setLineWidth(1)
-    canvas.line(doc.leftMargin, doc.bottomMargin - 8, doc.pagesize[0] - doc.rightMargin, doc.bottomMargin - 8)
+    canvas.line(
+        doc.leftMargin,
+        doc.bottomMargin - 8,
+        doc.pagesize[0] - doc.rightMargin,
+        doc.bottomMargin - 8,
+    )
 
     canvas.setFillColor(colors.HexColor("#6B7280"))
     canvas.setFont("Helvetica", 8)
-    canvas.drawString(doc.leftMargin, doc.bottomMargin - 18, "Documento generado automáticamente.")
-    canvas.drawRightString(doc.pagesize[0] - doc.rightMargin, doc.bottomMargin - 18, f"Página {canvas.getPageNumber()}")
+    canvas.drawString(
+        doc.leftMargin, doc.bottomMargin - 18, "Documento generado automáticamente."
+    )
+    canvas.drawRightString(
+        doc.pagesize[0] - doc.rightMargin,
+        doc.bottomMargin - 18,
+        f"Página {canvas.getPageNumber()}",
+    )
 
     canvas.restoreState()
 
@@ -216,7 +236,13 @@ def generar_pdf_tendencias(
                     _safe(delta.get("aov", {}).get("pct", "—")),
                 ],
             ],
-            colWidths=[doc.width * 0.26, doc.width * 0.18, doc.width * 0.18, doc.width * 0.18, doc.width * 0.20],
+            colWidths=[
+                doc.width * 0.26,
+                doc.width * 0.18,
+                doc.width * 0.18,
+                doc.width * 0.18,
+                doc.width * 0.20,
+            ],
         )
         comp_tbl.setStyle(
             TableStyle(
@@ -245,8 +271,16 @@ def generar_pdf_tendencias(
     sbd = metrics_actual.get("sales_by_day", [])
     sbd_tbl_data = [["Fecha", "Pedidos", "Ingresos"]]
     for row in sbd[-60:]:  # últimas 60 filas para que no sea infinito
-        sbd_tbl_data.append([_safe(row.get("date")), _safe(row.get("orders")), eur(row.get("revenue", 0))])
-    sbd_tbl = Table(sbd_tbl_data, colWidths=[doc.width * 0.35, doc.width * 0.25, doc.width * 0.40])
+        sbd_tbl_data.append(
+            [
+                _safe(row.get("date")),
+                _safe(row.get("orders")),
+                eur(row.get("revenue", 0)),
+            ]
+        )
+    sbd_tbl = Table(
+        sbd_tbl_data, colWidths=[doc.width * 0.35, doc.width * 0.25, doc.width * 0.40]
+    )
     sbd_tbl.setStyle(
         TableStyle(
             [
@@ -265,8 +299,16 @@ def generar_pdf_tendencias(
     tp = metrics_actual.get("top_products", [])
     tp_data = [["Producto", "Unidades", "Facturación"]]
     for t in tp[:12]:
-        tp_data.append([_safe(t.get("name")), f"{float(t.get('qty') or 0):.0f}", eur(t.get("revenue", 0))])
-    tp_tbl = Table(tp_data, colWidths=[doc.width * 0.55, doc.width * 0.15, doc.width * 0.30])
+        tp_data.append(
+            [
+                _safe(t.get("name")),
+                f"{float(t.get('qty') or 0):.0f}",
+                eur(t.get("revenue", 0)),
+            ]
+        )
+    tp_tbl = Table(
+        tp_data, colWidths=[doc.width * 0.55, doc.width * 0.15, doc.width * 0.30]
+    )
     tp_tbl.setStyle(
         TableStyle(
             [
@@ -284,7 +326,9 @@ def generar_pdf_tendencias(
     story.append(Paragraph("Segmentación RFM", styles["H2"]))
     seg = (metrics_actual.get("rfm") or {}).get("summary", {})
     if seg:
-        seg_data = [["Segmento", "Clientes"]] + [[_safe(k), _safe(v)] for k, v in seg.items()]
+        seg_data = [["Segmento", "Clientes"]] + [
+            [_safe(k), _safe(v)] for k, v in seg.items()
+        ]
         seg_tbl = Table(seg_data, colWidths=[doc.width * 0.70, doc.width * 0.30])
         seg_tbl.setStyle(
             TableStyle(
@@ -299,7 +343,9 @@ def generar_pdf_tendencias(
         )
         story.append(seg_tbl)
     else:
-        story.append(Paragraph("Sin datos suficientes para segmentar.", styles["Muted"]))
+        story.append(
+            Paragraph("Sin datos suficientes para segmentar.", styles["Muted"])
+        )
 
     # Co-compras
     story.append(Paragraph("Co-compras (pares)", styles["H2"]))
@@ -318,7 +364,13 @@ def generar_pdf_tendencias(
             )
         pairs_tbl = Table(
             pairs_data,
-            colWidths=[doc.width * 0.30, doc.width * 0.30, doc.width * 0.12, doc.width * 0.14, doc.width * 0.14],
+            colWidths=[
+                doc.width * 0.30,
+                doc.width * 0.30,
+                doc.width * 0.12,
+                doc.width * 0.14,
+                doc.width * 0.14,
+            ],
         )
         pairs_tbl.setStyle(
             TableStyle(
@@ -339,7 +391,10 @@ def generar_pdf_tendencias(
     story.append(PageBreak())
     story.append(Paragraph("Informe detallado (IA)", styles["H1"]))
     story.append(
-        Paragraph("Este apartado está generado por la IA a partir de todas las métricas del rango.", styles["Muted"])
+        Paragraph(
+            "Este apartado está generado por la IA a partir de todas las métricas del rango.",
+            styles["Muted"],
+        )
     )
     story.append(Spacer(1, 8))
     for para in _safe(ai_report).split("\n"):

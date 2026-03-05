@@ -20,6 +20,7 @@ from backend.app.utils.tendencias_pdf import generar_pdf_tendencias
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 log = logging.getLogger("analytics")
 
+
 # ---------- Utilidades ----------
 def daterange_defaults(dfrom: Optional[date], dto: Optional[date]) -> Tuple[date, date]:
     if not dto:
@@ -104,7 +105,10 @@ def sales_by_day(db: Session, dfrom: date, dto: date):
         .order_by(AlbaranDB.fecha)
         .all()
     )
-    return [{"date": to_iso(r.fecha), "orders": int(r.orders), "revenue": float(r.revenue)} for r in rows]
+    return [
+        {"date": to_iso(r.fecha), "orders": int(r.orders), "revenue": float(r.revenue)}
+        for r in rows
+    ]
 
 
 def top_products(db: Session, dfrom: date, dto: date, limit: int = 10):
@@ -112,7 +116,9 @@ def top_products(db: Session, dfrom: date, dto: date, limit: int = 10):
         db.query(
             LineaAlbaranDB.producto_id,
             func.sum(LineaAlbaranDB.cantidad).label("qty"),
-            func.sum(LineaAlbaranDB.cantidad * LineaAlbaranDB.precio_unitario).label("revenue"),
+            func.sum(LineaAlbaranDB.cantidad * LineaAlbaranDB.precio_unitario).label(
+                "revenue"
+            ),
         )
         .join(AlbaranDB, AlbaranDB.id == LineaAlbaranDB.albaran_id)
         .filter(AlbaranDB.fecha >= dfrom, AlbaranDB.fecha <= dto)
@@ -123,7 +129,9 @@ def top_products(db: Session, dfrom: date, dto: date, limit: int = 10):
     )
     prod_map = {
         p.id: p.nombre
-        for p in db.query(ProductoDB).filter(ProductoDB.id.in_([r.producto_id for r in rows])).all()
+        for p in db.query(ProductoDB)
+        .filter(ProductoDB.id.in_([r.producto_id for r in rows]))
+        .all()
     }
     return [
         {
@@ -148,16 +156,26 @@ def averages(db: Session, dfrom: date, dto: date):
     aov = total / orders if orders else 0.0
 
     rows = (
-        db.query(AlbaranDB.cliente_id, func.coalesce(func.sum(AlbaranDB.total), 0.0).label("spent"))
+        db.query(
+            AlbaranDB.cliente_id,
+            func.coalesce(func.sum(AlbaranDB.total), 0.0).label("spent"),
+        )
         .filter(AlbaranDB.fecha >= dfrom, AlbaranDB.fecha <= dto)
         .group_by(AlbaranDB.cliente_id)
         .all()
     )
     avg_per_customer = (sum(float(r.spent) for r in rows) / len(rows)) if rows else 0.0
-    return {"orders": orders, "revenue": total, "aov": aov, "avg_per_customer": avg_per_customer}
+    return {
+        "orders": orders,
+        "revenue": total,
+        "aov": aov,
+        "avg_per_customer": avg_per_customer,
+    }
 
 
-def basket_pairs(db: Session, dfrom: date, dto: date, min_support: int = 2, limit: int = 10):
+def basket_pairs(
+    db: Session, dfrom: date, dto: date, min_support: int = 2, limit: int = 10
+):
     rows = (
         db.query(LineaAlbaranDB.albaran_id, LineaAlbaranDB.producto_id)
         .join(AlbaranDB, AlbaranDB.id == LineaAlbaranDB.albaran_id)
@@ -180,7 +198,10 @@ def basket_pairs(db: Session, dfrom: date, dto: date, min_support: int = 2, limi
             pair_count[(a, b)] += 1
 
     prod_ids = list(set([p for pair in pair_count.keys() for p in pair]))
-    name_map = {p.id: p.nombre for p in db.query(ProductoDB).filter(ProductoDB.id.in_(prod_ids)).all()}
+    name_map = {
+        p.id: p.nombre
+        for p in db.query(ProductoDB).filter(ProductoDB.id.in_(prod_ids)).all()
+    }
 
     pairs = []
     for (a, b), supp in pair_count.items():
@@ -256,7 +277,11 @@ def rfm_segments(db: Session, ref_date: date):
     by_customer = []
     for r in rows:
         rec_days = (ref_date - r.last_date).days if r.last_date else 99999
-        sR, sF, sM = score_r(rec_days), score(float(r.freq), Fq), score(float(r.monetary), Mq)
+        sR, sF, sM = (
+            score_r(rec_days),
+            score(float(r.freq), Fq),
+            score(float(r.monetary), Mq),
+        )
         seg = (
             "VIP"
             if (sR >= 3 and sF == 4 and sM == 4)
@@ -305,7 +330,10 @@ def generate_ai_report(metrics_full: Dict[str, Any]) -> str:
 
         return groq_chat(
             [
-                {"role": "system", "content": "Eres un experto en analítica de retail."},
+                {
+                    "role": "system",
+                    "content": "Eres un experto en analítica de retail.",
+                },
                 {"role": "user", "content": prompt},
             ],
             temperature=0.2,
@@ -358,9 +386,18 @@ def compare_periods(db: Session, dfrom: date, dto: date) -> Dict[str, Any]:
 
     ca, pa = current["averages"], previous["averages"]
     delta = {
-        "revenue": {"current": float(ca.get("revenue", 0) or 0), "previous": float(pa.get("revenue", 0) or 0)},
-        "orders": {"current": int(ca.get("orders", 0) or 0), "previous": int(pa.get("orders", 0) or 0)},
-        "aov": {"current": float(ca.get("aov", 0) or 0), "previous": float(pa.get("aov", 0) or 0)},
+        "revenue": {
+            "current": float(ca.get("revenue", 0) or 0),
+            "previous": float(pa.get("revenue", 0) or 0),
+        },
+        "orders": {
+            "current": int(ca.get("orders", 0) or 0),
+            "previous": int(pa.get("orders", 0) or 0),
+        },
+        "aov": {
+            "current": float(ca.get("aov", 0) or 0),
+            "previous": float(pa.get("aov", 0) or 0),
+        },
     }
     for k in ("revenue", "orders", "aov"):
         cur = float(delta[k]["current"])
@@ -398,7 +435,10 @@ def generate_ai_compare_report(compare_obj_full: Dict[str, Any]) -> str:
 
         return groq_chat(
             [
-                {"role": "system", "content": "Eres un experto en analítica de retail."},
+                {
+                    "role": "system",
+                    "content": "Eres un experto en analítica de retail.",
+                },
                 {"role": "user", "content": prompt},
             ],
             temperature=0.2,
@@ -487,5 +527,5 @@ def analytics_export_pdf(
     return StreamingResponse(
         buffer,
         media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename=\"{filename}\""},
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )

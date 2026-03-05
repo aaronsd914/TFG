@@ -8,12 +8,18 @@ class AlbaranRutaDB(Base):
     Tabla auxiliar para asignar albaranes (en estado RUTA) a un camión.
     Evita tener que añadir camion_id a la tabla albaranes.
     """
+
     __tablename__ = "albaran_rutas"
 
     id = Column(Integer, primary_key=True, index=True)
 
     # Un albarán solo puede estar asignado a 1 camión a la vez
-    albaran_id = Column(Integer, ForeignKey("albaranes.id", ondelete="CASCADE"), nullable=False, unique=True)
+    albaran_id = Column(
+        Integer,
+        ForeignKey("albaranes.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
 
     camion_id = Column(Integer, nullable=False)
 

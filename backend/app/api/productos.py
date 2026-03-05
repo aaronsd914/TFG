@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 
 router = APIRouter()
 
+
 @router.post("/productos/post", response_model=Producto)
 def crear_producto(producto: ProductoCreate, db: Session = Depends(get_db)):
     db_producto = ProductoDB(**producto.model_dump())
@@ -17,9 +18,11 @@ def crear_producto(producto: ProductoCreate, db: Session = Depends(get_db)):
     db.refresh(db_producto)
     return db_producto
 
+
 @router.get("/productos/get", response_model=List[Producto])
 def obtener_productos(db: Session = Depends(get_db)):
     return db.query(ProductoDB).all()
+
 
 @router.get("/productos/get/{producto_id}", response_model=Producto)
 def obtener_producto(producto_id: int, db: Session = Depends(get_db)):
@@ -28,8 +31,11 @@ def obtener_producto(producto_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Producto no encontrado")
     return producto
 
+
 @router.put("/productos/put/{producto_id}", response_model=Producto)
-def actualizar_producto(producto_id: int, actualizado: ProductoCreate, db: Session = Depends(get_db)):
+def actualizar_producto(
+    producto_id: int, actualizado: ProductoCreate, db: Session = Depends(get_db)
+):
     producto = db.query(ProductoDB).filter(ProductoDB.id == producto_id).first()
     if not producto:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
@@ -38,6 +44,7 @@ def actualizar_producto(producto_id: int, actualizado: ProductoCreate, db: Sessi
     db.commit()
     db.refresh(producto)
     return producto
+
 
 @router.delete("/productos/delete/{producto_id}")
 def eliminar_producto(producto_id: int, db: Session = Depends(get_db)):
@@ -57,10 +64,12 @@ def eliminar_producto(producto_id: int, db: Session = Depends(get_db)):
             detail="No se puede eliminar este producto porque está referenciado en albaranes (líneas de albarán).",
         )
 
+
 def _norm(s: str) -> str:
     s = s or ""
     nfkd = unicodedata.normalize("NFD", s)
     return "".join(ch for ch in nfkd if not unicodedata.combining(ch)).lower()
+
 
 @router.get("/productos/search", response_model=List[Producto])
 def buscar_productos(

@@ -31,6 +31,7 @@ def _eur(n: float) -> str:
     except Exception:
         return "0.00 €"
 
+
 def _fmt_fecha(value) -> str:
     """Convierte un objeto date/datetime a cadena 'dd/mm/yyyy'. Devuelve '—' si es None."""
     if value is None:
@@ -39,7 +40,10 @@ def _fmt_fecha(value) -> str:
         return value.strftime("%d/%m/%Y")
     return str(value)
 
-def generar_pdf_factura_ruta(camion_id: int, albaranes: List[AlbaranDB], clientes_map: Dict[int, ClienteDB]) -> bytes:
+
+def generar_pdf_factura_ruta(
+    camion_id: int, albaranes: List[AlbaranDB], clientes_map: Dict[int, ClienteDB]
+) -> bytes:
     """Genera un PDF con el listado de albaranes asignados a un camión, incluyendo cliente, total y datos del pedido."""
     buf = BytesIO()
     doc = SimpleDocTemplate(
@@ -54,31 +58,37 @@ def generar_pdf_factura_ruta(camion_id: int, albaranes: List[AlbaranDB], cliente
     )
 
     styles = getSampleStyleSheet()
-    styles.add(ParagraphStyle(
-        name="H1",
-        parent=styles["Heading1"],
-        fontName="Helvetica-Bold",
-        fontSize=16,
-        leading=18,
-        textColor=colors.HexColor("#111827"),
-        spaceAfter=6,
-    ))
-    styles.add(ParagraphStyle(
-        name="Muted",
-        parent=styles["Normal"],
-        fontName="Helvetica",
-        fontSize=9,
-        leading=12,
-        textColor=colors.HexColor("#6B7280"),
-    ))
-    styles.add(ParagraphStyle(
-        name="Body",
-        parent=styles["Normal"],
-        fontName="Helvetica",
-        fontSize=10,
-        leading=14,
-        textColor=colors.HexColor("#111827"),
-    ))
+    styles.add(
+        ParagraphStyle(
+            name="H1",
+            parent=styles["Heading1"],
+            fontName="Helvetica-Bold",
+            fontSize=16,
+            leading=18,
+            textColor=colors.HexColor("#111827"),
+            spaceAfter=6,
+        )
+    )
+    styles.add(
+        ParagraphStyle(
+            name="Muted",
+            parent=styles["Normal"],
+            fontName="Helvetica",
+            fontSize=9,
+            leading=12,
+            textColor=colors.HexColor("#6B7280"),
+        )
+    )
+    styles.add(
+        ParagraphStyle(
+            name="Body",
+            parent=styles["Normal"],
+            fontName="Helvetica",
+            fontSize=10,
+            leading=14,
+            textColor=colors.HexColor("#111827"),
+        )
+    )
 
     total = sum(float(a.total or 0) for a in albaranes)
     comision = total * 0.07
@@ -87,7 +97,9 @@ def generar_pdf_factura_ruta(camion_id: int, albaranes: List[AlbaranDB], cliente
     story = []
     story.append(Spacer(1, 10))
     story.append(Paragraph(f"Factura de ruta · Camión {camion_id}", styles["H1"]))
-    story.append(Paragraph(f"Fecha de emisión: {_fmt_fecha(date.today())}", styles["Muted"]))
+    story.append(
+        Paragraph(f"Fecha de emisión: {_fmt_fecha(date.today())}", styles["Muted"])
+    )
     story.append(Spacer(1, 10))
 
     # Resumen
@@ -99,19 +111,23 @@ def generar_pdf_factura_ruta(camion_id: int, albaranes: List[AlbaranDB], cliente
         ],
         colWidths=[90 * mm, 70 * mm],
     )
-    resumen.setStyle(TableStyle([
-        ("BOX", (0, 0), (-1, -1), 1, colors.HexColor("#E5E7EB")),
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#F9FAFB")),
-        ("TEXTCOLOR", (0, 0), (-1, -1), colors.HexColor("#111827")),
-        ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, -1), 10),
-        ("LEFTPADDING", (0, 0), (-1, -1), 10),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
-        ("TOPPADDING", (0, 0), (-1, -1), 8),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
-        ("LINEBELOW", (0, 0), (-1, 0), 1, colors.HexColor("#E5E7EB")),
-    ]))
+    resumen.setStyle(
+        TableStyle(
+            [
+                ("BOX", (0, 0), (-1, -1), 1, colors.HexColor("#E5E7EB")),
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#F9FAFB")),
+                ("TEXTCOLOR", (0, 0), (-1, -1), colors.HexColor("#111827")),
+                ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, -1), 10),
+                ("LEFTPADDING", (0, 0), (-1, -1), 10),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+                ("TOPPADDING", (0, 0), (-1, -1), 8),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+                ("LINEBELOW", (0, 0), (-1, 0), 1, colors.HexColor("#E5E7EB")),
+            ]
+        )
+    )
     story.append(resumen)
     story.append(Spacer(1, 14))
 
@@ -119,28 +135,36 @@ def generar_pdf_factura_ruta(camion_id: int, albaranes: List[AlbaranDB], cliente
     data = [["Albarán", "Fecha", "Cliente", "Total"]]
     for a in albaranes:
         c = clientes_map.get(a.cliente_id)
-        cliente = "—" if not c else f"{(c.nombre or '').strip()} {(c.apellidos or '').strip()}".strip() or f"Cliente #{a.cliente_id}"
+        cliente = (
+            "—"
+            if not c
+            else f"{(c.nombre or '').strip()} {(c.apellidos or '').strip()}".strip()
+            or f"Cliente #{a.cliente_id}"
+        )
         data.append([f"#{a.id}", _fmt_fecha(a.fecha), cliente, _eur(a.total or 0)])
 
     tbl = Table(data, colWidths=[22 * mm, 28 * mm, 92 * mm, 28 * mm])
-    tbl.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#111827")),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, 0), 9),
-
-        ("BOX", (0, 0), (-1, -1), 1, colors.HexColor("#E5E7EB")),
-        ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#E5E7EB")),
-        ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
-        ("FONTSIZE", (0, 1), (-1, -1), 9),
-        ("TEXTCOLOR", (0, 1), (-1, -1), colors.HexColor("#111827")),
-        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("ALIGN", (3, 1), (3, -1), "RIGHT"),
-        ("LEFTPADDING", (0, 0), (-1, -1), 8),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 8),
-        ("TOPPADDING", (0, 0), (-1, -1), 6),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-    ]))
+    tbl.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#111827")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, 0), 9),
+                ("BOX", (0, 0), (-1, -1), 1, colors.HexColor("#E5E7EB")),
+                ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#E5E7EB")),
+                ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+                ("FONTSIZE", (0, 1), (-1, -1), 9),
+                ("TEXTCOLOR", (0, 1), (-1, -1), colors.HexColor("#111827")),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("ALIGN", (3, 1), (3, -1), "RIGHT"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+                ("TOPPADDING", (0, 0), (-1, -1), 6),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+            ]
+        )
+    )
     story.append(tbl)
     story.append(Spacer(1, 10))
     story.append(Paragraph("Documento generado automáticamente.", styles["Muted"]))
@@ -178,7 +202,10 @@ def get_rutas(db: Session = Depends(get_db)) -> Dict[str, Any]:
             grupos.setdefault(int(cid), []).append(alb)
 
     camiones = [
-        {"camion_id": cid, "albaranes": [Albaran.model_validate(x) for x in grupos[cid]]}
+        {
+            "camion_id": cid,
+            "albaranes": [Albaran.model_validate(x) for x in grupos[cid]],
+        }
         for cid in sorted(grupos.keys())
     ]
 
@@ -192,11 +219,14 @@ class AsignarRutaBody(BaseModel):
     camion_id: int
     albaran_ids: List[int]
 
+
 class QuitarRutaBody(BaseModel):
     albaran_ids: List[int]
 
+
 class PendienteBody(BaseModel):
     albaran_ids: List[int]
+
 
 class LiquidarCamionOut(BaseModel):
     ok: bool
@@ -227,7 +257,10 @@ def asignar_ruta(body: AsignarRutaBody, db: Session = Depends(get_db)):
 
     invalid = [a.id for a in albs if a.estado not in ("ALMACEN", "RUTA")]
     if invalid:
-        raise HTTPException(status_code=400, detail=f"No se pueden asignar (no están en ALMACEN/RUTA): {invalid}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"No se pueden asignar (no están en ALMACEN/RUTA): {invalid}",
+        )
 
     for a in albs:
         if a.estado == "ALMACEN":
@@ -269,7 +302,9 @@ def quitar_ruta(body: QuitarRutaBody, db: Session = Depends(get_db)):
     for a in albs:
         a.estado = "ALMACEN"
 
-    db.query(AlbaranRutaDB).filter(AlbaranRutaDB.albaran_id.in_(body.albaran_ids)).delete(synchronize_session=False)
+    db.query(AlbaranRutaDB).filter(
+        AlbaranRutaDB.albaran_id.in_(body.albaran_ids)
+    ).delete(synchronize_session=False)
 
     db.commit()
     return {"ok": True, "n": len(albs)}
@@ -292,12 +327,17 @@ def poner_pendiente(body: PendienteBody, db: Session = Depends(get_db)):
 
     invalid = [a.id for a in albs if a.estado not in ("ALMACEN", "RUTA")]
     if invalid:
-        raise HTTPException(status_code=400, detail=f"No se pueden poner pendientes (no están en ALMACEN/RUTA): {invalid}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"No se pueden poner pendientes (no están en ALMACEN/RUTA): {invalid}",
+        )
 
     for a in albs:
         a.estado = "RUTA"
 
-    db.query(AlbaranRutaDB).filter(AlbaranRutaDB.albaran_id.in_(body.albaran_ids)).delete(synchronize_session=False)
+    db.query(AlbaranRutaDB).filter(
+        AlbaranRutaDB.albaran_id.in_(body.albaran_ids)
+    ).delete(synchronize_session=False)
 
     db.commit()
     return {"ok": True, "n": len(albs)}
@@ -396,5 +436,5 @@ def factura_ruta(camion_id: int, db: Session = Depends(get_db)):
     return StreamingResponse(
         BytesIO(pdf_bytes),
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )

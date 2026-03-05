@@ -10,7 +10,12 @@ from email import encoders
 from email.utils import formatdate, make_msgid
 
 from backend.app.settings_email import (
-    EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASSWORD, EMAIL_FROM, EMAIL_SENDER_NAME
+    EMAIL_HOST,
+    EMAIL_PORT,
+    EMAIL_USER,
+    EMAIL_PASSWORD,
+    EMAIL_FROM,
+    EMAIL_SENDER_NAME,
 )
 
 log = logging.getLogger("emailer")
@@ -27,16 +32,29 @@ def _html_to_text(html: str) -> str:
     # Quita tags
     text = re.sub(r"<[^>]+>", "", html)
     # Entidades mínimas
-    text = text.replace("&nbsp;", " ").replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">")
+    text = (
+        text.replace("&nbsp;", " ")
+        .replace("&amp;", "&")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+    )
     # Limpia líneas
     text = "\n".join([ln.strip() for ln in text.splitlines()])
     text = re.sub(r"\n{3,}", "\n\n", text).strip()
     return text
 
 
-def send_email_with_pdf(to_email: str, subject: str, html_body: str, pdf_bytes: bytes, pdf_filename: str):
-    log.info("[emailer] Preparando email → to=%s subject=%s host=%s port=%s user=%s",
-             to_email, subject, EMAIL_HOST, EMAIL_PORT, EMAIL_USER)
+def send_email_with_pdf(
+    to_email: str, subject: str, html_body: str, pdf_bytes: bytes, pdf_filename: str
+):
+    log.info(
+        "[emailer] Preparando email → to=%s subject=%s host=%s port=%s user=%s",
+        to_email,
+        subject,
+        EMAIL_HOST,
+        EMAIL_PORT,
+        EMAIL_USER,
+    )
 
     msg = MIMEMultipart("mixed")
     msg["From"] = f"{EMAIL_SENDER_NAME} <{EMAIL_FROM}>"

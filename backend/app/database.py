@@ -5,7 +5,9 @@ import os
 
 # En Docker, DATABASE_URL se inyecta vía docker-compose.yml
 # En local (sin Docker), se usa la conexión directa a localhost
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:root@localhost:5432/TFG")
+DATABASE_URL = os.getenv(
+    "DATABASE_URL", "postgresql://postgres:root@localhost:5432/TFG"
+)
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

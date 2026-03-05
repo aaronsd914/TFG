@@ -6,6 +6,7 @@ from backend.app.database import get_db
 
 router = APIRouter()
 
+
 @router.post("/clientes/post", response_model=Cliente)
 def crear_cliente(payload: ClienteCreate, db: Session = Depends(get_db)):
     """
@@ -32,9 +33,11 @@ def crear_cliente(payload: ClienteCreate, db: Session = Depends(get_db)):
     db.refresh(nuevo)
     return nuevo
 
+
 @router.get("/clientes/get", response_model=List[Cliente])
 def obtener_clientes(db: Session = Depends(get_db)):
     return db.query(ClienteDB).all()
+
 
 @router.get("/clientes/get/{cliente_id}", response_model=Cliente)
 def obtener_cliente(cliente_id: int, db: Session = Depends(get_db)):
@@ -43,8 +46,11 @@ def obtener_cliente(cliente_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
     return cliente
 
+
 @router.put("/clientes/put/{cliente_id}", response_model=Cliente)
-def actualizar_cliente(cliente_id: int, payload: ClienteCreate, db: Session = Depends(get_db)):
+def actualizar_cliente(
+    cliente_id: int, payload: ClienteCreate, db: Session = Depends(get_db)
+):
     """Sobreescribe todos los campos del cliente con los datos recibidos."""
     cliente_db = db.query(ClienteDB).filter(ClienteDB.id == cliente_id).first()
     if cliente_db is None:
@@ -54,6 +60,7 @@ def actualizar_cliente(cliente_id: int, payload: ClienteCreate, db: Session = De
     db.commit()
     db.refresh(cliente_db)
     return cliente_db
+
 
 @router.delete("/clientes/delete/{cliente_id}")
 def eliminar_cliente(cliente_id: int, db: Session = Depends(get_db)):

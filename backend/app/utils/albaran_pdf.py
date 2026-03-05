@@ -56,7 +56,9 @@ def _build_header_footer(canvas, doc, tienda_nombre: str, right_text: str):
     # Línea del header
     canvas.setStrokeColor(colors.HexColor("#E5E7EB"))
     canvas.setLineWidth(1)
-    canvas.line(doc.leftMargin, header_y - 8, doc.pagesize[0] - doc.rightMargin, header_y - 8)
+    canvas.line(
+        doc.leftMargin, header_y - 8, doc.pagesize[0] - doc.rightMargin, header_y - 8
+    )
 
     # Texto header (izq: tienda)
     canvas.setFillColor(colors.HexColor("#111827"))
@@ -71,11 +73,18 @@ def _build_header_footer(canvas, doc, tienda_nombre: str, right_text: str):
     # Footer
     canvas.setStrokeColor(colors.HexColor("#E5E7EB"))
     canvas.setLineWidth(1)
-    canvas.line(doc.leftMargin, doc.bottomMargin - 8, doc.pagesize[0] - doc.rightMargin, doc.bottomMargin - 8)
+    canvas.line(
+        doc.leftMargin,
+        doc.bottomMargin - 8,
+        doc.pagesize[0] - doc.rightMargin,
+        doc.bottomMargin - 8,
+    )
 
     canvas.setFillColor(colors.HexColor("#6B7280"))
     canvas.setFont("Helvetica", 8)
-    canvas.drawString(doc.leftMargin, doc.bottomMargin - 18, "Documento generado automáticamente.")
+    canvas.drawString(
+        doc.leftMargin, doc.bottomMargin - 18, "Documento generado automáticamente."
+    )
     canvas.drawRightString(
         doc.pagesize[0] - doc.rightMargin,
         doc.bottomMargin - 18,
@@ -101,7 +110,7 @@ def generar_pdf_albaran(albaran, cliente, lineas_con_nombre):
         pagesize=A4,
         leftMargin=18 * mm,
         rightMargin=18 * mm,
-        topMargin=26 * mm,     # antes 18mm
+        topMargin=26 * mm,  # antes 18mm
         bottomMargin=18 * mm,
         title=f"Albarán {getattr(albaran, 'id', '')}",
         author="Tienda",
@@ -270,7 +279,12 @@ def generar_pdf_albaran(albaran, cliente, lineas_con_nombre):
             ]
         )
 
-    col_widths = [doc.width * 0.52, doc.width * 0.16, doc.width * 0.16, doc.width * 0.16]
+    col_widths = [
+        doc.width * 0.52,
+        doc.width * 0.16,
+        doc.width * 0.16,
+        doc.width * 0.16,
+    ]
     tbl = Table(data, colWidths=col_widths, repeatRows=1)
     table_style = [
         ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#F3F4F6")),
@@ -286,7 +300,9 @@ def generar_pdf_albaran(albaran, cliente, lineas_con_nombre):
     ]
     for r in range(1, len(data)):
         if r % 2 == 0:
-            table_style.append(("BACKGROUND", (0, r), (-1, r), colors.HexColor("#FAFAFA")))
+            table_style.append(
+                ("BACKGROUND", (0, r), (-1, r), colors.HexColor("#FAFAFA"))
+            )
     tbl.setStyle(TableStyle(table_style))
 
     story.append(tbl)
@@ -294,7 +310,12 @@ def generar_pdf_albaran(albaran, cliente, lineas_con_nombre):
 
     # Total final
     total_tbl = Table(
-        [[Paragraph("TOTAL", styles["Label"]), Paragraph(f"<b>{eur(total)}</b>", styles["Body"])]],
+        [
+            [
+                Paragraph("TOTAL", styles["Label"]),
+                Paragraph(f"<b>{eur(total)}</b>", styles["Body"]),
+            ]
+        ],
         colWidths=[doc.width * 0.80, doc.width * 0.20],
     )
     total_tbl.setStyle(
@@ -315,7 +336,10 @@ def generar_pdf_albaran(albaran, cliente, lineas_con_nombre):
     if descripcion:
         story.append(Spacer(1, 10))
         obs_tbl = Table(
-            [[Paragraph("<b>Observaciones</b>", styles["Body"])], [Paragraph(descripcion, styles["Body"])]],
+            [
+                [Paragraph("<b>Observaciones</b>", styles["Body"])],
+                [Paragraph(descripcion, styles["Body"])],
+            ],
             colWidths=[doc.width],
         )
         obs_tbl.setStyle(
@@ -338,8 +362,12 @@ def generar_pdf_albaran(albaran, cliente, lineas_con_nombre):
 
     doc.build(
         story,
-        onFirstPage=lambda canv, d: _build_header_footer(canv, d, tienda_nombre, right_text),
-        onLaterPages=lambda canv, d: _build_header_footer(canv, d, tienda_nombre, right_text),
+        onFirstPage=lambda canv, d: _build_header_footer(
+            canv, d, tienda_nombre, right_text
+        ),
+        onLaterPages=lambda canv, d: _build_header_footer(
+            canv, d, tienda_nombre, right_text
+        ),
     )
 
     pdf = buffer.getvalue()

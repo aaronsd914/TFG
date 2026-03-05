@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 from backend.app.database import Base
 from pydantic import BaseModel
 
+
 class ProductoDB(Base):
     __tablename__ = "productos"
 
@@ -15,6 +16,7 @@ class ProductoDB(Base):
     proveedor_id = Column(Integer, ForeignKey("proveedores.id"), nullable=False)
     proveedor = relationship("ProveedorDB", back_populates="productos")
 
+
 class Producto(BaseModel):
     id: int
     nombre: str
@@ -24,6 +26,7 @@ class Producto(BaseModel):
 
     class Config:
         from_attributes = True
+
 
 class ProductoCreate(BaseModel):
     nombre: str

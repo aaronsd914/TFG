@@ -4,6 +4,7 @@ from backend.app.database import Base
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 
+
 # Modelo SQLAlchemy (tabla en la BBDD)
 class ClienteDB(Base):
     __tablename__ = "clientes"
@@ -13,7 +14,9 @@ class ClienteDB(Base):
     # Identificación
     nombre = Column(String, index=True, nullable=False)
     apellidos = Column(String, index=True, nullable=False)
-    dni = Column(String, index=True, unique=True, nullable=True)  # puede ser null, pero si viene debe ser único
+    dni = Column(
+        String, index=True, unique=True, nullable=True
+    )  # puede ser null, pero si viene debe ser único
 
     # Contacto
     email = Column(String, index=True, nullable=True)
@@ -22,12 +25,17 @@ class ClienteDB(Base):
 
     # Dirección
     calle = Column(String, nullable=True)
-    numero_vivienda = Column(String, nullable=True)  # string para soportar 12B, s/n, etc.
-    piso_portal = Column(String, nullable=True)      # opcional (ej. "2A")
+    numero_vivienda = Column(
+        String, nullable=True
+    )  # string para soportar 12B, s/n, etc.
+    piso_portal = Column(String, nullable=True)  # opcional (ej. "2A")
     ciudad = Column(String, index=True, nullable=True)
     codigo_postal = Column(String, index=True, nullable=True)
 
-    albaranes = relationship("AlbaranDB", back_populates="cliente", cascade="all, delete")
+    albaranes = relationship(
+        "AlbaranDB", back_populates="cliente", cascade="all, delete"
+    )
+
 
 # ----------------- Pydantic -----------------
 class Cliente(BaseModel):
@@ -46,6 +54,7 @@ class Cliente(BaseModel):
 
     class Config:
         from_attributes = True
+
 
 class ClienteCreate(BaseModel):
     # Para crear/actualizar (desde formularios)

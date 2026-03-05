@@ -117,7 +117,9 @@ def confirm_checkout(payload: ConfirmIn, db: Session = Depends(get_db)):
         raise HTTPException(400, "session_id requerido")
 
     # idempotencia
-    already = db.query(StripeCheckoutDB).filter(StripeCheckoutDB.session_id == sid).first()
+    already = (
+        db.query(StripeCheckoutDB).filter(StripeCheckoutDB.session_id == sid).first()
+    )
     if already:
         return {
             "ok": True,
@@ -137,9 +139,14 @@ def confirm_checkout(payload: ConfirmIn, db: Session = Depends(get_db)):
     payment_status = getattr(session, "payment_status", None) or (
         session.get("payment_status") if isinstance(session, dict) else None
     )
-    status = getattr(session, "status", None) or (session.get("status") if isinstance(session, dict) else None)
+    status = getattr(session, "status", None) or (
+        session.get("status") if isinstance(session, dict) else None
+    )
     if payment_status != "paid":
-        raise HTTPException(400, f"La sesión no está pagada (payment_status={payment_status}, status={status})")
+        raise HTTPException(
+            400,
+            f"La sesión no está pagada (payment_status={payment_status}, status={status})",
+        )
 
     amount_total = getattr(session, "amount_total", None) or (
         session.get("amount_total") if isinstance(session, dict) else 0
@@ -149,13 +156,25 @@ def confirm_checkout(payload: ConfirmIn, db: Session = Depends(get_db)):
         or (session.get("currency") if isinstance(session, dict) else STRIPE_CURRENCY)
         or STRIPE_CURRENCY
     ).lower()
-    meta = getattr(session, "metadata", None) or (session.get("metadata") if isinstance(session, dict) else {}) or {}
+    meta = (
+        getattr(session, "metadata", None)
+        or (session.get("metadata") if isinstance(session, dict) else {})
+        or {}
+    )
     desc = meta.get("description") or "Cobro"
-    pi = getattr(session, "payment_intent", None) or (session.get("payment_intent") if isinstance(session, dict) else None)
+    pi = getattr(session, "payment_intent", None) or (
+        session.get("payment_intent") if isinstance(session, dict) else None
+    )
 
     # Fecha del cobro = fecha creación sesión (o hoy si no viene)
-    created_ts = getattr(session, "created", None) or (session.get("created") if isinstance(session, dict) else None)
-    fecha = datetime.utcfromtimestamp(created_ts).date() if created_ts else datetime.utcnow().date()
+    created_ts = getattr(session, "created", None) or (
+        session.get("created") if isinstance(session, dict) else None
+    )
+    fecha = (
+        datetime.utcfromtimestamp(created_ts).date()
+        if created_ts
+        else datetime.utcnow().date()
+    )
 
     amount_eur = round(float(amount_total or 0) / 100.0, 2)
     concepto = f"Cobro Stripe · {desc} · {sid}"

@@ -6,9 +6,12 @@ import logging
 import time
 from backend.app.bank_settings import (
     DEMO,
-    HUB_OAUTH_BASE, HUB_API_BASE,
-    CAIXA_CLIENT_ID, CAIXA_CLIENT_SECRET,
-    CAIXA_REDIRECT_URI, ASPSP_CODE,
+    HUB_OAUTH_BASE,
+    HUB_API_BASE,
+    CAIXA_CLIENT_ID,
+    CAIXA_CLIENT_SECRET,
+    CAIXA_REDIRECT_URI,
+    ASPSP_CODE,
     REQUEST_TIMEOUT,
 )
 
@@ -18,8 +21,10 @@ log = logging.getLogger("bank")
 # Token global en memoria (solo demo/sandbox)
 _TOKEN = None
 
+
 def _xid():
     return str(uuid.uuid4())
+
 
 # ===== Debug & Estado =====
 @router.get("/_debug")
@@ -32,6 +37,7 @@ def debug():
         "token": bool(_TOKEN),
     }
 
+
 @router.get("/status")
 def status():
     return {
@@ -39,6 +45,7 @@ def status():
         "demo": DEMO,
         "token_expires_in": _TOKEN.get("expires_in") if _TOKEN else None,
     }
+
 
 # ===== Flujo de enlace (consent + redirect) =====
 @router.post("/link")
@@ -72,13 +79,15 @@ def link_start(request: Request):
 
     last = None
     for i in range(3):
-        r = requests.post(consent_url, json=consent_body, headers=headers, timeout=REQUEST_TIMEOUT)
+        r = requests.post(
+            consent_url, json=consent_body, headers=headers, timeout=REQUEST_TIMEOUT
+        )
         last = r
         if r.status_code in (200, 201):
             break
         if 500 <= r.status_code < 600:
-            log.warning("Consent %s (intento %s): %s", r.status_code, i+1, r.text)
-            time.sleep(0.8 * (i+1))
+            log.warning("Consent %s (intento %s): %s", r.status_code, i + 1, r.text)
+            time.sleep(0.8 * (i + 1))
 
     if last.status_code not in (200, 201):
         log.error("Consent error %s: %s", last.status_code, last.text)
@@ -96,6 +105,7 @@ def link_start(request: Request):
     )
 
     return {"redirect_url": auth_url}
+
 
 # ===== Callback OAuth2 =====
 @router.get("/callback")
@@ -125,6 +135,7 @@ def link_callback(code: str = None, error: str = None):
 
     _TOKEN = r.json()
     return {"linked": True, "token": _TOKEN}
+
 
 # ===== Ejemplo: cuentas =====
 @router.get("/accounts")

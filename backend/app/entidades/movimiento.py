@@ -9,6 +9,7 @@ from typing import Literal
 # EGRESO  -> "Egreso"
 OneWordTipo = Literal["INGRESO", "EGRESO"]
 
+
 class MovimientoDB(Base):
     __tablename__ = "movimientos"
 
@@ -17,6 +18,7 @@ class MovimientoDB(Base):
     concepto = Column(String)
     cantidad = Column(Float)
     tipo = Column(String, nullable=False, default="INGRESO")
+
 
 class Movimiento(BaseModel):
     id: int
@@ -27,6 +29,7 @@ class Movimiento(BaseModel):
 
     class Config:
         from_attributes = True
+
 
 class MovimientoCreate(BaseModel):
     fecha: date

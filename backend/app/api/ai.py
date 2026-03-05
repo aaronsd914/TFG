@@ -104,8 +104,20 @@ def _metrics_for_llm(metrics: Dict[str, Any]) -> Dict[str, Any]:
 
 def default_charts(metrics: Dict[str, Any]) -> List[Dict[str, Any]]:
     return [
-        {"type": "line", "title": "Ingresos por día", "xKey": "date", "yKey": "revenue", "data": metrics.get("sales_by_day", [])},
-        {"type": "bar", "title": "Top productos por facturación", "xKey": "name", "yKey": "revenue", "data": metrics.get("top_products", [])},
+        {
+            "type": "line",
+            "title": "Ingresos por día",
+            "xKey": "date",
+            "yKey": "revenue",
+            "data": metrics.get("sales_by_day", []),
+        },
+        {
+            "type": "bar",
+            "title": "Top productos por facturación",
+            "xKey": "name",
+            "yKey": "revenue",
+            "data": metrics.get("top_products", []),
+        },
     ]
 
 
@@ -132,12 +144,14 @@ def build_metrics(db: Session, dfrom: date, dto: date) -> Dict[str, Any]:
     }
 
 
-def call_llm_ask(question: str, metrics_full: Dict[str, Any]) -> tuple[str, List[Dict[str, Any]]]:
+def call_llm_ask(
+    question: str, metrics_full: Dict[str, Any]
+) -> tuple[str, List[Dict[str, Any]]]:
     metrics_small = _metrics_for_llm(metrics_full)
 
     system_msg = (
         "Eres analista de datos retail de una tienda de muebles. Responde en español, claro y accionable. "
-        "Si propones un gráfico, devuelve SOLO JSON estricto válido: {\"charts\":[...]} "
+        'Si propones un gráfico, devuelve SOLO JSON estricto válido: {"charts":[...]} '
         "y usa números con punto decimal, sin separador de miles."
     )
 
@@ -148,7 +162,10 @@ def call_llm_ask(question: str, metrics_full: Dict[str, Any]) -> tuple[str, List
     )
 
     answer = groq_chat(
-        [{"role": "system", "content": system_msg}, {"role": "user", "content": user_msg}],
+        [
+            {"role": "system", "content": system_msg},
+            {"role": "user", "content": user_msg},
+        ],
         temperature=0.2,
     )
 
@@ -166,8 +183,12 @@ def call_llm_ask(question: str, metrics_full: Dict[str, Any]) -> tuple[str, List
             pass
         return text
 
-    answer = re.sub(r"(\{\s*\"charts\"\s*:\s*\[.*?\]\s*\})", extract_charts, answer, flags=re.S)
-    answer = re.sub(r"```json\s*(.*?)\s*```", lambda m: extract_charts(m), answer, flags=re.S)
+    answer = re.sub(
+        r"(\{\s*\"charts\"\s*:\s*\[.*?\]\s*\})", extract_charts, answer, flags=re.S
+    )
+    answer = re.sub(
+        r"```json\s*(.*?)\s*```", lambda m: extract_charts(m), answer, flags=re.S
+    )
     answer = re.sub(r"\n\s*\n", "\n\n", answer).strip()
 
     return answer, charts
@@ -202,7 +223,12 @@ def chat(payload: ChatPayload, db: Session = Depends(get_db)):
 
         avg = m.get("averages", {})
         top = (m.get("top_products") or [])[:5]
-        top_txt = ", ".join([f"{t.get('name')} ({float(t.get('revenue') or 0):.2f}€)" for t in top]) or "—"
+        top_txt = (
+            ", ".join(
+                [f"{t.get('name')} ({float(t.get('revenue') or 0):.2f}€)" for t in top]
+            )
+            or "—"
+        )
         ctx = (
             "Contexto Tendencias (tienda de muebles):\n"
             f"- Rango: {m['range']['from']} → {m['range']['to']}\n"

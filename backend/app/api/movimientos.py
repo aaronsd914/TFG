@@ -6,6 +6,7 @@ from backend.app.database import get_db
 
 router = APIRouter()
 
+
 @router.post("/movimientos/post", response_model=Movimiento)
 def crear_movimiento(movimiento: MovimientoCreate, db: Session = Depends(get_db)):
     nuevo = MovimientoDB(**movimiento.model_dump())
@@ -13,6 +14,7 @@ def crear_movimiento(movimiento: MovimientoCreate, db: Session = Depends(get_db)
     db.commit()
     db.refresh(nuevo)
     return nuevo
+
 
 @router.get("/movimientos/get", response_model=List[Movimiento])
 def obtener_movimientos(db: Session = Depends(get_db)):
@@ -22,6 +24,7 @@ def obtener_movimientos(db: Session = Depends(get_db)):
         .all()
     )
 
+
 @router.get("/movimientos/get/{movimiento_id}", response_model=Movimiento)
 def obtener_movimiento(movimiento_id: int, db: Session = Depends(get_db)):
     movimiento = db.query(MovimientoDB).filter(MovimientoDB.id == movimiento_id).first()
@@ -29,8 +32,11 @@ def obtener_movimiento(movimiento_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Movimiento no encontrado")
     return movimiento
 
+
 @router.put("/movimientos/put/{movimiento_id}", response_model=Movimiento)
-def actualizar_movimiento(movimiento_id: int, actualizado: MovimientoCreate, db: Session = Depends(get_db)):
+def actualizar_movimiento(
+    movimiento_id: int, actualizado: MovimientoCreate, db: Session = Depends(get_db)
+):
     movimiento = db.query(MovimientoDB).filter(MovimientoDB.id == movimiento_id).first()
     if not movimiento:
         raise HTTPException(status_code=404, detail="Movimiento no encontrado")
@@ -39,6 +45,7 @@ def actualizar_movimiento(movimiento_id: int, actualizado: MovimientoCreate, db:
     db.commit()
     db.refresh(movimiento)
     return movimiento
+
 
 @router.delete("/movimientos/delete/{movimiento_id}")
 def eliminar_movimiento(movimiento_id: int, db: Session = Depends(get_db)):
