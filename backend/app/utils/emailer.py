@@ -1,4 +1,5 @@
 # backend/app/utils/emailer.py
+import base64
 import logging
 import smtplib
 import ssl
@@ -16,6 +17,8 @@ from backend.app.settings_email import (
     EMAIL_PASSWORD,
     EMAIL_FROM,
     EMAIL_SENDER_NAME,
+    RESEND_API_KEY,
+    RESEND_FROM,
 )
 
 log = logging.getLogger("emailer")
@@ -84,26 +87,62 @@ def send_email_with_pdf(
     else:
         log.warning("[emailer] pdf_bytes es None: se enviará sin adjunto")
 
-    context = ssl.create_default_context()
+    if RESEND_API_KEY:
+        _send_via_resend(to_email, subject, html_body, pdf_bytes, pdf_filename)
+    else:
+        _send_via_smtp(msg, to_email)
+
+
+def _send_via_resend(
+    to_email: str, subject: str, html_body: str, pdf_bytes: bytes, pdf_filename: str
+):
+    """Envía usando la API HTTP de Resend (no usa SMTP — funciona en Railway)."""
+    try:
+        import resend  # type: ignore
+    except ImportError:
+        log.error("[emailer] Paquete 'resend' no instalado. Ejecuta: pip install resend")
+        raise
+
+    resend.api_key = RESEND_API_KEY
+    from_addr = RESEND_FROM or "onboarding@resend.dev"
+
+    params: dict = {
+        "from": f"{EMAIL_SENDER_NAME} <{from_addr}>",
+        "to": [to_email],
+        "subject": subject,
+        "html": html_body,
+    }
+
+    if pdf_bytes:
+        params["attachments"] = [
+            {
+                "filename": pdf_filename,
+                "content": base64.b64encode(pdf_bytes).decode(),
+            }
+        ]
 
     try:
-        with smtplib.SMTP(EMAIL_HOST, EMAIL_PORT, timeout=30) as smtp:
-            # En producción suele ser mejor NO imprimir el diálogo SMTP
-            # (si quieres, puedes activarlo vía logging config)
-            # smtp.set_debuglevel(1)
+        response = resend.Emails.send(params)
+        log.info("[emailer] Email enviado via Resend a %s (id=%s)", to_email, response.get("id"))
+    except Exception as e:
+        log.exception("[emailer] Error enviando el email via Resend: %s", e)
+        raise
 
+
+def _send_via_smtp(msg: MIMEMultipart, to_email: str):
+    """Envía usando SMTP (Gmail por defecto). Para desarrollo local."""
+    context = ssl.create_default_context()
+    try:
+        with smtplib.SMTP(EMAIL_HOST, EMAIL_PORT, timeout=30) as smtp:
             log.info("[emailer] Conectando a SMTP...")
             smtp.ehlo()
             smtp.starttls(context=context)
             smtp.ehlo()
-
             log.info("[emailer] TLS OK. Autenticando como %s ...", EMAIL_USER)
             smtp.login(EMAIL_USER, EMAIL_PASSWORD)
-
             log.info("[emailer] Enviando mensaje...")
             smtp.send_message(msg)
-
             log.info("[emailer] Email enviado correctamente a %s", to_email)
     except Exception as e:
-        log.exception("[emailer] Error enviando el email: %s", e)
+        log.exception("[emailer] Error enviando el email via SMTP: %s", e)
         raise

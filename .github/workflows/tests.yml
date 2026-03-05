@@ -53,6 +53,8 @@ jobs:
           echo "EMAIL_PASSWORD=''" >> backend/app/settings_email.py
           echo "EMAIL_FROM='test@test.com'" >> backend/app/settings_email.py
           echo "EMAIL_SENDER_NAME='Test'" >> backend/app/settings_email.py
+          echo "RESEND_API_KEY=''" >> backend/app/settings_email.py
+          echo "RESEND_FROM=''" >> backend/app/settings_email.py
           
           echo "GROQ_API_KEY=''" > backend/app/ia_settings.py
           echo "GROQ_BASE_URL=''" >> backend/app/ia_settings.py
