@@ -12,6 +12,7 @@ import ProductosPage from './components/ProductosPage.jsx';
 import BancoPage from './components/BancoPage.jsx';
 import TransportePage from './components/TransportePage.jsx';
 import MovimientosPage from './components/MovimientosPage.jsx';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import './index.css';
 
 const router = createBrowserRouter([
@@ -50,5 +51,6 @@ createRoot(document.getElementById('root')).render(
       }}
     />
       <RouterProvider router={router} />
+      <SpeedInsights />
   </StrictMode>
 );
