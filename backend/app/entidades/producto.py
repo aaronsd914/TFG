@@ -2,7 +2,6 @@ from sqlalchemy import Column, Integer, String, Float, ForeignKey
 from sqlalchemy.orm import relationship
 from backend.app.database import Base
 from pydantic import BaseModel
-from typing import Optional
 
 class ProductoDB(Base):
     __tablename__ = "productos"

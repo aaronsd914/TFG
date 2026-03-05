@@ -5,7 +5,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
 from datetime import date, datetime, timedelta
 from typing import Optional, Dict, Any, Tuple
-import json, logging
+import json
+import logging
 
 from backend.app.database import get_db
 from backend.app.entidades.albaran import AlbaranDB

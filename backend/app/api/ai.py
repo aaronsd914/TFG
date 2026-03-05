@@ -4,7 +4,9 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from typing import Optional, Dict, Any, List, Literal
 from datetime import date, datetime
-import json, re, logging
+import json
+import re
+import logging
 
 from backend.app.database import get_db
 from backend.app.api.analytics import (

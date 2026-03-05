@@ -2,7 +2,6 @@ from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
 from backend.app.database import Base
 from pydantic import BaseModel
-from typing import List
 
 class ProveedorDB(Base):
     __tablename__ = "proveedores"

@@ -16,7 +16,7 @@ from backend.app.utils.albaran_pdf import generar_pdf_albaran
 from backend.app.utils.templates import render
 
 from pydantic import BaseModel
-from datetime import date, datetime
+from datetime import date
 import logging
 
 router = APIRouter()
@@ -50,11 +50,13 @@ def _send_albaran_email_task(albaran_id: int):
         log.info("[email] Preparando envío para albarán #%s", albaran_id)
         albaran = db.query(AlbaranDB).filter(AlbaranDB.id == albaran_id).first()
         if not albaran:
-            log.warning("[email] Albarán %s no existe", albaran_id); return
+            log.warning("[email] Albarán %s no existe", albaran_id)
+            return
 
         cliente = db.query(ClienteDB).filter(ClienteDB.id == albaran.cliente_id).first()
         if not cliente or not cliente.email:
-            log.warning("[email] Cliente inexistente o sin email para albarán %s", albaran_id); return
+            log.warning("[email] Cliente inexistente o sin email para albarán %s", albaran_id)
+            return
 
         lineas = db.query(LineaAlbaranDB).filter(LineaAlbaranDB.albaran_id == albaran.id).all()
         prods = {}
@@ -134,7 +136,8 @@ def crear_albaran(
             cliente_id = c.id
         else:
             c = ClienteDB(**payload.cliente.model_dump())
-            db.add(c); db.flush()
+            db.add(c)
+            db.flush()
             cliente_id = c.id
     else:
         raise HTTPException(400, "Debes indicar cliente_id o datos de cliente")
@@ -147,7 +150,8 @@ def crear_albaran(
         total=0.0,
         estado=payload.estado or "FIANZA",
     )
-    db.add(albaran); db.flush()
+    db.add(albaran)
+    db.flush()
 
     # 3) Líneas + total
     total = 0.0

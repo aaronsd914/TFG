@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, UniqueConstraint
+from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
 from backend.app.database import Base
 from pydantic import BaseModel, EmailStr
