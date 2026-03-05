@@ -100,7 +100,9 @@ def _send_via_resend(
     try:
         import resend  # type: ignore
     except ImportError:
-        log.error("[emailer] Paquete 'resend' no instalado. Ejecuta: pip install resend")
+        log.error(
+            "[emailer] Paquete 'resend' no instalado. Ejecuta: pip install resend"
+        )
         raise
 
     resend.api_key = RESEND_API_KEY
@@ -123,7 +125,11 @@ def _send_via_resend(
 
     try:
         response = resend.Emails.send(params)
-        log.info("[emailer] Email enviado via Resend a %s (id=%s)", to_email, response.get("id"))
+        log.info(
+            "[emailer] Email enviado via Resend a %s (id=%s)",
+            to_email,
+            response.get("id"),
+        )
     except Exception as e:
         log.exception("[emailer] Error enviando el email via Resend: %s", e)
         raise
