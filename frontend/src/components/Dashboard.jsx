@@ -26,7 +26,7 @@ export default function Dashboard() {
   const [movs, setMovs] = useState([]);
   const [albaranes, setAlbaranes] = useState([]);
   const [almacen, setAlmacen] = useState([]);
-  const [ruta, setRuta] = useState([]); // se mantiene para métricas/estados, aunque no se muestre sección
+  const [_ruta, setRuta] = useState([]); // se mantiene para métricas/estados, aunque no se muestre sección
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);

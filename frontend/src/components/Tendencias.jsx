@@ -38,7 +38,7 @@ export default function TendenciasPage() {
 
   // --- Comparativa ---
   const [compareEnabled, setCompareEnabled] = useState(false);
-  const [compareLoading, setCompareLoading] = useState(false);
+  const [_compareLoading, setCompareLoading] = useState(false);
   const [compareErr, setCompareErr] = useState(null);
   const [compare, setCompare] = useState(null);
   const compareAbortRef = useRef(null);

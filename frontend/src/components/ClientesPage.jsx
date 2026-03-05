@@ -302,7 +302,7 @@ export default function ClientesPage() {
     try {
       const resCli = await fetch(`${API_URL}clientes/get/${c.id}`);
       setSelected(resCli.ok ? await resCli.json() : c);
-    } catch (e) {
+    } catch {
       setSelected(c);
       // aquí no meto toast: seguimos con fallback y no es un fallo crítico
     }

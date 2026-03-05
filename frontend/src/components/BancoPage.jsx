@@ -27,7 +27,7 @@ export default function BancoPage() {
       const r = await fetch(`${API_URL}stripe/status`);
       const j = await r.json();
       setStripeStatus(j);
-    } catch (e) {
+    } catch {
       setStripeStatus({ configured: false, currency: 'eur' });
     }
   }
