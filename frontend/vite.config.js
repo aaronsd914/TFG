@@ -8,5 +8,12 @@ export default defineConfig({
   resolve: {
     dedupe: ['react', 'react-dom'],
   },
+  test: {
+    globals: true,
+    environment: 'happy-dom',
+    setupFiles: './src/test-setup.js',
+    css: false,
+    include: ['test/**/*.test.{js,jsx}'],
+  },
 })
   

@@ -4,11 +4,15 @@
   "description": "��#\u0000 \u0000T\u0000F\u0000G\u0000\r\u0000 \u0000",
   "main": "index.js",
   "scripts": {
+    "start": "concurrently \"npm run dev --prefix frontend\" \"uvicorn backend.app.main:app --reload\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.13",
     "sileo": "^0.1.4",
