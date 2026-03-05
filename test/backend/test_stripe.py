@@ -1,5 +1,13 @@
 """Tests para /api/stripe — status, checkout, confirm (con mocks), checkouts list."""
+import pytest
 from unittest.mock import MagicMock, patch
+
+
+@pytest.fixture(autouse=True)
+def mock_stripe_secret_key():
+    """Evita que los tests fallen por STRIPE_SECRET_KEY vacía en CI."""
+    with patch("backend.app.api.stripe_payments.STRIPE_SECRET_KEY", "sk_test_fake_ci_key"):
+        yield
 
 
 class TestStripeStatus:
