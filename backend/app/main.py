@@ -40,6 +40,8 @@ app.add_middleware(
         "http://localhost",  # Docker / Nginx (puerto 80)
         "http://localhost:80",
         "http://127.0.0.1",
+        "https://tfg-five-drab.vercel.app",  # Vercel producción
+        "https://tfg-i35kymnah-aaronsd914s-projects.vercel.app",  # Vercel preview
     ],
     allow_credentials=True,
     allow_methods=["*"],
