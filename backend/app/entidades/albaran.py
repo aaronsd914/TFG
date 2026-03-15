@@ -42,7 +42,8 @@ class AlbaranLinea(BaseModel):
     cantidad: int
     precio_unitario: float
 
-    model_config = ConfigDict(from_attributes=True)
+    class Config:
+        from_attributes = True
 
 
 OneWordEstado = Literal["FIANZA", "ALMACEN", "RUTA", "ENTREGADO"]
@@ -57,7 +58,8 @@ class Albaran(BaseModel):
     estado: OneWordEstado
     lineas: List[AlbaranLinea] = []
 
-    model_config = ConfigDict(from_attributes=True)
+    class Config:
+        from_attributes = True
 
 
 # ---- Pydantic (creación) ----

@@ -27,4 +27,4 @@ class StripeCheckoutDB(Base):
     description = Column(String, nullable=True)
     status = Column(String, nullable=False, default="paid")
 
-    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(datetime.UTC))
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)

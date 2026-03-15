@@ -171,9 +171,9 @@ def confirm_checkout(payload: ConfirmIn, db: Session = Depends(get_db)):
         session.get("created") if isinstance(session, dict) else None
     )
     fecha = (
-        datetime.fromtimestamp(created_ts, datetime.UTC).date()
+        datetime.utcfromtimestamp(created_ts).date()
         if created_ts
-        else datetime.now(datetime.UTC).date()
+        else datetime.utcnow().date()
     )
 
     amount_eur = round(float(amount_total or 0) / 100.0, 2)

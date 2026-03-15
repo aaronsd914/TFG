@@ -27,7 +27,8 @@ class Movimiento(BaseModel):
     cantidad: float
     tipo: OneWordTipo
 
-    model_config = ConfigDict(from_attributes=True)
+    class Config:
+        from_attributes = True
 
 
 class MovimientoCreate(BaseModel):

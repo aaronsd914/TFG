@@ -21,7 +21,8 @@ class Proveedor(BaseModel):
     nombre: str
     contacto: str
 
-    model_config = ConfigDict(from_attributes=True)
+    class Config:
+        from_attributes = True
 
 
 class ProveedorCreate(BaseModel):
