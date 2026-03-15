@@ -149,15 +149,40 @@ export default function TransportePage() {
     return m;
   }, [clientes]);
 
-  const almacenFiltrado = useMemo(() => {
+
+  // Filtrado general: almacén, en ruta y camiones
+  const filterAlbaranes = (albaranes) => {
     const q = (search || '').trim().toLowerCase();
-    if (!q) return almacen;
-    return (almacen || []).filter(a => {
+    if (!q) return albaranes;
+    return (albaranes || []).filter(a => {
       const idStr = String(a.id);
       const cli = clienteLabel(clientesMap, a.cliente_id).toLowerCase();
-      return idStr.includes(q) || cli.includes(q);
+      const totalStr = a.total !== undefined ? String(a.total) : '';
+      const fechaStr = a.fecha ? String(a.fecha) : '';
+      // Buscar en id, cliente, total y fecha
+      return (
+        idStr.includes(q) ||
+        cli.includes(q) ||
+        totalStr.includes(q) ||
+        fechaStr.includes(q)
+      );
     });
-  }, [almacen, search, clientesMap]);
+  };
+
+  // Filtrar almacén
+  const almacenFiltrado = useMemo(() => filterAlbaranes(almacen), [almacen, search, clientesMap]);
+  // Filtrar en ruta (sin camión)
+  const pendienteFiltrado = useMemo(() => filterAlbaranes(rutas.sin_camion || []), [rutas, search, clientesMap]);
+  // Filtrar camiones: para cada camión, filtrar sus albaranes
+  const camionesMapFiltrado = useMemo(() => {
+    const m = new Map();
+    (rutas.camiones || []).forEach(c => m.set(Number(c.camion_id), filterAlbaranes(c.albaranes || [])));
+    // También filtrar los camiones extra aunque estén vacíos
+    camionesExtra.forEach(cid => {
+      if (!m.has(cid)) m.set(cid, []);
+    });
+    return m;
+  }, [rutas, search, clientesMap, camionesExtra]);
 
   async function fetchAll() {
     try {
@@ -565,34 +590,26 @@ export default function TransportePage() {
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between gap-3">
           <h1 className="text-2xl font-semibold">Transporte</h1>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCamionesModalOpen(true)}
-              className="px-3 py-2 rounded-xl border border-gray-300 bg-white hover:bg-gray-50"
-              disabled={processing}
-              type="button"
-            >
-              Camiones
-            </button>
-            <button
-              onClick={fetchAll}
-              className="px-3 py-2 rounded-xl border border-gray-300 bg-white hover:bg-gray-50"
-              disabled={processing}
-              type="button"
-            >
-              Actualizar
-            </button>
-          </div>
         </div>
 
         <div className="bg-white border border-gray-200 rounded-2xl p-4">
           <div className="flex flex-col md:flex-row gap-3 md:items-end">
             <div className="flex-1">
-              <div className="text-sm text-gray-600 mb-1">Buscar</div>
+              <div className="text-sm text-gray-600 mb-1 flex items-center justify-between">
+                <span>Buscar</span>
+                <button
+                  onClick={() => setCamionesModalOpen(true)}
+                  className="px-3 py-2 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 ml-2"
+                  disabled={processing}
+                  type="button"
+                >
+                  Camiones
+                </button>
+              </div>
               <input
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="ID o cliente…"
+                placeholder="ID, cliente, total o fecha…"
                 className="w-full border rounded-lg px-3 py-2"
               />
               <div className="text-xs text-gray-500 mt-2">
@@ -654,11 +671,11 @@ export default function TransportePage() {
         >
           <DropZoneHeader
             title="En ruta (pendiente camión)"
-            subtitle={`${(rutas.sin_camion || []).length} pedidos`}
+            subtitle={`${pendienteFiltrado.length} pedidos`}
             isOver={overZone === 'pendiente'}
           />
           <div className="p-4 space-y-3">
-            {(rutas.sin_camion || []).map(a => (
+            {pendienteFiltrado.map(a => (
               <AlbaranCard
                 key={a.id}
                 a={a}
@@ -685,14 +702,14 @@ export default function TransportePage() {
                 </div>
               </AlbaranCard>
             ))}
-            {(rutas.sin_camion || []).length === 0 && <div className="text-sm text-gray-600">Nada por asignar.</div>}
+            {pendienteFiltrado.length === 0 && <div className="text-sm text-gray-600">Nada por asignar.</div>}
           </div>
         </div>
 
         {/* CAMIONES */}
         {allCamiones.map((cid) => {
           const zoneKey = `camion:${cid}`;
-          const albs = camionesMap.get(cid) || [];
+          const albs = camionesMapFiltrado.get(cid) || [];
           const puedeQuitar = albs.length === 0;
           const st = camionStyle(cid, albs);
 
