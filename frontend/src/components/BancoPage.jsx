@@ -230,8 +230,8 @@ STRIPE_PUBLISHABLE_KEY = "pk_test_..."
           <span className="text-xs text-gray-500">Se registran al volver del pago</span>
         </div>
 
-        <div className="border rounded-xl overflow-auto">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-xl">
+          <table className="min-w-[600px] w-full text-sm">
             <thead className="bg-gray-50">
               <tr className="border-b">
                 <th className="text-left p-2">Fecha</th>

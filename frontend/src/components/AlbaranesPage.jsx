@@ -426,69 +426,71 @@ export default function AlbaranesPage() {
           </div>
         )}
 
-        {/* Tabla */}
-        <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-          <div className="grid grid-cols-12 px-4 py-2 text-sm font-medium text-gray-600 border-b">
-            <div className="col-span-2">ID</div>
-            <div className="col-span-2">Fecha</div>
-            <div className="col-span-3">Cliente</div>
-            <div className="col-span-2">Total</div>
-            <div className="col-span-1">Estado</div>
-            <div className="col-span-2">Descripción</div>
-          </div>
+        {/* Tabla responsive */}
+        <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white">
+          <div className="min-w-[700px]">
+            <div className="grid grid-cols-12 px-4 py-2 text-sm font-medium text-gray-600 border-b">
+              <div className="col-span-2">ID</div>
+              <div className="col-span-2">Fecha</div>
+              <div className="col-span-3">Cliente</div>
+              <div className="col-span-2">Total</div>
+              <div className="col-span-1">Estado</div>
+              <div className="col-span-2">Descripción</div>
+            </div>
 
-          <ul>
-            {loading && <li className="p-6 text-gray-500">Cargando albaranes…</li>}
+            <ul>
+              {loading && <li className="p-6 text-gray-500">Cargando albaranes…</li>}
 
-            {/* ✅ En vez de “notificación” inline con todo el texto, dejamos un aviso suave aquí
-                y el detalle ya va por toast (Sileo). */}
-            {error && (
-              <li className="p-6 text-gray-700">
-                No se pudieron cargar los albaranes.
-                <div className="text-xs text-gray-500 mt-1">{error}</div>
-              </li>
-            )}
-
-            {!loading && !error && filtered.length === 0 && <li className="p-6 text-gray-500">Sin resultados</li>}
-
-            {filtered.map((a) => {
-              const cli = clientesById.get(a.cliente_id);
-              const meta =
-                ESTADO_META[a.estado] || { label: a.estado, className: 'bg-gray-100 text-gray-700 border-gray-300' };
-              return (
-                <li
-                  key={a.id}
-                  className="grid grid-cols-12 px-4 py-3 border-t hover:bg-gray-50 cursor-pointer"
-                  onClick={() => openDetail(a)}
-                >
-                  <div className="col-span-2">#{a.id}</div>
-                  <div className="col-span-2">{formatDate(a.fecha)}</div>
-
-                  <div className="col-span-3">
-                    <div className="font-medium">
-                      {cli?.nombre} {cli?.apellidos}
-                    </div>
-                    <div className="text-xs text-gray-500 truncate">
-                      {cli?.dni ? `${cli.dni} · ` : ''}
-                      {cli?.email}
-                    </div>
-                  </div>
-
-                  <div className="col-span-2">{formatEUR(a.total)}</div>
-
-                  <div className="col-span-1">
-                    <span className={`inline-block border px-2 py-1 rounded-lg text-xs text-center ${meta.className}`}>
-                      {meta.label}
-                    </span>
-                  </div>
-
-                  <div className="col-span-2 truncate" title={a.descripcion || ''}>
-                    {a.descripcion || '—'}
-                  </div>
+              {/* ✅ En vez de “notificación” inline con todo el texto, dejamos un aviso suave aquí
+                  y el detalle ya va por toast (Sileo). */}
+              {error && (
+                <li className="p-6 text-gray-700">
+                  No se pudieron cargar los albaranes.
+                  <div className="text-xs text-gray-500 mt-1">{error}</div>
                 </li>
-              );
-            })}
-          </ul>
+              )}
+
+              {!loading && !error && filtered.length === 0 && <li className="p-6 text-gray-500">Sin resultados</li>}
+
+              {filtered.map((a) => {
+                const cli = clientesById.get(a.cliente_id);
+                const meta =
+                  ESTADO_META[a.estado] || { label: a.estado, className: 'bg-gray-100 text-gray-700 border-gray-300' };
+                return (
+                  <li
+                    key={a.id}
+                    className="grid grid-cols-12 px-4 py-3 border-t hover:bg-gray-50 cursor-pointer"
+                    onClick={() => openDetail(a)}
+                  >
+                    <div className="col-span-2">#{a.id}</div>
+                    <div className="col-span-2">{formatDate(a.fecha)}</div>
+
+                    <div className="col-span-3">
+                      <div className="font-medium">
+                        {cli?.nombre} {cli?.apellidos}
+                      </div>
+                      <div className="text-xs text-gray-500 truncate">
+                        {cli?.dni ? `${cli.dni} · ` : ''}
+                        {cli?.email}
+                      </div>
+                    </div>
+
+                    <div className="col-span-2">{formatEUR(a.total)}</div>
+
+                    <div className="col-span-1">
+                      <span className={`inline-block border px-2 py-1 rounded-lg text-xs text-center ${meta.className}`}>
+                        {meta.label}
+                      </span>
+                    </div>
+
+                    <div className="col-span-2 truncate" title={a.descripcion || ''}>
+                      {a.descripcion || '—'}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
         </div>
 
         {/* Modal filtros */}

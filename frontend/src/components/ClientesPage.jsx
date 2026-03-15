@@ -397,41 +397,43 @@ export default function ClientesPage() {
       )}
 
       {/* Tabla de clientes */}
-      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-        <div className="grid grid-cols-12 px-4 py-2 text-sm font-medium text-gray-600 border-b">
-          <div className="col-span-2">ID</div>
-          <div className="col-span-4">Nombre</div>
-          <div className="col-span-3">DNI</div>
-          <div className="col-span-3">Email</div>
+      <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white mt-4">
+        <div className="min-w-[700px]">
+          <div className="grid grid-cols-12 px-4 py-2 text-sm font-medium text-gray-600 border-b">
+            <div className="col-span-2">ID</div>
+            <div className="col-span-3">Nombre</div>
+            <div className="col-span-3">Email</div>
+            <div className="col-span-2">DNI</div>
+            <div className="col-span-2">Acciones</div>
+          </div>
+
+          <ul>
+            {loading && <li className="p-6 text-gray-500">Cargando clientes…</li>}
+            {error && (
+              <li className="p-6 text-gray-700">
+                No se pudieron cargar los clientes.
+                <div className="text-xs text-gray-500 mt-1">{error}</div>
+              </li>
+            )}
+            {!loading && !error && filtered.length === 0 && <li className="p-6 text-gray-500">Sin resultados</li>}
+            {filtered.map((c) => (
+              <li
+                key={c.id}
+                className="grid grid-cols-12 px-4 py-3 border-t hover:bg-gray-50 cursor-pointer"
+                onClick={() => openDetail(c)}
+              >
+                <div className="col-span-2">#{c.id}</div>
+                <div className="col-span-3">{c.nombre} {c.apellidos}</div>
+                <div className="col-span-3">{c.email}</div>
+                <div className="col-span-2">{c.dni}</div>
+                <div className="col-span-2">
+                  <button className="text-blue-600 hover:underline" onClick={(e) => { e.stopPropagation(); openDetail(c); }} type="button">Ver</button>
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
-        <ul>
-          {loading && <li className="p-6 text-gray-500">Cargando clientes…</li>}
-          {error && <li className="p-6 text-red-600">{error}</li>}
-          {!loading && !error && filtered.length === 0 && <li className="p-6 text-gray-500">Sin resultados</li>}
-
-          {filtered.map((c) => (
-            <li
-              key={c.id}
-              className="grid grid-cols-12 px-4 py-3 border-t hover:bg-gray-50 cursor-pointer"
-              onClick={() => openDetail(c)}
-            >
-              <div className="col-span-2">{c.id}</div>
-              <div className="col-span-4">
-                {c.nombre} {c.apellidos || ''}
-              </div>
-              <div className="col-span-3">{c.dni || '—'}</div>
-              <div className="col-span-3 truncate">{c.email || '—'}</div>
-            </li>
-          ))}
-        </ul>
       </div>
-
-      {/* Modal de filtros */}
-      <ModalCenter isOpen={filtersOpen} onClose={() => setFiltersOpen(false)} maxWidth="max-w-lg">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">Filtros</h2>
-          <button onClick={() => setFiltersOpen(false)} className="text-gray-500 hover:text-gray-700" type="button">
-            Cerrar
           </button>
         </div>
 

@@ -687,7 +687,13 @@ function RenderedMessage({ content }) {
           );
         }
         if (b.type === "table") {
-          return <MarkdownTable key={idx} table={b.table} />;
+          return (
+            <div key={idx} className="overflow-x-auto">
+              <div className="min-w-[520px]">
+                <MarkdownTable table={b.table} />
+              </div>
+            </div>
+          );
         }
         return null;
       })}

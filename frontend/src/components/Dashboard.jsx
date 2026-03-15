@@ -471,33 +471,35 @@ export default function Dashboard() {
           <h3 className="text-base font-semibold">Últimos movimientos</h3>
           <a href="/movimientos" className="text-sm text-blue-600 hover:underline">Ver todo</a>
         </div>
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="text-left border-b border-gray-200">
-              <th className="p-2">Fecha</th>
-              <th className="p-2">Tipo</th>
-              <th className="p-2">Descripción</th>
-              <th className="p-2">Monto</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading && (
-              <tr><td colSpan={4} className="p-3 text-sm text-gray-500">Cargando…</td></tr>
-            )}
-            {!loading && ultimosMovs.length === 0 && (
-              <tr><td colSpan={4} className="p-3 text-sm text-gray-500">No hay movimientos.</td></tr>
-            )}
-            {!loading && ultimosMovs.map(m => (
-              <Row
-                key={m.id}
-                fecha={fmtDate(m.fecha)}
-                tipo={m.tipo === 'INGRESO' ? 'Ingreso' : 'Egreso'}
-                desc={m.concepto}
-                monto={eur(m.cantidad)}
-              />
-            ))}
-          </tbody>
-        </table>
+        <div className="overflow-x-auto rounded-xl">
+          <table className="min-w-[600px] w-full border-collapse">
+            <thead>
+              <tr className="text-left border-b border-gray-200">
+                <th className="p-2">Fecha</th>
+                <th className="p-2">Tipo</th>
+                <th className="p-2">Descripción</th>
+                <th className="p-2">Monto</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading && (
+                <tr><td colSpan={4} className="p-3 text-sm text-gray-500">Cargando…</td></tr>
+              )}
+              {!loading && ultimosMovs.length === 0 && (
+                <tr><td colSpan={4} className="p-3 text-sm text-gray-500">No hay movimientos.</td></tr>
+              )}
+              {!loading && ultimosMovs.map(m => (
+                <Row
+                  key={m.id}
+                  fecha={fmtDate(m.fecha)}
+                  tipo={m.tipo === 'INGRESO' ? 'Ingreso' : 'Egreso'}
+                  desc={m.concepto}
+                  monto={eur(m.cantidad)}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Almacén (ALMACEN) */}
