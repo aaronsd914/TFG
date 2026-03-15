@@ -1,1 +1,8 @@
 @import "tailwindcss";
+
+/* Hide sidebar by default on mobile, show on md+ */
+@media (max-width: 767px) {
+	aside[aria-label="Sidebar"] {
+		box-shadow: 0 4px 24px 0 rgba(0,0,0,0.10);
+	}
+}

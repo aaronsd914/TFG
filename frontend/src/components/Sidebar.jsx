@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 
-export default function Sidebar() {
+export default function Sidebar({ open, setOpen }) {
   const { pathname } = useLocation();
 
   const items = [
@@ -9,14 +9,34 @@ export default function Sidebar() {
     { icon: '👥', label: 'Clientes', to: '/clientes' },
     { icon: '🧾', label: 'Albaranes', to: '/albaranes' },
     { icon: '🚚', label: 'Transporte', to: '/transporte' },
-    { icon: '💳', label: 'Movimientos', to: '/movimientos' }, // NUEVO
+    { icon: '💳', label: 'Movimientos', to: '/movimientos' },
     { icon: '🧰', label: 'Productos', to: '/productos' },
     { icon: '🏦', label: 'Banco', to: '/banco' },
     { icon: '📊', label: 'Tendencias', to: '/tendencias' },
   ];
 
   return (
-    <aside className="w-[220px] bg-[#f5f1e8] p-6 h-[calc(100vh-32px)] m-4 rounded-2xl shadow-md flex flex-col">
+    <aside
+      className={`
+        w-[220px] bg-[#f5f1e8] p-6 h-[calc(100vh-32px)] m-4 rounded-2xl shadow-md flex flex-col
+        fixed top-0 left-0 z-30 transition-transform duration-300
+        md:static md:translate-x-0
+        ${open ? 'translate-x-0' : '-translate-x-full'}
+        md:block
+      `}
+      style={{ maxWidth: 260 }}
+      aria-label="Sidebar"
+    >
+      {/* Close button for mobile */}
+      <button
+        className="md:hidden absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+        onClick={() => setOpen(false)}
+        aria-label="Close sidebar"
+      >
+        <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
       <h2 className="text-xl mb-8 font-semibold">Financias</h2>
       <nav className="flex flex-col gap-2">
         {items.map((item) => {
@@ -27,6 +47,7 @@ export default function Sidebar() {
               to={item.to}
               className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-300
                 ${active ? 'bg-[#e0dcd3] text-black' : 'text-gray-600 hover:bg-[#e0dcd3] hover:text-black'}`}
+              onClick={() => setOpen(false)}
             >
               <span>{item.icon}</span>
               <span>{item.label}</span>
