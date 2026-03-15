@@ -299,7 +299,7 @@ export default function ProductosPage() {
     const arr = Array.from(map.values());
     arr.sort((a, b) => (a.proveedor?.nombre || '').localeCompare(b.proveedor?.nombre || ''));
     return arr;
-  }, [filteredBase, proveedores]);
+  }, [filteredBase, proveedores, provName]);
 
   // ===== GESTIÓN LISTA =====
   const gestionList = useMemo(() => {
@@ -318,7 +318,7 @@ export default function ProductosPage() {
     }
     list.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
     return list;
-  }, [productos, gestionQuery, proveedores]);
+  }, [productos, gestionQuery, proveedores, provName]);
 
   const selectedProduct = useMemo(() => productos.find((p) => p.id === selectedId) || null, [productos, selectedId]);
 

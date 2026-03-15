@@ -210,7 +210,7 @@ export default function TransportePage() {
     }
   }
 
-  useEffect(() => { fetchAll(); }, []);
+  useEffect(() => { fetchAll(); }, [fetchAll]);
 
   async function asignarA(camion_id, albaran_id) {
     setProcessing(true);

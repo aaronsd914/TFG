@@ -52,8 +52,7 @@ class Cliente(BaseModel):
     ciudad: Optional[str] = None
     codigo_postal: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ClienteCreate(BaseModel):
