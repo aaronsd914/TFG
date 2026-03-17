@@ -137,6 +137,7 @@ Nueva bibliografía añadida (SI + Redes + IA):
   (administrador de tienda, vendedor, repartidor) como se hace en DCU.
   Esto enriquece el análisis de requisitos y conecta con IPO T3A.
   Coste: 1 tabla o lista de 3 items.
+
 [SI T7 / Redes T2] — Mencionar HTTPS/TLS en la sección de despliegue:
   Railway inyecta TLS automáticamente, pero la memoria no lo menciona.
   Añadir: "En producción, toda la comunicación se protege con TLS
@@ -354,6 +355,81 @@ Ordenadas de mayor a menor impacto académico y alineadas con temarios:
     Coste estimado: 1 hora (solo configuración, integrar con #1 JWT).
     En la memoria: subsección Seguridad dentro de Backend.
 
+────────────────────────────────────────────────────────────────────────────
+16. ANALIZADORES DE CÓDIGO DE CIBERSEGURIDAD (SAST + SCA en CI/CD)
+    Asignatura: SI T9 (metodologías desarrollo seguro: analizadores estáticos,
+                       OWASP, PMD, FlawFinder, LAPSE, AppScan, Fortify)
+               AIS T1.5 (SCA — Static Code Analysis, calidad del software)
+               SI T5 (OWASP Top 10: inyecciones, fallos criptográficos)
+               IS T2 (RNF de seguridad)
+
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │ HERRAMIENTA  │ ÁMBITO          │ QUÉ DETECTA                        │
+    ├─────────────────────────────────────────────────────────────────────┤
+    │ Bandit       │ Python (SAST)   │ Hardcoded secrets, inyecciones SQL, │
+    │              │                 │ uso de funciones inseguras (eval,   │
+    │              │                 │ pickle, subprocess), crypto débil   │
+    ├─────────────────────────────────────────────────────────────────────┤
+    │ pip-audit    │ Python (SCA)    │ CVEs en dependencias PyPI (compara  │
+    │              │                 │ requirements.txt vs OSV/NVD)        │
+    ├─────────────────────────────────────────────────────────────────────┤
+    │ npm audit    │ JavaScript (SCA)│ CVEs en dependencias npm            │
+    │              │                 │ (ya disponible, solo hay que usarlo)│
+    ├─────────────────────────────────────────────────────────────────────┤
+    │ Trivy        │ Docker images   │ CVEs en imagen base (python:3.12,   │
+    │              │                 │ nginx:alpine) + dependencias OS     │
+    ├─────────────────────────────────────────────────────────────────────┤
+    │ Semgrep      │ Python + JS     │ OWASP Top 10 rules, inyecciones,    │
+    │  (opcional)  │ (SAST multi)    │ XSS, SSRF, lógica insegura          │
+    └─────────────────────────────────────────────────────────────────────┘
+
+    IMPLEMENTACIÓN — añadir al workflow .github/workflows/deploy.yml:
+
+      - name: Security — SAST Python (Bandit)
+        run: pip install bandit && bandit -r backend/ -ll -ii
+
+      - name: Security — SCA Python (pip-audit)
+        run: pip install pip-audit && pip-audit
+
+      - name: Security — SCA JavaScript (npm audit)
+        working-directory: frontend
+        run: npm audit --audit-level=high
+
+      - name: Security — Docker image scan (Trivy)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'nombre-imagen:latest'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+
+    Notas de integración:
+      - Bandit usa severidades: LOW / MEDIUM / HIGH y confianza -l/-ll/-lll.
+        Recomendado: -ll -ii (solo MEDIUM+HIGH con confianza MEDIUM+HIGH)
+        para evitar falsos positivos en el pipeline.
+      - pip-audit tiene modo --fix para actualizar dependencias vulnerables.
+      - Bandit es el equivalente open-source a FlawFinder/LAPSE mencionados
+        en SI T9. AppScan (IBM) y Fortify (HP) son los equivalentes
+        comerciales de nivel enterprise.
+      - Semgrep ofrece reglas gratuitas alineadas con CWE y OWASP Top 10;
+        se puede ejecutar con: semgrep --config=p/owasp-top-ten .
+
+    Por qué es valioso para el TFG:
+      SI T9 detalla explícitamente que "existen analizadores estáticos
+      capaces de detectar las vulnerabilidades más extendidas" (PMD,
+      FlawFinder, LAPSE, CodeSecure, AppScan, Fortify) y que OWASP ofrece
+      una "guía de referencia rápida de prácticas de codificación segura".
+      Integrar Bandit + pip-audit + npm audit en el pipeline de CI es la
+      implementación directa de estas metodologías en un proyecto real,
+      demostrando que la seguridad se verifica de forma automática en
+      cada commit (DevSecOps).
+
+    Coste estimado: 3-4 horas (configurar las 4 herramientas + resolver
+                    los warnings iniciales de Bandit en el código).
+    En la memoria: nueva subsección "Análisis de seguridad en CI/CD" dentro
+                   de la sección de Pruebas o Calidad del código.
+                   Añadir tabla con herramientas y resultados obtenidos.
+                   Citar SI T9 + AIS T1.5 + OWASP \cite{owasp2021}.
+
 
 ╔══════════════════════════════════════════════════════════════════════════╗
 ║               RESUMEN RÁPIDO — POR ESFUERZO                            ║
@@ -370,7 +446,7 @@ BAJO ESFUERZO (< 4 horas, solo texto/config):
   - Rate limiting slowapi                                     [IS T2]
   - Logging estructurado                                      [AIS T1.4]
   - PWA básica (Vite PWA plugin)                              [IPO T2]
-  - Mencionar HTTPS/TLS en despliege (1 párrafo)              [SI T7 / Redes T2]
+  - Mencionar HTTPS/TLS en despliegue (1 párrafo)             [SI T7 / Redes T2]
   - Mencionar metodología OWASP en sección CI/CD              [SI T9]
   - Citar HTTP/1.1 RFC 2616 en sección REST \cite{kurose}     [Redes T2]
   - Vaswani 2017 "Attention Is All You Need" para Transformer  [IA T11]
@@ -382,6 +458,7 @@ MEDIO ESFUERZO (1-2 días):
   - Accesibilidad ARIA básica                                 [IPO T5]
   - HTTPS redirect middleware + HSTS header                   [SI T7]
   - Hash bcrypt/Argon2 cuando se implante auth                [SI T7]
+  - SAST+SCA en CI: Bandit + pip-audit + npm audit + Trivy    [SI T9 / AIS T1.5]
 
 ALTO ESFUERZO (> 2 días, máximo impacto):
   - Autenticación JWT + roles                                 [SD T2 / IS T2]
