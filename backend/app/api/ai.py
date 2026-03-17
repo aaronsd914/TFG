@@ -234,7 +234,8 @@ def chat(payload: ChatPayload, db: Session = Depends(get_db)):
             f"- Rango: {m['range']['from']} → {m['range']['to']}\n"
             f"- Ingresos: {float(avg.get('revenue') or 0):.2f}€ | Pedidos: {int(avg.get('orders') or 0)} | AOV: {float(avg.get('aov') or 0):.2f}€\n"
             f"- Top productos: {top_txt}\n"
-            "Responde en español, claro y accionable."
+            "Responde en español, claro y accionable. "
+            "Usa HTML para formatear la respuesta: <strong>, <ul>, <li>, <ol>, <p>, <br>. No uses Markdown."
         )
         msgs = [{"role": "system", "content": ctx}, *msgs]
 

@@ -44,7 +44,6 @@ export default function TendenciasPage() {
   const compareAbortRef = useRef(null);
 
   // --- Chat ---
-  const [chatMode, setChatMode] = useState("analytics"); // analytics | general
   const [messages, setMessages] = useState(() => [
     {
       id: crypto.randomUUID(),
@@ -250,7 +249,7 @@ export default function TendenciasPage() {
       sileo.show({
         id: toastId,
         state: "loading",
-        title: includeCompare ? "Generando PDF + comparativa…" : "Generando PDF…",
+        title: includeCompare ? "Generando PDF con comparativa…" : "Generando PDF de tendencias…",
         duration: null,
       });
     } catch {}
@@ -316,7 +315,7 @@ export default function TendenciasPage() {
       sileo.show({
         id: toastId,
         state: "loading",
-        title: chatMode === "analytics" ? "IA analizando tendencias…" : "IA respondiendo…",
+        title: "IA respondiendo…",
         duration: null,
       });
     } catch {}
@@ -327,55 +326,32 @@ export default function TendenciasPage() {
     setSending(true);
 
     try {
-      if (chatMode === "analytics") {
-        const res = await fetch(`${API_URL}ai/ask`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            question: text,
-            date_from: range.from || null,
-            date_to: range.to || null,
-          }),
-        });
-        if (!res.ok) throw new Error(`${res.status} ${res.statusText} – ${await res.text()}`);
-        const json = await res.json();
+      const trimmed = (arr) => arr.slice(-12);
+      const chatPayload = {
+        mode: "analytics",
+        temperature: 0.2,
+        date_from: range.from || null,
+        date_to: range.to || null,
+        messages: trimmed(
+          [...messages, userMsg]
+            .filter((x) => x.role === "user" || x.role === "assistant" || x.role === "system")
+            .map((x) => ({ role: x.role, content: x.content }))
+        ),
+      };
 
-        setMessages((m) => [
-          ...m,
-          {
-            id: crypto.randomUUID(),
-            role: "assistant",
-            content: json.answer || "(sin respuesta)",
-          },
-        ]);
-        ok = true;
-      } else {
-        // Chat general con historial
-        const trimmed = (arr) => arr.slice(-12);
-        const payload = {
-          mode: "general",
-          temperature: 0.2,
-          messages: trimmed(
-            [...messages, userMsg]
-              .filter((x) => x.role === "user" || x.role === "assistant" || x.role === "system")
-              .map((x) => ({ role: x.role, content: x.content }))
-          ),
-        };
+      const res = await fetch(`${API_URL}ai/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(chatPayload),
+      });
+      if (!res.ok) throw new Error(`${res.status} ${res.statusText} – ${await res.text()}`);
+      const json = await res.json();
 
-        const res = await fetch(`${API_URL}ai/chat`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        if (!res.ok) throw new Error(`${res.status} ${res.statusText} – ${await res.text()}`);
-        const json = await res.json();
-
-        setMessages((m) => [
-          ...m,
-          { id: crypto.randomUUID(), role: "assistant", content: json.answer || "(sin respuesta)" },
-        ]);
-        ok = true;
-      }
+      setMessages((m) => [
+        ...m,
+        { id: crypto.randomUUID(), role: "assistant", content: json.answer || "(sin respuesta)" },
+      ]);
+      ok = true;
     } catch (e2) {
       setMessages((m) => [
         ...m,
@@ -455,13 +431,13 @@ export default function TendenciasPage() {
               onClick={() => exportPdf(false)}
               className="text-sm px-3 py-2 rounded-2xl border bg-white hover:bg-gray-50"
             >
-              Exportar PDF
+              PDF de tendencias
             </button>
             <button
               onClick={() => exportPdf(true)}
               className="text-sm px-3 py-2 rounded-2xl bg-black text-white hover:opacity-90"
             >
-              PDF + Comparativa
+              PDF con comparativa
             </button>
           </div>
         </div>
@@ -581,7 +557,7 @@ export default function TendenciasPage() {
                 <h3 className="font-semibold mb-2">Informe IA (resumen en pantalla)</h3>
                 <div className="text-sm whitespace-pre-wrap">{aiReport || "(sin informe)"}</div>
                 <div className="text-xs text-gray-500 mt-2">
-                  Para el informe completo “bien detallado”, usa Exportar PDF (el PDF incluye todo lo generado por la IA).
+                  Para el informe completo, usa PDF de tendencias (el PDF incluye todo lo generado por la IA).
                 </div>
               </div>
             </>
@@ -604,15 +580,6 @@ export default function TendenciasPage() {
                 >
                   Reiniciar
                 </button>
-              </div>
-
-              <div className="flex items-center gap-2 mb-3">
-                <Pill active={chatMode === "analytics"} onClick={() => setChatMode("analytics")}>
-                  Modo Tendencias
-                </Pill>
-                <Pill active={chatMode === "general"} onClick={() => setChatMode("general")}>
-                  Modo General
-                </Pill>
               </div>
 
               <div className="rounded-2xl border bg-white p-3 h-[420px] overflow-y-auto">
@@ -640,11 +607,7 @@ export default function TendenciasPage() {
                   <input
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    placeholder={
-                      chatMode === "analytics"
-                        ? "Pregunta sobre las métricas… (comparativas, productos, etc.)"
-                        : "Pregunta cualquier cosa…"
-                    }
+                    placeholder="Pregunta sobre ventas, productos, comparativas…"
                     className="flex-1 border rounded-2xl px-3 py-2 bg-white"
                   />
                   <button
@@ -654,11 +617,7 @@ export default function TendenciasPage() {
                     Enviar
                   </button>
                 </form>
-                <div className="text-xs text-gray-500 mt-2">
-                  {chatMode === "analytics"
-                    ? "Modo Tendencias: la IA responde con el contexto del rango seleccionado."
-                    : "Modo General: conversación libre."}
-                </div>
+                <div className="text-xs text-gray-500 mt-2">La IA responde con el contexto del rango seleccionado.</div>
               </div>
             </div>
           </div>
@@ -671,32 +630,50 @@ export default function TendenciasPage() {
 // ------------------------------
 // Renderizador: texto + tablas + charts (Chart.js)
 // ------------------------------
+
+// Whitelist sanitizer — allows only safe inline/block HTML tags
+function sanitizeHtml(html) {
+  const allowed = new Set(['p', 'br', 'strong', 'b', 'em', 'i', 'ul', 'ol', 'li', 'h3', 'h4', 'h5', 'span']);
+  return String(html || '').replace(/<(\/?)(\w+)([^>]*)>/g, (_m, slash, tag) => {
+    const t = tag.toLowerCase();
+    return allowed.has(t) ? `<${slash}${t}>` : '';
+  });
+}
+
 function RenderedMessage({ content }) {
   const { cleanText, charts } = extractCharts(content);
 
-  const blocks = parseMarkdownTables(cleanText);
+  // If the AI response contains HTML tags, render as sanitized HTML
+  const hasHtml = /<(strong|b|em|i|ul|ol|li|p|h[3-5]|br)\b/i.test(cleanText);
 
   return (
     <div className="space-y-3">
-      {blocks.map((b, idx) => {
-        if (b.type === "text") {
-          return (
-            <div key={idx} className="whitespace-pre-wrap text-sm leading-6">
-              {b.text}
-            </div>
-          );
-        }
-        if (b.type === "table") {
-          return (
-            <div key={idx} className="overflow-x-auto">
-              <div className="min-w-[520px]">
-                <MarkdownTable table={b.table} />
+      {hasHtml ? (
+        <div
+          className="text-sm leading-6 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:my-0.5 [&_strong]:font-semibold [&_b]:font-semibold [&_p]:mb-2"
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(cleanText) }}
+        />
+      ) : (
+        parseMarkdownTables(cleanText).map((b, idx) => {
+          if (b.type === "text") {
+            return (
+              <div key={idx} className="whitespace-pre-wrap text-sm leading-6">
+                {b.text}
               </div>
-            </div>
-          );
-        }
-        return null;
-      })}
+            );
+          }
+          if (b.type === "table") {
+            return (
+              <div key={idx} className="overflow-x-auto">
+                <div className="min-w-[520px]">
+                  <MarkdownTable table={b.table} />
+                </div>
+              </div>
+            );
+          }
+          return null;
+        })
+      )}
 
       {charts.length > 0 && (
         <div className="space-y-3">
