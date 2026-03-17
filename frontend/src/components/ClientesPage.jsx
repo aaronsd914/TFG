@@ -434,6 +434,13 @@ export default function ClientesPage() {
           </ul>
         </div>
       </div>
+
+      {/* Modal de filtros */}
+      <ModalCenter isOpen={filtersOpen} onClose={() => setFiltersOpen(false)} maxWidth="max-w-lg">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">Filtros</h2>
+          <button onClick={() => setFiltersOpen(false)} className="text-gray-500 hover:text-gray-700" type="button">
+            Cerrar
           </button>
         </div>
 
