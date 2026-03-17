@@ -47,27 +47,6 @@ jobs:
       - run: npm test
 
   # ────────────────────────────────────────────────────────────
-  # JOB 2: Deploy del backend en Railway (solo si tests pasan)
-  # ────────────────────────────────────────────────────────────
-  deploy-backend:
-    name: Deploy Backend (Railway)
-    runs-on: ubuntu-latest
-    needs: [backend-tests, frontend-tests]
-
-    steps:
-      - name: Checkout código
-        uses: actions/checkout@v4
-
-      - name: Instalar Railway CLI
-        run: npm install -g @railway/cli@3.22.0
-
-      - name: Deploy en Railway
-        run: railway up --service backend --detach
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
-
-  # ────────────────────────────────────────────────────────────
   # JOB 3: Deploy del frontend en Vercel (solo si tests pasan)
   # ────────────────────────────────────────────────────────────
   deploy-frontend:
