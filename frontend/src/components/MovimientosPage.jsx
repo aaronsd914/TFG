@@ -17,6 +17,20 @@ function formatDate(d) {
   return Number.isNaN(dt.getTime()) ? '—' : dt.toLocaleDateString();
 }
 
+function ModalCenter({ isOpen, onClose, children, maxWidth = 'max-w-lg' }) {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-40">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="absolute inset-0 flex items-center justify-center p-4">
+        <div className={`w-full ${maxWidth} bg-white rounded-2xl shadow-2xl p-6 overflow-y-auto max-h-[90vh]`}>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function MovimientosPage() {
   const [movs, setMovs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -34,6 +48,12 @@ export default function MovimientosPage() {
   const [cantidad, setCantidad] = useState('');
   const [tipo, setTipo] = useState('INGRESO');
   const [posting, setPosting] = useState(false);
+
+  // modal + validation
+  const [formModalOpen, setFormModalOpen] = useState(false);
+  const [fechaErr, setFechaErr] = useState(false);
+  const [conceptoErr, setConceptoErr] = useState(false);
+  const [cantidadErr, setCantidadErr] = useState(false);
 
   async function fetchMovs() {
     try {
@@ -57,11 +77,16 @@ export default function MovimientosPage() {
   async function addMovimiento(e) {
     e.preventDefault();
 
-    if (!fecha || !concepto || !cantidad || !tipo) {
+    let hasErrors = false;
+    if (!fecha) { setFechaErr(true); hasErrors = true; }
+    if (!concepto.trim()) { setConceptoErr(true); hasErrors = true; }
+    if (!cantidad || Number(cantidad) <= 0) { setCantidadErr(true); hasErrors = true; }
+
+    if (hasErrors) {
       try {
         sileo.warning({
           title: 'Campos obligatorios',
-          description: 'Rellena fecha, concepto, cantidad y tipo.',
+          description: 'Rellena todos los campos correctamente.',
         });
       } catch {}
       return;
@@ -87,6 +112,10 @@ export default function MovimientosPage() {
       setConcepto('');
       setCantidad('');
       setTipo('INGRESO');
+      setFechaErr(false);
+      setConceptoErr(false);
+      setCantidadErr(false);
+      setFormModalOpen(false);
     } catch (e) {
       try {
         sileo.error({
@@ -144,7 +173,13 @@ export default function MovimientosPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Movimientos</h1>
-        {/* ✅ Botón de actualizar eliminado */}
+        <button
+          onClick={() => setFormModalOpen(true)}
+          className="px-4 py-2 rounded-xl bg-black text-white hover:opacity-90"
+          type="button"
+        >
+          Añadir movimiento
+        </button>
       </div>
 
       {/* Resumen mensual */}
@@ -169,79 +204,6 @@ export default function MovimientosPage() {
             {formatEUR(resumen.balance)}
           </div>
         </div>
-      </div>
-
-      {/* Alta rápida */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-4">
-        <h2 className="font-semibold mb-3">Añadir movimiento manual</h2>
-
-        <form onSubmit={addMovimiento} className="grid grid-cols-1 md:grid-cols-6 gap-3">
-          <div className="md:col-span-1">
-            <label className="block text-sm text-gray-700 mb-1">
-              Fecha <span className="text-red-600">*</span>
-            </label>
-            <input
-              type="date"
-              value={fecha}
-              onChange={(e) => setFecha(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2"
-              required
-            />
-          </div>
-
-          <div className="md:col-span-3">
-            <label className="block text-sm text-gray-700 mb-1">
-              Concepto <span className="text-red-600">*</span>
-            </label>
-            <input
-              type="text"
-              placeholder="Concepto"
-              value={concepto}
-              onChange={(e) => setConcepto(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2"
-              required
-            />
-          </div>
-
-          <div className="md:col-span-1">
-            <label className="block text-sm text-gray-700 mb-1">
-              Cantidad (€) <span className="text-red-600">*</span>
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              placeholder="Cantidad (€)"
-              value={cantidad}
-              onChange={(e) => setCantidad(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2"
-              required
-            />
-          </div>
-
-          <div className="md:col-span-1">
-            <label className="block text-sm text-gray-700 mb-1">
-              Tipo <span className="text-red-600">*</span>
-            </label>
-            <select
-              value={tipo}
-              onChange={(e) => setTipo(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2"
-              required
-            >
-              <option value="INGRESO">Ingreso</option>
-              <option value="EGRESO">Egreso</option>
-            </select>
-          </div>
-
-          <div className="md:col-span-6">
-            <button
-              disabled={posting}
-              className={`mt-1 px-4 py-2 rounded-xl text-white ${posting ? 'bg-gray-400' : 'bg-black hover:opacity-90'}`}
-            >
-              {posting ? 'Guardando…' : 'Guardar'}
-            </button>
-          </div>
-        </form>
       </div>
 
       {/* Filtros */}
@@ -290,6 +252,96 @@ export default function MovimientosPage() {
           Mostrando <span className="font-medium">{movsFiltrados.length}</span> movimientos.
         </div>
       </div>
+
+      {/* Modal: Añadir movimiento */}
+      <ModalCenter isOpen={formModalOpen} onClose={() => { setFormModalOpen(false); setFechaErr(false); setConceptoErr(false); setCantidadErr(false); }}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">Añadir movimiento</h2>
+          <button onClick={() => setFormModalOpen(false)} className="text-gray-500 hover:text-gray-700" type="button">
+            Cerrar
+          </button>
+        </div>
+
+        <form onSubmit={addMovimiento} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Fecha <span className="text-red-600">*</span>
+            </label>
+            <input
+              type="date"
+              value={fecha}
+              onChange={(e) => { setFecha(e.target.value); setFechaErr(false); }}
+              className={`w-full border rounded-lg px-3 py-2 ${fechaErr ? 'border-red-500 focus:ring-red-300' : ''}`}
+              required
+            />
+            {fechaErr && <p className="text-red-500 text-xs mt-1">La fecha es obligatoria.</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Concepto <span className="text-red-600">*</span>
+            </label>
+            <input
+              type="text"
+              placeholder="Concepto"
+              value={concepto}
+              onChange={(e) => { setConcepto(e.target.value); setConceptoErr(false); }}
+              className={`w-full border rounded-lg px-3 py-2 ${conceptoErr ? 'border-red-500 focus:ring-red-300' : ''}`}
+              required
+            />
+            {conceptoErr && <p className="text-red-500 text-xs mt-1">El concepto es obligatorio.</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Cantidad (€) <span className="text-red-600">*</span>
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              min="0.01"
+              placeholder="0.00"
+              value={cantidad}
+              onChange={(e) => { setCantidad(e.target.value); setCantidadErr(false); }}
+              className={`w-full border rounded-lg px-3 py-2 ${cantidadErr ? 'border-red-500 focus:ring-red-300' : ''}`}
+              required
+            />
+            {cantidadErr && <p className="text-red-500 text-xs mt-1">Introduce una cantidad válida mayor que 0.</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Tipo <span className="text-red-600">*</span>
+            </label>
+            <select
+              value={tipo}
+              onChange={(e) => setTipo(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2"
+              required
+            >
+              <option value="INGRESO">Ingreso</option>
+              <option value="EGRESO">Egreso</option>
+            </select>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => setFormModalOpen(false)}
+              className="px-4 py-2 rounded-xl border border-gray-300 bg-white hover:bg-gray-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={posting}
+              className={`px-4 py-2 rounded-xl text-white ${posting ? 'bg-gray-400' : 'bg-black hover:opacity-90'}`}
+            >
+              {posting ? 'Guardando…' : 'Guardar'}
+            </button>
+          </div>
+        </form>
+      </ModalCenter>
 
       {/* Listado */}
       <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
