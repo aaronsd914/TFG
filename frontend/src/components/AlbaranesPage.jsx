@@ -98,6 +98,7 @@ export default function AlbaranesPage() {
   const [selected, setSelected] = useState(null);
   const [selectedClient, setSelectedClient] = useState(null);
   const [detailError, setDetailError] = useState(null);
+  const [detailTab, setDetailTab] = useState('albaran'); // 'albaran' | 'cliente'
 
   // ✅ ID pendiente para abrir desde Clientes
   const [pendingOpenId, setPendingOpenId] = useState(null);
@@ -202,7 +203,7 @@ export default function AlbaranesPage() {
             (cliente.email || '').toLowerCase().includes(t) ||
             (cliente.dni || '').toLowerCase().includes(t));
 
-        return String(a.id).includes(t) || (a.descripcion || '').toLowerCase().includes(t) || enCliente;
+        return String(a.id).includes(t) || enCliente;
       });
     }
 
@@ -343,6 +344,7 @@ export default function AlbaranesPage() {
     }
 
     setDetailOpen(true);
+    setDetailTab('albaran');
   }
 
   function closeDetail() {
@@ -350,6 +352,7 @@ export default function AlbaranesPage() {
     setSelected(null);
     setSelectedClient(null);
     setDetailError(null);
+    setDetailTab('albaran');
   }
 
   // ✅ Abrir detalle desde ClientesPage si llega ID
@@ -399,7 +402,7 @@ export default function AlbaranesPage() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar por id, descripción, cliente, DNI o email…"
+              placeholder="Buscar por id, cliente, DNI o email…"
               className="w-full rounded-xl border border-gray-300 px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-gray-300"
             />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">⌕</span>
@@ -412,6 +415,34 @@ export default function AlbaranesPage() {
           >
             Filtros
           </button>
+        </div>
+
+        {/* Rango de fechas rápido */}
+        <div className="flex flex-wrap items-center gap-2 mb-3">
+          <span className="text-sm text-gray-500">Fecha:</span>
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="border border-gray-300 rounded-lg px-2 py-1 text-sm"
+          />
+          <span className="text-gray-400">—</span>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="border border-gray-300 rounded-lg px-2 py-1 text-sm"
+          />
+          {(dateFrom || dateTo) && (
+            <button
+              type="button"
+              onClick={() => { setDateFrom(''); setDateTo(''); }}
+              className="text-sm text-gray-500 hover:text-gray-700 px-2"
+              title="Limpiar fechas"
+            >
+              ×
+            </button>
+          )}
         </div>
 
         {/* Chips */}
@@ -432,10 +463,9 @@ export default function AlbaranesPage() {
             <div className="grid grid-cols-12 px-4 py-2 text-sm font-medium text-gray-600 border-b">
               <div className="col-span-2">ID</div>
               <div className="col-span-2">Fecha</div>
-              <div className="col-span-3">Cliente</div>
+              <div className="col-span-4">Cliente</div>
               <div className="col-span-2">Total</div>
-              <div className="col-span-1">Estado</div>
-              <div className="col-span-2">Descripción</div>
+              <div className="col-span-2">Estado</div>
             </div>
 
             <ul>
@@ -465,7 +495,7 @@ export default function AlbaranesPage() {
                     <div className="col-span-2">#{a.id}</div>
                     <div className="col-span-2">{formatDate(a.fecha)}</div>
 
-                    <div className="col-span-3">
+                    <div className="col-span-4">
                       <div className="font-medium">
                         {cli?.nombre} {cli?.apellidos}
                       </div>
@@ -477,14 +507,10 @@ export default function AlbaranesPage() {
 
                     <div className="col-span-2">{formatEUR(a.total)}</div>
 
-                    <div className="col-span-1">
+                    <div className="col-span-2">
                       <span className={`inline-block border px-2 py-1 rounded-lg text-xs text-center ${meta.className}`}>
                         {meta.label}
                       </span>
-                    </div>
-
-                    <div className="col-span-2 truncate" title={a.descripcion || ''}>
-                      {a.descripcion || '—'}
                     </div>
                   </li>
                 );
@@ -639,6 +665,30 @@ export default function AlbaranesPage() {
             <p className="text-gray-500">Cargando…</p>
           ) : (
             <div className="space-y-4">
+              {/* Tabs */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDetailTab('albaran')}
+                  className={`px-4 py-2 rounded-xl border ${
+                    detailTab === 'albaran' ? 'bg-black text-white border-black' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  Albarán
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDetailTab('cliente')}
+                  className={`px-4 py-2 rounded-xl border ${
+                    detailTab === 'cliente' ? 'bg-black text-white border-black' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  Cliente
+                </button>
+              </div>
+
+              {detailTab === 'albaran' && (
+                <>
               {/* cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
@@ -676,66 +726,8 @@ export default function AlbaranesPage() {
               </div>
 
               <div className="bg-white border border-gray-200 rounded-xl p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold">Cliente</h3>
-
-                  {/* ✅ Botón claro */}
-                  {selectedClient?.id && (
-                    <button
-                      type="button"
-                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 active:scale-[0.98] text-sm"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        goToCliente(selectedClient.id);
-                      }}
-                      title="Ver cliente en Clientes"
-                    >
-                      Ver cliente <span aria-hidden="true">→</span>
-                    </button>
-                  )}
-                </div>
-
-                {selectedClient ? (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-                      <div className="text-xs text-gray-500">Nombre</div>
-                      {/* ✅ “pill button” */}
-                      <button
-                        type="button"
-                        className="mt-1 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black text-white hover:bg-gray-800 active:scale-[0.98] text-sm"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          goToCliente(selectedClient.id);
-                        }}
-                        title="Ir a Clientes"
-                      >
-                        {selectedClient.nombre} {selectedClient.apellidos}
-                        <span aria-hidden="true">↗</span>
-                      </button>
-                    </div>
-                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-                      <div className="text-xs text-gray-500">DNI</div>
-                      <div className="font-medium">{selectedClient.dni || '—'}</div>
-                    </div>
-                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-                      <div className="text-xs text-gray-500">Email</div>
-                      <div className="font-medium break-all">{selectedClient.email || '—'}</div>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-gray-500">Cargando cliente…</p>
-                )}
-              </div>
-
-              <div className="bg-white border border-gray-200 rounded-xl p-4">
                 <h3 className="font-semibold mb-3">Líneas</h3>
-
-                {/* Mantengo este inline porque es “feedback de contexto” dentro del modal,
-                   pero el aviso principal ya va por toast también */}
                 {detailError && <p className="text-red-600 mb-2">Error: {detailError}</p>}
-
                 <div className="border rounded-xl overflow-hidden">
                   <table className="w-full border-collapse">
                     <thead>
@@ -768,6 +760,58 @@ export default function AlbaranesPage() {
                   </table>
                 </div>
               </div>
+                </>
+              )}
+
+              {detailTab === 'cliente' && (
+                <div className="bg-white border border-gray-200 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold">Información del cliente</h3>
+                    {selectedClient?.id && (
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-sm"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          goToCliente(selectedClient.id);
+                        }}
+                      >
+                        Ver cliente →
+                      </button>
+                    )}
+                  </div>
+                  {selectedClient ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
+                        <div className="text-xs text-gray-500">Nombre</div>
+                        <div className="font-medium">{selectedClient.nombre} {selectedClient.apellidos}</div>
+                      </div>
+                      <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
+                        <div className="text-xs text-gray-500">DNI</div>
+                        <div className="font-medium">{selectedClient.dni || '—'}</div>
+                      </div>
+                      <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
+                        <div className="text-xs text-gray-500">Email</div>
+                        <div className="font-medium break-all">{selectedClient.email || '—'}</div>
+                      </div>
+                      <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
+                        <div className="text-xs text-gray-500">Teléfono</div>
+                        <div className="font-medium">
+                          {selectedClient.telefono1 || '—'}
+                          {selectedClient.telefono2 ? ` · ${selectedClient.telefono2}` : ''}
+                        </div>
+                      </div>
+                      <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 md:col-span-2">
+                        <div className="text-xs text-gray-500">Ciudad</div>
+                        <div className="font-medium">{selectedClient.ciudad || '—'}</div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-gray-500">Cargando cliente…</p>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </ModalCenter>
