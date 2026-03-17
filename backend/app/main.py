@@ -59,6 +59,11 @@ app.include_router(transportes.router, prefix="/api")
 app.include_router(bank.router)
 app.include_router(stripe_payments.router)
 
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
 logging.basicConfig(
     level=logging.INFO, format="%(levelname)s %(name)s:%(lineno)d - %(message)s"
 )
