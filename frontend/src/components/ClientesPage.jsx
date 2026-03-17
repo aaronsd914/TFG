@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { sileo } from 'sileo';
 
 import { API_URL } from '../config.js';
@@ -87,6 +88,10 @@ export default function ClientesPage() {
   const [sort, setSort] = useState('az'); // az|za|id_up|id_down
   const [selectedDomains, setSelectedDomains] = useState([]);
   const [idRange, setIdRange] = useState([0, 999999]);
+  const [filterCiudad, setFilterCiudad] = useState('');
+  const [filterConTelefono, setFilterConTelefono] = useState(false);
+
+  const navigate = useNavigate();
 
   // detalle (modal centrado)
   const [detailOpen, setDetailOpen] = useState(false);
@@ -189,6 +194,14 @@ export default function ClientesPage() {
     return Array.from(set).sort();
   }, [data]);
 
+  const ciudades = useMemo(() => {
+    const set = new Set();
+    data.forEach((c) => {
+      if (c.ciudad) set.add(c.ciudad.trim());
+    });
+    return Array.from(set).sort();
+  }, [data]);
+
   const defaultMin = data.length ? Math.min(...data.map((d) => d.id)) : 0;
   const defaultMax = data.length ? Math.max(...data.map((d) => d.id)) : 999999;
 
@@ -214,11 +227,20 @@ export default function ClientesPage() {
         (c) =>
           `${c.nombre || ''} ${c.apellidos || ''}`.toLowerCase().includes(t) ||
           (c.email || '').toLowerCase().includes(t) ||
-          (c.dni || '').toLowerCase().includes(t)
+          (c.dni || '').toLowerCase().includes(t) ||
+          (c.telefono1 || '').toLowerCase().includes(t)
       );
     }
 
     list = list.filter((c) => c.id >= idRange[0] && c.id <= idRange[1]);
+
+    if (filterCiudad) {
+      list = list.filter((c) => (c.ciudad || '').toLowerCase().includes(filterCiudad.toLowerCase()));
+    }
+
+    if (filterConTelefono) {
+      list = list.filter((c) => !!c.telefono1);
+    }
 
     if (selectedDomains.length) {
       list = list.filter((c) => selectedDomains.includes((c.email?.split('@')[1] || '').toLowerCase()));
@@ -242,7 +264,7 @@ export default function ClientesPage() {
     }
 
     return list;
-  }, [data, q, idRange, selectedDomains, sort]);
+  }, [data, q, idRange, selectedDomains, sort, filterCiudad, filterConTelefono]);
 
   // Chips de filtros activos
   const activeChips = [
@@ -264,6 +286,8 @@ export default function ClientesPage() {
           },
         ]
       : []),
+    ...(filterCiudad ? [{ key: 'ciudad', label: `Ciudad: ${filterCiudad}`, onRemove: () => setFilterCiudad('') }] : []),
+    ...(filterConTelefono ? [{ key: 'telefono', label: 'Con teléfono', onRemove: () => setFilterConTelefono(false) }] : []),
   ];
 
   function clearAll() {
@@ -271,6 +295,8 @@ export default function ClientesPage() {
     setSelectedDomains([]);
     setSort('az');
     setIdRange([defaultMin, defaultMax]);
+    setFilterCiudad('');
+    setFilterConTelefono(false);
   }
 
   async function loadOrders(clienteId) {
@@ -344,8 +370,7 @@ export default function ClientesPage() {
     try {
       localStorage.setItem('albaran_open_id', String(albaranId));
     } catch {}
-    window.dispatchEvent(new CustomEvent('open-albaran', { detail: { id: albaranId } }));
-    window.location.href = '/albaranes'; // ajusta si tu ruta es otra
+    navigate('/albaranes');
   }
 
   const totalClientesRegistrados = data.length;
@@ -369,7 +394,7 @@ export default function ClientesPage() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar por nombre, apellidos, email o DNI…"
+            placeholder="Buscar por nombre, apellidos, email, DNI o teléfono…"
             className="w-full rounded-xl border border-gray-300 px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-gray-300"
           />
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">⌕</span>
@@ -400,8 +425,8 @@ export default function ClientesPage() {
       <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white mt-4">
         <div className="min-w-[700px]">
           <div className="grid grid-cols-12 px-4 py-2 text-sm font-medium text-gray-600 border-b">
-            <div className="col-span-2">ID</div>
             <div className="col-span-3">Nombre</div>
+            <div className="col-span-2">Teléfono</div>
             <div className="col-span-3">Email</div>
             <div className="col-span-2">DNI</div>
             <div className="col-span-2">Acciones</div>
@@ -422,8 +447,8 @@ export default function ClientesPage() {
                 className="grid grid-cols-12 px-4 py-3 border-t hover:bg-gray-50 cursor-pointer"
                 onClick={() => openDetail(c)}
               >
-                <div className="col-span-2">#{c.id}</div>
                 <div className="col-span-3">{c.nombre} {c.apellidos}</div>
+                <div className="col-span-2">{c.telefono1 || '—'}</div>
                 <div className="col-span-3">{c.email}</div>
                 <div className="col-span-2">{c.dni}</div>
                 <div className="col-span-2">
@@ -456,24 +481,37 @@ export default function ClientesPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Rango de ID</label>
-            <div className="flex items-center gap-3">
-              <input
-                type="number"
-                min={0}
-                value={idRange[0]}
-                onChange={(e) => setIdRangeSafe(e.target.value, idRange[1])}
-                className="w-32 border border-gray-300 rounded-lg px-3 py-2"
-              />
-              <span>—</span>
-              <input
-                type="number"
-                min={0}
-                value={idRange[1]}
-                onChange={(e) => setIdRangeSafe(idRange[0], e.target.value)}
-                className="w-32 border border-gray-300 rounded-lg px-3 py-2"
-              />
+            <label className="block text-sm font-medium mb-2">Ciudad</label>
+            <div className="flex flex-wrap gap-2">
+              {ciudades.length === 0 && <span className="text-sm text-gray-500">No hay ciudades registradas.</span>}
+              {ciudades.map((city) => {
+                const active = filterCiudad === city;
+                return (
+                  <button
+                    key={city}
+                    onClick={() => setFilterCiudad(active ? '' : city)}
+                    className={`px-3 py-1 rounded-full border ${
+                      active ? 'bg-black text-white border-black' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    }`}
+                    type="button"
+                  >
+                    {city}
+                  </button>
+                );
+              })}
             </div>
+          </div>
+
+          <div>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={filterConTelefono}
+                onChange={(e) => setFilterConTelefono(e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300"
+              />
+              <span className="text-sm font-medium">Solo clientes con teléfono</span>
+            </label>
           </div>
 
           <div>

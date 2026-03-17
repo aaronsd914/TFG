@@ -4,6 +4,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, act } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import ClientesPage from '../src/components/ClientesPage.jsx';
 
 vi.mock('sileo', () => ({
@@ -14,7 +15,7 @@ vi.mock('sileo', () => ({
 }));
 
 function renderPage() {
-  return render(<ClientesPage />);
+  return render(<MemoryRouter><ClientesPage /></MemoryRouter>);
 }
 
 describe('ClientesPage', () => {
