@@ -1,6 +1,7 @@
 ===========================================================================
   RECOMENDACIONES PARA EL TFG — FURNIGEST
-  Basadas en los temarios de: IS, AIS, SD, IPO, Bases de Datos (URJC)
+  Basadas en los temarios de: IS, AIS, SD, IPO, Bases de Datos,
+  Seguridad Informática, Redes de Computadores, Inteligencia Artificial (URJC)
   Divididas en: CAMBIOS FÁCILES A LA MEMORIA | COSAS A AÑADIR AL PROYECTO
 ===========================================================================
 
@@ -69,6 +70,24 @@ Nueva bibliografía añadida (8 entradas IS/AIS + 6 entradas SD/BD/IPO):
   pressman, schwaber, cohn, fieldingREST, tanenbaum, chen1976,
   codd1970, nielsen, iso9241
 
+[SI T1 / SI T9] Cap. 3 — RNF-06 (Seguridad) ampliado:
+  - Trada CIA: confidencialidad, integridad, disponibilidad \cite{owasp2021}
+  - El backend neutraliza inyecciones SQL / XSS (OWASP Top 10) \cite{owasp2021}
+  - Pydantic como mecanismo de validación de entrada en cada endpoint
+
+[SO T4 / SD T1] Cap. 3 — Backend — nuevo párrafo ASGI:
+  - ASGI (Asynchronous Server Gateway Interface) descrito formalmente
+  - Event loop de Python vs modelo clásico de hilo OS por petición
+  - Concurrencia sin coste de creación/conmutación de hilos
+
+[IA T1 / IA T11] Cap. 3 — Asistente IA — nuevo párrafo Deep Learning:
+  - Llama-3 contextualizado como LLM basado en Deep Learning \cite{goodfellow2016}
+  - Evolución histórica: sistemas expertos → MLP → Transformer
+  - Paradigma transfer learning + prompt engineering justificado
+
+Nueva bibliografía añadida (SI + Redes + IA):
+  owasp2021, kurose, goodfellow2016
+
 
 ╔══════════════════════════════════════════════════════════════════════════╗
 ║    PARTE 2 — CAMBIOS FÁCILES PENDIENTES (sólo texto en la memoria)     ║
@@ -118,7 +137,33 @@ Nueva bibliografía añadida (8 entradas IS/AIS + 6 entradas SD/BD/IPO):
   (administrador de tienda, vendedor, repartidor) como se hace en DCU.
   Esto enriquece el análisis de requisitos y conecta con IPO T3A.
   Coste: 1 tabla o lista de 3 items.
+[SI T7 / Redes T2] — Mencionar HTTPS/TLS en la sección de despliegue:
+  Railway inyecta TLS automáticamente, pero la memoria no lo menciona.
+  Añadir: "En producción, toda la comunicación se protege con TLS
+  (Transport Layer Security) via el certificado gestionado por Railway,
+  cifrando el tráfico HTTP con AES y garantizando la autenticidad
+  del servidor mediante certificados X.509" (SI T7: SSL/TLS, AES).
+  Coste: 2-3 líneas en la subsección de despliegue.
 
+[SI T9 / OWASP] — Metodología de desarrollo seguro en sección CI/CD:
+  Mencionar que el pipeline de CI ejecuta Ruff (Python) y ESLint (JS)
+  como analizadores estáticos de seguridad compatible con la filosofía
+  OWASP ("concebir, desarrollar y mantener aplicaciones confiables").
+  PMD, FlawFinder, LAPSE son herramientas del ecosistema OWASP
+  que podrían añadirse al pipeline para un análisis más profundo.
+  Coste: 2 líneas en la sección de calidad del código.
+
+[Redes T2 — HTTP RFCs] — Citar HTTP/1.1 en la sección REST:
+  La sección de API REST menciona los métodos HTTP pero no cita la
+  especificación formal. Añadir: "HTTP/1.1 (RFC 2616 \cite{kurose}),
+  protocolo de la capa de aplicación sobre el que se monta REST".
+  Coste: 1 linea.
+
+[IA T1 — Evolución histórica] — Ampliar introducción al asistente IA:
+  Ya aplicado en esta sesión. Si se quiere ampliar: mencionar que
+  el modelo de atención (\textit{attention}) del Transformer fue
+  propuesto por Vaswani et al. (2017) — "Attention Is All You Need".
+  Coste: 1 oracón + 1 cita.
 
 ╔══════════════════════════════════════════════════════════════════════════╗
 ║       PARTE 3 — COSAS A AÑADIR AL PROYECTO (código real)               ║
@@ -275,6 +320,40 @@ Ordenadas de mayor a menor impacto académico y alineadas con temarios:
     Coste estimado: 2-3 días.
     En la memoria: nuevo subsección en Cap. 3 Analytics.
 
+────────────────────────────────────────────────────────────────────────
+14. HTTPS/TLS EN CAPA DE APLICACIÓN (enforcing en el servidor)
+    Asignatura: SI T7 (mecanismos criptográficos: SSL/TLS, AES, certificados),
+                Redes T3 (capa de transporte, conexión TCP)
+    Qué es: Railway gestiona TLS en el balanceador (nivel de plataforma),
+            pero la aplicación no redirige HTTP → HTTPS explícitamente.
+            Añadir middleware HTTPS-redirect en FastAPI + HSTS header:
+              app.add_middleware(HTTPSRedirectMiddleware)
+            También: cabeceras de seguridad (CORS stricto, X-Frame-Options).
+    Por qué: SI T7 cubre el protocolo SSL/TLS (AES para el cifrado simétrico,
+            RSA para el intercambio de clave) como mecanismo de
+            confidencialidad e integridad en la capa de transporte.
+            Refleja el pilar CIA implantado en RNF-06.
+    Coste estimado: 2-3 horas.
+    En la memoria: ampliar RNF-06, nuevo párrafo en sección Despliegue
+                   citando TLS y los certificados gestionados por Railway.
+
+────────────────────────────────────────────────────────────────────────
+15. HASH DE CONTRASEÑAS CON bcrypt/Argon2 (preparación para auth)
+    Asignatura: SI T7 (funciones hash, mecanismos de autenticación)
+    Qué es: Cuando se implante la autenticación (#1 de esta lista),
+            las contraseñas deben almacenarse como hash irreversible.
+            SI T7 explica: SHA-256 para integridad, bcrypt/Argon2 para
+            contraseñas (salt + iteraciones para resistir ataques dict.).
+            Usar passlib[bcrypt] en FastAPI:
+              from passlib.context import CryptContext
+              pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+    Por qué: Almacenar contraseñas en claro es la vulnerabilidad #2 del
+            OWASP Top 10 ("Cryptographic Failures"). SI T7 establece que
+            los sistemas de autenticación deben usar funciones hash
+            con sal para proteger las credenciales.
+    Coste estimado: 1 hora (solo configuración, integrar con #1 JWT).
+    En la memoria: subsección Seguridad dentro de Backend.
+
 
 ╔══════════════════════════════════════════════════════════════════════════╗
 ║               RESUMEN RÁPIDO — POR ESFUERZO                            ║
@@ -291,12 +370,18 @@ BAJO ESFUERZO (< 4 horas, solo texto/config):
   - Rate limiting slowapi                                     [IS T2]
   - Logging estructurado                                      [AIS T1.4]
   - PWA básica (Vite PWA plugin)                              [IPO T2]
+  - Mencionar HTTPS/TLS en despliege (1 párrafo)              [SI T7 / Redes T2]
+  - Mencionar metodología OWASP en sección CI/CD              [SI T9]
+  - Citar HTTP/1.1 RFC 2616 en sección REST \cite{kurose}     [Redes T2]
+  - Vaswani 2017 "Attention Is All You Need" para Transformer  [IA T11]
 
 MEDIO ESFUERZO (1-2 días):
   - Migraciones Alembic                                       [BD T6]
   - Gestión de stock                                          [BD T4]
   - Módulo de presupuestos                                    [IS T3]
   - Accesibilidad ARIA básica                                 [IPO T5]
+  - HTTPS redirect middleware + HSTS header                   [SI T7]
+  - Hash bcrypt/Argon2 cuando se implante auth                [SI T7]
 
 ALTO ESFUERZO (> 2 días, máximo impacto):
   - Autenticación JWT + roles                                 [SD T2 / IS T2]

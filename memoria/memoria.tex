@@ -731,7 +731,7 @@ La Tabla~\ref{tab:requisitos_funcionales} recoge los requisitos funcionales iden
     \hline
     RNF-05 & Portabilidad & La aplicación podrá ejecutarse en local con un único comando (\texttt{docker compose up}) sobre cualquier sistema operativo compatible con Docker. \\
     \hline
-    RNF-06 & Seguridad & El \textit{backend} validará todos los datos de entrada mediante esquemas Pydantic. Las claves de API y credenciales no se incluirán en el repositorio de código fuente. \\
+    RNF-06 & Seguridad & El sistema preserva los tres pilares clásicos de la seguridad de la información: \textbf{confidencialidad} (acceso únicamente a usuarios autorizados), \textbf{integridad} (datos no alterados sin autorización) y \textbf{disponibilidad} (servicio operable cuando se requiere)~\cite{owasp2021}. El \textit{backend} valida todos los datos de entrada con esquemas Pydantic~\cite{pydantic}, neutralizando inyecciones SQL y ataques XSS, recogidos en el \textbf{OWASP Top 10}~\cite{owasp2021} como las vulnerabilidades más críticas de las aplicaciones web. Las claves de API y credenciales se gestionan como variables de entorno y no se incluyen en el repositorio de código fuente. \\
     \hline
   \end{tabular}
   \end{footnotesize}
@@ -921,6 +921,8 @@ La API REST se sirve en \texttt{http://\{host\}:8000}. Todos los endpoints de do
 \label{sec:backend}
 
 El \textit{backend} es una aplicación FastAPI~0.115 \cite{fastapi} que se arranca con Uvicorn~\cite{uvicorn}. Su punto de entrada es \texttt{backend/app/main.py}, que registra todos los routers, configura el \textit{middleware} CORS y define el ciclo de vida de la aplicación (\textit{lifespan}) en el que se ejecutan la creación de tablas y la carga de datos iniciales.
+
+Uvicorn implementa el protocolo \textbf{ASGI} (\textit{Asynchronous Server Gateway Interface}), que permite gestionar múltiples peticiones HTTP concurrentes en un único proceso mediante el \textbf{bucle de eventos} (\textit{event loop}) de Python. A diferencia del modelo clásico basado en un hilo del sistema operativo por petición, el modelo asíncrono suspende una corrutina mientras espera I/O (base de datos, red) y cede el control a otra petición pendiente, dando lugar a una alta concurrencia sin el coste de la creación y conmutación de hilos.
 
 El Código~\ref{cod:lifespan} muestra el patrón de inicialización empleado.
 
@@ -1140,6 +1142,8 @@ El análisis de \textit{market basket} \cite{agrawal1994} identifica pares de pr
 \label{sec:ia}
 
 El asistente de IA está implementado en \texttt{backend/app/api/ai.py} y se apoya en la API de \textbf{Groq} \cite{groq} con el modelo \textbf{Llama-3.1-8b-instant} \cite{llama2}. Groq proporciona una infraestructura de inferencia de ultra baja latencia (típicamente inferior a 500\,ms para el modelo 8B) mediante unidades de procesamiento LPU (\textit{Language Processing Unit}).
+
+\textbf{Llama-3} pertenece a la familia de \textit{Large Language Models} (LLMs), que constituyen la aplicación más reciente del \textbf{aprendizaje profundo} (\textit{deep learning})~\cite{goodfellow2016}: redes neuronales con múltiples capas de transformación no lineal entrenadas sobre corpus de texto de escala masiva. Esta familia recoge la evolución histórica del campo desde los primeros sistemas expertos basados en reglas de los años 80 hasta las redes neuronales profundas actuales, pasando por los perceptrones multicapa (MLP) y la arquitectura \textit{Transformer}. El uso de Llama-3 en FurniGest ilustra el paradigma del \textbf{\textit{transfer learning}}: un modelo preentrenado con billones de tokens es reutilizado en una tarea específica de razonamiento analítico mediante \textit{prompt engineering} sin necesidad de reentrenamiento \textit{fine-tuning}.
 
 La integración sigue un patrón de \textit{prompt engineering} estructurado en dos capas:
 
