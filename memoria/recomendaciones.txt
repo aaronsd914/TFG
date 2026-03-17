@@ -1,0 +1,307 @@
+===========================================================================
+  RECOMENDACIONES PARA EL TFG — FURNIGEST
+  Basadas en los temarios de: IS, AIS, SD, IPO, Bases de Datos (URJC)
+  Divididas en: CAMBIOS FÁCILES A LA MEMORIA | COSAS A AÑADIR AL PROYECTO
+===========================================================================
+
+
+╔══════════════════════════════════════════════════════════════════════════╗
+║         PARTE 1 — CAMBIOS FÁCILES EN LA MEMORIA (ya aplicados)         ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
+Los siguientes cambios ya han sido incorporados a memoria.tex:
+
+[AIS T2/T5] Cap. 2 — Metodología reescrita:
+  - Se menciona el Manifiesto Ágil (Beck et al., 2001) y Scrum \cite{schwaber}
+  - La Fase 0 se llama ahora "Elicitación y análisis de requisitos" (IS T3)
+  - La Fase 1 cita explícitamente TDD (Kent Beck) \cite{beckTDD}
+  - La Fase 3 introduce "refactorización" y "deuda técnica" (Fowler 2018)
+    + la Regla del Boy Scout
+
+[IS T2] Cap. 3 — Requisitos:
+  - Párrafo introductorio referenciando IEEE 830-1998 \cite{ieee830}
+  - Diferenciación explícita RF (qué) vs RNF (bajo qué restricciones)
+
+[SD T1] Cap. 3 — Arquitectura:
+  - FurniGest descrito como "sistema distribuido" (Tanenbaum) \cite{tanenbaum}
+  - Vocabulario: concurrencia ASGI, tolerancia a fallos, escalabilidad horizontal
+
+[SD T2.3] Cap. 3 — API REST (nueva subsección introductoria):
+  - Roy Fielding, tesis doctoral 2000 \cite{fieldingREST}
+  - Restricciones REST: stateless, recursos/URIs, métodos HTTP
+  - El stateless justifica la escalabilidad horizontal del backend
+
+[BD T4/T5] Cap. 3 — Modelo de datos:
+  - Referencia al modelo E/R (Peter P. Chen, 1976) \cite{chen1976}
+  - Modelo Relacional de E.F. Codd \cite{codd1970}
+  - SQLAlchemy presentado formalmente como ORM (Object-Relational Mapper)
+  - Integridad referencial y claves foráneas
+
+[AIS T3] Cap. 3 — CI/CD:
+  - Diferencia ahora los tres niveles: CI / Entrega continua / Despliegue continuo
+  - Cita textual de la definición de Martin Fowler (2006) \cite{fowlerCI}
+
+[AIS T2.3] Cap. 3 — Backend:
+  - Párrafo TDD con ciclo Rojo → Verde → Refactor
+  - Tests descritos como "especificación ejecutable"
+
+[AIS T1] Cap. 3 — Pruebas:
+  - Pirámide de pruebas (Cohn) \cite{cohn}
+  - Término SUT (System Under Test)
+  - Pruebas de regresión como "red de seguridad"
+  - Prueba de caja negra
+
+[AIS T1.5] Cap. 3 — Calidad del código (renombrado "Análisis estático"):
+  - Define SCA (Static Code Analysis)
+  - Explica calidad interna vs externa (Fowler)
+  - Code smells + Regla del Boy Scout referenciada
+
+[IPO T4] RNF-03:
+  - DCU (Diseño Centrado en el Usuario) referenciado \cite{iso9241}
+  - Dimensiones de usabilidad: learnability, efficiency (Nielsen \cite{nielsen})
+
+[SD T4] Docker:
+  - Virtualización basada en contenedores vs máquinas virtuales + hypervisor
+  - Justificación técnica del tiempo de arranque y consumo de recursos
+
+Nueva bibliografía añadida (8 entradas IS/AIS + 6 entradas SD/BD/IPO):
+  beckTDD, fowlerCI, fowlerRefactoring, manifiestoAgil, ieee830,
+  pressman, schwaber, cohn, fieldingREST, tanenbaum, chen1976,
+  codd1970, nielsen, iso9241
+
+
+╔══════════════════════════════════════════════════════════════════════════╗
+║    PARTE 2 — CAMBIOS FÁCILES PENDIENTES (sólo texto en la memoria)     ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
+[BD T1] — Mentionar "Sistema de Información" en Cap. 1:
+  En la introducción del Cap. 1 puedes añadir una oración que califique
+  FurniGest como "Sistema de Información para la Gestión" (SIG), ya que
+  el Tema 1 de BD define exactamente este concepto: captura, almacena,
+  procesa y distribuye información para apoyar la toma de decisiones.
+  Coste: 2 líneas.
+
+[BD T7b / Normalización] — Mencionar normalización en el modelo de datos:
+  Indicar que el esquema de la BD cumple la 3ª Forma Normal (3FN)
+  (o Forma Normal de Boyce-Codd si aplica). Esto demuestra que el
+  diseño evita redundancias y anomalías de actualización/inserción/borrado.
+  Coste: 1 párrafo breve.
+
+[SD T1 — Teorema CAP] — Añadir referencia al teorema CAP:
+  Breve mención en la sección de arquitectura: dado que FurniGest
+  usa PostgreSQL (CP: Consistency + Partition tolerance sacrificando
+  Available en particiones de red), se puede mencionar este compromiso.
+  Coste: 2-3 líneas.
+
+[IPO T6 — Evaluación de IUs] — Añadir en Cap. 4 (Resultados):
+  Mencionar que la UI fue evaluada mediante el método de
+  "evaluación heurística" (Tema 6 IPO) usando las heurísticas de
+  Nielsen: visibilidad del estado del sistema, consistencia, prevención
+  de errores, etc. Si se hizo alguna sesión de prueba con usuarios reales,
+  mejor aún — ese es el método empírico de evaluación.
+  Coste: 1 párrafo en Cap. 4.
+
+[IPO T5 — Accesibilidad] — Citar accesibilidad en RNF:
+  Añadir RNF-07: "La interfaz respetará las recomendaciones de
+  accesibilidad WCAG 2.1 nivel AA: contraste de color mínimo 4.5:1,
+  navegación por teclado, atributos ARIA en elementos interactivos."
+  TailwindCSS facilita esto. Coste: 1 fila en la tabla de RNF.
+
+[SD T3 — Comunicación] — Nombrar protocolo HTTP/1.1 en la API:
+  En la descripción de la API REST, indicar que la comunicación
+  usa HTTP/1.1 sobre TLS (HTTPS) en producción (Railway inyecta TLS
+  automáticamente). Añade profundidad técnica referenciando SD T3.
+  Coste: 1 línea.
+
+[IPO T3 — DCU / Personas de usuario] — Añadir "persona" de usuario:
+  En Cap. 2, al describir el problema, definir 2-3 perfiles de usuario
+  (administrador de tienda, vendedor, repartidor) como se hace en DCU.
+  Esto enriquece el análisis de requisitos y conecta con IPO T3A.
+  Coste: 1 tabla o lista de 3 items.
+
+
+╔══════════════════════════════════════════════════════════════════════════╗
+║       PARTE 3 — COSAS A AÑADIR AL PROYECTO (código real)               ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
+Ordenadas de mayor a menor impacto académico y alineadas con temarios:
+
+────────────────────────────────────────────────────────────────────────────
+1. AUTENTICACIÓN JWT + ROLES DE USUARIO
+   Asignatura: SD T2 (Spring Security / protección de endpoints)
+               IS T2 (RNF de seguridad), AIS T1 (pruebas de seguridad)
+   Qué es: FastAPI Security con OAuth2PasswordBearer + JWT (PyJWT).
+   Por qué: El mayor gap de seguridad del proyecto. Sin auth, cualquiera
+            con la URL puede leer o modificar todos los datos.
+   Roles sugeridos: admin, vendedor, repartidor.
+   Coste estimado: 2-3 días de trabajo + 6-8 tests nuevos.
+   En la memoria: nuevo subsección "Seguridad y control de acceso",
+                  nuevo RNF-07, tests de autenticación.
+
+────────────────────────────────────────────────────────────────────────────
+2. MIGRACIONES DE BD CON ALEMBIC
+   Asignatura: BD T6/T7 (diseño relacional, evolución del esquema)
+               AIS T2 (mantenimiento y evolución del software)
+   Qué es: Herramienta de migraciones para SQLAlchemy. Permite
+           modificar tablas ya existentes sin perder datos.
+   Por qué: create_all() solo crea tablas que no existen; no puede
+            añadir columnas a tablas ya existentes en producción.
+           Es una técnica fundamental de mantenimiento de BD (BD T6).
+   Coste estimado: medio día para configurar + 1 migración inicial.
+   En la memoria: subsección en CI/CD sobre "migraciones automáticas".
+
+────────────────────────────────────────────────────────────────────────────
+3. TESTS E2E CON PLAYWRIGHT
+   Asignatura: AIS T1.3 (Pruebas de sistema/E2E), Práctica 2 AIS
+   Qué es: Automatizar el navegador para verificar flujos completos
+           de usuario (crear venta → cambiar estado → ver en contabilidad).
+   Por qué: Completa la pirámide de pruebas con el nivel más alto.
+           AIS T1 trata exactamente este tipo de prueba (Selenium/Playwright).
+   Flujos críticos sugeridos:
+     - Crear un albarán y verificar que aparece en la lista
+     - Avanzar estado FIANZA → ENTREGADO y verificar el movimiento
+   Coste estimado: 1 día + integración en el pipeline de CI.
+   En la memoria: nueva fila en tabla de pruebas, diagrama de pirámide.
+
+────────────────────────────────────────────────────────────────────────────
+4. COBERTURA DE CÓDIGO (pytest-cov + badge en README)
+   Asignatura: AIS T1.4 (Calidad del software), AIS T1.5 (SCA/SonarQube)
+   Qué es: pytest --cov genera informe línea a línea de cobertura.
+           Se puede subir a Codecov o mostrar en GitHub Actions.
+   Por qué: Métrica objetiva de calidad interna (AIS T1.4).
+            SonarQube (AIS T1.5) usa la cobertura como KPI clave.
+   Coste estimado: 2 horas (pip install pytest-cov + config en CI).
+   En la memoria: añadir % de cobertura en tabla métricas Cap. 4.
+
+────────────────────────────────────────────────────────────────────────────
+5. GESTIÓN DE STOCK / INVENTARIO
+   Asignatura: BD T4/T5 (modelo E/R, modelo relacional)
+               IS T2 (requisitos funcionales no implementados)
+   Qué es: El campo `stock` ya existe en `productos` pero no se descuenta
+           al crear líneas de albarán ni se controla el stock mínimo.
+   Sugerencias:
+     - Descontar stock al crear cada línea de albarán
+     - Reposición de stock al crear un movimiento de compra a proveedor
+     - Alertas visuales cuando stock < umbral mínimo configurable
+   Coste estimado: 1 día (lógica en api/albaranes.py + 4-5 tests).
+   En la memoria: nuevo RF-14, nueva entidad o atributo en tabla E/R.
+
+────────────────────────────────────────────────────────────────────────────
+6. LOGGING ESTRUCTURADO
+   Asignatura: AIS T1.4 (calidad, observabilidad), SD T1 (fallos en SSDD)
+   Qué es: Emitir logs en formato JSON (structlog o logging estándar).
+           Permite correlacionar eventos en Railway con timestamps.
+   Por qué: La observabilidad es una propiedad de los sistemas distribuidos
+           (SD T1: "detección y recuperación de fallos son esenciales").
+   Coste estimado: 2 horas (setup de structlog o Python logging en main.py).
+   En la memoria: añadir en subsección Despliegue/CI-CD.
+
+────────────────────────────────────────────────────────────────────────────
+7. RATE LIMITING EN ENDPOINTS DE IA/STRIPE
+   Asignatura: IS T2 (RNF de seguridad), SD T1 (seguridad en SSDD)
+               AIS T1 (pruebas no funcionales)
+   Qué es: slowapi (FastAPI) limita peticiones por IP/minuto.
+           Evita abuso de la API de Groq (que tiene cuotas gratuitas)
+           y de Stripe (que cobra por llamada).
+   Coste estimado: 2 horas.
+   En la memoria: nuevo RNF de seguridad.
+
+────────────────────────────────────────────────────────────────────────────
+8. EVALUACIÓN DE USABILIDAD FORMAL (heurísticas de Nielsen)
+   Asignatura: IPO T4 (Usabilidad), IPO T6 (Evaluación de IUs)
+   Qué es: Realizar una evaluación heurística de la UI con las
+           10 heurísticas de Nielsen (o una checklist simplificada).
+           No requiere código — es un análisis documental.
+   Por qué: IPO T6 dice que "el diseño iterativo sin evaluación es
+            tirar dinero por el desagüe" (Bruce Tognazzini).
+           Añade una sección completa de resultados de evaluación.
+   Dimensiones a evaluar (IPO T4): learnability, efficiency,
+     memorability, error rate, satisfaction.
+   Coste estimado: medio día (checklist + párrafos en Cap. 4).
+   En la memoria: nueva sección "Evaluación de la interfaz de usuario".
+
+────────────────────────────────────────────────────────────────────────────
+9. MÓDULO DE PRESUPUESTOS (estado previo al albarán)
+   Asignatura: IS T2/T3 (requisitos, casos de uso), BD T4 (modelo E/R)
+   Qué es: Estado "PRESUPUESTO" antes de FIANZA. El cliente puede
+           aceptar o rechazar. Si acepta → se convierte en albarán.
+   Por qué: Flujo comercial natural + amplía la máquina de estados
+           (enriquece el diagrama IS T5 y el modelo E/R BD T4).
+   Coste estimado: 1-2 días (nueva entidad + endpoints + 5 tests).
+   En la memoria: nuevo RF, nueva fila en E/R, diagrama de estados ampliado.
+
+────────────────────────────────────────────────────────────────────────────
+10. INTERNACIONALIZACIÓN (i18n) / ACCESIBILIDAD WCAG
+    Asignatura: IPO T5 (Accesibilidad), IPO T4 (Usabilidad universal)
+    Qué es: i18next para React (traducciones ES/EN). ARIA labels en
+            formularios, contraste de color WCAG 2.1 AA.
+    Por qué: IPO T5 define accesibilidad como parte de la "usabilidad
+            universal": la IU debe poder ser utilizada por cualquier persona.
+    Coste estimado: 1-2 días para accesibilidad básica ARIA + contraste.
+    En la memoria: nuevo RNF-07 (accesibilidad) + subsección en Cap. 3.
+
+────────────────────────────────────────────────────────────────────────────
+11. APLICACIÓN MÓVIL / PWA
+    Asignatura: IPO T2 (paradigmas de interacción), SD T2 (cliente web)
+    Qué es: Convertir la SPA en una PWA (Progressive Web App) añadiendo
+            service worker y manifest.json. Sin código nativo.
+            Alternativa más ambiciosa: React Native con la API existente.
+    Por qué: IPO T2 trata la computación ubicua y dispositivos móviles
+            como paradigma de interacción emergente.
+    Coste estimado: 2-3 horas para PWA basic (Vite PWA plugin).
+    En la memoria: Cap. 5 Trabajos futuros (ya mencionado) → moverlo
+                   a Cap. 4 si se implementa.
+
+────────────────────────────────────────────────────────────────────────────
+12. BASE DE DATOS NoSQL / CACHÉ REDIS para analíticas
+    Asignatura: SD T5 (Sistemas de persistencia distribuidos),
+                SD T2.4 (Spring Data menciona Redis y MongoDB)
+    Qué es: Cachear los resultados de /api/analytics/summary en Redis
+            (TTL de 60 segundos). Las analíticas son costosas en BD.
+    Por qué: SD T5 trata persistencia distribuida y caché. El uso de
+            Redis demuestra conocimiento de bases de datos en memoria
+            y sistemas de persistencia distribuidos.
+    Coste estimado: 1 día.
+    En la memoria: nueva subsección "Optimización de rendimiento".
+
+────────────────────────────────────────────────────────────────────────────
+13. ANALÍTICAS PREDICTIVAS (ARIMA / serie temporal)
+    Asignatura: BD T1 (SI para toma de decisiones), IPO T4 (utilidad)
+    Qué es: Usar los datos históricos de movimientos para predecir
+            ventas del próximo mes (Prophet de Meta o statsmodels ARIMA).
+    Por qué: BD T1 define los Sistemas de Información para Ayuda a la
+            Toma de Decisiones (DSS). FurniGest ya tiene los datos;
+            añadir predicción lo convierte en un DSS completo.
+    Coste estimado: 2-3 días.
+    En la memoria: nuevo subsección en Cap. 3 Analytics.
+
+
+╔══════════════════════════════════════════════════════════════════════════╗
+║               RESUMEN RÁPIDO — POR ESFUERZO                            ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
+BAJO ESFUERZO (< 4 horas, solo texto/config):
+  - Mencionar normalización 3FN en el modelo de datos         [BD T7b]
+  - Mencionar SIG en Cap. 1                                   [BD T1]
+  - Añadir RNF-07 de accesibilidad WCAG                       [IPO T5]
+  - Añadir teorema CAP en arquitectura                        [SD T1]
+  - Perfiles de usuario (personas) en Cap. 2                  [IPO T3]
+  - Evaluación heurística Nielsen en Cap. 4                   [IPO T6]
+  - Cobertura pytest-cov                                      [AIS T1.4]
+  - Rate limiting slowapi                                     [IS T2]
+  - Logging estructurado                                      [AIS T1.4]
+  - PWA básica (Vite PWA plugin)                              [IPO T2]
+
+MEDIO ESFUERZO (1-2 días):
+  - Migraciones Alembic                                       [BD T6]
+  - Gestión de stock                                          [BD T4]
+  - Módulo de presupuestos                                    [IS T3]
+  - Accesibilidad ARIA básica                                 [IPO T5]
+
+ALTO ESFUERZO (> 2 días, máximo impacto):
+  - Autenticación JWT + roles                                 [SD T2 / IS T2]
+  - Tests E2E Playwright                                      [AIS T1.3]
+  - Caché Redis para analíticas                               [SD T5]
+  - Analíticas predictivas ARIMA/Prophet                      [BD T1]
+
+===========================================================================

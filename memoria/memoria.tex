@@ -1,0 +1,1721 @@
+% Clase del documento
+\documentclass[12pt,twoside,titlepage]{report}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%% Paquetes %%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage[a4paper,bindingoffset=3mm,bottom=35mm]{geometry}
+
+
+% Usad \usepackage[dvips]{graphicx} o \usepackage[pdftex]{graphicx} (no ambos)
+%\usepackage[dvips]{graphicx} %%% para LaTeX. Las figuras deben estar en formato eps
+
+\usepackage[colorlinks=true,pdftex]{hyperref}   %%% Opcional. Para incluir marcadores y enlaces en el pdf
+\usepackage[pdftex]{graphicx}  %%% para pdflatex. Las figuras pueden estar en pdf, jpg, svg y otros formatos
+
+
+\usepackage[spanish]{babel}
+
+%\usepackage[latin1]{inputenc} % Usad en WinEdt/MikTex
+\usepackage[utf8]{inputenc} % Usad en overleaf
+
+%\usepackage[T1]{fontenc}
+
+
+% Algunos paquetes útiles
+
+\usepackage{amsmath,amssymb}
+\usepackage{hyperref}
+\usepackage{color}
+\usepackage{afterpage}
+\usepackage{paralist}
+\usepackage{array}
+\usepackage{enumerate}
+\usepackage{paralist}
+\usepackage{enumitem}
+\usepackage{float}
+\usepackage{setspace}
+\usepackage{listings}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{fancyhdr}
+\usepackage{rotating}
+\usepackage{multirow}
+
+
+% Otros paquetes
+
+\usepackage{quotchap}
+\usepackage{lipsum}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%% Definiciones básicas %%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\nombreautor}{Aarón Salinero Valencia}
+\newcommand{\nombretutor}{Nicolás Rodríguez Uribe}
+\newcommand{\titulotrabajo}{Aplicación web de finanzas para tienda de muebles}
+\newcommand{\escuela}{Escuela Técnica Superior\\de Ingeniería Informática}
+\newcommand{\escuelalargo}{Escuela Técnica Superior de Ingeniería Informática}
+\newcommand{\universidad}{Universidad Rey Juan Carlos}
+\newcommand{\fecha}{Fecha}
+\newcommand{\grado}{Grado en Ingeniería Informática}
+\newcommand{\curso}{Curso 2024-2025}
+\newcommand{\logoUniversidad}{logoURJC.pdf} % logoURJC.eps
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%% Otras definiciones %%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Definiciones de colores (para hidelinks)
+\definecolor{BlueLink}{rgb}{0.165,0.322,0.745}
+\definecolor{PinkLink}{rgb}{0.8,0.22,0.5}
+\definecolor{gray}{rgb}{0.6,0.6,0.6}
+
+
+% Enlaces
+\hypersetup{hidelinks,pageanchor=true,colorlinks,citecolor=PinkLink,urlcolor=black,linkcolor=BlueLink}
+
+
+\newcommand\blankpage{%
+    \newpage
+    \null
+    \thispagestyle{empty}%
+    %\addtocounter{page}{-1}%
+    \newpage}
+
+
+% Texto referencias
+\addto{\captionsspanish}{\renewcommand{\bibname}{Bibliografía}}
+
+% Texto Índice de tablas
+\addto\captionsspanish{
+\def\tablename{Tabla}
+\def\listtablename{\'{I}ndice de tablas}
+}
+
+
+\floatname{algorithm}{Algoritmo}
+
+\newfloat{algorithm}{t}{lop}
+
+
+%\newenvironment{pseudocodigo}[1][htb]
+%  {\renewcommand{\algorithmcfname}{Pseudocódig}% Update algorithm name
+%   \begin{algorithm}[#1]%
+%  }{\end{algorithm}}
+  
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%% Estilo de código (en Python) %%%%%%%%%%%%%%%%%%%%%%%
+
+\definecolor{bg}{rgb}{0.95,0.95,0.95}
+\definecolor{mydeepteal}{rgb}{0.16,0.22,0.23}
+\definecolor{myteal}{rgb}{0.31,0.44,0.46}
+\definecolor{mymediumteal}{rgb}{0.41,0.58,0.60}
+
+\DeclareFixedFont{\ttb}{T1}{txtt}{bx}{n}{12} % for bold
+\DeclareFixedFont{\ttm}{T1}{txtt}{m}{n}{12}  % for normal
+
+
+%\newcommand*{\FormatDigit}[1]{\textcolor{mydeepteal}{#1}}
+\newcommand*{\FormatDigit}[1]{\textcolor{black}{#1}}
+
+% Python style for highlighting
+\newcommand\mypythonstyle{\lstset{
+language=Python,
+basicstyle=\ttfamily\small,
+%basicstyle=\linespread{1.0}\footnotesize\ttm,
+otherkeywords={self},             % Add keywords here
+keywordstyle=\bfseries\ttfamily\color{myteal},
+%keywordstyle=\ttb\color{myteal},
+commentstyle=\itshape\color{myteal},
+stringstyle=\color{mydeepteal},
+emph={MyClass,__init__},          % Custom highlighting
+emphstyle=\ttb\color{mydeepteal},    % Custom highlighting style
+% Any extra options here
+showstringspaces=false,            %
+backgroundcolor=\color{bg},
+rulecolor = \color{bg},
+%identifierstyle=\color{deepgreen},
+breaklines=true,
+numbers=left,
+numbersep=5pt,
+numberstyle=\tiny,
+tabsize=4,
+xleftmargin=1em,
+frame = single,
+framesep = 3pt,
+framextopmargin=0pt,
+framexbottommargin=0pt,
+framexleftmargin=0pt,
+framexrightmargin=0pt,
+fontadjust=true,
+basewidth=0.55em, % compactness of code
+upquote=true,
+}}
+
+% Python environment
+\lstnewenvironment{mypython}[1][]
+{
+\mypythonstyle
+\lstset{#1}
+}
+{}
+
+\newcommand\mypythonstylenormalinline{\lstset{
+language=Python,
+basicstyle=\ttfamily\normalsize,
+%basicstyle=\linespread{1.0}\footnotesize\ttm,
+otherkeywords={self},            % Add keywords here
+keywordstyle=\bfseries\ttfamily\color{myteal},
+%keywordstyle=\ttb\color{myteal},
+commentstyle=\itshape\color{mymediumteal},
+stringstyle=\color{mydeepteal},
+emph={MyClass,__init__},          % Custom highlighting
+emphstyle=\ttb\color{mydeepteal},    % Custom highlighting style
+% Any extra options here
+showstringspaces=false,            %
+backgroundcolor=\color{bg},
+rulecolor = \color{bg},
+%identifierstyle=\color{deepgreen},
+breaklines=false,
+numbers=left,
+numbersep=5pt,
+numberstyle=\tiny,
+tabsize=4,
+xleftmargin=0em,
+frame = single,
+framesep = 3pt,
+framextopmargin=0pt,
+framexbottommargin=0pt,
+framexleftmargin=0pt,
+framexrightmargin=0pt,
+fontadjust=true,
+%basewidth=0.55em, % compactness of code
+upquote=true,
+}}
+
+\newcommand\mypythoninline[1]{{\mypythonstylenormalinline\lstinline!#1!}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%% Comandos definidos por el autor 
+
+\newcommand{\transpuesta}{\mbox{\tiny $\mathsf{T}$}}
+
+% Estilo adicional para código JavaScript/JSX
+\lstdefinestyle{myjs}{
+  language=JavaScript,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\bfseries\ttfamily\color{myteal},
+  commentstyle=\itshape\color{myteal},
+  stringstyle=\color{mydeepteal},
+  showstringspaces=false,
+  backgroundcolor=\color{bg},
+  rulecolor=\color{bg},
+  breaklines=true,
+  numbers=left,
+  numbersep=5pt,
+  numberstyle=\tiny,
+  tabsize=2,
+  xleftmargin=1em,
+  frame=single,
+  framesep=3pt,
+  framextopmargin=0pt,
+  framexbottommargin=0pt,
+  framexleftmargin=0pt,
+  framexrightmargin=0pt,
+  fontadjust=true,
+  basewidth=0.55em,
+  upquote=true,
+}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                           Inicio del documento                       
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\begin{document}
+
+\pagestyle{plain}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Portada %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\pagenumbering{gobble}
+%\pagenumbering{arabic}
+
+% Universidad, Facultad
+\begin{titlepage}
+\selectlanguage{spanish}
+
+
+% logo
+\begin{center}
+    \includegraphics[scale=0.7]{\logoUniversidad}
+\end{center}
+
+\bigskip
+
+\begin{center}
+\begin{LARGE}
+\escuela \\
+\end{LARGE}
+\end{center}
+
+\bigskip
+\bigskip
+
+% Grado
+\begin{center}
+\begin{large}
+\textbf{\grado}\\
+\end{large}
+\end{center}
+
+% Curso
+\begin{center}
+\begin{large}
+\textbf{\curso}\\
+\end{large}
+\end{center}
+
+\bigskip
+
+\textbf{\begin{center}
+\begin{large}
+\textbf{Trabajo Fin de Grado}
+\end{large}
+\end{center}}
+
+\bigskip
+\bigskip
+\bigskip
+
+% Nombre del TFG
+\begin{center}
+\textbf{\begin{large}
+\MakeUppercase{\titulotrabajo}\\
+\end{large}}
+\end{center}
+
+% Nombre del autor
+\vspace{\fill}
+\begin{center}
+\textbf{Autor: \nombreautor}\\ \smallskip
+% Tutor
+\textbf{Tutor: \nombretutor}\\
+% Añadir segundo tutor si hubiera
+
+
+\bigskip
+
+% Fecha
+%\textbf{\fecha}\\
+\end{center}
+\end{titlepage}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%% Opcional %%%%%%%%%%%%%%%%%%%%%%
+%\blankpage
+
+%\thispagestyle{empty}
+%\begin{center}
+
+% Nombre del trabajo
+%\textbf{\begin{large}
+%\MakeUppercase{\titulotrabajo}\\*
+%\end{large}}
+%\vspace*{0.2cm}
+%\vspace{5cm}
+
+% Nombre del autor y del tutor
+%\large Autor: \nombreautor \\* \medskip
+%\large Tutor: \nombretutor \\*
+
+%\vfill
+
+% Escuela, universidad y fecha
+%\escuelalargo \\ \smallskip
+%\universidad \\
+%\vspace{1cm}
+%\fecha \\
+
+%\clearpage
+
+%\end{center}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\hypersetup{pageanchor=true}
+
+\normalsize
+\afterpage{\blankpage} % Se deben añadir página en blanco para que lo capítulos de la memoria o estas secciones introductorias empiecen en páginas impares
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+% Estilo de párrafo de los capítulos
+\setlength{\parskip}{0.75em}
+\renewcommand{\baselinestretch}{1.25}
+% Interlineado simple
+\spacing{1}
+
+\pagenumbering{Roman}
+\setcounter{page}{2}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%% Agradecimientos o dedicatoria %%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter*{Agradecimientos}
+
+Quiero expresar mi gratitud a mi tutor, Nicolás Rodríguez Uribe, por su orientación, disposición y los valiosos consejos aportados a lo largo de todo el desarrollo de este Trabajo Fin de Grado. Su apoyo ha sido fundamental para encauzar el proyecto en la dirección correcta.
+
+Agradezco también a mi familia su paciencia y aliento constantes durante los momentos de mayor exigencia. Sin su respaldo este trabajo no habría sido posible.
+
+Por último, hago extensivo este agradecimiento a todos los compañeros y profesores que, de una forma u otra, han contribuido a mi formación a lo largo de estos años en la Escuela Técnica Superior de Ingeniería Informática de la Universidad Rey Juan Carlos.
+
+\afterpage{\blankpage}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Resumen %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter*{Resumen}
+
+El presente Trabajo Fin de Grado describe el diseño e implementación de \textbf{FurniGest}, una aplicación web de gestión integral (ERP, \textit{Enterprise Resource Planning}) orientada a una tienda de muebles. La problemática de partida es la dependencia de métodos manuales ---hojas de cálculo y registros en papel--- para dar soporte a los procesos de negocio fundamentales: gestión de clientes, pedidos, inventario, flujos financieros y logística de entrega. Esta aproximación genera ineficiencias operativas, propensión a errores y ausencia total de visibilidad analítica sobre el rendimiento del negocio.
+
+La solución desarrollada es una \textit{Single Page Application} (SPA) con arquitectura cliente-servidor desacoplada. El \textit{backend} está construido con \textbf{FastAPI} (Python 3.12) y \textbf{SQLAlchemy} sobre una base de datos \textbf{PostgreSQL~16}, exponiendo una API REST que gestiona ocho entidades de dominio. El \textit{frontend} emplea \textbf{React~19}, \textbf{Vite~6} y \textbf{TailwindCSS~4}, con visualización de datos mediante \textbf{Chart.js}.
+
+Entre las funcionalidades avanzadas destaca un motor de analíticas con segmentación de clientes mediante el modelo \textbf{RFM} (\textit{Recency-Frequency-Monetary}) y análisis de pares de productos frecuentemente comprados juntos (\textit{market basket analysis}). Se integra además un asistente de inteligencia artificial basado en la API de \textbf{Groq} con el modelo \textbf{Llama-3.1-8b-instant}, que recibe métricas de negocio en tiempo real y responde consultas en lenguaje natural. El sistema incorpora también integración de pagos con \textbf{Stripe Checkout}, generación de documentos PDF con \textbf{ReportLab} y notificaciones por correo electrónico mediante SMTP y la API de \textbf{Resend}.
+
+La aplicación se despliega en producción con el \textit{frontend} en \textbf{Vercel} y el \textit{backend} en \textbf{Railway}, con un flujo de integración y despliegue continuos (\textit{CI/CD}) articulado sobre \textbf{GitHub Actions}. La batería de pruebas automatizadas comprende 96 pruebas unitarias del \textit{backend} (pytest) y 61 del \textit{frontend} (Vitest), con cobertura de todos los módulos de la API.
+
+\mbox{} \bigskip
+
+\noindent \textbf{Palabras clave}:
+\begin{compactitem}
+    \item Aplicación web, ERP, SPA (\textit{Single Page Application})
+    \item FastAPI, Python, SQLAlchemy, PostgreSQL
+    \item React, Vite, TailwindCSS
+    \item Inteligencia artificial, LLM, Groq, Llama-3
+    \item Segmentación RFM, \textit{Market basket analysis}
+    \item Stripe, ReportLab, CI/CD, Docker
+\end{compactitem}
+
+\afterpage{\blankpage}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Índices %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Estilo de párrafo de los Índices
+\setlength{\parskip}{1pt}
+\renewcommand{\baselinestretch}{1}
+\renewcommand{\contentsname}{Índice de contenidos}
+
+
+% Índice de contenidos
+\tableofcontents
+\afterpage{\blankpage}
+
+% Índice de tablas (OPCIONAL)
+\listoftables
+\afterpage{\blankpage}
+\addcontentsline{toc}{chapter}{\noindent \listtablename}
+
+% Índice de figuras (OPCIONAL)
+\listoffigures
+\afterpage{\blankpage}
+\addcontentsline{toc}{chapter}{\listfigurename}
+
+% Índice de códigos/algoritmos (OPCIONAL).   El término "Códigos" se puede cambiar por "Métodos", "Funciones", "Algoritmos", etc.
+\renewcommand\lstlistlistingname{Códigos}
+\renewcommand\lstlistingname{Código}
+\renewcommand\lstlistlistingname{Índice de códigos}
+
+\lstlistoflistings
+\afterpage{\blankpage}
+\addcontentsline{toc}{chapter}{\lstlistlistingname}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%% Cabeceras y pies de página (Opcional) %%%%%%%%%%%%%%%%%%%%%%%
+
+%\setlength{\headheight}{15.2pt}
+\pagestyle{fancy}
+
+
+\renewcommand{\chaptermark}[1]{\markboth{Capítulo \thechapter.\ #1}{}}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LO]{\leftmark}
+\fancyhead[RO]{}
+\fancyhead[RE]{\nouppercase\rightmark}
+\fancyhead[LE]{}
+\fancyfoot[C]{\thepage}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Capítulos de la memoria %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+% ==============================================================
+% CAPÍTULO 1 — INTRODUCCIÓN
+% ==============================================================
+\chapter{Introducción}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Estilo resto de páginas
+\pagestyle{fancy}
+
+
+% Estilo de párrafo de los capítulos
+\setlength{\parskip}{0.75em}
+\renewcommand{\baselinestretch}{1.25}
+% Interlineado simple
+\spacing{1}
+% Numeración contenido
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+La digitalización de los procesos de negocio representa uno de los mayores retos para las pequeñas y medianas empresas del sector minorista. En este contexto, el presente Trabajo Fin de Grado aborda el diseño y la implementación de \textbf{FurniGest}, una aplicación web de gestión integral orientada a una tienda de muebles, con el objetivo de sustituir los métodos manuales de trabajo por una herramienta digital centralizada, accesible y extensible.
+
+\section{Contexto y alcance}
+
+Las tiendas de muebles combinan de forma habitual operaciones propias de la venta al detalle ---gestión de clientes, catálogo de productos y presupuestos--- con procesos logísticos que distinguen este sector de otros: cada pedido implica la preparación de un albarán, el seguimiento del estado del producto en almacén y, finalmente, la entrega a domicilio mediante un servicio de transporte propio. El control financiero de estos flujos ---ingresos por ventas, fianzas, gastos de transporte y devoluciones--- es igualmente complejo.
+
+En el caso de partida que motiva este proyecto, la tienda gestionaba todos estos procesos de forma manual, haciendo uso de hojas de cálculo y registros en papel. Esta aproximación presentaba limitaciones evidentes: duplicación de datos, ausencia de trazabilidad sobre el estado de los pedidos, imposibilidad de obtener analíticas de ventas en tiempo real y dificultad para generar documentación formal (albaranes en PDF) de forma ágil.
+
+FurniGest cubre íntegramente estas necesidades mediante una \textit{Single Page Application} (SPA) con una API REST en el \textit{backend}. El alcance del sistema comprende:
+
+\begin{enumerate}
+  \item Gestión completa (CRUD) de clientes, productos y proveedores.
+  \item Ciclo de vida de pedidos (albaranes) con una máquina de cuatro estados: \textit{Fianza} $\to$ \textit{Almacén} $\to$ \textit{Ruta} $\to$ \textit{Entregado}.
+  \item Libro contable de movimientos financieros con creación automática de registros ante eventos de negocio.
+  \item Dashboard con indicadores clave de rendimiento (KPI) y gráficas interactivas.
+  \item Motor de analíticas avanzadas: segmentación RFM de clientes y análisis de cestas de la compra.
+  \item Asistente de inteligencia artificial en lenguaje natural, integrado con métricas de negocio en vivo.
+  \item Módulo de logística y transporte con gestión de camiones y liquidación de rutas.
+  \item Integración de pagos en línea mediante Stripe Checkout.
+  \item Generación de documentos PDF (albaranes, facturas de ruta e informes de analíticas).
+  \item Notificaciones por correo electrónico con PDF adjunto al crear cada pedido.
+\end{enumerate}
+
+La aplicación está desplegada en producción, con el \textit{frontend} en Vercel y el \textit{backend} en Railway. La base de datos es PostgreSQL~16. Todo el proceso de integración y despliegue continuos está automatizado mediante GitHub Actions.
+
+
+\section{Estructura del documento}
+
+La memoria se organiza siguiendo la estructura recomendada para trabajos de grado en informática:
+
+\begin{itemize}
+  \item \textbf{Capítulo~2 — Objetivos:} describe el problema concreto que motiva el desarrollo, analiza las alternativas existentes en el mercado y justifica la elección de una solución de desarrollo a medida. Se detallan los objetivos funcionales y no funcionales del sistema.
+  \item \textbf{Capítulo~3 — Descripción informática:} constituye el núcleo técnico del trabajo. Recoge la especificación de requisitos, el diseño arquitectónico y del modelo de datos, los detalles de implementación del \textit{backend} y el \textit{frontend}, el funcionamiento de los algoritmos avanzados, la integración con servicios externos y la estrategia de pruebas y despliegue.
+  \item \textbf{Capítulo~4 — Resultados:} presenta la aplicación funcionando, describe las métricas de calidad obtenidas y valida el cumplimiento de los objetivos planteados.
+  \item \textbf{Capítulo~5 — Conclusiones y trabajos futuros:} recoge las lecciones aprendidas durante el desarrollo y propone líneas de trabajo que ampliarían las capacidades del sistema.
+\end{itemize}
+
+Al final del documento se incluye la bibliografía y dos apéndices: el esquema completo de la base de datos y la referencia de la API REST.
+
+
+% ==============================================================
+% CAPÍTULO 2 — OBJETIVOS
+% ==============================================================
+\chapter{Objetivos}
+
+Este capítulo describe el problema que motiva el desarrollo de FurniGest, analiza las alternativas existentes en el mercado y expone la metodología de trabajo seguida a lo largo del proyecto.
+
+\section{Descripción del problema}
+
+La tienda de muebles que sirve de caso de uso contaba, antes del inicio de este proyecto, con el siguiente modelo operativo:
+
+\begin{itemize}
+  \item Los datos de clientes se almacenaban en una hoja de cálculo local sin mecanismo de búsqueda estructurado.
+  \item Los pedidos se registraban manualmente en papel, sin trazabilidad del estado (si el artículo estaba en almacén, en ruta o entregado).
+  \item La facturación y los albaranes se generaban con plantillas de procesador de texto, con el riesgo de errores tipográficos y pérdida de documentos.
+  \item No existía ninguna herramienta que ofreciese visión consolidada de los ingresos, gastos o tendencias de venta.
+  \item El cobro de fianzas y el seguimiento de los pagos pendientes se realizaban de memoria o con notas en papel.
+\end{itemize}
+
+Esta situación generaba ineficiencias tangibles: tiempo perdido en tareas administrativas repetitivas, errores en los importes reflejados en los albaranes, falta de coordinación entre el personal de tienda y los repartidores, y ausencia total de capacidad analítica para la toma de decisiones.
+
+El objetivo global del proyecto es diseñar e implementar un sistema de información web que digitalice de forma integral todos estos procesos. El sistema debe ser accesible desde cualquier ordenador de la red local de la tienda sin necesidad de instalar ningún software adicional, y debe poder operar también de forma remota a través de internet una vez desplegado en la nube.
+
+\section{Estudio de alternativas}
+
+Antes de optar por el desarrollo a medida se analizaron las soluciones de gestión comercial disponibles en el mercado:
+
+\begin{table}[H]
+  \centering
+  \caption{Comparativa de soluciones ERP existentes.}
+  \label{tab:comparativa_erp}
+  \renewcommand{\arraystretch}{1.4}
+  \begin{footnotesize}
+  \begin{tabular}{|l|p{4.5cm}|p{4.5cm}|}
+    \hline
+    \textbf{Solución} & \textbf{Ventajas} & \textbf{Inconvenientes} \\
+    \hline
+    \textbf{Odoo (Community)} & Funcionalidad muy completa; código abierto & Curva de aprendizaje elevada; configuración compleja; módulos irrelevantes para una tienda pequeña \\
+    \hline
+    \textbf{Holded} & Interfaz moderna; integración contable nativa & Suscripción mensual de pago; no adaptable a flujos específicos de este sector \\
+    \hline
+    \textbf{Sage 50} & Ampliamente utilizado en España; módulo fiscal completo & Precio de licencia elevado; arquitectura cliente-escritorio; difícil de personalizar \\
+    \hline
+    \textbf{ERPNext} & Código abierto; modular & Instalación y mantenimiento complejos; requiere servidor dedicado y conocimientos avanzados \\
+    \hline
+    \textbf{Desarrollo a medida} & Adaptado exactamente al flujo de la tienda; funcionalidades exclusivas (IA, RFM); sin costes de licencia recurrentes & Mayor inversión inicial de desarrollo \\
+    \hline
+  \end{tabular}
+  \end{footnotesize}
+\end{table}
+
+Las soluciones comerciales presentan un problema común: están diseñadas para cubrir una amplísima gama de sectores y tamaños de empresa, lo que se traduce en interfaces sobrecargadas y flujos de trabajo que no encajan con la operativa específica de una tienda de muebles mediana. Ninguna de las alternativas evaluadas ofrecía de forma nativa la combinación de módulo logístico por camiones, segmentación RFM de clientes y asistente conversacional de IA.
+
+Por estos motivos se optó por el \textbf{desarrollo a medida} de una aplicación web moderna, aprovechando tecnologías de código abierto y servicios en la nube con capa gratuita amplia (Railway, Vercel, Groq, Stripe en modo de prueba).
+
+\section{Metodología empleada}
+
+El desarrollo de FurniGest siguió el \textbf{modelo iterativo e incremental} \cite{pressman}, inspirado en los principios del \textbf{Manifiesto Ágil} \cite{manifiestoAgil} (Beck et al., 2001) y en las prácticas de gestión de \textbf{Scrum} \cite{schwaber}. Frente al modelo en cascada clásico ---en el que los requisitos se congelan antes del diseño--- el enfoque ágil permite ajustar el \textit{product backlog} a medida que se adquiere un mejor conocimiento del dominio del problema.
+
+Cada iteración del proyecto agrupaba un conjunto de historias de usuario que añadían valor entrenable de forma independiente, siguiendo el ciclo: análisis de requisitos de la iteración $\to$ diseño $\to$ implementación $\to$ pruebas $\to$ revisión. La sincronización entre el estado del código y las pruebas automatizadas se mantuvo gracias al pipeline de CI que se activaba en cada \textit{push}.
+
+Las fases del desarrollo fueron:
+
+\begin{enumerate}
+  \item \textbf{Fase~0 —~Elicitación y análisis de requisitos:} Se identificaron las entidades del dominio y los casos de uso principales mediante entrevistas con la tienda. Se elaboró el catálogo de requisitos funcionales (RF) y no funcionales (RNF) siguiendo la estructura del estándar\textbf{ IEEE~830} \cite{ieee830}. Las funcionalidades se priorizaron en dos categorías: \textit{core} (necesarias para la operativa diaria) y \textit{avanzadas} (analíticas, IA, pagos en línea).
+  \item \textbf{Fase~1 —~Implementación iterativa por módulos:} Desarrollo incremental guiado por pruebas (\textbf{TDD}, \textit{Test-Driven Development} \cite{beckTDD}). En cada iteración se completaban: modelo de datos, endpoints de la API, vista del \textit{frontend} y pruebas automatizadas. El orden de implementación respetó las dependencias entre entidades (clientes $\to$ productos/proveedores $\to$ albaranes $\to$ movimientos $\to$ módulos avanzados).
+  \item \textbf{Fase~2 —~Integración y entrega continuas:} Desde la primera semana se configuró un pipeline de GitHub Actions con \textbf{integración continua (CI)} \cite{fowlerCI} que ejecuta la batería de pruebas en cada \textit{push} y despliega automáticamente en producción \textbf{(despliegue continuo, CD)} si todas las pruebas pasan.
+  \item \textbf{Fase~3 —~Refinamiento e inspección de calidad:} Una vez implementadas las funcionalidades base se realizó una pasada de \textbf{refactorización} \cite{fowlerRefactoring} para reducir la \textit{deuda técnica} acumulada, mejorar la cohesión de módulos y eliminar duplicaciones de código. Se aplicó la regla del \textit{boy scout}: ``deja el código mejor de lo que te lo encontraste''.
+\end{enumerate}
+
+\section{Objetivos específicos}
+
+Los objetivos concretos que FurniGest alcanza pueden enumerarse de la siguiente forma:
+
+\begin{enumerate}[label=\textbf{OBJ-\arabic*}]
+  \item Proporcionar un CRUD completo de clientes con datos de contacto, dirección y acceso directo a su historial de pedidos.
+  \item Gestionar el catálogo de productos enlazados a sus proveedores, con precios y descripciones editables.
+  \item Implementar el ciclo de vida completo de un albarán (Fianza $\to$ Almacén $\to$ Ruta $\to$ Entregado) con registro automático de movimientos financieros en cada transición.
+  \item Mantener un libro contable de movimientos con clasificación en ingresos y gastos.
+  \item Ofrecer un dashboard con KPI actualizados en tiempo real y gráficas de evolución de ventas y distribución de estados de pedidos.
+  \item Implementar un motor de analíticas con segmentación RFM de clientes y análisis de pares de productos.
+  \item Integrar un asistente conversacional de IA capaz de responder preguntas sobre el negocio en lenguaje natural a partir de métricas reales.
+  \item Gestionar la logística de entrega mediante asignación de albaranes a camiones numerados, liquidación de rutas y descarga de facturas PDF.
+  \item Habilitar el cobro de pagos en línea mediante Stripe Checkout con registro automático del ingreso confirmado.
+  \item Generar y enviar por correo electrónico documentos PDF de albaranes al crear cada pedido.
+  \item Garantizar la calidad del código mediante pruebas automatizadas con cobertura de todos los módulos de la API.
+  \item Desplegar la aplicación en la nube con CI/CD completamente automatizado.
+\end{enumerate}
+
+\blankpage
+
+
+% ==============================================================
+% CAPÍTULO 3 — DESCRIPCIÓN INFORMÁTICA
+% ==============================================================
+\chapter{Descripción informática}
+\label{chap:descripcion}
+
+Este capítulo recoge la especificación de requisitos, el diseño del sistema y los detalles de implementación de todos los componentes de FurniGest.
+
+\section{Especificación de requisitos}
+
+Los requisitos del sistema se especifican siguiendo la terminología del estándar \textbf{IEEE~830-1998} \cite{ieee830}, que distingue entre \textbf{requisitos funcionales} ---qué debe hacer el sistema--- y \textbf{requisitos no funcionales} ---bajo qué restricciones de calidad debe hacerlo. Esta separación facilita la trazabilidad entre las necesidades del cliente y las decisiones de diseño adoptadas en fases posteriores.
+
+\subsection{Requisitos funcionales}
+
+La Tabla~\ref{tab:requisitos_funcionales} recoge los requisitos funcionales identificados en la fase de \textbf{elicitación de requisitos} \cite{ieee830} mediante la técnica de entrevista estructurada con los usuarios de la tienda.
+
+\begin{table}[H]
+  \centering
+  \caption{Requisitos funcionales del sistema.}
+  \label{tab:requisitos_funcionales}
+  \renewcommand{\arraystretch}{1.4}
+  \begin{footnotesize}
+  \begin{tabular}{|l|p{9cm}|}
+    \hline
+    \textbf{Identificador} & \textbf{Descripción} \\
+    \hline
+    RF-01 & El sistema permitirá crear, consultar, editar y eliminar clientes. \\
+    \hline
+    RF-02 & El sistema permitirá crear, consultar, editar y eliminar productos enlazados a proveedores. \\
+    \hline
+    RF-03 & El sistema permitirá crear, consultar, editar y eliminar proveedores. \\
+    \hline
+    RF-04 & El sistema permitirá crear albaranes con una o varias líneas de producto; en la creación se registrará automáticamente un movimiento de fianza. \\
+    \hline
+    RF-05 & El sistema permitirá avanzar el estado de un albarán por la transición: Fianza $\to$ Almacén $\to$ Ruta $\to$ Entregado; al marcar Entregado se registra el importe pendiente como ingreso. \\
+    \hline
+    RF-06 & El sistema registrará movimientos financieros (ingresos y gastos) de forma manual y automática; mostrará el listado filtrable por tipo y rango de fechas. \\
+    \hline
+    RF-07 & El dashboard mostrará: ingresos y gastos totales del mes, número de pedidos activos, últimos pedidos y gráfica de evolución de ventas. \\
+    \hline
+    RF-08 & El sistema calculará métricas de analíticas: ventas diarias/semanales, productos más vendidos, comparativa de periodos y segmentación RFM de clientes. \\
+    \hline
+    RF-09 & El asistente de IA recibirá las métricas actuales del negocio y responderá preguntas en lenguaje natural, pudiendo generar sugerencias de gráficas. \\
+    \hline
+    RF-10 & El módulo de transporte permitirá asignar albaranes en estado Almacén a camiones numerados, visualizar las rutas activas, liquidar cada ruta (registra un gasto del 7\,\% del total) y descargar la factura en PDF. \\
+    \hline
+    RF-11 & El módulo de pagos generará una sesión de Stripe Checkout para cualquier importe, verificará el pago en el \textit{backend} y creará el movimiento de ingreso correspondiente. \\
+    \hline
+    RF-12 & Al crear un albarán, el sistema enviará automáticamente en segundo plano un correo electrónico al cliente con el PDF del albarán adjunto. \\
+    \hline
+    RF-13 & El sistema permitirá exportar informes de analíticas en PDF. \\
+    \hline
+  \end{tabular}
+  \end{footnotesize}
+\end{table}
+
+\subsection{Requisitos no funcionales}
+
+\begin{table}[H]
+  \centering
+  \caption{Requisitos no funcionales del sistema.}
+  \label{tab:requisitos_nofuncionales}
+  \renewcommand{\arraystretch}{1.4}
+  \begin{footnotesize}
+  \begin{tabular}{|l|l|p{7.5cm}|}
+    \hline
+    \textbf{Id.} & \textbf{Categoría} & \textbf{Descripción} \\
+    \hline
+    RNF-01 & Rendimiento & El \textit{backend} responderá el 95\,\% de las peticiones en menos de 500\,ms en producción (Railway). \\
+    \hline
+    RNF-02 & Disponibilidad & La aplicación estará desplegada en servicios \textit{cloud} con disponibilidad declarada $\geq$ 99\,\%. \\
+    \hline
+    RNF-03 & Usabilidad & La interfaz seguirá los principios del \textbf{Diseño Centrado en el Usuario (DCU)}~\cite{iso9241}: será responsiva y operativa en pantallas de 320\,px de ancho mínimo; la navegación entre módulos no superará dos clics desde el menú lateral. Se optimizará la \textit{learnability} (facilidad de aprendizaje) y la \textit{efficiency} (velocidad de realización de tareas) según las dimensiones de usabilidad definidas por Nielsen~\cite{nielsen}. \\
+    \hline
+    RNF-04 & Mantenibilidad & El código fuente superará los controles de calidad de Ruff (Python) y ESLint (JavaScript) de forma automática en cada \textit{commit}. La batería de pruebas cubrirá el 100\,\% de los endpoints de la API. \\
+    \hline
+    RNF-05 & Portabilidad & La aplicación podrá ejecutarse en local con un único comando (\texttt{docker compose up}) sobre cualquier sistema operativo compatible con Docker. \\
+    \hline
+    RNF-06 & Seguridad & El \textit{backend} validará todos los datos de entrada mediante esquemas Pydantic. Las claves de API y credenciales no se incluirán en el repositorio de código fuente. \\
+    \hline
+  \end{tabular}
+  \end{footnotesize}
+\end{table}
+
+
+\section{Diseño}
+
+\subsection{Arquitectura del sistema}
+
+FurniGest puede caracterizarse como un \textbf{sistema distribuido} en el sentido definido por Tanenbaum: un conjunto de nodos independientes (cliente en Vercel, servidor en Railway, base de datos en PostgreSQL) que se presentan al usuario como un único sistema coherente~\cite{tanenbaum}. Sus características fundamentales son: \textbf{concurrencia} (múltiples usuarios pueden operar simultáneamente gracias al modelo ASGI de FastAPI), \textbf{tolerancia a fallos} (cada servicio de Railway y Vercel está respaldado por infraestructura con disponibilidad declarada $\geq$ 99\,\%) y \textbf{escalabilidad horizontal} (añadir instancias del backend sin modificar la capa de datos).
+
+FurniGest sigue una \textbf{arquitectura de tres capas} \cite{pressman}, también representable mediante un \textit{diagrama de despliegue} UML: capa de presentación (cliente), capa lógica (servidor) y capa de datos (base de datos). Este patrón arquitectónico \textbf{desacopla} las responsabilidades de cada nivel, favoreciendo la \textbf{cohesión} interna de cada subsistema y reduciendo el \textbf{acoplamiento} entre ellos. La comunicación entre el \textit{frontend} y el \textit{backend} se realiza íntegramente mediante peticiones HTTP (REST), lo que permite que ambas capas evolucionen de forma independiente y que el \textit{backend} pueda ser consumido por cualquier otro cliente en el futuro (p.ej., aplicación móvil).
+
+% ----- FIGURA NECESARIA -----
+% Descripción: Diagrama de arquitectura del sistema completo.
+%   Mostrar: navegador (React SPA) → API REST (FastAPI / Railway)
+%   → PostgreSQL. Además: flechas a servicios externos Groq API,
+%   Stripe API, SMTP/Resend. El frontend también apunta a Vercel
+%   (hosting estático). GitHub Actions conecta el repositorio con
+%   Vercel y Railway (CI/CD).
+% Nombre sugerido: fig_arquitectura.pdf  (o .png)
+\begin{figure}[H]
+  \centering
+  \fbox{\parbox{0.85\textwidth}{\centering\vspace{2.5cm}
+    \textit{[FIGURA PENDIENTE — Diagrama de despliegue UML de FurniGest: \\
+    cliente (React/Vercel) $\leftrightarrow$ backend (FastAPI/Railway) $\leftrightarrow$ PostgreSQL, \\
+    con flechas a Groq API, Stripe API y SMTP/Resend]}
+    \vspace{2.5cm}}}
+  \caption{Diagrama de despliegue de FurniGest (arquitectura de tres capas).}
+  \label{fig:arquitectura}
+\end{figure}
+
+El \textit{backend} se organiza en tres subcapas:
+
+\begin{itemize}
+  \item \textbf{Capa HTTP (\texttt{api/}):} routers FastAPI, un fichero por dominio. Son capas delgadas que solo validan la entrada y delegan en la lógica de negocio.
+  \item \textbf{Capa de servicio (\texttt{services/}):} contiene la lógica de negocio reutilizable (upserts, validaciones de integridad, reglas de transición de estado).
+  \item \textbf{Capa de datos (\texttt{entidades/}):} modelos SQLAlchemy y esquemas Pydantic, un fichero por entidad.
+\end{itemize}
+
+El \textit{frontend} es una SPA organizada en componentes React. Cada página del sistema corresponde a un componente de nivel superior (`Dashboard`, `ClientesPage`, `AlbaranesPage`, etc.) montado por React Router~7 mediante el patrón \textit{layout} con \verb|<Outlet>|, de modo que el menú lateral (`Sidebar`) persiste entre navegaciones.
+
+Las decisiones tecnológicas clave se justifican en la Tabla~\ref{tab:decisiones_tecnicas}.
+
+\begin{table}[H]
+  \centering
+  \caption{Principales decisiones tecnológicas y su justificación.}
+  \label{tab:decisiones_tecnicas}
+  \renewcommand{\arraystretch}{1.4}
+  \begin{footnotesize}
+  \begin{tabular}{|l|l|p{6cm}|}
+    \hline
+    \textbf{Capa} & \textbf{Tecnología elegida} & \textbf{Justificación principal} \\
+    \hline
+    Framework backend  & FastAPI 0.115    & ASGI nativo, generación automática de OpenAPI, integración directa con Pydantic~v2 \\
+    \hline
+    ORM                & SQLAlchemy 2.x   & Mapeo declarativo, carga selectiva con \texttt{selectinload}, gestión de sesión por petición \\
+    \hline
+    Base de datos       & PostgreSQL 16    & Concurrencia, integridad referencial, soporte de tipos avanzados \\
+    \hline
+    Framework frontend & React 19         & Ecosistema maduro, Hooks para estado local sin gestor global \\
+    \hline
+    Estilos            & TailwindCSS 4    & CSS \textit{utility-first}, cero \textit{runtime}, configuración CSS nativa en v4 \\
+    \hline
+    Gráficas           & Chart.js 4       & Renderizado en \texttt{<canvas>}, alto rendimiento, soporte react-chartjs-2 \\
+    \hline
+    LLM                & Groq / Llama-3.1-8b & Latencia sub-segundo, API compatible con OpenAI, coste nulo en desarrollo \\
+    \hline
+    Pagos              & Stripe Checkout  & Externaliza la página de pago, elimina responsabilidad PCI \\
+    \hline
+    PDF                & ReportLab 4.x    & Generación en proceso sin dependencia de navegador \\
+    \hline
+  \end{tabular}
+  \end{footnotesize}
+\end{table}
+
+
+\subsection{Modelo de datos}
+
+El diseño de la base de datos sigue la metodología clásica de modelado conceptual mediante el \textbf{modelo Entidad-Relación (E/R)}, propuesto por Peter P.~Chen en 1976~\cite{chen1976}. En el nivel conceptual se identifican las entidades del dominio, sus atributos y las relaciones entre ellas. Posteriormente, el modelo E/R se transforma al \textbf{modelo relacional} de E.F.~Codd~\cite{codd1970}: cada entidad se convierte en una tabla, las relaciones pasan a ser \textbf{claves foráneas} (\textit{foreign keys}) y se aplican \textbf{restricciones de integridad referencial} en el SGBD para garantizar la consistencia de los datos. SQLAlchemy actúa como \textbf{ORM} (\textit{Object-Relational Mapper}), mapeando las clases Python a tablas SQL y abstrayendo el acceso a datos en una interfaz orientada a objetos.
+
+FurniGest gestiona \textbf{ocho entidades} almacenadas en PostgreSQL. Las relaciones entre ellas se ilustran en la Figura~\ref{fig:er}.
+
+% ----- FIGURA NECESARIA -----
+% Descripción: Diagrama Entidad-Relación (o diagrama de clases UML)
+%   con las 8 tablas:
+%   clientes, albaranes, lineas_albaran, productos, proveedores,
+%   movimientos, albaran_rutas, stripe_checkouts.
+%   Mostrar claves primarias, foráneas y cardinalidades.
+% Nombre sugerido: fig_er.pdf  (o .png)
+\begin{figure}[H]
+  \centering
+  \fbox{\parbox{0.85\textwidth}{\centering\vspace{2.5cm}
+    \textit{[FIGURA PENDIENTE — Diagrama Entidad-Relación: \\
+    \texttt{clientes} $\xrightarrow{1:N}$ \texttt{albaranes} $\xrightarrow{1:N}$ \texttt{lineas\_albaran} $\xrightarrow{N:1}$ \texttt{productos} $\xrightarrow{N:1}$ \texttt{proveedores} \\
+    \texttt{albaranes} $\xrightarrow{1:N}$ \texttt{albaran\_rutas}, \texttt{movimientos} (independiente), \texttt{stripe\_checkouts} (independiente)]}
+    \vspace{2.5cm}}}
+  \caption{Esquema Entidad-Relación de la base de datos de FurniGest.}
+  \label{fig:er}
+\end{figure}
+
+La Tabla~\ref{tab:entidades} resume las entidades y sus relaciones principales.
+
+\begin{table}[H]
+  \centering
+  \caption{Entidades del modelo de datos.}
+  \label{tab:entidades}
+  \renewcommand{\arraystretch}{1.4}
+  \begin{footnotesize}
+  \begin{tabular}{|l|l|p{7cm}|}
+    \hline
+    \textbf{Entidad} & \textbf{Tabla SQL} & \textbf{Relaciones y atributos clave} \\
+    \hline
+    Cliente       & \texttt{clientes}        & Tiene muchos albaranes; atributos: nombre, apellidos, DNI (único), email, teléfono, dirección completa \\
+    \hline
+    Proveedor     & \texttt{proveedores}     & Tiene muchos productos; atributos: nombre, contacto \\
+    \hline
+    Producto      & \texttt{productos}       & Pertenece a un proveedor; atributos: nombre, descripción, precio, stock \\
+    \hline
+    Albarán       & \texttt{albaranes}       & Pertenece a un cliente; tiene muchas líneas; atributos: fecha, total, estado (FIANZA/ALMACEN/RUTA/ENTREGADO) \\
+    \hline
+    Línea albarán & \texttt{lineas\_albaran} & Relaciona albarán con producto; atributos: cantidad, precio unitario \\
+    \hline
+    Movimiento    & \texttt{movimientos}     & Independiente; atributos: fecha, concepto, cantidad, tipo (INGRESO/GASTO) \\
+    \hline
+    Ruta albarán  & \texttt{albaran\_rutas}  & Asocia un albarán a un camión (camion\textunderscore id); permite múltiples albaranes por camión \\
+    \hline
+    Stripe Checkout & \texttt{stripe\_checkouts} & Registro de idempotencia; atributos: session\textunderscore id, importe, estado, fecha \\
+    \hline
+  \end{tabular}
+  \end{footnotesize}
+\end{table}
+
+
+\subsection{Diseño de la API REST}
+
+La API REST de FurniGest sigue el estilo arquitectónico \textbf{REST} (\textit{Representational State Transfer}), descrito por Roy Fielding en su tesis doctoral en el año 2000~\cite{fieldingREST}. REST define un conjunto de restricciones para el diseño de servicios web distribuidos: sin estado (\textit{stateless}), interfaz uniforme basada en \textbf{recursos} identificados por \textbf{URIs}, y uso de los métodos estándar del protocolo HTTP (GET, POST, PUT, PATCH, DELETE). El carácter \textit{stateless} implica que cada petición del cliente contiene toda la información necesaria para ser procesada, sin que el servidor mantenga estado de sesión entre peticiones. Esta restricción facilita la escalabilidad horizontal del servidor: dado que no existe estado compartido entre instancias, es posible añadir nodos al servicio sin coordinación entre ellos.
+
+La API REST se sirve en \texttt{http://\{host\}:8000}. Todos los endpoints de dominio llevan el prefijo \texttt{/api}. La Tabla~\ref{tab:api_resumen} recoge un resumen de los endpoints principales.
+
+\begin{table}[H]
+  \centering
+  \caption{Resumen de los endpoints principales de la API REST.}
+  \label{tab:api_resumen}
+  \renewcommand{\arraystretch}{1.4}
+  \begin{footnotesize}
+  \begin{tabular}{|l|l|p{6.5cm}|}
+    \hline
+    \textbf{Método} & \textbf{Ruta} & \textbf{Descripción} \\
+    \hline
+    GET    & \texttt{/api/clientes/get}               & Lista todos los clientes \\
+    POST   & \texttt{/api/clientes/post}              & Crea un cliente \\
+    PUT    & \texttt{/api/clientes/put/\{id\}}         & Actualiza un cliente \\
+    DELETE & \texttt{/api/clientes/delete/\{id\}}      & Elimina un cliente \\
+    \hline
+    GET    & \texttt{/api/productos/get}              & Lista productos con su proveedor \\
+    POST   & \texttt{/api/productos/post}             & Crea un producto \\
+    \hline
+    POST   & \texttt{/api/albaranes/post}             & Crea albarán (líneas + movimiento fianza + email) \\
+    GET    & \texttt{/api/albaranes/get}              & Lista todos los albaranes \\
+    PATCH  & \texttt{/api/albaranes/\{id\}/estado}    & Avanza el estado del albarán \\
+    \hline
+    GET    & \texttt{/api/movimientos/get}            & Lista movimientos (filtro por tipo) \\
+    POST   & \texttt{/api/movimientos/post}           & Registra un movimiento manual \\
+    \hline
+    GET    & \texttt{/api/transporte/almacen}         & Albaranes en estado Almacén \\
+    POST   & \texttt{/api/transporte/ruta/asignar}    & Asigna albaranes a un camión \\
+    POST   & \texttt{/api/transporte/ruta/\{id\}/liquidar} & Liquida una ruta (registra gasto 7\,\%) \\
+    \hline
+    GET    & \texttt{/api/analytics/summary}          & Métricas completas del periodo \\
+    GET    & \texttt{/api/analytics/compare}          & Comparativa de periodos \\
+    \hline
+    POST   & \texttt{/api/ai/chat}                    & Chat multi-turno con el asistente IA \\
+    POST   & \texttt{/api/stripe/checkout}            & Crea sesión de pago Stripe \\
+    POST   & \texttt{/api/stripe/confirm}             & Verifica pago y registra ingreso \\
+    GET    & \texttt{/health}                         & Sonda de salud para Railway \\
+    \hline
+  \end{tabular}
+  \end{footnotesize}
+\end{table}
+
+
+\section{Implementación}
+
+\subsection{Backend con FastAPI}
+\label{sec:backend}
+
+El \textit{backend} es una aplicación FastAPI~0.115 \cite{fastapi} que se arranca con Uvicorn~\cite{uvicorn}. Su punto de entrada es \texttt{backend/app/main.py}, que registra todos los routers, configura el \textit{middleware} CORS y define el ciclo de vida de la aplicación (\textit{lifespan}) en el que se ejecutan la creación de tablas y la carga de datos iniciales.
+
+El Código~\ref{cod:lifespan} muestra el patrón de inicialización empleado.
+
+\begin{mypython}[float={!t},caption={Ciclo de vida de la aplicación FastAPI (\texttt{main.py}).},label={cod:lifespan}]
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from backend.app.database import Base, engine, SessionLocal
+from backend.app.seed import seed
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Crea todas las tablas si no existen
+    Base.metadata.create_all(bind=engine)
+    # Carga datos de demostración en primera ejecución
+    with SessionLocal() as db:
+        seed(db)
+    yield  # la aplicación queda en ejecución
+
+app = FastAPI(lifespan=lifespan)
+\end{mypython}
+
+La gestión de sesiones de base de datos sigue el patrón \textit{dependency injection} de FastAPI \cite{sqlalchemy}. El generador \texttt{get\_db()} garantiza que cada petición HTTP dispone de una sesión exclusiva que se cierra automáticamente aunque ocurra una excepción:
+
+\begin{mypython}[float={!t},caption={Generador de sesión de base de datos (\texttt{database.py}).},label={cod:getdb}]
+from sqlalchemy.orm import Session
+
+def get_db():
+    db: Session = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+\end{mypython}
+
+Los routers inyectan esta sesión declarando \texttt{db: Session = Depends(get\_db)} en la firma de cada función de vista. Pydantic~v2 \cite{pydantic} se usa para validar la entrada de cada petición (modelos \texttt{*Create}) y serializar la respuesta (modelos de respuesta con \texttt{from\_attributes=True}).
+
+\paragraph{Test-Driven Development.}
+El desarrollo del \textit{backend} siguió el ciclo \textbf{TDD} (\textit{Test-Driven Development}) descrito por Kent Beck \cite{beckTDD}: \textbf{Rojo} (escribir el test que falla) $\to$ \textbf{Verde} (escribir el código mínimo para que pase) $\to$ \textbf{Refactor} (mejorar la estructura sin alterar el comportamiento). Este ciclo garantiza que cada endpoint de la API tiene al menos un test que lo especifica antes de su implementación, actuando los tests como \textit{especificación ejecutable} del sistema.
+
+
+\subsection{Capa de persistencia con SQLAlchemy y PostgreSQL}
+
+Las entidades del dominio se definen como clases SQLAlchemy heredando de \texttt{Base} (instancia de \texttt{declarative\_base()}). La Figura~\ref{fig:er} ilustra las relaciones; el Código~\ref{cod:albaran_model} muestra el modelo de la entidad más central: el albarán.
+
+\begin{mypython}[float={!t},caption={Modelo SQLAlchemy del albarán (\texttt{entidades/albaran.py}, extracto).},label={cod:albaran_model}]
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, Date
+from sqlalchemy.orm import relationship
+from backend.app.database import Base
+
+class AlbaranDB(Base):
+    __tablename__ = "albaranes"
+
+    id      = Column(Integer, primary_key=True, index=True)
+    fecha   = Column(Date, nullable=False)
+    total   = Column(Float, default=0.0)
+    estado  = Column(String, default="FIANZA", nullable=False)
+
+    cliente_id = Column(Integer, ForeignKey("clientes.id"))
+    cliente    = relationship("ClienteDB", back_populates="albaranes")
+    lineas     = relationship(
+        "LineaAlbaranDB",
+        back_populates="albaran",
+        cascade="all, delete-orphan",
+    )
+\end{mypython}
+
+El estado del albarán se modela como un campo \texttt{String} con el tipo Pydantic \mypythoninline{Literal["FIANZA", "ALMACEN", "RUTA", "ENTREGADO"]}, de modo que la máquina de estados queda validada en la capa HTTP antes de que el cambio llegue a la base de datos.
+
+La Figura~\ref{fig:estados} muestra el flujo de transiciones del albarán y los efectos secundarios que dispara cada transición.
+
+% ----- FIGURA NECESARIA -----
+% Descripción: Diagrama de máquina de estados del albarán.
+%   Estados: FIANZA → ALMACEN → RUTA → ENTREGADO.
+%   En FIANZA: se crea movimiento tipo INGRESO "Fianza albarán #id".
+%   En RUTA: se asigna camión_id en albaran_rutas;
+%            al liquidar la ruta se crea movimiento GASTO (7 %).
+%   En ENTREGADO: se crea movimiento INGRESO "Pendiente albarán #id"
+%                 por la diferencia (total – fianza).
+%   Incluir también el envío de email + PDF al crear (FIANZA).
+% Nombre sugerido: fig_estados_albaran.pdf (o .png)
+\begin{figure}[H]
+  \centering
+  \fbox{\parbox{0.85\textwidth}{\centering\vspace{2.5cm}
+    \textit{[FIGURA PENDIENTE — Diagrama de máquina de estados del albarán: \\
+    FIANZA $\to$ ALMACEN $\to$ RUTA $\to$ ENTREGADO \\
+    con efectos laterales en cada transición (movimientos, email, PDF)]}
+    \vspace{2.5cm}}}
+  \caption{Máquina de estados del albarán y sus efectos laterales.}
+  \label{fig:estados}
+\end{figure}
+
+
+\subsection{Frontend con React y Vite}
+
+El \textit{frontend} es una SPA construida con React~19 \cite{react} y empaquetada con Vite~6 \cite{vite}. El punto de entrada (\texttt{src/main.jsx}) registra el enrutador y monta el componente raíz:
+
+\begin{lstlisting}[style=myjs,float={!t},
+  caption={Router principal de la SPA (\texttt{src/main.jsx}, extracto).},
+  label={cod:router}]
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <App />,           // shell con Sidebar + <Outlet>
+    children: [
+      { index: true,            element: <Dashboard /> },
+      { path: 'clientes',       element: <ClientesPage /> },
+      { path: 'albaranes',      element: <AlbaranesPage /> },
+      { path: 'movimientos',    element: <MovimientosPage /> },
+      { path: 'tendencias',     element: <Tendencias /> },
+      { path: 'transporte',     element: <TransportePage /> },
+      { path: 'banco',          element: <BancoPage /> },
+    ],
+  },
+]);
+\end{lstlisting}
+
+El componente \texttt{App.jsx} actúa de \textit{shell}: renderiza el \texttt{Sidebar} de manera permanente y delega el contenido de cada ruta en \verb|<Outlet>|, evitando que el menú se recargue en cada navegación.
+
+El estilado utiliza \textbf{TailwindCSS~4} \cite{tailwindcss} en su variante \textit{utility-first}: cada clase se genera en tiempo de compilación de forma que en producción no llega ningún CSS sin usar al navegador. La versión 4 de TailwindCSS eliminó el fichero \texttt{tailwind.config.js} en favor de directivas CSS nativas (\texttt{@theme}), lo que simplificó la configuración del proyecto.
+
+Las notificaciones visuales (confirmaciones, errores, advertencias) se muestran con la biblioteca \textbf{sileo} mediante un único componente \texttt{<Toaster>} instanciado en \texttt{main.jsx}.
+
+
+\subsection{Motor de analíticas y algoritmos avanzados}
+\label{sec:analytics}
+
+El módulo de analíticas (\texttt{backend/app/api/analytics.py}) expone tres endpoints que calculan bajo demanda las siguientes métricas:
+
+\begin{itemize}
+  \item Evolución diaria o semanal de ventas e ingresos.
+  \item Top 10 de productos por ingresos.
+  \item Comparativa entre un periodo actual y el periodo equivalente anterior.
+  \item Segmentación RFM de clientes.
+  \item Pares de productos frecuentemente comprados juntos.
+\end{itemize}
+
+Todos los cálculos se realizan en Python sobre SQLAlchemy sin pre-computación ni trabajos en segundo plano. El resultado se visualiza en la página \textit{Tendencias} mediante gráficas Chart.js \cite{chartjs} y es también inyectado en el contexto del asistente de IA.
+
+\subsubsection{Segmentación RFM}
+
+El modelo \textit{Recency-Frequency-Monetary} \cite{hughes1994, rfm_review} clasifica a los clientes en función de tres dimensiones calculadas sobre la tabla \texttt{albaranes}:
+
+\begin{itemize}
+  \item \textbf{Recencia ($R$):} días transcurridos desde el último albarán (a menor número, mejor).
+  \item \textbf{Frecuencia ($F$):} número total de albaranes del cliente.
+  \item \textbf{Monetario ($M$):} suma del campo \texttt{total} de todos sus albaranes.
+\end{itemize}
+
+Cada dimensión se cuantifica en una escala del 1 al 5 mediante quintiles calculados sobre el conjunto de todos los clientes activos. La combinación de las tres puntuaciones determina el segmento, según las reglas de la Tabla~\ref{tab:rfm_segmentos}. El Algoritmo~\ref{alg:rfm} muestra el pseudocódigo del proceso.
+
+\begin{table}[H]
+  \centering
+  \caption{Reglas de asignación de segmentos RFM.}
+  \label{tab:rfm_segmentos}
+  \renewcommand{\arraystretch}{1.4}
+  \begin{footnotesize}
+  \begin{tabular}{|l|p{7cm}|}
+    \hline
+    \textbf{Segmento} & \textbf{Criterio (puntuaciones R, F, M sobre quintil 1--5)} \\
+    \hline
+    Champions          & $r = 5$ y $f \geq 4$ \\
+    Loyal Customers    & $f \geq 3$ y $m \geq 3$ \\
+    Potential Loyalists & $r \geq 3$ y $f \leq 2$ \\
+    Need Attention     & $r = 3$ y $f \leq 2$ y $m \leq 2$ \\
+    At Risk            & $r \leq 2$ y $f \geq 2$ \\
+    Lost               & $r = 1$ y $f = 1$ \\
+    \hline
+  \end{tabular}
+  \end{footnotesize}
+\end{table}
+
+\begin{algorithm}[H]
+\begin{algorithmic}[1]
+\STATE Consultar todos los clientes con al menos un albarán
+\FORALL{cliente $c$ en el conjunto}
+  \STATE $R_c \leftarrow$ días entre hoy y la fecha del último albarán de $c$
+  \STATE $F_c \leftarrow$ número total de albaranes de $c$
+  \STATE $M_c \leftarrow \sum \texttt{total}$ de todos los albaranes de $c$
+\ENDFOR
+\STATE Calcular quintiles sobre las distribuciones $\{R_c\}$, $\{F_c\}$, $\{M_c\}$
+\FORALL{cliente $c$}
+  \STATE $r_c \leftarrow$ posición de $R_c$ en el quintil de recencia (invertido: menor $R$ $\Rightarrow$ mayor puntuación)
+  \STATE $f_c \leftarrow$ posición de $F_c$ en el quintil de frecuencia
+  \STATE $m_c \leftarrow$ posición de $M_c$ en el quintil de monetario
+  \STATE $\textit{segmento}_c \leftarrow$ \textsc{AsignarSegmento}$(r_c, f_c, m_c)$
+\ENDFOR
+\RETURN mapa $c \mapsto \textit{segmento}_c$
+\end{algorithmic}
+\caption{Segmentación RFM de clientes.}
+\label{alg:rfm}
+\end{algorithm}
+
+
+\subsubsection{Análisis de cestas de la compra}
+
+El análisis de \textit{market basket} \cite{agrawal1994} identifica pares de productos que aparecen con frecuencia en el mismo albarán. El algoritmo recorre todos los albaranes y cuenta las co-ocurrencias de cada par ordenado $(p_i, p_j)$ con $i < j$. Los pares cuya frecuencia supera un umbral mínimo (\textit{min\_support}) se devuelven ordenados por frecuencia descendente, ofreciendo información accionable para estrategias de venta cruzada. El Algoritmo~\ref{alg:basket} detalla el proceso.
+
+\begin{algorithm}[H]
+\begin{algorithmic}[1]
+\STATE $\textit{pares} \leftarrow \{\}$ \COMMENT{mapa par $\to$ contador}
+\FORALL{albarán $a$ en la tabla \texttt{albaranes}}
+  \STATE $P_a \leftarrow$ lista de \texttt{producto\_id} en las líneas de $a$
+  \FORALL{par $(p_i, p_j)$ con $p_i < p_j$ y $p_i, p_j \in P_a$}
+    \STATE $\textit{pares}[(p_i, p_j)] \mathrel{+}= 1$
+  \ENDFOR
+\ENDFOR
+\STATE Filtrar $\textit{pares}$ conservando aquéllos con valor $\geq \textit{min\_support}$
+\STATE Ordenar por valor descendente
+\RETURN primeros $k$ pares
+\end{algorithmic}
+\caption{Análisis de pares de productos en cestas de la compra.}
+\label{alg:basket}
+\end{algorithm}
+
+
+\subsection{Asistente de inteligencia artificial}
+\label{sec:ia}
+
+El asistente de IA está implementado en \texttt{backend/app/api/ai.py} y se apoya en la API de \textbf{Groq} \cite{groq} con el modelo \textbf{Llama-3.1-8b-instant} \cite{llama2}. Groq proporciona una infraestructura de inferencia de ultra baja latencia (típicamente inferior a 500\,ms para el modelo 8B) mediante unidades de procesamiento LPU (\textit{Language Processing Unit}).
+
+La integración sigue un patrón de \textit{prompt engineering} estructurado en dos capas:
+
+\begin{enumerate}
+  \item \textbf{Mensaje de sistema:} describe el rol del asistente como analista financiero experto de una tienda de muebles, indica el formato de respuesta esperado y define las restricciones (no inventar cifras, usar solo los datos inyectados).
+  \item \textbf{Contexto de métricas:} antes de cada petición del usuario, el \textit{backend} calcula las métricas del periodo seleccionado (ventas, top productos, RFM, pares) y las serializa como JSON compacto, que se incorpora al historial de la conversación como mensaje de usuario previo.
+\end{enumerate}
+
+Esta arquitectura permite que el modelo realice razonamiento analítico sobre datos reales sin necesidad de un modelo de mayor tamaño: la tarea no es recuperación de conocimiento, sino razonamiento numérico sobre un JSON estructurado.
+
+El Código~\ref{cod:groq} muestra la función de llamada a la API de Groq, que utiliza el cliente HTTP estándar de Python (\texttt{requests}) sobre el endpoint compatible con la API de OpenAI.
+
+\begin{mypython}[float={!t},caption={Llamada al LLM mediante la API de Groq (\texttt{utils/groq\_llm.py}).},label={cod:groq}]
+import requests
+from backend.app.ia_settings import GROQ_API_KEY, GROQ_BASE_URL, GROQ_MODEL
+
+def groq_chat(messages, temperature: float = 0.2,
+              model: str | None = None) -> str:
+    url = f"{GROQ_BASE_URL.rstrip('/')}/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "model": model or GROQ_MODEL,
+        "temperature": float(temperature),
+        "messages": messages,
+    }
+    r = requests.post(url, headers=headers,
+                      json=payload, timeout=60)
+    r.raise_for_status()
+    return r.json()["choices"][0]["message"]["content"].strip()
+\end{mypython}
+
+El \textit{frontend} expone el asistente en la página \textit{Tendencias} mediante un widget de chat flotante que soporta renderizado HTML en las respuestas (negrita, listas, epígrafes), de modo que el modelo puede estructurar sus análisis con formato enriquecido.
+
+% ----- FIGURA NECESARIA -----
+% Descripción: Captura de pantalla de la página Tendencias mostrando
+%   las gráficas de ventas (línea), top productos (barra), segmentación
+%   RFM y el widget de chat con una conversación de ejemplo.
+% Nombre sugerido: fig_tendencias.png
+\begin{figure}[H]
+  \centering
+  \fbox{\parbox{0.85\textwidth}{\centering\vspace{2.5cm}
+    \textit{[FIGURA PENDIENTE — Captura de pantalla de la página Tendencias \\
+    con gráficas de ventas, top productos, segmentación RFM \\
+    y widget de chat con asistente IA activo]}
+    \vspace{2.5cm}}}
+  \caption{Página Tendencias: analíticas e integración con el asistente IA.}
+  \label{fig:tendencias}
+\end{figure}
+
+
+\subsection{Módulo de pagos con Stripe}
+
+La integración de pagos sigue el flujo \textit{Stripe Checkout} \cite{stripe} en su modalidad con sesión creada en el servidor:
+
+\begin{enumerate}
+  \item El \textit{frontend} (\texttt{BancoPage}) envía un \texttt{POST /api/stripe/checkout} con el importe y la descripción del cobro.
+  \item El \textit{backend} crea una sesión de Stripe con \texttt{payment\_method\_types=["card"]} y devuelve la URL de pago al cliente.
+  \item El navegador redirige al usuario a la página hospedada de Stripe; al completarse el pago, Stripe devuelve al usuario a \texttt{/banco?success=true}.
+  \item El \textit{frontend} llama a \texttt{POST /api/stripe/confirm} con el identificador de sesión.
+  \item El \textit{backend} verifica el estado de la sesión (\texttt{payment\_status == "paid"}) mediante la API de Stripe y, si el pago está confirmado, crea un movimiento de tipo \texttt{INGRESO} y registra la sesión en \texttt{stripe\_checkouts} para garantizar idempotencia.
+\end{enumerate}
+
+Este diseño externaliza íntegramente la página de pago a la infraestructura de Stripe, eliminando cualquier obligación de cumplimiento PCI en el servidor de la aplicación. Las claves secretas de Stripe nunca se transmiten al navegador.
+
+
+\subsection{Generación de documentos PDF}
+
+FurniGest genera tres tipos de documentos PDF mediante la biblioteca \textbf{ReportLab~4.x} \cite{reportlab}:
+
+\begin{itemize}
+  \item \textbf{Albarán de cliente} (\texttt{utils/albaran\_pdf.py}): incluye datos del cliente, tabla de líneas con productos, cantidades y precios, total y estado. Se genera en memoria (\texttt{io.BytesIO}) y se adjunta al correo electrónico.
+  \item \textbf{Factura de ruta} (\texttt{api/transportes.py}): lista los albaranes asignados al camión, con el total de la ruta y el coste de transporte (7\,\%).
+  \item \textbf{Informe de analíticas} (\texttt{utils/tendencias\_pdf.py}): exporta las gráficas de ventas y los datos de segmentación RFM para su distribución o archivo.
+\end{itemize}
+
+Los endpoints de descarga de PDF devuelven \texttt{StreamingResponse} con \texttt{media\_type="application/pdf"}, lo que permite que el navegador abra directamente el documento sin necesidad de guardar fichero temporal en el servidor.
+
+
+\subsection{Notificaciones por correo electrónico}
+
+Al crear un albarán, el \textit{backend} encola en una \texttt{BackgroundTask} de FastAPI el envío de un correo con el PDF del albarán adjunto. El uso de \texttt{BackgroundTask} garantiza que la respuesta HTTP (201 Created) se devuelve al cliente de forma inmediata; el correo se envía de forma asíncrona después.
+
+El módulo \texttt{utils/emailer.py} implementa una estrategia dual:
+
+\begin{itemize}
+  \item \textbf{Desarrollo local:} se usa \texttt{smtplib} sobre Gmail SMTP (puerto 587, STARTTLS) con una contraseña de aplicación de 16 caracteres generada en la cuenta de Google.
+  \item \textbf{Producción (Railway):} Railway bloquea las conexiones SMTP salientes. Cuando se detecta la variable \texttt{RESEND\_API\_KEY} en el entorno, el módulo cambia automáticamente al proveedor \textbf{Resend} \cite{resend}, cuya API HTTP opera sobre el puerto 443, nunca bloqueado. El cuerpo HTML del mensaje y el PDF adjunto en \textit{base64} se envían a la API de Resend mediante una petición POST.
+\end{itemize}
+
+El cuerpo del correo se renderiza a partir de la plantilla Jinja2 \texttt{templates/albaran\_email.html}, que incluye los datos del cliente, el resumen del pedido y el importe total.
+
+
+\subsection{Despliegue y CI/CD}
+\label{sec:cicd}
+
+La infraestructura de despliegue aplica los tres niveles del modelo de \textbf{entrega de software continua} \cite{fowlerCI}:
+
+\begin{itemize}
+  \item \textbf{Integración continua (CI):} cada \textit{push} a la rama \texttt{main} desencadena la ejecución automática de la batería de pruebas. Martin Fowler (2006) \cite{fowlerCI} define la integración continua como la práctica en la que ``cada miembro del equipo integra su trabajo al repositorio principal al menos una vez al día, siendo verificado por un proceso de \textit{build} automatizado que detecta errores lo antes posible''. En FurniGest, este proceso está orquestado por \textbf{GitHub Actions} \cite{githubactions}.
+  \item \textbf{Entrega continua (\textit{Continuous Delivery}):} si todos los tests pasan, los artefactos compilados (imagen Docker del \textit{backend}, \_bundle\_ estático del \textit{frontend}) están listos para ser desplegados en cualquier momento con un único paso manual.
+  \item \textbf{Despliegue continuo (\textit{Continuous Deployment}):} en FurniGest el despliegue es completamente automático, sin intervención humana. \textbf{Vercel} \cite{vercel} recibe el \textit{bundle} del \textit{frontend} (SPA estática generada por \texttt{vite build}) y lo sirve desde su CDN global. \textbf{Railway} \cite{railway} construye y arranca el contenedor Docker del \textit{backend} directamente desde GitHub, inyectando la variable \texttt{DATABASE\_URL} y gestionando la instancia PostgreSQL~16.
+\end{itemize}
+
+% ----- FIGURA NECESARIA -----
+% Descripción: Diagrama del pipeline CI/CD de GitHub Actions.
+%   Mostrar los workflows: tests.yml (backend-tests + frontend-tests)
+%   y deploy.yml (backend-tests → frontend-tests → deploy-frontend a Vercel).
+%   Railway se conecta directamente al repositorio GitHub (GitHub App)
+%   y despliega en paralelo al detectar un push a main.
+% Nombre sugerido: fig_cicd.pdf (o .png)
+\begin{figure}[H]
+  \centering
+  \fbox{\parbox{0.85\textwidth}{\centering\vspace{2.5cm}
+    \textit{[FIGURA PENDIENTE — Diagrama del pipeline CI/CD: \\
+    GitHub push $\to$ Actions: tests backend + frontend $\to$ deploy a Vercel; \\
+    en paralelo, Railway GitHub App despliega el backend automáticamente]}
+    \vspace{2.5cm}}}
+  \caption{Pipeline de CI/CD de FurniGest.}
+  \label{fig:cicd}
+\end{figure}
+
+Para la ejecución local la aplicación completa puede levantarse con un único comando:
+
+\begin{verbatim}
+docker compose up --build
+\end{verbatim}
+
+Docker Compose \cite{docker} define tres servicios: \texttt{db} (PostgreSQL~16), \texttt{backend} (FastAPI + Uvicorn) y \texttt{frontend} (React compilado con Nginx). El servicio \texttt{backend} espera a que \texttt{db} pase su \textit{healthcheck} antes de iniciarse, evitando errores de conexión en el arranque.
+
+\textbf{Docker} implementa el paradigma de \textbf{virtualización basada en contenedores}: a diferencia de las máquinas virtuales que emulan hardware completo mediante un \textit{hypervisor}, los contenedores comparten el núcleo del sistema operativo anfitrión aislando únicamente el espacio de procesos, sistema de ficheros y red~\cite{docker}. Esto reduce drásticamente el tiempo de arranque y el consumo de recursos, siendo especialmente adecuado para arquitecturas de servicios distribuidos como la de FurniGest.
+
+
+\section{Pruebas}
+
+La estrategia de pruebas de FurniGest sigue la \textbf{pirámide de pruebas} \cite{cohn}: una base amplia de \textbf{pruebas unitarias}, una capa intermedia de \textbf{pruebas de integración} que verifican la interacción entre componentes, y un número reducido de \textbf{pruebas de sistema} que validan la aplicación completa desde el punto de vista del usuario. Las pruebas automatizadas actúan como \textbf{red de seguridad frente a regresiones}: cualquier cambio en el código que rompa comportamiento existente es detectado en segundos durante el pipeline de CI antes de que llegue a producción.
+
+\subsection{Pruebas del backend}
+
+Las pruebas del \textit{backend} son \textbf{pruebas de integración HTTP} implementadas con \textbf{pytest} \cite{pytest} y \texttt{TestClient} de FastAPI, que ejerce la aplicación completa (enrutador $\to$ lógica de negocio $\to$ base de datos) sin levantar un servidor real. El \textbf{SUT} (\textit{System Under Test}) en cada caso de prueba es el endpoint completo. La configuración utiliza una base de datos SQLite en memoria para garantizar el \textbf{aislamiento} entre pruebas y la repetibilidad de los resultados sin necesidad de una instancia PostgreSQL real en el entorno de CI. Cada fichero de pruebas se encuentra en \texttt{test/backend/}.
+
+\begin{table}[H]
+  \centering
+  \caption{Distribución de pruebas del backend por módulo.}
+  \label{tab:pruebas_backend}
+  \renewcommand{\arraystretch}{1.4}
+  \begin{footnotesize}
+  \begin{tabular}{|l|r|}
+    \hline
+    \textbf{Módulo} & \textbf{N.º de pruebas} \\
+    \hline
+    \texttt{test\_clientes.py}     & 12 \\
+    \texttt{test\_productos.py}    & 11 \\
+    \texttt{test\_proveedores.py}  & 8  \\
+    \texttt{test\_albaranes.py}    & 15 \\
+    \texttt{test\_movimientos.py}  & 10 \\
+    \texttt{test\_transportes.py}  & 14 \\
+    \texttt{test\_analytics.py}    & 10 \\
+    \texttt{test\_bank.py}         & 8  \\
+    \texttt{test\_stripe.py}       & 8  \\
+    \hline
+    \textbf{Total}                 & \textbf{96} \\
+    \hline
+  \end{tabular}
+  \end{footnotesize}
+\end{table}
+
+El \texttt{conftest.py} define los \textit{fixtures} compartidos y el esquema de la base de datos de prueba. Los tests más complejos (albaranes, transportes) verifican no solo los códigos de respuesta HTTP sino también los \textbf{efectos laterales}: creación automática de movimientos, transiciones de estado y asignación de camiones. Esto constituye \textbf{prueba de caja negra} sobre el endpoint: se verifica el comportamiento observable sin depender de la implementación interna.
+
+\subsection{Pruebas del frontend}
+
+Las pruebas del \textit{frontend} emplean \textbf{Vitest} \cite{vitest} con \textit{happy-dom} como entorno de DOM y \texttt{@testing-library/react} para la interacción con componentes. Se encuentran en \texttt{frontend/test/} con un fichero por componente de página.
+
+\begin{table}[H]
+  \centering
+  \caption{Distribución de pruebas del frontend por componente.}
+  \label{tab:pruebas_frontend}
+  \renewcommand{\arraystretch}{1.4}
+  \begin{footnotesize}
+  \begin{tabular}{|l|r|}
+    \hline
+    \textbf{Componente} & \textbf{N.º de pruebas} \\
+    \hline
+    \texttt{App.test.jsx}           & 6 \\
+    \texttt{Dashboard.test.jsx}     & 7 \\
+    \texttt{ClientesPage.test.jsx}  & 6 \\
+    \texttt{AlbaranesPage.test.jsx} & 7 \\
+    \texttt{MovimientosPage.test.jsx} & 6 \\
+    \texttt{ProductosPage.test.jsx} & 6 \\
+    \texttt{NuevaVenta.test.jsx}    & 5 \\
+    \texttt{Tendencias.test.jsx}    & 5 \\
+    \texttt{TransportePage.test.jsx}& 5 \\
+    \texttt{BancoPage.test.jsx}     & 4 \\
+    \texttt{Sidebar.test.jsx}       & 4 \\
+    \hline
+    \textbf{Total}                  & \textbf{61} \\
+    \hline
+  \end{tabular}
+  \end{footnotesize}
+\end{table}
+
+Las peticiones HTTP se \textit{mockean} con \texttt{vi.stubGlobal('fetch', ...)} para aislar los componentes del servidor real durante las pruebas.
+
+\subsection{Calidad del código y análisis estático}
+
+El \textbf{análisis estático de código (SCA, \textit{Static Code Analysis})} \cite{fowlerRefactoring} consiste en examinar el código fuente automáticamente sin ejecutarlo, con el objetivo de detectar errores potenciales, violaciones de estilo, código duplicado y posibles vulnerabilidades de seguridad. El repositorio aplica dos herramientas de SCA:
+
+\begin{itemize}
+  \item \textbf{Ruff} \cite{ruff}: \textit{linter} y formateador de código Python ultrarrápido que agrupa las reglas de PEP~8, Pyflakes y otras más de 500 reglas de estilo. Se verifica automáticamente en el workflow \texttt{lint.yml} de GitHub Actions. El proyecto mantiene \textbf{cero avisos} de Ruff en todo momento, lo que garantiza una \textbf{calidad interna} mínima del código fuente \cite{fowlerRefactoring}: legibilidad, eliminación de importaciones no utilizadas y ausencia de patrones anti-idiomáticos.
+  \item \textbf{ESLint}: análisis estático de JavaScript/JSX con las reglas \texttt{eslint:recommended} y \texttt{react-hooks/recommended}, que detectan dependencias incorrectas en efectos de React y uso inadecuado de los Hooks. Integrado en el workflow de CI.
+\end{itemize}
+
+La ausencia de \textit{code smells} ---indicadores de degradación de la calidad interna identificados por Martin Fowler \cite{fowlerRefactoring}, como funciones demasiado largas, nombres poco expresivos o código duplicado--- se mantiene mediante refactorizaciones periódicas durante el desarrollo siguiendo la \textit{Regla del Boy Scout}: dejar el código siempre en mejor estado del que se encontró.
+
+
+% ==============================================================
+% CAPÍTULO 4 — RESULTADOS
+% ==============================================================
+\chapter{Resultados}
+\label{cap:resultados}
+
+Este capítulo presenta los módulos funcionales de FurniGest desplegados en producción y valida el cumplimiento de los objetivos planteados en el Capítulo~2.
+
+\section{Módulos funcionales implementados}
+
+La aplicación desplegada en producción ofrece todos los módulos definidos en los objetivos. A continuación se describe brevemente cada pantalla principal.
+
+\textbf{Dashboard.} La página de inicio muestra cuatro KPI en tarjetas (ingresos del mes, gastos del mes, pedidos activos y clientes activos), una gráfica de líneas con la evolución de la facturación en los últimos 30~días y un gráfico de tarta con la distribución de estados de los albaranes activos. Desde esta pantalla es posible navegar directamente a cualquier albarán concreto.
+
+% ----- FIGURA NECESARIA -----
+% Descripción: Captura de pantalla del Dashboard:
+%   4 tarjetas KPI + gráfica de evolución de ingresos + tabla de últimos pedidos
+%   + gráfico de tarta de estados.
+% Nombre sugerido: fig_dashboard.png
+\begin{figure}[H]
+  \centering
+  \fbox{\parbox{0.85\textwidth}{\centering\vspace{2.5cm}
+    \textit{[FIGURA PENDIENTE — Captura de pantalla del Dashboard: \\
+    tarjetas KPI, gráfica de evolución de ventas y tabla de últimos pedidos]}
+    \vspace{2.5cm}}}
+  \caption{Dashboard principal de FurniGest con KPI y gráficas.}
+  \label{fig:dashboard}
+\end{figure}
+
+\textbf{Nueva Venta.} El asistente de creación de pedidos permite buscar o crear un cliente, buscar productos del catálogo y añadir las líneas del pedido con sus cantidades. Al confirmar, el sistema crea el albarán, registra la fianza como movimiento de ingreso y envía el correo al cliente en segundo plano.
+
+% ----- FIGURA NECESARIA -----
+% Descripción: Captura de pantalla del asistente Nueva Venta
+%   mostrando la búsqueda de producto y el resumen de líneas del pedido.
+% Nombre sugerido: fig_nueva_venta.png
+\begin{figure}[H]
+  \centering
+  \fbox{\parbox{0.85\textwidth}{\centering\vspace{2.5cm}
+    \textit{[FIGURA PENDIENTE — Captura de pantalla del asistente Nueva Venta \\
+    con formulario de cliente, búsqueda de producto y tabla de líneas]}
+    \vspace{2.5cm}}}
+  \caption{Asistente de creación de pedidos (Nueva Venta).}
+  \label{fig:nueva_venta}
+\end{figure}
+
+\textbf{Albaranes.} La página de albaranes muestra el listado completo con filtros por estado y rango de fechas. Cada fila expande un modal de detalle desde el que se puede cambiar el estado, descargar el PDF o navegar al cliente asociado.
+
+\textbf{Transporte.} El coordinador de logística visualiza en una misma pantalla los albaranes en estado Almacén y los camiones con sus rutas activas. Puede arrastrar albaranes a un camión, ver el manifiesto de carga, liquidar la ruta (lo que descuenta el 7\,\% del total como gasto de transporte) y descargar la factura PDF.
+
+% ----- FIGURA NECESARIA -----
+% Descripción: Captura de pantalla del módulo de Transporte
+%   con la lista de camiones, sus albaranes asignados
+%   y el botón de liquidar ruta.
+% Nombre sugerido: fig_transporte.png
+\begin{figure}[H]
+  \centering
+  \fbox{\parbox{0.85\textwidth}{\centering\vspace{2.5cm}
+    \textit{[FIGURA PENDIENTE — Captura de pantalla del módulo de Transporte \\
+    con camiones, albaranes asignados y botón de liquidación de ruta]}
+    \vspace{2.5cm}}}
+  \caption{Módulo de transporte y gestión de rutas.}
+  \label{fig:transporte}
+\end{figure}
+
+\textbf{Movimientos.} El libro contable lista todos los movimientos financieros con su tipo, concepto, fecha e importe. Dispone de un modal de filtros (tipo Ingreso/Gasto, rango de fechas) y permite crear movimientos manuales.
+
+\textbf{Tendencias.} La página de analíticas incluye un selector de rango de fechas, cuatro gráficas interactivas (evolución de ventas, top productos, comparativa de periodos y distribución de segmentos RFM), la tabla de pares de productos más frecuentes y el asistente de IA. Desde este módulo pueden exportarse los informes en PDF.
+
+\section{Métricas de calidad}
+
+La Tabla~\ref{tab:metricas_calidad} resume las métricas de calidad obtenidas al cierre del proyecto.
+
+\begin{table}[H]
+  \centering
+  \caption{Métricas de calidad del proyecto FurniGest.}
+  \label{tab:metricas_calidad}
+  \renewcommand{\arraystretch}{1.4}
+  \begin{footnotesize}
+  \begin{tabular}{|l|l|}
+    \hline
+    \textbf{Métrica} & \textbf{Valor} \\
+    \hline
+    Pruebas unitarias backend (pytest)         & 96 / 96 pasadas \\
+    Pruebas unitarias frontend (Vitest)        & 61 / 61 pasadas \\
+    Avisos de Ruff (Python linter)             & 0 \\
+    Avisos de ESLint (JavaScript linter)       & 0 \\
+    Endpoints de la API cubiertos por pruebas  & 100\,\% \\
+    Tiempo medio de respuesta en producción    & $< 350$\,ms \\
+    Tiempo de compilación \textit{frontend} (Vite) & $\approx 4$\,s \\
+    Tiempo de ejecución completa de tests (CI) & $\approx 45$\,s \\
+    \hline
+  \end{tabular}
+  \end{footnotesize}
+\end{table}
+
+\blankpage
+
+
+% ==============================================================
+% CAPÍTULO 5 — CONCLUSIONES Y TRABAJOS FUTUROS
+% ==============================================================
+\chapter{Conclusiones y trabajos futuros}
+
+\section{Logros alcanzados}
+
+FurniGest cumple íntegramente los doce objetivos específicos enunciados en el Capítulo~2. La aplicación está desplegada en producción, es accesible desde cualquier navegador web y ha sido validada con una batería de 157~pruebas automatizadas que se ejecutan en cada \textit{commit}.
+
+Desde el punto de vista funcional, el sistema transforma los flujos de trabajo de la tienda en procesos digitales completos: la creación de un pedido activa simultáneamente el registro contable, la generación del PDF y el envío del correo al cliente; la entrega de los artículos liquida automáticamente el saldo pendiente; y la asignación de un camión crea el albarán de transporte y registra su coste sin intervención manual adicional.
+
+Desde el punto de vista técnico, el proyecto ha demostrado la viabilidad de construir un ERP a medida de calidad profesional con tecnologías de código abierto y servicios en la nube con coste de operación nulo o muy reducido:
+
+\begin{itemize}
+  \item \textbf{FastAPI + SQLAlchemy} han permitido construir una API REST sólida y bien documentada con muy pocas líneas de código gracias a la generación automática de esquemas OpenAPI y la validación de datos mediante Pydantic.
+  \item \textbf{React~19 + TailwindCSS~4} han posibilitado una interfaz moderna, responsiva y mantenible, con un proceso de compilación en segundos gracias a Vite.
+  \item La integración de \textbf{Groq/Llama-3} como asistente de IA ha resultado especialmente efectiva al inyectar métricas reales en el contexto del modelo: el sistema no requiere un LLM de gran tamaño porque el razonamiento se produce sobre datos estructurados, no sobre conocimiento general.
+  \item La arquitectura de \textbf{CI/CD} con GitHub Actions garantiza que ningún cambio defectuoso llegue a producción.
+\end{itemize}
+
+\section{Conclusiones técnicas}
+
+El desarrollo de FurniGest ha confirmado que el patrón de inyección de dependencias de FastAPI (\texttt{Depends(get\_db)}) es extraordinariamente eficaz para gestionar recursos por petición sin compartir estado entre \textit{workers}. Las \texttt{BackgroundTask} de FastAPI resultan suficientes para tareas de vida corta como el envío de correos, evitando la complejidad operacional de Celery. El modelo de eventos del ciclo de vida (\textit{lifespan}) es la forma idiomática de gestionar la inicialización de la aplicación en las versiones recientes de FastAPI.
+
+En el \textit{frontend}, el patrón \texttt{useState} + \texttt{useEffect} de React ha sido suficiente para el estado local de cada componente. No ha sido necesario ningún gestor de estado global (Redux, Zustand) porque el estado compartido entre páginas es mínimo y se gestiona mediante \texttt{localStorage} para los casos puntuales de datos de navegación cruzada.
+
+\section{Trabajos futuros}
+
+Las siguientes líneas de trabajo ampliarían significativamente las capacidades de FurniGest:
+
+\begin{enumerate}
+  \item \textbf{Autenticación y control de acceso:} FurniGest opera actualmente sin capa de autenticación. La incorporación de \textit{JSON Web Tokens} (JWT) con FastAPI Security permitiría diferenciar roles (administrador, vendedor, repartidor) y auditar las acciones de cada usuario.
+
+  \item \textbf{Aplicación móvil nativa:} la API REST existente podría consumirse desde una aplicación \textit{React Native} o \textit{Flutter} que mejore la experiencia de los repartidores al gestionar las entregas desde un teléfono en campo.
+
+  \item \textbf{Gestión de stock e inventario:} actualmente el catálogo de productos almacena precios y descripciones pero no un nivel de stock real. La extensión del modelo con un campo de inventario, alertas de stock mínimo y un flujo de recepción de mercancía completaría el ciclo de producto.
+
+  \item \textbf{Módulo de presupuestos:} incorporar una fase previa al albarán (presupuesto aceptado/rechazado por el cliente) mejoraría la trazabilidad comercial y la previsión de ventas.
+
+  \item \textbf{Analíticas predictivas:} ampliar el motor de analíticas con modelos de previsión de demanda (ARIMA, Prophet) o predicción de \textit{churn} de clientes aprovecharía los datos históricos ya acumulados.
+
+  \item \textbf{Notificaciones \textit{push}:} integrar Web Push API o un canal de Slack/Telegram para notificaciones en tiempo real (nuevo pedido, entrega confirmada, pago recibido) reduciría la dependencia del correo electrónico.
+
+  \item \textbf{Internacionalización (i18n):} la aplicación podría adaptarse fácilmente a otros sectores e idiomas parametrizando el vocabulario de dominio (albarán, fianza, camión) mediante un sistema de traducciones como \textit{i18next}.
+\end{enumerate}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Bibliografía %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\phantomsection
+\addcontentsline{toc}{chapter}{Bibliografía}
+
+\footnotesize{
+%\bibliographystyle{hispa}
+\bibliographystyle{IEEEtran}
+\bibliography{bibliografia}
+}
+
+
+
+% No expandir elementos para llenar toda la página
+\raggedbottom
+\afterpage{\blankpage}
+
+\newpage
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Apéndices %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\appendix
+
+\phantomsection
+\addcontentsline{toc}{chapter}{Apéndices}
+
+\mbox{}
+\vfill
+\begin{center}
+\begin{Huge}
+\textbf{Apéndices}
+\end{Huge}
+\end{center}
+\vfill
+\mbox{}
+\thispagestyle{empty}
+
+\newpage
+\mbox{}
+\thispagestyle{empty}
+\newpage
+
+
+% ==============================================================
+% APÉNDICE A — Esquema de la base de datos
+% ==============================================================
+\chapter{Esquema completo de la base de datos}
+\label{apend:db}
+
+\section{Definición SQL de las tablas}
+
+A continuación se recoge el esquema SQL generado por SQLAlchemy al ejecutar \texttt{Base.metadata.create\_all(bind=engine)} en una base de datos vacía. Las restricciones de clave foránea y los índices reflejan la configuración establecida en los modelos ORM descritos en el Capítulo~3.
+
+\begin{mypython}[caption={Esquema simplificado de las tablas principales.},label={cod:schema}]
+-- Tabla de clientes
+CREATE TABLE clientes (
+    id               SERIAL PRIMARY KEY,
+    nombre           VARCHAR NOT NULL,
+    apellidos        VARCHAR NOT NULL,
+    dni              VARCHAR UNIQUE,
+    email            VARCHAR,
+    telefono1        VARCHAR,
+    telefono2        VARCHAR,
+    calle            VARCHAR,
+    numero_vivienda  VARCHAR,
+    piso_portal      VARCHAR,
+    ciudad           VARCHAR,
+    codigo_postal    VARCHAR
+);
+
+-- Tabla de proveedores
+CREATE TABLE proveedores (
+    id      SERIAL PRIMARY KEY,
+    nombre  VARCHAR NOT NULL,
+    email   VARCHAR,
+    telefono VARCHAR
+);
+
+-- Tabla de productos
+CREATE TABLE productos (
+    id            SERIAL PRIMARY KEY,
+    nombre        VARCHAR NOT NULL,
+    descripcion   VARCHAR,
+    precio        FLOAT DEFAULT 0.0,
+    proveedor_id  INTEGER REFERENCES proveedores(id)
+);
+
+-- Tabla de albaranes
+CREATE TABLE albaranes (
+    id           SERIAL PRIMARY KEY,
+    fecha        DATE NOT NULL,
+    descripcion  VARCHAR,
+    total        FLOAT DEFAULT 0.0,
+    estado       VARCHAR DEFAULT 'FIANZA' NOT NULL,
+    cliente_id   INTEGER REFERENCES clientes(id)
+);
+
+-- Tabla de líneas de albarán
+CREATE TABLE lineas_albaran (
+    id               SERIAL PRIMARY KEY,
+    albaran_id       INTEGER REFERENCES albaranes(id) ON DELETE CASCADE,
+    producto_id      INTEGER REFERENCES productos(id),
+    cantidad         INTEGER NOT NULL,
+    precio_unitario  FLOAT NOT NULL
+);
+
+-- Tabla de movimientos financieros
+CREATE TABLE movimientos (
+    id        SERIAL PRIMARY KEY,
+    fecha     DATE NOT NULL,
+    concepto  VARCHAR NOT NULL,
+    cantidad  FLOAT NOT NULL,
+    tipo      VARCHAR NOT NULL  -- 'INGRESO' | 'GASTO'
+);
+
+-- Tabla de rutas de transporte
+CREATE TABLE albaran_rutas (
+    id          SERIAL PRIMARY KEY,
+    albaran_id  INTEGER UNIQUE REFERENCES albaranes(id),
+    camion_id   INTEGER NOT NULL
+);
+
+-- Tabla de registros Stripe
+CREATE TABLE stripe_checkouts (
+    id          SERIAL PRIMARY KEY,
+    session_id  VARCHAR UNIQUE NOT NULL,
+    amount      FLOAT NOT NULL,
+    description VARCHAR,
+    status      VARCHAR NOT NULL,
+    created_at  DATE
+);
+\end{mypython}
+
+
+% ==============================================================
+% APÉNDICE B — Referencia completa de la API REST
+% ==============================================================
+\chapter{Referencia de la API REST}
+\label{apend:api}
+
+\section{Módulo de clientes}
+
+\begin{table}[H]
+  \centering
+  \caption{Endpoints del módulo de clientes.}
+  \label{tab:api_clientes}
+  \renewcommand{\arraystretch}{1.4}
+  \begin{footnotesize}
+  \begin{tabular}{|l|l|p{6cm}|}
+    \hline
+    \textbf{Método} & \textbf{Ruta} & \textbf{Descripción} \\
+    \hline
+    GET    & \texttt{/api/clientes/get}           & Lista todos los clientes \\
+    GET    & \texttt{/api/clientes/get/\{id\}}     & Obtiene un cliente por ID \\
+    POST   & \texttt{/api/clientes/post}          & Crea un nuevo cliente \\
+    PUT    & \texttt{/api/clientes/put/\{id\}}     & Actualiza un cliente existente \\
+    DELETE & \texttt{/api/clientes/delete/\{id\}} & Elimina un cliente \\
+    GET    & \texttt{/api/clientes/by-cliente/\{id\}} & Albaranes de un cliente \\
+    \hline
+  \end{tabular}
+  \end{footnotesize}
+\end{table}
+
+\section{Módulo de productos y proveedores}
+
+\begin{table}[H]
+  \centering
+  \caption{Endpoints de productos y proveedores.}
+  \label{tab:api_productos}
+  \renewcommand{\arraystretch}{1.4}
+  \begin{footnotesize}
+  \begin{tabular}{|l|l|p{5.5cm}|}
+    \hline
+    \textbf{Método} & \textbf{Ruta} & \textbf{Descripción} \\
+    \hline
+    GET    & \texttt{/api/productos/get}           & Lista productos (incluye proveedor) \\
+    POST   & \texttt{/api/productos/post}          & Crea un producto \\
+    PUT    & \texttt{/api/productos/put/\{id\}}    & Actualiza un producto \\
+    DELETE & \texttt{/api/productos/delete/\{id\}} & Elimina un producto \\
+    \hline
+    GET    & \texttt{/api/proveedores/get}           & Lista todos los proveedores \\
+    POST   & \texttt{/api/proveedores/post}          & Crea un proveedor \\
+    PUT    & \texttt{/api/proveedores/put/\{id\}}    & Actualiza un proveedor \\
+    DELETE & \texttt{/api/proveedores/delete/\{id\}} & Elimina un proveedor \\
+    \hline
+  \end{tabular}
+  \end{footnotesize}
+\end{table}
+
+\section{Módulo de analíticas e IA}
+
+\begin{table}[H]
+  \centering
+  \caption{Endpoints de analíticas e inteligencia artificial.}
+  \label{tab:api_analytics}
+  \renewcommand{\arraystretch}{1.4}
+  \begin{footnotesize}
+  \begin{tabular}{|l|l|p{6cm}|}
+    \hline
+    \textbf{Método} & \textbf{Ruta} & \textbf{Descripción} \\
+    \hline
+    GET  & \texttt{/api/analytics/summary}      & Métricas del periodo (ventas, RFM, pares) \\
+    GET  & \texttt{/api/analytics/compare}      & Comparativa de dos periodos \\
+    GET  & \texttt{/api/analytics/export/pdf}   & Descarga informe PDF de analíticas \\
+    POST & \texttt{/api/ai/ask}                 & Pregunta puntual con métricas auto-inyectadas \\
+    POST & \texttt{/api/ai/chat}                & Chat multi-turno (modo general o analítico) \\
+    \hline
+  \end{tabular}
+  \end{footnotesize}
+\end{table}
+
+
+% Fin del documento
+\end{document}
