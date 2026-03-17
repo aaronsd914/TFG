@@ -341,7 +341,6 @@ export default function MovimientosPage() {
               value={fecha}
               onChange={(e) => { setFecha(e.target.value); setFechaErr(false); }}
               className={`w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 ${fechaErr ? 'border-red-500 focus:ring-red-300' : 'focus:ring-gray-300'}`}
-              required
             />
             {fechaErr && <p className="text-red-500 text-xs mt-1">La fecha es obligatoria.</p>}
           </div>
@@ -356,7 +355,6 @@ export default function MovimientosPage() {
               value={concepto}
               onChange={(e) => { setConcepto(e.target.value); setConceptoErr(false); }}
               className={`w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 ${conceptoErr ? 'border-red-500 focus:ring-red-300' : 'focus:ring-gray-300'}`}
-              required
             />
             {conceptoErr && <p className="text-red-500 text-xs mt-1">El concepto es obligatorio.</p>}
           </div>
@@ -373,7 +371,6 @@ export default function MovimientosPage() {
               value={cantidad}
               onChange={(e) => { setCantidad(e.target.value); setCantidadErr(false); }}
               className={`w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 ${cantidadErr ? 'border-red-500 focus:ring-red-300' : 'focus:ring-gray-300'}`}
-              required
             />
             {cantidadErr && <p className="text-red-500 text-xs mt-1">Introduce una cantidad válida mayor que 0.</p>}
           </div>
@@ -386,7 +383,6 @@ export default function MovimientosPage() {
               value={tipo}
               onChange={(e) => setTipo(e.target.value)}
               className="w-full border rounded-lg px-3 py-2"
-              required
             >
               <option value="INGRESO">Ingreso</option>
               <option value="EGRESO">Egreso</option>
