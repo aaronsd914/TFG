@@ -14,14 +14,6 @@ vi.mock('react-chartjs-2', () => ({
   Pie: () => <canvas data-testid="pie-chart" />,
 }));
 
-// sileo no es relevante en este contexto
-vi.mock('sileo', () => ({
-  sileo: Object.assign(vi.fn(), {
-    error: vi.fn(), success: vi.fn(), warning: vi.fn(), info: vi.fn(),
-  }),
-  Toaster: () => null,
-}));
-
 function renderDashboard() {
   return render(
     <MemoryRouter>

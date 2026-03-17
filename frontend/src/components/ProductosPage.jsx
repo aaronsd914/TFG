@@ -321,6 +321,7 @@ export default function ProductosPage() {
     }
     list.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
     return list;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productos, gestionQuery, proveedores]);
 
   const selectedProduct = useMemo(() => productos.find((p) => p.id === selectedId) || null, [productos, selectedId]);

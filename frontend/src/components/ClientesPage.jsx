@@ -205,18 +205,6 @@ export default function ClientesPage() {
   const defaultMin = data.length ? Math.min(...data.map((d) => d.id)) : 0;
   const defaultMax = data.length ? Math.max(...data.map((d) => d.id)) : 999999;
 
-  // Evitar negativos + rango coherente
-  function setIdRangeSafe(nextMin, nextMax) {
-    let min = Number.isFinite(Number(nextMin)) ? Number(nextMin) : 0;
-    let max = Number.isFinite(Number(nextMax)) ? Number(nextMax) : defaultMax;
-
-    min = Math.max(0, min);
-    max = Math.max(0, max);
-    if (max < min) max = min;
-
-    setIdRange([min, max]);
-  }
-
   // Aplicación de buscador + filtros + orden
   const filtered = useMemo(() => {
     let list = [...data];

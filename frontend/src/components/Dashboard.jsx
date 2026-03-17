@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Line, Pie } from 'react-chartjs-2';
 import 'chart.js/auto';
-import { sileo } from 'sileo';
 import { API_URL } from '../config.js';
 
 function eur(n) {
@@ -30,8 +29,6 @@ export default function Dashboard() {
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
-  const [savingIds, setSavingIds] = useState(new Set());
-
   // UI
   const [monthsWindow, setMonthsWindow] = useState(6);
   const [refreshing, setRefreshing] = useState(false);
@@ -41,25 +38,6 @@ export default function Dashboard() {
   const [chartMode, setChartMode] = useState('ALL');
 
   const firstLoadRef = useRef(true);
-
-  async function reloadAlmacen() {
-    try {
-      const r = await fetch(`${API_URL}transporte/almacen`);
-      if (r.ok) setAlmacen(await r.json());
-    } catch {}
-  }
-  async function reloadRuta() {
-    try {
-      const r = await fetch(`${API_URL}transporte/ruta`);
-      if (r.ok) setRuta(await r.json());
-    } catch {}
-  }
-  async function reloadAlbaranes() {
-    try {
-      const r = await fetch(`${API_URL}albaranes/get`);
-      if (r.ok) setAlbaranes(await r.json());
-    } catch {}
-  }
 
   async function reloadAll() {
     try {
@@ -284,51 +262,6 @@ export default function Dashboard() {
     },
     scales: { y: { ticks: { precision: 0 } } },
   };
-
-  async function marcarEntregado(id) {
-    setSavingIds(prev => new Set(prev).add(id));
-    try {
-      const res = await fetch(`${API_URL}albaranes/${id}/estado`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estado: 'ENTREGADO' }),
-      });
-
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        const msg = j?.detail || res.statusText || 'No se pudo marcar como entregado.';
-        try {
-          sileo.error({
-            title: 'No se pudo marcar entregado',
-            description: msg,
-          });
-        } catch {}
-        return;
-      }
-
-      await Promise.all([reloadAlmacen(), reloadRuta(), reloadAlbaranes()]);
-
-      try {
-        sileo.success({
-          title: 'Pedido entregado',
-          description: `Albarán #${id} ha sido marcado como entregado.`,
-        });
-      } catch {}
-    } catch (e) {
-      try {
-        sileo.error({
-          title: 'Error de red',
-          description: e?.message || 'No se pudo conectar con el servidor.',
-        });
-      } catch {}
-    } finally {
-      setSavingIds(prev => {
-        const n = new Set(prev);
-        n.delete(id);
-        return n;
-      });
-    }
-  }
 
   function toggleMode(next) {
     setChartMode(prev => (prev === next ? 'ALL' : next));

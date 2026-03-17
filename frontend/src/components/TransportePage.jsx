@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { sileo } from 'sileo';
 
 import { API_URL } from '../config.js';
@@ -151,7 +151,7 @@ export default function TransportePage() {
 
 
   // Filtrado general: almacén, en ruta y camiones
-  const filterAlbaranes = (albaranes) => {
+  const filterAlbaranes = useCallback((albaranes) => {
     const q = (search || '').trim().toLowerCase();
     if (!q) return albaranes;
     return (albaranes || []).filter(a => {
@@ -167,12 +167,12 @@ export default function TransportePage() {
         fechaStr.includes(q)
       );
     });
-  };
+  }, [search, clientesMap]);
 
   // Filtrar almacén
-  const almacenFiltrado = useMemo(() => filterAlbaranes(almacen), [almacen, search, clientesMap]);
+  const almacenFiltrado = useMemo(() => filterAlbaranes(almacen), [almacen, filterAlbaranes]);
   // Filtrar en ruta (sin camión)
-  const pendienteFiltrado = useMemo(() => filterAlbaranes(rutas.sin_camion || []), [rutas, search, clientesMap]);
+  const pendienteFiltrado = useMemo(() => filterAlbaranes(rutas.sin_camion || []), [rutas, filterAlbaranes]);
   // Filtrar camiones: para cada camión, filtrar sus albaranes
   const camionesMapFiltrado = useMemo(() => {
     const m = new Map();
@@ -182,7 +182,7 @@ export default function TransportePage() {
       if (!m.has(cid)) m.set(cid, []);
     });
     return m;
-  }, [rutas, search, clientesMap, camionesExtra]);
+  }, [rutas, filterAlbaranes, camionesExtra]);
 
   async function fetchAll() {
     try {
@@ -235,6 +235,7 @@ export default function TransportePage() {
     }
   }
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchAll(); }, []);
 
   async function asignarA(camion_id, albaran_id) {

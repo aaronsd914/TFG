@@ -56,4 +56,11 @@ describe('ProductosPage', () => {
     await act(async () => { renderPage(); });
     expect(document.body).toBeTruthy();
   });
+
+  it('muestra el botón "Nuevo producto" en el header', async () => {
+    await act(async () => { renderPage(); });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /nuevo producto/i })).toBeInTheDocument();
+    });
+  });
 });

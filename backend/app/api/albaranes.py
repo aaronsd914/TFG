@@ -315,7 +315,9 @@ def descargar_pdf_albaran(albaran_id: int, db: Session = Depends(get_db)):
 
     cliente = db.query(ClienteDB).filter(ClienteDB.id == albaran.cliente_id).first()
 
-    lineas = db.query(LineaAlbaranDB).filter(LineaAlbaranDB.albaran_id == albaran.id).all()
+    lineas = (
+        db.query(LineaAlbaranDB).filter(LineaAlbaranDB.albaran_id == albaran.id).all()
+    )
     prods = {}
     if lineas:
         prod_ids = {ln.producto_id for ln in lineas}
@@ -327,15 +329,21 @@ def descargar_pdf_albaran(albaran_id: int, db: Session = Depends(get_db)):
     for ln in lineas:
         subtotal = (ln.cantidad or 0) * (ln.precio_unitario or 0.0)
         total += subtotal
-        nombre = prods.get(ln.producto_id).nombre if prods.get(ln.producto_id) else f"Producto {ln.producto_id}"
-        lineas_ext.append({
-            "producto_nombre": nombre,
-            "cantidad": ln.cantidad,
-            "precio_unitario": ln.precio_unitario,
-            "p_unit_eur": f"{ln.precio_unitario:.2f} €",
-            "subtotal": subtotal,
-            "subtotal_eur": f"{subtotal:.2f} €",
-        })
+        nombre = (
+            prods.get(ln.producto_id).nombre
+            if prods.get(ln.producto_id)
+            else f"Producto {ln.producto_id}"
+        )
+        lineas_ext.append(
+            {
+                "producto_nombre": nombre,
+                "cantidad": ln.cantidad,
+                "precio_unitario": ln.precio_unitario,
+                "p_unit_eur": f"{ln.precio_unitario:.2f} €",
+                "subtotal": subtotal,
+                "subtotal_eur": f"{subtotal:.2f} €",
+            }
+        )
 
     pdf_bytes = generar_pdf_albaran(albaran, cliente, lineas_ext)
 
