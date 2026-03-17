@@ -17,6 +17,15 @@ function formatDate(d) {
   return Number.isNaN(dt.getTime()) ? '—' : dt.toLocaleDateString();
 }
 
+function Chip({ label, onRemove }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 bg-gray-100 border border-gray-200 px-3 py-1 rounded-full text-sm">
+      {label}
+      <button className="text-gray-500 hover:text-gray-700" onClick={onRemove} aria-label={`Quitar ${label}`} type="button">×</button>
+    </span>
+  );
+}
+
 function ModalCenter({ isOpen, onClose, children, maxWidth = 'max-w-lg' }) {
   if (!isOpen) return null;
   return (
@@ -49,8 +58,9 @@ export default function MovimientosPage() {
   const [tipo, setTipo] = useState('INGRESO');
   const [posting, setPosting] = useState(false);
 
-  // modal + validation
+  // modals
   const [formModalOpen, setFormModalOpen] = useState(false);
+  const [filtersModalOpen, setFiltersModalOpen] = useState(false);
   const [fechaErr, setFechaErr] = useState(false);
   const [conceptoErr, setConceptoErr] = useState(false);
   const [cantidadErr, setCantidadErr] = useState(false);
@@ -206,52 +216,111 @@ export default function MovimientosPage() {
         </div>
       </div>
 
-      {/* Filtros */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-4">
-        <div className="flex flex-col md:flex-row gap-3 md:items-end">
-          <div className="flex-1">
-            <div className="text-sm text-gray-600 mb-1">Buscar</div>
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Concepto, tipo, cantidad…"
-              className="w-full border rounded-lg px-3 py-2"
-            />
-          </div>
-          <div>
-            <div className="text-sm text-gray-600 mb-1">Tipo</div>
-            <select
-              value={tipoFiltro}
-              onChange={(e) => setTipoFiltro(e.target.value)}
-              className="border rounded-lg px-3 py-2"
-            >
-              <option value="TODOS">Todos</option>
-              <option value="INGRESO">Ingreso</option>
-              <option value="EGRESO">Egreso</option>
-            </select>
-          </div>
-          <div>
-            <div className="text-sm text-gray-600 mb-1">Desde</div>
-            <input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} className="border rounded-lg px-3 py-2" />
-          </div>
-          <div>
-            <div className="text-sm text-gray-600 mb-1">Hasta</div>
-            <input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} className="border rounded-lg px-3 py-2" />
-          </div>
-          <div>
-            <button
-              type="button"
-              onClick={() => { setQ(''); setTipoFiltro('TODOS'); setDesde(''); setHasta(''); }}
-              className="px-3 py-2 rounded-xl border border-gray-300 bg-white hover:bg-gray-50"
-            >
-              Limpiar
-            </button>
-          </div>
-        </div>
-        <div className="mt-3 text-sm text-gray-600">
-          Mostrando <span className="font-medium">{movsFiltrados.length}</span> movimientos.
-        </div>
-      </div>
+      {/* Búsqueda + Filtros */}
+      {(() => {
+        const activeCount = [tipoFiltro !== 'TODOS', !!desde, !!hasta].filter(Boolean).length;
+        return (
+          <>
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="Buscar por concepto, tipo, cantidad…"
+                  className="w-full border border-gray-300 rounded-xl px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">⌕</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFiltersModalOpen(true)}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl border text-sm font-medium transition-colors ${activeCount > 0 ? 'bg-black text-white border-black' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 8h10M11 12h2M13 16h-2" />
+                </svg>
+                Filtros{activeCount > 0 ? ` (${activeCount})` : ''}
+              </button>
+            </div>
+
+            {/* Chips filtros activos */}
+            {activeCount > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                {tipoFiltro !== 'TODOS' && (
+                  <Chip label={`Tipo: ${tipoFiltro === 'INGRESO' ? 'Ingreso' : 'Gasto'}`} onRemove={() => setTipoFiltro('TODOS')} />
+                )}
+                {desde && <Chip label={`Desde: ${desde}`} onRemove={() => setDesde('')} />}
+                {hasta && <Chip label={`Hasta: ${hasta}`} onRemove={() => setHasta('')} />}
+                <button
+                  type="button"
+                  className="text-sm text-gray-600 underline ml-1"
+                  onClick={() => { setTipoFiltro('TODOS'); setDesde(''); setHasta(''); }}
+                >
+                  Limpiar todo
+                </button>
+              </div>
+            )}
+
+            <div className="text-sm text-gray-500">
+              Mostrando <span className="font-medium text-gray-800">{movsFiltrados.length}</span> movimientos.
+            </div>
+
+            {/* Modal filtros */}
+            <ModalCenter isOpen={filtersModalOpen} onClose={() => setFiltersModalOpen(false)}>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold">Filtros</h2>
+                <button onClick={() => setFiltersModalOpen(false)} className="text-gray-500 hover:text-gray-700" type="button">Cerrar</button>
+              </div>
+
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Tipo</label>
+                  <div className="flex gap-2 flex-wrap">
+                    {[['TODOS', 'Todos'], ['INGRESO', 'Ingreso'], ['EGRESO', 'Gasto']].map(([val, lbl]) => (
+                      <button
+                        key={val}
+                        type="button"
+                        onClick={() => setTipoFiltro(val)}
+                        className={`px-4 py-2 rounded-xl border text-sm font-medium transition-colors ${tipoFiltro === val ? 'bg-black text-white border-black' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                      >
+                        {lbl}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Desde</label>
+                    <input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} className="w-full border rounded-lg px-3 py-2" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Hasta</label>
+                    <input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} className="w-full border rounded-lg px-3 py-2" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-8 flex items-center justify-between">
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded-xl bg-gray-200 text-gray-900 hover:bg-gray-300"
+                  onClick={() => { setTipoFiltro('TODOS'); setDesde(''); setHasta(''); }}
+                >
+                  Limpiar filtros
+                </button>
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded-xl bg-black text-white hover:opacity-90"
+                  onClick={() => setFiltersModalOpen(false)}
+                >
+                  Aplicar
+                </button>
+              </div>
+            </ModalCenter>
+          </>
+        );
+      })()}
 
       {/* Modal: Añadir movimiento */}
       <ModalCenter isOpen={formModalOpen} onClose={() => { setFormModalOpen(false); setFechaErr(false); setConceptoErr(false); setCantidadErr(false); }}>
@@ -271,7 +340,7 @@ export default function MovimientosPage() {
               type="date"
               value={fecha}
               onChange={(e) => { setFecha(e.target.value); setFechaErr(false); }}
-              className={`w-full border rounded-lg px-3 py-2 ${fechaErr ? 'border-red-500 focus:ring-red-300' : ''}`}
+              className={`w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 ${fechaErr ? 'border-red-500 focus:ring-red-300' : 'focus:ring-gray-300'}`}
               required
             />
             {fechaErr && <p className="text-red-500 text-xs mt-1">La fecha es obligatoria.</p>}
@@ -286,7 +355,7 @@ export default function MovimientosPage() {
               placeholder="Concepto"
               value={concepto}
               onChange={(e) => { setConcepto(e.target.value); setConceptoErr(false); }}
-              className={`w-full border rounded-lg px-3 py-2 ${conceptoErr ? 'border-red-500 focus:ring-red-300' : ''}`}
+              className={`w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 ${conceptoErr ? 'border-red-500 focus:ring-red-300' : 'focus:ring-gray-300'}`}
               required
             />
             {conceptoErr && <p className="text-red-500 text-xs mt-1">El concepto es obligatorio.</p>}
@@ -303,7 +372,7 @@ export default function MovimientosPage() {
               placeholder="0.00"
               value={cantidad}
               onChange={(e) => { setCantidad(e.target.value); setCantidadErr(false); }}
-              className={`w-full border rounded-lg px-3 py-2 ${cantidadErr ? 'border-red-500 focus:ring-red-300' : ''}`}
+              className={`w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 ${cantidadErr ? 'border-red-500 focus:ring-red-300' : 'focus:ring-gray-300'}`}
               required
             />
             {cantidadErr && <p className="text-red-500 text-xs mt-1">Introduce una cantidad válida mayor que 0.</p>}

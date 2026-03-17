@@ -498,7 +498,7 @@ function TablaPedidos({ rows, clientesMap }) {
               <tr
                 key={a.id}
                 className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
-                onClick={() => { window.location.href = `/albaranes`; }}
+                onClick={() => { try { localStorage.setItem('albaran_open_id', String(a.id)); } catch {} window.location.href = '/albaranes'; }}
                 title={`Ir al albarán #${a.id}`}
               >
                 <td className="p-2">#{a.id}</td>

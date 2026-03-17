@@ -64,6 +64,7 @@ app.include_router(stripe_payments.router)
 def health_check():
     return {"status": "ok"}
 
+
 logging.basicConfig(
     level=logging.INFO, format="%(levelname)s %(name)s:%(lineno)d - %(message)s"
 )

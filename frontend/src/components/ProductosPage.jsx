@@ -129,8 +129,6 @@ export default function ProductosPage() {
   const [minPrecio, setMinPrecio] = useState('');
   const [maxPrecio, setMaxPrecio] = useState('');
   const [sort, setSort] = useState('nombre_az');
-  const [soloConDescripcion, setSoloConDescripcion] = useState(false);
-  const [soloPrecioMayor0, setSoloPrecioMayor0] = useState(false);
 
   // paginación (modo all)
   const [page, setPage] = useState(1);
@@ -204,7 +202,7 @@ export default function ProductosPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [q, provFilter, minPrecio, maxPrecio, sort, pageSize, soloConDescripcion, soloPrecioMayor0, groupMode]);
+  }, [q, provFilter, minPrecio, maxPrecio, sort, pageSize, groupMode]);
 
   const precioRangeInvalid = useMemo(() => {
     if (minPrecio === '' || maxPrecio === '') return false;
@@ -223,14 +221,11 @@ export default function ProductosPage() {
         (p) =>
           (p.nombre || '').toLowerCase().includes(t) ||
           (p.descripcion || '').toLowerCase().includes(t) ||
-          String(p.id).includes(t) ||
           provName(p.proveedor_id).toLowerCase().includes(t)
       );
     }
 
     if (provFilter) list = list.filter((p) => String(p.proveedor_id) === String(provFilter));
-    if (soloConDescripcion) list = list.filter((p) => (p.descripcion || '').trim().length > 0);
-    if (soloPrecioMayor0) list = list.filter((p) => Number(p.precio || 0) > 0);
 
     const min = minPrecio === '' ? null : Number(minPrecio);
     const max = maxPrecio === '' ? null : Number(maxPrecio);
@@ -273,8 +268,6 @@ export default function ProductosPage() {
     maxPrecio,
     sort,
     precioRangeInvalid,
-    soloConDescripcion,
-    soloPrecioMayor0,
     proveedores,
   ]);
 
@@ -312,7 +305,6 @@ export default function ProductosPage() {
       list = list.filter((p) => {
         const prov = provName(p.proveedor_id);
         return (
-          String(p.id).includes(t) ||
           (p.nombre || '').toLowerCase().includes(t) ||
           (p.descripcion || '').toLowerCase().includes(t) ||
           prov.toLowerCase().includes(t)
@@ -559,8 +551,6 @@ export default function ProductosPage() {
     setMinPrecio('');
     setMaxPrecio('');
     setSort('nombre_az');
-    setSoloConDescripcion(false);
-    setSoloPrecioMayor0(false);
     setPage(1);
   }
 
@@ -574,9 +564,7 @@ export default function ProductosPage() {
       provFilter ||
       minPrecio !== '' ||
       maxPrecio !== '' ||
-      sort !== 'nombre_az' ||
-      soloConDescripcion ||
-      soloPrecioMayor0
+      sort !== 'nombre_az'
     );
   }
 
@@ -616,11 +604,9 @@ export default function ProductosPage() {
         label: `Orden: ${sortLabel(sort)}`,
         onRemove: () => setSort('nombre_az'),
       });
-    if (soloConDescripcion) list.push({ key: 'desc', label: 'Solo con descripción', onRemove: () => setSoloConDescripcion(false) });
-    if (soloPrecioMayor0) list.push({ key: 'p0', label: 'Precio > 0', onRemove: () => setSoloPrecioMayor0(false) });
     return list;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, provFilter, minPrecio, maxPrecio, sort, soloConDescripcion, soloPrecioMayor0, proveedores]);
+  }, [q, provFilter, minPrecio, maxPrecio, sort, proveedores]);
 
   // ===== UI =====
   if (loading) return <div className="p-6">Cargando productos…</div>;
@@ -687,7 +673,7 @@ export default function ProductosPage() {
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Buscar por ID, nombre, descripción o proveedor…"
+                  placeholder="Buscar por nombre, descripción o proveedor…"
                   className="border rounded-lg px-3 py-2 pr-20 w-full"
                 />
                 <span className="absolute right-10 top-1/2 -translate-y-1/2 text-gray-400">⌕</span>
@@ -809,9 +795,8 @@ export default function ProductosPage() {
                   </select>
                 </div>
 
-                <div className="lg:col-span-6 grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-sm mb-1">Precio mínimo (€)</label>
+                <div className="lg:col-span-6">
+                  <label className="block text-sm mb-1">Precio mínimo (€)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -819,11 +804,11 @@ export default function ProductosPage() {
                       value={minPrecio}
                       onChange={(e) => setMinPrecio(clampNumberInput(e.target.value))}
                       className={`border rounded-lg px-3 py-2 w-full ${precioRangeInvalid ? 'border-red-400' : ''}`}
-                      placeholder="Min €"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm mb-1">Precio máximo (€)</label>
+                    placeholder="Min €"
+                  />
+                </div>
+                <div className="lg:col-span-6">
+                  <label className="block text-sm mb-1">Precio máximo (€)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -831,23 +816,8 @@ export default function ProductosPage() {
                       value={maxPrecio}
                       onChange={(e) => setMaxPrecio(clampNumberInput(e.target.value))}
                       className={`border rounded-lg px-3 py-2 w-full ${precioRangeInvalid ? 'border-red-400' : ''}`}
-                      placeholder="Max €"
-                    />
-                  </div>
-                </div>
-
-                <div className="lg:col-span-6">
-                  <label className="block text-sm mb-2">Filtros extra</label>
-                  <div className="flex flex-wrap gap-3">
-                    <label className="inline-flex items-center gap-2 text-sm">
-                      <input type="checkbox" checked={soloConDescripcion} onChange={(e) => setSoloConDescripcion(e.target.checked)} />
-                      Solo con descripción
-                    </label>
-                    <label className="inline-flex items-center gap-2 text-sm">
-                      <input type="checkbox" checked={soloPrecioMayor0} onChange={(e) => setSoloPrecioMayor0(e.target.checked)} />
-                      Solo precio &gt; 0
-                    </label>
-                  </div>
+                    placeholder="Max €"
+                  />
                 </div>
               </div>
 
@@ -1036,7 +1006,7 @@ export default function ProductosPage() {
                 <input
                   value={gestionQuery}
                   onChange={(e) => setGestionQuery(e.target.value)}
-                  placeholder="Buscar por ID, nombre, descripción o proveedor…"
+                  placeholder="Buscar por nombre, descripción o proveedor…"
                   className="border rounded-lg px-3 py-2 pr-16 w-full"
                 />
                 <span className="absolute right-10 top-1/2 -translate-y-1/2 text-gray-400">⌕</span>

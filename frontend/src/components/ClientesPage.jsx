@@ -88,8 +88,6 @@ export default function ClientesPage() {
   const [sort, setSort] = useState('az'); // az|za|id_up|id_down
   const [selectedDomains, setSelectedDomains] = useState([]);
   const [idRange, setIdRange] = useState([0, 999999]);
-  const [filterCiudad, setFilterCiudad] = useState('');
-  const [filterConTelefono, setFilterConTelefono] = useState(false);
 
   const navigate = useNavigate();
 
@@ -194,14 +192,6 @@ export default function ClientesPage() {
     return Array.from(set).sort();
   }, [data]);
 
-  const ciudades = useMemo(() => {
-    const set = new Set();
-    data.forEach((c) => {
-      if (c.ciudad) set.add(c.ciudad.trim());
-    });
-    return Array.from(set).sort();
-  }, [data]);
-
   const defaultMin = data.length ? Math.min(...data.map((d) => d.id)) : 0;
   const defaultMax = data.length ? Math.max(...data.map((d) => d.id)) : 999999;
 
@@ -221,14 +211,6 @@ export default function ClientesPage() {
     }
 
     list = list.filter((c) => c.id >= idRange[0] && c.id <= idRange[1]);
-
-    if (filterCiudad) {
-      list = list.filter((c) => (c.ciudad || '').toLowerCase().includes(filterCiudad.toLowerCase()));
-    }
-
-    if (filterConTelefono) {
-      list = list.filter((c) => !!c.telefono1);
-    }
 
     if (selectedDomains.length) {
       list = list.filter((c) => selectedDomains.includes((c.email?.split('@')[1] || '').toLowerCase()));
@@ -252,7 +234,7 @@ export default function ClientesPage() {
     }
 
     return list;
-  }, [data, q, idRange, selectedDomains, sort, filterCiudad, filterConTelefono]);
+  }, [data, q, idRange, selectedDomains, sort]);
 
   // Chips de filtros activos
   const activeChips = [
@@ -274,8 +256,7 @@ export default function ClientesPage() {
           },
         ]
       : []),
-    ...(filterCiudad ? [{ key: 'ciudad', label: `Ciudad: ${filterCiudad}`, onRemove: () => setFilterCiudad('') }] : []),
-    ...(filterConTelefono ? [{ key: 'telefono', label: 'Con teléfono', onRemove: () => setFilterConTelefono(false) }] : []),
+
   ];
 
   function clearAll() {
@@ -283,8 +264,6 @@ export default function ClientesPage() {
     setSelectedDomains([]);
     setSort('az');
     setIdRange([defaultMin, defaultMax]);
-    setFilterCiudad('');
-    setFilterConTelefono(false);
   }
 
   async function loadOrders(clienteId) {
@@ -413,11 +392,10 @@ export default function ClientesPage() {
       <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white mt-4">
         <div className="min-w-[700px]">
           <div className="grid grid-cols-12 px-4 py-2 text-sm font-medium text-gray-600 border-b">
-            <div className="col-span-3">Nombre</div>
+            <div className="col-span-4">Nombre</div>
             <div className="col-span-2">Teléfono</div>
-            <div className="col-span-3">Email</div>
+            <div className="col-span-4">Email</div>
             <div className="col-span-2">DNI</div>
-            <div className="col-span-2">Acciones</div>
           </div>
 
           <ul>
@@ -435,13 +413,10 @@ export default function ClientesPage() {
                 className="grid grid-cols-12 px-4 py-3 border-t hover:bg-gray-50 cursor-pointer"
                 onClick={() => openDetail(c)}
               >
-                <div className="col-span-3">{c.nombre} {c.apellidos}</div>
+                <div className="col-span-4">{c.nombre} {c.apellidos}</div>
                 <div className="col-span-2">{c.telefono1 || '—'}</div>
-                <div className="col-span-3">{c.email}</div>
+                <div className="col-span-4">{c.email}</div>
                 <div className="col-span-2">{c.dni}</div>
-                <div className="col-span-2">
-                  <button className="text-blue-600 hover:underline" onClick={(e) => { e.stopPropagation(); openDetail(c); }} type="button">Ver</button>
-                </div>
               </li>
             ))}
           </ul>
@@ -466,40 +441,6 @@ export default function ClientesPage() {
               <option value="id_up">ID ascendente</option>
               <option value="id_down">ID descendente</option>
             </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Ciudad</label>
-            <div className="flex flex-wrap gap-2">
-              {ciudades.length === 0 && <span className="text-sm text-gray-500">No hay ciudades registradas.</span>}
-              {ciudades.map((city) => {
-                const active = filterCiudad === city;
-                return (
-                  <button
-                    key={city}
-                    onClick={() => setFilterCiudad(active ? '' : city)}
-                    className={`px-3 py-1 rounded-full border ${
-                      active ? 'bg-black text-white border-black' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                    }`}
-                    type="button"
-                  >
-                    {city}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div>
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={filterConTelefono}
-                onChange={(e) => setFilterConTelefono(e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300"
-              />
-              <span className="text-sm font-medium">Solo clientes con teléfono</span>
-            </label>
           </div>
 
           <div>

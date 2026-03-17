@@ -437,7 +437,7 @@ export default function TendenciasPage() {
 
           <div className="flex gap-2 ml-2">
             <button
-              onClick={() => exportPdf(false)}
+              onClick={() => exportPdf(true)}
               title="Exporta el informe del período seleccionado en PDF"
               className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-2xl border bg-white hover:bg-gray-50"
             >
@@ -447,7 +447,7 @@ export default function TendenciasPage() {
               Exportar análisis
             </button>
             <button
-              onClick={() => exportPdf(true)}
+              onClick={() => exportPdf(false)}
               title="Exporta el análisis más la comparativa con el período anterior"
               className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-2xl bg-black text-white hover:opacity-90"
             >
@@ -582,8 +582,15 @@ export default function TendenciasPage() {
 
       {/* FLOATING CHAT WIDGET */}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
-        {chatOpen && (
-          <div className="mb-3 w-80 md:w-96 h-[520px] bg-white border rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+          <div
+            className={
+              "mb-3 w-80 md:w-96 h-[520px] bg-white border rounded-2xl shadow-2xl flex flex-col overflow-hidden " +
+              "transition-all duration-300 origin-bottom-right " +
+              (chatOpen
+                ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
+                : "opacity-0 scale-95 translate-y-3 pointer-events-none")
+            }
+          >
             <div className="flex items-center justify-between px-4 py-2.5 border-b bg-gray-50 rounded-t-2xl shrink-0">
               <div className="flex items-center gap-2">
                 <span className="text-base">🤖</span>
@@ -637,12 +644,11 @@ export default function TendenciasPage() {
               <div className="text-xs text-gray-500 mt-1">La IA responde con el contexto del rango seleccionado.</div>
             </div>
           </div>
-        )}
 
         <button
           onClick={() => setChatOpen((o) => !o)}
           className={
-            "flex items-center gap-2 px-4 py-3 rounded-full shadow-lg transition-colors " +
+            "flex items-center gap-2 px-4 py-3 rounded-full shadow-lg transition-all duration-200 active:scale-95 " +
             (chatOpen ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-black text-white hover:opacity-90")
           }
         >
