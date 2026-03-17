@@ -28,9 +28,17 @@ function isoDate(d) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+function defaultRange() {
+  const today = new Date();
+  const end = today.toISOString().slice(0, 10);
+  const start = new Date(today);
+  start.setDate(start.getDate() - 29);
+  return { from: start.toISOString().slice(0, 10), to: end };
+}
+
 export default function TendenciasPage() {
   // --- Rangos y resumen ---
-  const [range, setRange] = useState({ from: "", to: "" });
+  const [range, setRange] = useState(defaultRange);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
   const [summary, setSummary] = useState(null);

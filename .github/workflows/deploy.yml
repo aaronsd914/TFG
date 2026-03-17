@@ -65,6 +65,7 @@ jobs:
         run: railway up --service backend --detach
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
 
   # ────────────────────────────────────────────────────────────
   # JOB 3: Deploy del frontend en Vercel (solo si tests pasan)

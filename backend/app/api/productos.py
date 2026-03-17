@@ -1,22 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from backend.app.entidades.producto import Producto, ProductoCreate, ProductoDB
 from backend.app.database import get_db
+from backend.app.services import productos_service
 from typing import List
-import unicodedata
-
-from sqlalchemy.exc import IntegrityError
 
 router = APIRouter()
 
 
 @router.post("/productos/post", response_model=Producto)
 def crear_producto(producto: ProductoCreate, db: Session = Depends(get_db)):
-    db_producto = ProductoDB(**producto.model_dump())
-    db.add(db_producto)
-    db.commit()
-    db.refresh(db_producto)
-    return db_producto
+    return productos_service.create_producto(producto, db)
 
 
 @router.get("/productos/get", response_model=List[Producto])
@@ -26,49 +20,19 @@ def obtener_productos(db: Session = Depends(get_db)):
 
 @router.get("/productos/get/{producto_id}", response_model=Producto)
 def obtener_producto(producto_id: int, db: Session = Depends(get_db)):
-    producto = db.query(ProductoDB).filter(ProductoDB.id == producto_id).first()
-    if not producto:
-        raise HTTPException(status_code=404, detail="Producto no encontrado")
-    return producto
+    return productos_service.get_producto_or_404(producto_id, db)
 
 
 @router.put("/productos/put/{producto_id}", response_model=Producto)
 def actualizar_producto(
     producto_id: int, actualizado: ProductoCreate, db: Session = Depends(get_db)
 ):
-    producto = db.query(ProductoDB).filter(ProductoDB.id == producto_id).first()
-    if not producto:
-        raise HTTPException(status_code=404, detail="Producto no encontrado")
-    for key, value in actualizado.model_dump().items():
-        setattr(producto, key, value)
-    db.commit()
-    db.refresh(producto)
-    return producto
+    return productos_service.update_producto(producto_id, actualizado, db)
 
 
 @router.delete("/productos/delete/{producto_id}")
 def eliminar_producto(producto_id: int, db: Session = Depends(get_db)):
-    producto = db.query(ProductoDB).filter(ProductoDB.id == producto_id).first()
-    if not producto:
-        raise HTTPException(status_code=404, detail="Producto no encontrado")
-
-    try:
-        db.delete(producto)
-        db.commit()
-        return {"message": f"Producto {producto_id} eliminado"}
-    except IntegrityError:
-        db.rollback()
-        # ✅ No lo borramos porque hay líneas de albarán que lo referencian
-        raise HTTPException(
-            status_code=409,
-            detail="No se puede eliminar este producto porque está referenciado en albaranes (líneas de albarán).",
-        )
-
-
-def _norm(s: str) -> str:
-    s = s or ""
-    nfkd = unicodedata.normalize("NFD", s)
-    return "".join(ch for ch in nfkd if not unicodedata.combining(ch)).lower()
+    return productos_service.delete_producto(producto_id, db)
 
 
 @router.get("/productos/search", response_model=List[Producto])
@@ -77,7 +41,4 @@ def buscar_productos(
     limit: int = 20,
     db: Session = Depends(get_db),
 ):
-    qn = _norm(q)
-    productos = db.query(ProductoDB).all()
-    res = [p for p in productos if qn in _norm(p.nombre)]
-    return res[:limit]
+    return productos_service.search_productos(q, limit, db)
