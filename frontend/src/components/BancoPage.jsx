@@ -151,7 +151,7 @@ export default function BancoPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-3 md:p-6 space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <h1 className="text-2xl font-semibold">Banco</h1>
         <button

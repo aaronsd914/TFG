@@ -170,7 +170,7 @@ export default function MovimientosPage() {
   }, [movs]);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-3 md:p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Movimientos</h1>
         <button
@@ -345,6 +345,8 @@ export default function MovimientosPage() {
 
       {/* Listado */}
       <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+        <div className="overflow-x-auto">
+        <div className="min-w-[480px]">
         <div className="grid grid-cols-12 px-4 py-2 text-sm font-medium text-gray-600 border-b">
           <div className="col-span-2">Fecha</div>
           <div className="col-span-6">Concepto</div>
@@ -371,6 +373,8 @@ export default function MovimientosPage() {
             );
           })}
         </ul>
+        </div>
+        </div>
       </div>
     </div>
   );

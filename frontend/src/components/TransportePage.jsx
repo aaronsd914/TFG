@@ -579,15 +579,15 @@ export default function TransportePage() {
   }
 
   if (loading) {
-    return <div className="p-6 text-gray-600">Cargando…</div>;
+    return <div className="p-3 md:p-6 text-gray-600">Cargando…</div>;
   }
   if (err) {
-    return <div className="p-6 text-red-600">{err}</div>;
+    return <div className="p-3 md:p-6 text-red-600">{err}</div>;
   }
 
   return (
     <>
-      <div className="p-6 space-y-6">
+      <div className="p-3 md:p-6 space-y-6">
         <div className="flex items-center justify-between gap-3">
           <h1 className="text-2xl font-semibold">Transporte</h1>
         </div>

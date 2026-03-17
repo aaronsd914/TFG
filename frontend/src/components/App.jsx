@@ -19,7 +19,7 @@ export default function App() {
         />
       )}
 
-      <main className="flex-1 p-6 overflow-y-auto">
+      <main className="flex-1 p-3 md:p-6 overflow-y-auto">
         {/* Hamburger + title row for mobile */}
         <div className="md:hidden flex items-center justify-between mb-4">
           <button

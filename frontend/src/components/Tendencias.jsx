@@ -376,7 +376,7 @@ export default function TendenciasPage() {
   }
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-3 md:p-6 space-y-4">
       {/* HEADER */}
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>

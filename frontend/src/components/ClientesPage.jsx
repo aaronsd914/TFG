@@ -376,7 +376,7 @@ export default function ClientesPage() {
   const totalClientesRegistrados = data.length;
 
   return (
-    <div className="p-6">
+    <div className="p-3 md:p-6">
       {/* Título + contador */}
       <div className="flex items-end justify-between mb-4">
         <div>
