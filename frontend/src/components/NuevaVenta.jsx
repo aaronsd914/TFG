@@ -156,7 +156,7 @@ export default function NuevaVenta() {
     return (
       <>
         {text.slice(0, idx)}
-        <mark className="rounded bg-yellow-100 px-1 py-0.5">{text.slice(idx, idx + q.length)}</mark>
+        <mark className="rounded bg-yellow-100">{text.slice(idx, idx + q.length)}</mark>
         {text.slice(idx + q.length)}
       </>
     );
@@ -251,7 +251,7 @@ export default function NuevaVenta() {
         return;
       }
       try {
-        const res = await fetch(`${API_URL}productos/search?q=${encodeURIComponent(query)}`);
+        const res = await fetch(`${API_URL}productos/search?q=${encodeURIComponent(query)}&limit=200`);
         if (!res.ok) {
           setSugerencias([]);
           setActiveIdx(-1);
@@ -264,7 +264,6 @@ export default function NuevaVenta() {
           .map((p) => ({ p, score: normalize(p.nombre).indexOf(nq) }))
           .filter((x) => x.score >= 0)
           .sort((a, b) => a.score - b.score)
-          .slice(0, 8)
           .map((x) => x.p);
 
         setSugerencias(scored);
@@ -472,6 +471,28 @@ export default function NuevaVenta() {
           description: 'Se ha enviado al cliente por correo electrónico.',
         });
       } catch {}
+
+      // ✅ Descargar PDF del albarán
+      if (body?.id) {
+        try {
+          const pdfRes = await fetch(`${API_URL}albaranes/${body.id}/pdf`);
+          if (pdfRes.ok) {
+            const blob = await pdfRes.blob();
+            const today = new Date().toISOString().slice(0, 10);
+            const clientName = (useExisting && selectedClient)
+              ? `_${selectedClient.nombre}_${selectedClient.apellidos}`.replace(/\s+/g, '_')
+              : '';
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${today}_albaran_${body.id}${clientName}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+          }
+        } catch {}
+      }
     } catch (e) {
       const msg = `Error de red: ${e?.message || 'desconocido'}`;
       setFormError(msg);
@@ -778,7 +799,7 @@ export default function NuevaVenta() {
                   ref={listRef}
                   className="absolute z-10 mt-2 w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg"
                 >
-                  <div className="max-h-72 overflow-auto p-1">
+                  <div className="max-h-80 overflow-auto p-1">
                     {sugerencias.length === 0 ? (
                       <div className="px-3 py-3 text-sm text-gray-500">Sin resultados</div>
                     ) : (

@@ -303,6 +303,54 @@ def actualizar_estado(
     return alb
 
 
+@router.get("/albaranes/{albaran_id}/pdf")
+def descargar_pdf_albaran(albaran_id: int, db: Session = Depends(get_db)):
+    """Genera y descarga el PDF de un albarán específico."""
+    from fastapi.responses import StreamingResponse
+    from io import BytesIO
+
+    albaran = db.query(AlbaranDB).filter(AlbaranDB.id == albaran_id).first()
+    if not albaran:
+        raise HTTPException(404, "Albarán no encontrado")
+
+    cliente = db.query(ClienteDB).filter(ClienteDB.id == albaran.cliente_id).first()
+
+    lineas = db.query(LineaAlbaranDB).filter(LineaAlbaranDB.albaran_id == albaran.id).all()
+    prods = {}
+    if lineas:
+        prod_ids = {ln.producto_id for ln in lineas}
+        for p in db.query(ProductoDB).filter(ProductoDB.id.in_(prod_ids)).all():
+            prods[p.id] = p
+
+    lineas_ext = []
+    total = 0.0
+    for ln in lineas:
+        subtotal = (ln.cantidad or 0) * (ln.precio_unitario or 0.0)
+        total += subtotal
+        nombre = prods.get(ln.producto_id).nombre if prods.get(ln.producto_id) else f"Producto {ln.producto_id}"
+        lineas_ext.append({
+            "producto_nombre": nombre,
+            "cantidad": ln.cantidad,
+            "precio_unitario": ln.precio_unitario,
+            "p_unit_eur": f"{ln.precio_unitario:.2f} €",
+            "subtotal": subtotal,
+            "subtotal_eur": f"{subtotal:.2f} €",
+        })
+
+    pdf_bytes = generar_pdf_albaran(albaran, cliente, lineas_ext)
+
+    nombre_cliente = ""
+    if cliente:
+        nombre_cliente = f"_{cliente.nombre}_{cliente.apellidos}".replace(" ", "_")
+    filename = f"albaran_{albaran.id}{nombre_cliente}.pdf"
+
+    return StreamingResponse(
+        BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
 @router.get("/transporte/almacen", response_model=List[Albaran])
 def pedidos_en_almacen(db: Session = Depends(get_db)):
     """Devuelve los albaranes en estado ALMACEN, ordenados por fecha de entrada."""
