@@ -3,7 +3,7 @@
  * Verifica el layout de la página de analítica/tendencias y el chat IA.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, waitFor, act, fireEvent } from '@testing-library/react';
 import TendenciasPage from '../src/components/Tendencias.jsx';
 
 vi.mock('sileo', () => ({
@@ -60,15 +60,21 @@ describe('TendenciasPage', () => {
     });
   });
 
-  it('muestra el encabezado del asistente IA', async () => {
+  it('muestra el botón del asistente IA', async () => {
     renderPage();
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /asistente ia/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /asistente ia/i })).toBeInTheDocument();
     });
   });
 
   it('muestra el mensaje de bienvenida del chat', async () => {
     renderPage();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /asistente ia/i })).toBeInTheDocument();
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /asistente ia/i }));
+    });
     await waitFor(() => {
       expect(screen.getByText(/puedes preguntarme/i)).toBeInTheDocument();
     });

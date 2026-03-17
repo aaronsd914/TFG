@@ -332,7 +332,12 @@ def generate_ai_report(metrics_full: Dict[str, Any]) -> str:
             [
                 {
                     "role": "system",
-                    "content": "Eres un experto en analítica de retail.",
+                    "content": (
+                        "Eres un experto en analítica de retail de una tienda de muebles. "
+                        "Responde siempre en español con el informe formateado en HTML usando "
+                        "solo estas etiquetas: <h3>, <h4>, <strong>, <ul>, <li>, <ol>, <p>, <br>. "
+                        "No uses Markdown ni ningún otro formato."
+                    ),
                 },
                 {"role": "user", "content": prompt},
             ],
@@ -429,7 +434,8 @@ def generate_ai_compare_report(compare_obj_full: Dict[str, Any]) -> str:
 
         prompt = (
             "Eres analista de datos retail. Con el JSON de comparativa (compacto), "
-            "explica en español: qué sube/baja, posibles causas, y 3 acciones. Sé concreto.\n\n"
+            "explica en español: qué sube/baja, posibles causas, y 3 acciones. Sé concreto. "
+            "Formatea la respuesta en HTML usando solo: <strong>, <ul>, <li>, <p>, <br>. No uses Markdown.\n\n"
             f"COMPARATIVA JSON:\n{_json_compact(compact)}"
         )
 
@@ -437,7 +443,10 @@ def generate_ai_compare_report(compare_obj_full: Dict[str, Any]) -> str:
             [
                 {
                     "role": "system",
-                    "content": "Eres un experto en analítica de retail.",
+                    "content": (
+                        "Eres un experto en analítica de retail de una tienda de muebles. "
+                        "Responde en HTML usando solo: <strong>, <ul>, <li>, <p>, <br>. No uses Markdown."
+                    ),
                 },
                 {"role": "user", "content": prompt},
             ],

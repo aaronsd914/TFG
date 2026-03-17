@@ -62,6 +62,7 @@ export default function TendenciasPage() {
   ]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   const chatEndRef = useRef(null);
 
   // Cargar summary
@@ -437,24 +438,30 @@ export default function TendenciasPage() {
           <div className="flex gap-2 ml-2">
             <button
               onClick={() => exportPdf(false)}
-              className="text-sm px-3 py-2 rounded-2xl border bg-white hover:bg-gray-50"
+              title="Exporta el informe del período seleccionado en PDF"
+              className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-2xl border bg-white hover:bg-gray-50"
             >
-              PDF de tendencias
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+              </svg>
+              Exportar análisis
             </button>
             <button
               onClick={() => exportPdf(true)}
-              className="text-sm px-3 py-2 rounded-2xl bg-black text-white hover:opacity-90"
+              title="Exporta el análisis más la comparativa con el período anterior"
+              className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-2xl bg-black text-white hover:opacity-90"
             >
-              PDF con comparativa
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+              </svg>
+              Exportar + comparativa
             </button>
           </div>
         </div>
       </div>
 
-      {/* BODY GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* LEFT: dashboard */}
-        <div className="lg:col-span-2 space-y-4">
+      {/* BODY */}
+      <div className="space-y-4">
           {loading ? (
             <div className="rounded-2xl border bg-white p-4">Cargando…</div>
           ) : err ? (
@@ -506,7 +513,7 @@ export default function TendenciasPage() {
                       {aiCompare && (
                         <div className="mt-3">
                           <div className="font-semibold mb-1">Lectura IA</div>
-                          <div className="text-sm text-gray-800 whitespace-pre-wrap">{aiCompare}</div>
+                          <RenderedMessage content={aiCompare} />
                         </div>
                       )}
                     </>
@@ -562,74 +569,99 @@ export default function TendenciasPage() {
               </div>
 
               <div className="rounded-2xl border bg-white p-4">
-                <h3 className="font-semibold mb-2">Informe IA (resumen en pantalla)</h3>
-                <div className="text-sm whitespace-pre-wrap">{aiReport || "(sin informe)"}</div>
-                <div className="text-xs text-gray-500 mt-2">
-                  Para el informe completo, usa PDF de tendencias (el PDF incluye todo lo generado por la IA).
+                <h3 className="font-semibold mb-2">Informe IA</h3>
+                <RenderedMessage content={aiReport || "(sin informe)"} />
+                <div className="text-xs text-gray-500 mt-3">
+                  El PDF incluye el informe completo generado por la IA.
                 </div>
               </div>
             </>
           )}
-        </div>
 
-        {/* RIGHT: chat */}
-        <div className="lg:col-span-1">
-          <div className="sticky top-6">
-            <div className="bg-white border rounded-2xl p-4">
-              <div className="flex items-center justify-between gap-2 mb-3">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold">Asistente IA</h3>
-                  <span className="text-xs text-gray-500">(Groq)</span>
-                </div>
+      </div>
+
+      {/* FLOATING CHAT WIDGET */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+        {chatOpen && (
+          <div className="mb-3 w-80 md:w-96 h-[520px] bg-white border rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-2.5 border-b bg-gray-50 rounded-t-2xl shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="text-base">🤖</span>
+                <h3 className="font-semibold text-sm">Asistente IA</h3>
+                <span className="text-xs text-gray-500">(Groq)</span>
+              </div>
+              <button
+                onClick={clearChat}
+                className="text-xs px-2 py-1 rounded-full border hover:bg-gray-100"
+                title="Reiniciar conversación"
+              >
+                Reiniciar
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-3 space-y-3">
+              {messages.map((m) => (
+                <ChatBubble key={m.id} role={m.role}>
+                  <RenderedMessage content={m.content} />
+                </ChatBubble>
+              ))}
+              {sending && (
+                <ChatBubble role="assistant">
+                  <span className="text-sm text-gray-500 italic">Escribiendo…</span>
+                </ChatBubble>
+              )}
+              <div ref={chatEndRef} />
+            </div>
+
+            <div className="px-3 pt-2 pb-1 flex flex-wrap gap-1.5 shrink-0 border-t">
+              <Chip onClick={() => setInput("¿Qué producto creció más en el rango?")}>Producto que más crece</Chip>
+              <Chip onClick={() => setInput("¿Hay días con picos anómalos de ventas? Describe posibles causas.")}>Detectar picos</Chip>
+              <Chip onClick={() => setInput("Dame 3 acciones para subir el ticket medio (AOV).")}>Subir AOV</Chip>
+            </div>
+
+            <div className="px-3 pb-3 pt-2 shrink-0">
+              <form onSubmit={onSend} className="flex gap-2">
+                <input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Pregunta sobre ventas, productos…"
+                  className="flex-1 border rounded-2xl px-3 py-2 bg-white text-sm"
+                />
                 <button
-                  onClick={clearChat}
-                  className="text-sm px-3 py-1.5 rounded-full border bg-white hover:bg-gray-50"
-                  title="Reiniciar conversación"
+                  disabled={sending || !input.trim()}
+                  className="px-3 py-2 rounded-2xl bg-black text-white disabled:opacity-50 text-sm"
                 >
-                  Reiniciar
+                  Enviar
                 </button>
-              </div>
-
-              <div className="rounded-2xl border bg-white p-3 h-[420px] overflow-y-auto">
-                <div className="space-y-3">
-                  {messages.map((m) => (
-                    <ChatBubble key={m.id} role={m.role}>
-                      <RenderedMessage content={m.content} />
-                    </ChatBubble>
-                  ))}
-
-                  <div ref={chatEndRef} />
-                </div>
-              </div>
-
-              <div className="mt-3">
-                <div className="flex flex-wrap gap-2 mb-3">
-                  <Chip onClick={() => setInput("¿Qué producto creció más en el rango?")}>Producto que más crece</Chip>
-                  <Chip onClick={() => setInput("¿Hay días con picos anómalos de ventas? Describe posibles causas.")}>
-                    Detectar picos
-                  </Chip>
-                  <Chip onClick={() => setInput("Dame 3 acciones para subir el ticket medio (AOV).")}>Subir AOV</Chip>
-                </div>
-
-                <form onSubmit={onSend} className="flex gap-2">
-                  <input
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder="Pregunta sobre ventas, productos, comparativas…"
-                    className="flex-1 border rounded-2xl px-3 py-2 bg-white"
-                  />
-                  <button
-                    disabled={sending || !input.trim()}
-                    className="px-4 py-2 rounded-2xl bg-black text-white disabled:opacity-50"
-                  >
-                    Enviar
-                  </button>
-                </form>
-                <div className="text-xs text-gray-500 mt-2">La IA responde con el contexto del rango seleccionado.</div>
-              </div>
+              </form>
+              <div className="text-xs text-gray-500 mt-1">La IA responde con el contexto del rango seleccionado.</div>
             </div>
           </div>
-        </div>
+        )}
+
+        <button
+          onClick={() => setChatOpen((o) => !o)}
+          className={
+            "flex items-center gap-2 px-4 py-3 rounded-full shadow-lg transition-colors " +
+            (chatOpen ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-black text-white hover:opacity-90")
+          }
+        >
+          {chatOpen ? (
+            <>
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              Cerrar chat
+            </>
+          ) : (
+            <>
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-3 3v-3z" />
+              </svg>
+              Asistente IA
+            </>
+          )}
+        </button>
       </div>
     </div>
   );
