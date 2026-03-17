@@ -398,7 +398,7 @@ export default function TransportePage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `factura_ruta_camion_${camion_id}.pdf`;
+    a.download = `${new Date().toISOString().slice(0, 10)}_ruta_camion_${camion_id}.pdf`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -651,7 +651,7 @@ export default function TransportePage() {
                     disabled={processing}
                     title="Pasa el pedido a EN RUTA (pendiente de camión)"
                   >
-                    → En ruta
+                    En ruta
                   </button>
                 </div>
               </AlbaranCard>
@@ -690,14 +690,14 @@ export default function TransportePage() {
                     onClick={() => marcarEntregado(a.id)}
                     disabled={processing}
                   >
-                    ✓ Entregado
+                    Entregado
                   </button>
                   <button
                     className="flex-1 px-3 py-2 rounded-lg border hover:bg-white/60 disabled:opacity-50 text-sm"
                     onClick={() => volverAlmacen(a.id)}
                     disabled={processing}
                   >
-                    ↩ Almacén
+                    Almacén
                   </button>
                 </div>
               </AlbaranCard>
@@ -788,14 +788,14 @@ export default function TransportePage() {
                         onClick={() => marcarEntregado(a.id)}
                         disabled={processing}
                       >
-                        ✓ Entregado
+                        Entregado
                       </button>
                       <button
                         className="flex-1 px-3 py-2 rounded-lg border hover:bg-white/60 disabled:opacity-50 text-sm"
                         onClick={() => volverAlmacen(a.id)}
                         disabled={processing}
                       >
-                        ↩ Almacén
+                        Almacén
                       </button>
                     </div>
                   </AlbaranCard>
