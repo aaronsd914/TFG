@@ -59,7 +59,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Instalar Railway CLI
-        run: npm install -g @railway/cli
+        run: npm install -g @railway/cli@3.22.0
 
       - name: Deploy en Railway
         run: railway up --service backend --detach
