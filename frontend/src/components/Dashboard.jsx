@@ -196,7 +196,7 @@ export default function Dashboard() {
       datasets.push({ label: 'Ingresos', data: ingresos, borderColor: '#5b8c5a', tension: 0.4 });
     }
     if (chartMode === 'ALL' || chartMode === 'EGR') {
-      datasets.push({ label: 'Egresos', data: egresos, borderColor: '#a5744b', tension: 0.4 });
+      datasets.push({ label: 'Gastos', data: egresos, borderColor: '#a5744b', tension: 0.4 });
     }
 
     return { labels, datasets };
@@ -256,7 +256,15 @@ export default function Dashboard() {
   const chartOptionsMoney = {
     responsive: true,
     maintainAspectRatio: false,
-    plugins: { legend: { position: 'top' } },
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { position: 'top' },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => ` ${ctx.dataset.label}: ${eur(ctx.parsed.y)}`,
+        },
+      },
+    },
     scales: {
       y: { ticks: { callback: (v) => (typeof v === 'number' ? eur(v) : v) } },
     },
@@ -265,7 +273,15 @@ export default function Dashboard() {
   const chartOptionsCount = {
     responsive: true,
     maintainAspectRatio: false,
-    plugins: { legend: { position: 'top' } },
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { position: 'top' },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y} albarán${ctx.parsed.y !== 1 ? 'es' : ''}`,
+        },
+      },
+    },
     scales: { y: { ticks: { precision: 0 } } },
   };
 
@@ -324,21 +340,12 @@ export default function Dashboard() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold">Dashboard · Tienda</h2>
-          <div className="text-sm text-gray-600">
-            {lastUpdated ? `Actualizado: ${lastUpdated.toLocaleString('es-ES')}` : 'Sin actualizar aún'}
-            {refreshing && (
-              <span className="ml-2 inline-flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                Refrescando…
-              </span>
-            )}
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <a className="px-3 py-1.5 rounded-lg border bg-white hover:bg-gray-50 text-sm" href="/movimientos">Movimientos</a>
-          <a className="px-3 py-1.5 rounded-lg border bg-white hover:bg-gray-50 text-sm" href="/albaranes">Albaranes</a>
-          <a className="px-3 py-1.5 rounded-lg border bg-white hover:bg-gray-50 text-sm" href="/transporte">Transporte</a>
+          {refreshing && (
+            <span className="inline-flex items-center gap-2 text-sm text-gray-500">
+              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+              Refrescando…
+            </span>
+          )}
         </div>
       </div>
 
@@ -354,7 +361,7 @@ export default function Dashboard() {
         ) : (
           <>
             <StatCard title="Ingresos (mes)" value={eur(ingresosMes)} delta={pctDelta(ingresosMes, ingresosPrev)} deltaLabel="vs mes anterior" />
-            <StatCard title="Egresos (mes)" value={eur(egresosMes)} delta={pctDelta(egresosMes, egresosPrev)} deltaLabel="vs mes anterior" invertColors />
+            <StatCard title="Gastos (mes)" value={eur(egresosMes)} delta={pctDelta(egresosMes, egresosPrev)} deltaLabel="vs mes anterior" invertColors />
             <StatCard title="Ventas del mes" value={String(ventasMes)} delta={pctDelta(ventasMes, ventasPrev)} deltaLabel="vs mes anterior" />
             <StatCard title="Pedidos en almacén" value={String(pedidosAlmacen)} hint="Pendientes de salida" />
           </>
@@ -373,7 +380,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           <div className="bg-white p-4 rounded-xl shadow-sm self-start">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-3">
-              <h3 className="text-base font-semibold">Ingresos / Egresos ({monthsWindow} meses)</h3>
+              <h3 className="text-base font-semibold">Ingresos / Gastos ({monthsWindow} meses)</h3>
 
               <div className="flex flex-wrap items-center gap-2">
                 <button
@@ -408,9 +415,9 @@ export default function Dashboard() {
                   }`}
                   onClick={() => toggleMode('EGR')}
                   disabled={loading}
-                  title="Mostrar solo egresos (vuelve a ambos si lo desactivas)"
+                  title="Mostrar solo gastos (vuelve a ambos si lo desactivas)"
                 >
-                  Solo egresos
+                  Solo gastos
                 </button>
               </div>
             </div>
@@ -422,7 +429,7 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between mb-2 text-sm text-gray-600">
                   <div>
                     Mes actual: <span className="font-semibold text-gray-900">{eur(ingresosMes)}</span> ingresos ·{' '}
-                    <span className="font-semibold text-gray-900">{eur(egresosMes)}</span> egresos
+                    <span className="font-semibold text-gray-900">{eur(egresosMes)}</span> gastos
                   </div>
                   <div className="text-xs">
                     {lastUpdated ? `Datos hasta ${lastUpdated.toLocaleDateString('es-ES')}` : ''}
@@ -469,7 +476,12 @@ export default function Dashboard() {
       <div className="bg-white p-4 rounded-xl shadow-sm">
         <div className="flex items-center justify-between gap-3 mb-3">
           <h3 className="text-base font-semibold">Últimos movimientos</h3>
-          <a href="/movimientos" className="text-sm text-blue-600 hover:underline">Ver todo</a>
+          <a
+            href="/movimientos"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black text-white text-sm font-medium hover:bg-gray-800 transition-colors"
+          >
+            Ver todos los movimientos →
+          </a>
         </div>
         <div className="overflow-x-auto rounded-xl">
           <table className="min-w-[600px] w-full border-collapse">
@@ -478,7 +490,7 @@ export default function Dashboard() {
                 <th className="p-2">Fecha</th>
                 <th className="p-2">Tipo</th>
                 <th className="p-2">Descripción</th>
-                <th className="p-2">Monto</th>
+                <th className="p-2">Cantidad</th>
               </tr>
             </thead>
             <tbody>
@@ -492,7 +504,8 @@ export default function Dashboard() {
                 <Row
                   key={m.id}
                   fecha={fmtDate(m.fecha)}
-                  tipo={m.tipo === 'INGRESO' ? 'Ingreso' : 'Egreso'}
+                  tipo={m.tipo === 'INGRESO' ? 'Ingreso' : 'Gasto'}
+                  ingreso={m.tipo === 'INGRESO'}
                   desc={m.concepto}
                   monto={eur(m.cantidad)}
                 />
@@ -512,16 +525,13 @@ export default function Dashboard() {
         <TablaPedidos
           rows={almacenTop}
           clientesMap={clientesMap}
-          onEntregar={marcarEntregado}
-          savingIds={savingIds}
         />
 
         <div className="mt-4 flex">
           <a
             href="/transporte"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-sm"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-black hover:bg-gray-800 shadow-sm transition-colors"
           >
-            <span className="text-base">🚚</span>
             Organizar transporte
           </a>
         </div>
@@ -532,48 +542,43 @@ export default function Dashboard() {
   );
 }
 
-function TablaPedidos({ rows, clientesMap, onEntregar, savingIds }) {
+function TablaPedidos({ rows, clientesMap }) {
   return (
-    <table className="w-full border-collapse">
-      <thead>
-        <tr className="text-left border-b border-gray-200">
-          <th className="p-2 w-20">ID</th>
-          <th className="p-2 w-32">Fecha</th>
-          <th className="p-2">Cliente</th>
-          <th className="p-2 w-28">Total</th>
-          <th className="p-2 w-48">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.length === 0 && (
-          <tr><td colSpan={5} className="p-3 text-sm text-gray-500">No hay pedidos.</td></tr>
-        )}
-        {rows.map(a => {
-          const c = clientesMap.get(a.cliente_id);
-          const saving = savingIds.has(a.id);
-          return (
-            <tr key={a.id} className="border-b border-gray-200">
-              <td className="p-2">#{a.id}</td>
-              <td className="p-2">{fmtDate(a.fecha)}</td>
-              <td className="p-2">{c ? `${c.nombre} ${c.apellidos}` : `Cliente #${a.cliente_id}`}</td>
-              <td className="p-2">{eur(a.total)}</td>
-              <td className="p-2">
-                <button
-                  className={`px-3 py-1 rounded-lg border text-sm ${
-                    saving ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'
-                  }`}
-                  onClick={() => onEntregar(a.id)}
-                  disabled={saving}
-                  title="Marcar como ENTREGADO"
-                >
-                  ✓ Entregado
-                </button>
-              </td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
+    <div className="overflow-x-auto">
+      <table className="min-w-[500px] w-full border-collapse">
+        <thead>
+          <tr className="text-left border-b border-gray-200">
+            <th className="p-2 w-20">ID</th>
+            <th className="p-2 w-32">Fecha</th>
+            <th className="p-2">Cliente</th>
+            <th className="p-2 w-28">DNI</th>
+            <th className="p-2 w-28">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 && (
+            <tr><td colSpan={5} className="p-3 text-sm text-gray-500">No hay pedidos.</td></tr>
+          )}
+          {rows.map(a => {
+            const c = clientesMap.get(a.cliente_id);
+            return (
+              <tr
+                key={a.id}
+                className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
+                onClick={() => { window.location.href = `/albaranes`; }}
+                title={`Ir al albarán #${a.id}`}
+              >
+                <td className="p-2">#{a.id}</td>
+                <td className="p-2">{fmtDate(a.fecha)}</td>
+                <td className="p-2">{c ? `${c.nombre} ${c.apellidos}` : `Cliente #${a.cliente_id}`}</td>
+                <td className="p-2">{c?.dni || '—'}</td>
+                <td className="p-2">{eur(a.total)}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -619,13 +624,20 @@ function StatCard({ title, value, delta, deltaLabel, hint, invertColors = false 
   );
 }
 
-function Row({ fecha, tipo, desc, monto }) {
+function Row({ fecha, tipo, ingreso, desc, monto }) {
+  const rowCls = ingreso
+    ? 'bg-green-50 border-b border-green-100'
+    : 'bg-red-50 border-b border-red-100';
   return (
-    <tr className="border-b border-gray-200">
+    <tr className={rowCls}>
       <td className="p-2">{fecha}</td>
-      <td className="p-2">{tipo}</td>
+      <td className="p-2">
+        <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${
+          ingreso ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+        }`}>{tipo}</span>
+      </td>
       <td className="p-2">{desc}</td>
-      <td className="p-2">{monto}</td>
+      <td className="p-2 font-semibold">{monto}</td>
     </tr>
   );
 }
