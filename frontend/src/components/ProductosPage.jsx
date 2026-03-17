@@ -171,6 +171,9 @@ export default function ProductosPage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null); // {id,nombre}
 
+  // modal creación (accesible desde cualquier tab)
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+
   const provName = (id) => proveedores.find((x) => x.id === id)?.nombre || `#${id}`;
 
   async function fetchData() {
@@ -438,6 +441,7 @@ export default function ProductosPage() {
       setFProveedor('');
       setCreateTouched(false);
       setCreateErrors({});
+      setCreateModalOpen(false);
     } catch (e2) {
       try {
         sileo.error({ title: '❌ No se pudo crear el producto', description: e2.message });
@@ -667,6 +671,9 @@ export default function ProductosPage() {
               Gestión
             </button>
           </div>
+          <Button variant="primary" onClick={() => setCreateModalOpen(true)} type="button">
+            Nuevo producto
+          </Button>
         </div>
       </div>
 
@@ -720,6 +727,28 @@ export default function ProductosPage() {
                     Por proveedor
                   </button>
                 </div>
+                {groupMode === 'proveedor' && (
+                  <div className="inline-flex rounded-xl border border-gray-300 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = {};
+                        for (const pc of providerCards) next[pc.proveedor.id] = true;
+                        setOpenProviders(next);
+                      }}
+                      className="px-3 py-2 text-sm bg-white text-gray-700 hover:bg-gray-50"
+                    >
+                      Expandir todo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOpenProviders({})}
+                      className="px-3 py-2 text-sm border-l border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                    >
+                      Colapsar todo
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -991,126 +1020,12 @@ export default function ProductosPage() {
                 })}
               </div>
 
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="secondary"
-                  type="button"
-                  onClick={() => {
-                    const next = {};
-                    for (const pc of providerCards) next[pc.proveedor.id] = true;
-                    setOpenProviders(next);
-                  }}
-                >
-                  Expandir todo
-                </Button>
-                <Button variant="secondary" type="button" onClick={() => setOpenProviders({})}>
-                  Colapsar todo
-                </Button>
-              </div>
+
             </>
           )}
         </>
       ) : (
         <>
-          {/* Alta de producto */}
-          <section className="bg-white border border-gray-200 rounded-2xl p-4 space-y-3">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-              <h3 className="font-semibold">Dar de alta producto</h3>
-              <div className="text-sm text-gray-600">
-                Campos con <span className="text-red-600 font-semibold">*</span> obligatorios
-              </div>
-            </div>
-
-            <form
-              onSubmit={crearProducto}
-              className="grid md:grid-cols-2 gap-3"
-              onChange={() => {
-                if (createTouched) {
-                  const v = validateCreate();
-                  setCreateErrors(v.errors);
-                }
-              }}
-            >
-              <div>
-                <label className={labelReq(createTouched && !!createErrors.nombre)}>
-                  Nombre<RequiredAsterisk />
-                </label>
-                <input
-                  value={fNombre}
-                  onChange={(e) => setFNombre(e.target.value)}
-                  className={inputReq(createTouched && !!createErrors.nombre)}
-                  placeholder="Ej: Mesa de comedor"
-                />
-              </div>
-
-              <div>
-                <label className={labelReq(createTouched && !!createErrors.precio)}>
-                  Precio<RequiredAsterisk />
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={fPrecio}
-                  onChange={(e) => setFPrecio(clampNumberInput(e.target.value))}
-                  className={inputReq(createTouched && !!createErrors.precio)}
-                  placeholder="Ej: 199.99"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm mb-1">Descripción</label>
-                <textarea
-                  value={fDesc}
-                  onChange={(e) => setFDesc(e.target.value)}
-                  className="border rounded-lg px-3 py-2 w-full"
-                  rows={3}
-                  placeholder="Detalles, medidas, materiales…"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className={labelReq(createTouched && !!createErrors.proveedor)}>
-                  Proveedor<RequiredAsterisk />
-                </label>
-                <select
-                  value={fProveedor}
-                  onChange={(e) => setFProveedor(e.target.value)}
-                  className={selectReq(createTouched && !!createErrors.proveedor)}
-                >
-                  <option value="">Selecciona proveedor</option>
-                  {proveedores.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.nombre}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="md:col-span-2 flex flex-wrap items-center gap-3">
-                <Button type="submit" disabled={saving}>
-                  {saving ? 'Guardando…' : 'Crear producto'}
-                </Button>
-
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => {
-                    setFNombre('');
-                    setFDesc('');
-                    setFPrecio('');
-                    setFProveedor('');
-                    setCreateTouched(false);
-                    setCreateErrors({});
-                  }}
-                  disabled={saving}
-                >
-                  Limpiar
-                </Button>
-              </div>
-            </form>
-          </section>
-
           {/* Gestión */}
           <section className="bg-white border border-gray-200 rounded-2xl p-4 space-y-4">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
@@ -1163,7 +1078,6 @@ export default function ProductosPage() {
                             >
                               <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
-                                  <div className={active ? 'text-xs text-white/70' : 'text-xs text-gray-500'}>#{p.id}</div>
                                   <div className={active ? 'font-semibold truncate text-white' : 'font-semibold truncate text-gray-900'}>
                                     {p.nombre}
                                   </div>
@@ -1301,6 +1215,106 @@ export default function ProductosPage() {
               </div>
             </div>
           </section>
+
+          {/* ✅ Modal: Crear nuevo producto */}
+          <Modal
+            open={createModalOpen}
+            onClose={() => {
+              setCreateModalOpen(false);
+              setCreateTouched(false);
+              setCreateErrors({});
+            }}
+            title="Nuevo producto"
+            maxWidth="max-w-2xl"
+          >
+            <form
+              onSubmit={crearProducto}
+              className="grid md:grid-cols-2 gap-3"
+              onChange={() => {
+                if (createTouched) {
+                  const v = validateCreate();
+                  setCreateErrors(v.errors);
+                }
+              }}
+            >
+              <div>
+                <label className={labelReq(createTouched && !!createErrors.nombre)}>
+                  Nombre<RequiredAsterisk />
+                </label>
+                <input
+                  value={fNombre}
+                  onChange={(e) => setFNombre(e.target.value)}
+                  className={inputReq(createTouched && !!createErrors.nombre)}
+                  placeholder="Ej: Mesa de comedor"
+                />
+              </div>
+
+              <div>
+                <label className={labelReq(createTouched && !!createErrors.precio)}>
+                  Precio<RequiredAsterisk />
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={fPrecio}
+                  onChange={(e) => setFPrecio(clampNumberInput(e.target.value))}
+                  className={inputReq(createTouched && !!createErrors.precio)}
+                  placeholder="Ej: 199.99"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm mb-1">Descripción</label>
+                <textarea
+                  value={fDesc}
+                  onChange={(e) => setFDesc(e.target.value)}
+                  className="border rounded-lg px-3 py-2 w-full"
+                  rows={3}
+                  placeholder="Detalles, medidas, materiales…"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className={labelReq(createTouched && !!createErrors.proveedor)}>
+                  Proveedor<RequiredAsterisk />
+                </label>
+                <select
+                  value={fProveedor}
+                  onChange={(e) => setFProveedor(e.target.value)}
+                  className={selectReq(createTouched && !!createErrors.proveedor)}
+                >
+                  <option value="">Selecciona proveedor</option>
+                  {proveedores.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="md:col-span-2 flex flex-wrap items-center gap-3">
+                <Button type="submit" disabled={saving}>
+                  {saving ? 'Guardando…' : 'Crear producto'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setFNombre('');
+                    setFDesc('');
+                    setFPrecio('');
+                    setFProveedor('');
+                    setCreateTouched(false);
+                    setCreateErrors({});
+                  }}
+                  disabled={saving}
+                >
+                  Limpiar
+                </Button>
+              </div>
+            </form>
+          </Modal>
 
           {/* ✅ Modal confirmación borrar */}
           <Modal
