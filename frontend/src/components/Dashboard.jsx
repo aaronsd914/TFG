@@ -30,7 +30,8 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
   // UI
-  const [monthsWindow, setMonthsWindow] = useState(6);
+  const [monthsWindowMovs, setMonthsWindowMovs] = useState(6);
+  const [monthsWindowVentas, setMonthsWindowVentas] = useState(6);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
 
@@ -143,7 +144,7 @@ export default function Dashboard() {
   // Serie ingresos/egresos (con filtros ING/EGR)
   const lineSeries = useMemo(() => {
     const keys = [];
-    for (let i = monthsWindow - 1; i >= 0; i--) {
+    for (let i = monthsWindowMovs - 1; i >= 0; i--) {
       const dt = new Date(currY, currM - i, 1);
       keys.push({ y: dt.getFullYear(), m: dt.getMonth() });
     }
@@ -178,12 +179,12 @@ export default function Dashboard() {
     }
 
     return { labels, datasets };
-  }, [movs, currY, currM, monthsWindow, chartMode]);
+  }, [movs, currY, currM, monthsWindowMovs, chartMode]);
 
   // Nueva gráfica: ventas por mes (número de albaranes)
   const ventasSeries = useMemo(() => {
     const keys = [];
-    for (let i = monthsWindow - 1; i >= 0; i--) {
+    for (let i = monthsWindowVentas - 1; i >= 0; i--) {
       const dt = new Date(currY, currM - i, 1);
       keys.push({ y: dt.getFullYear(), m: dt.getMonth() });
     }
@@ -203,7 +204,7 @@ export default function Dashboard() {
       labels,
       datasets: [{ label: 'Albaranes', data, borderColor: '#4f46e5', tension: 0.35 }],
     };
-  }, [albaranes, currY, currM, monthsWindow]);
+  }, [albaranes, currY, currM, monthsWindowVentas]);
 
   // Pie de estados de albaranes
   const pieData = useMemo(() => {
@@ -313,19 +314,19 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           <div className="bg-white p-4 rounded-xl shadow-sm self-start">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-3">
-              <h3 className="text-base font-semibold">Ingresos / Gastos ({monthsWindow} meses)</h3>
+              <h3 className="text-base font-semibold">Ingresos / Gastos ({monthsWindowMovs} meses)</h3>
 
               <div className="flex flex-wrap items-center gap-2">
                 <button
-                  className={`px-2.5 py-1 rounded-lg border text-sm ${monthsWindow === 6 ? 'bg-gray-100' : 'bg-white hover:bg-gray-50'}`}
-                  onClick={() => setMonthsWindow(6)}
+                  className={`px-2.5 py-1 rounded-lg border text-sm ${monthsWindowMovs === 6 ? 'bg-gray-100' : 'bg-white hover:bg-gray-50'}`}
+                  onClick={() => setMonthsWindowMovs(6)}
                   disabled={loading}
                 >
                   6M
                 </button>
                 <button
-                  className={`px-2.5 py-1 rounded-lg border text-sm ${monthsWindow === 12 ? 'bg-gray-100' : 'bg-white hover:bg-gray-50'}`}
-                  onClick={() => setMonthsWindow(12)}
+                  className={`px-2.5 py-1 rounded-lg border text-sm ${monthsWindowMovs === 12 ? 'bg-gray-100' : 'bg-white hover:bg-gray-50'}`}
+                  onClick={() => setMonthsWindowMovs(12)}
                   disabled={loading}
                 >
                   12M
@@ -391,9 +392,25 @@ export default function Dashboard() {
       {/* Nueva gráfica: Ventas por mes */}
       {!err && (
         <div className="bg-white p-4 rounded-xl shadow-sm">
-          <div className="flex items-center justify-between gap-3 mb-3">
-            <h3 className="text-base font-semibold">Ventas por mes (albaranes)</h3>
-            <div className="text-sm text-gray-600">{loading ? '…' : `Total albaranes: ${albaranes.length}`}</div>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-3">
+            <h3 className="text-base font-semibold">Ventas por mes (albaranes) ({monthsWindowVentas} meses)</h3>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                className={`px-2.5 py-1 rounded-lg border text-sm ${monthsWindowVentas === 6 ? 'bg-gray-100' : 'bg-white hover:bg-gray-50'}`}
+                onClick={() => setMonthsWindowVentas(6)}
+                disabled={loading}
+              >
+                6M
+              </button>
+              <button
+                className={`px-2.5 py-1 rounded-lg border text-sm ${monthsWindowVentas === 12 ? 'bg-gray-100' : 'bg-white hover:bg-gray-50'}`}
+                onClick={() => setMonthsWindowVentas(12)}
+                disabled={loading}
+              >
+                12M
+              </button>
+              <div className="text-sm text-gray-600">{loading ? '…' : `Total: ${albaranes.length} albaranes`}</div>
+            </div>
           </div>
           {loading ? (
             <div className="h-56 md:h-64 rounded-lg bg-gray-100 animate-pulse" />
