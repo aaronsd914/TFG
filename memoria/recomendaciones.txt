@@ -107,7 +107,7 @@ Nueva bibliografía añadida (SI + Redes + IA):
   diseño evita redundancias y anomalías de actualización/inserción/borrado.
   Coste: 1 párrafo breve.
 
-[SD T1 — Teorema CAP] — Añadir referencia al teorema CAP:
+[SD T1 — Teorema CAP] — Añadir referencia al teorema CAP:  ✅ COMPLETADO
   Breve mención en la sección de arquitectura: dado que FurniGest
   usa PostgreSQL (CP: Consistency + Partition tolerance sacrificando
   Available en particiones de red), se puede mencionar este compromiso.

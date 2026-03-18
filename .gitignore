@@ -3,3 +3,4 @@ backend/app/settings_email.py
 backend/app/bank_settings.py
 backend/app/stripe_settings.py
 backend/app/stripe_config.py
+memoria/recomendaciones.txt
