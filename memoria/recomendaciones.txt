@@ -113,7 +113,7 @@ Nueva bibliografía añadida (SI + Redes + IA):
   Available en particiones de red), se puede mencionar este compromiso.
   Coste: 2-3 líneas.
 
-[IPO T6 — Evaluación de IUs] — Añadir en Cap. 4 (Resultados):
+[IPO T6 — Evaluación de IUs] — Añadir en Cap. 4 (Resultados):  ✅ COMPLETADO
   Mencionar que la UI fue evaluada mediante el método de
   "evaluación heurística" (Tema 6 IPO) usando las heurísticas de
   Nielsen: visibilidad del estado del sistema, consistencia, prevención

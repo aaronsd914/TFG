@@ -1460,6 +1460,38 @@ La Tabla~\ref{tab:metricas_calidad} resume las métricas de calidad obtenidas al
   \end{footnotesize}
 \end{table}
 
+\subsection{Evaluación de usabilidad}
+
+Además de las métricas de calidad de código y pruebas, la interfaz de FurniGest fue evaluada mediante el método de \textbf{evaluación heurística} de Jakob Nielsen~\cite{nielsen}, que consiste en contrastar la interfaz con un conjunto de principios de diseño ampliamente reconocidos para detectar problemas de usabilidad sin necesidad de sesiones con usuarios reales. La Tabla~\ref{tab:heuristicas} recoge los resultados de esta evaluación aplicada a los módulos principales.
+
+\begin{table}[H]
+  \centering
+  \caption{Evaluación heurística de la interfaz de FurniGest (Nielsen, 1994).}
+  \label{tab:heuristicas}
+  \renewcommand{\arraystretch}{1.4}
+  \begin{footnotesize}
+  \begin{tabular}{|p{4.5cm}|p{8.5cm}|}
+    \hline
+    \textbf{Heurística} & \textbf{Implementación en FurniGest} \\
+    \hline
+    Visibilidad del estado del sistema & Las notificaciones \textit{toast} (sileo) confirman cada operación en tiempo real; los estados de los albaranes se muestran con colores diferenciados (ámbar, azul, violeta, verde). \\
+    \hline
+    Coincidencia con el mundo real & La terminología refleja el vocabulario del negocio (albarán, fianza, ruta, camión) sin exponer conceptos técnicos internos al usuario final. \\
+    \hline
+    Control y libertad del usuario & Las operaciones destructivas requieren confirmación explícita; los filtros y búsquedas pueden limpiarse con un clic para volver al estado anterior. \\
+    \hline
+    Consistencia y estándares & TailwindCSS~4 garantiza paleta de colores, tipografía y espaciado uniformes en todas las pantallas de la aplicación. \\
+    \hline
+    Prevención de errores & Los formularios validan los campos en el cliente antes del envío; Pydantic rechaza peticiones malformadas antes de que alcancen la base de datos. \\
+    \hline
+    Reconocimiento antes que recuerdo & Los iconos y etiquetas permanecen siempre visibles en el menú lateral; las tablas incluyen encabezados descriptivos en todas las vistas. \\
+    \hline
+    Diseño estético y minimalista & Cada pantalla presenta únicamente las columnas y acciones relevantes para el módulo activo, sin información superflua que distiga al usuario. \\
+    \hline
+  \end{tabular}
+  \end{footnotesize}
+\end{table}
+
 \blankpage
 
 
