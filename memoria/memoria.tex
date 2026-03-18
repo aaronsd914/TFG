@@ -1459,6 +1459,21 @@ La ausencia de \textit{code smells} ---indicadores de degradación de la calidad
 
 Esta práctica de análisis estático continuo es coherente con la filosofía de \textbf{desarrollo seguro} que promueve OWASP~\cite{owasp2021}: «concebir, desarrollar y mantener aplicaciones confiables». Ruff y ESLint actúan como herramientas SCA \textit{shift-left}, detectando defectos potenciales en el momento del \textit{commit} antes de que lleguen a producción, en la misma línea que herramientas del ecosistema OWASP como PMD, FlawFinder o LAPSE.
 
+\subsubsection{Quality gate con SonarCloud}
+
+FurniGest integra \textbf{SonarCloud}~\cite{sonarcloud}, la versión en la nube de \textbf{SonarQube}, como \textit{quality gate} en el pipeline de despliegue. SonarCloud va más allá de Ruff y ESLint: realiza \textbf{análisis de flujo de datos} para detectar bugs semánticos, mide la \textbf{cobertura agregada} de Python y JavaScript en un mismo cuadro de mando, e identifica \textbf{vulnerabilidades de seguridad} mapeadas a OWASP y CWE \cite{owasp2021}. AIS P2 está dedicada íntegramente a la integración de SonarQube en pipelines de CI, y AIS T1.5 lo cita como herramienta de SCA de referencia.
+
+El flujo de trabajo en \texttt{deploy.yml} es:
+
+\begin{enumerate}
+  \item El job \texttt{backend-tests} genera \texttt{coverage-backend.xml} mediante \texttt{pytest --cov}.
+  \item El job \texttt{frontend-tests} genera \texttt{frontend/coverage/lcov.info} mediante \texttt{vitest run --coverage} (proveedor V8).
+  \item El job \texttt{sonarcloud} (dependiente de los dos anteriores) ejecuta la acción oficial \texttt{SonarSource/sonarcloud-github-action@v3} con la configuración definida en \texttt{sonar-project.properties}.
+  \item El job \texttt{deploy-frontend} sólo se ejecuta si el \textit{quality gate} de SonarCloud pasa (\texttt{needs: [sonarcloud]}).
+\end{enumerate}
+
+Esto garantiza que ningún commit con cobertura insuficiente o con nuevos bugs detectados por SonarCloud llegue a producción, implementando la \textbf{política de calidad automatizada} descrita en AIS P2.
+
 
 % ==============================================================
 % CAPÍTULO 4 — RESULTADOS
