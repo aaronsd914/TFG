@@ -1,8 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sileo } from 'sileo';
-import { Badge } from './ui/Badge.jsx';
-import { Pagination } from './ui/Pagination.jsx';
 
 import { API_URL } from '../config.js';
 
@@ -64,10 +62,10 @@ function formatDate(d) {
 }
 
 const ESTADO_META = {
-  FIANZA:      { label: 'Fianza',     variant: 'warning' },
-  ALMACEN:     { label: 'Almacén',    variant: 'info' },
-  TRANSPORTE:  { label: 'Ruta',       variant: 'purple' },
-  ENTREGADO:   { label: 'Entregado',  variant: 'success' },
+  FIANZA:      { label: 'Fianza',     className: 'bg-amber-50 text-amber-800 border-amber-200' },
+  ALMACEN:     { label: 'Almacén',    className: 'bg-sky-50 text-sky-800 border-sky-200' },
+  TRANSPORTE:  { label: 'Ruta',       className: 'bg-violet-50 text-violet-800 border-violet-200' },
+  ENTREGADO:   { label: 'Entregado',  className: 'bg-green-50 text-green-800 border-green-200' },
 };
 
 // ===== Página =====
@@ -79,9 +77,6 @@ export default function AlbaranesPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  const [page, setPage] = useState(1);
-  const PAGE_SIZE = 20;
 
   // buscador + filtros
   const [query, setQuery] = useState('');
@@ -98,8 +93,7 @@ export default function AlbaranesPage() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
-  // Reset page when filters change
-  useEffect(() => { setPage(1); }, [q, sort, selectedDomains, selectedEstados, totalRange, dateFrom, dateTo]);
+
   // detalle
   const [detailOpen, setDetailOpen] = useState(false);
   const [selected, setSelected] = useState(null);
@@ -489,9 +483,9 @@ export default function AlbaranesPage() {
 
               {!loading && !error && filtered.length === 0 && <li className="p-6 text-gray-500">Sin resultados</li>}
 
-              {filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((a) => {
+              {filtered.map((a) => {
                 const cli = clientesById.get(a.cliente_id);
-                const meta = ESTADO_META[a.estado] || { label: a.estado, variant: 'secondary' };
+                const meta = ESTADO_META[a.estado] || { label: a.estado, className: 'bg-gray-100 text-gray-700 border-gray-300' };
                 return (
                   <li
                     key={a.id}
@@ -514,7 +508,7 @@ export default function AlbaranesPage() {
                     <div className="col-span-2">{formatEUR(a.total)}</div>
 
                     <div className="col-span-2">
-                      <Badge variant={meta.variant}>{meta.label}</Badge>
+                      <span className={`inline-block border px-2 py-1 rounded-lg text-xs ${meta.className}`}>{meta.label}</span>
                     </div>
                   </li>
                 );
@@ -522,8 +516,6 @@ export default function AlbaranesPage() {
             </ul>
           </div>
         </div>
-
-        <Pagination page={page} total={filtered.length} pageSize={PAGE_SIZE} onChange={setPage} />
 
         {/* Modal filtros */}
         <ModalCenter isOpen={filtersOpen} onClose={() => setFiltersOpen(false)} maxWidth="max-w-lg">
