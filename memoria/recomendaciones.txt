@@ -139,7 +139,7 @@ Nueva bibliografía añadida (SI + Redes + IA):
   Esto enriquece el análisis de requisitos y conecta con IPO T3A.
   Coste: 1 tabla o lista de 3 items.
 
-[SI T7 / Redes T2] — Mencionar HTTPS/TLS en la sección de despliegue:
+[SI T7 / Redes T2] — Mencionar HTTPS/TLS en la sección de despliegue:  ✅ COMPLETADO
   Railway inyecta TLS automáticamente, pero la memoria no lo menciona.
   Añadir: "En producción, toda la comunicación se protege con TLS
   (Transport Layer Security) via el certificado gestionado por Railway,
@@ -147,7 +147,7 @@ Nueva bibliografía añadida (SI + Redes + IA):
   del servidor mediante certificados X.509" (SI T7: SSL/TLS, AES).
   Coste: 2-3 líneas en la subsección de despliegue.
 
-[SI T9 / OWASP] — Metodología de desarrollo seguro en sección CI/CD:
+[SI T9 / OWASP] — Metodología de desarrollo seguro en sección CI/CD:  ✅ COMPLETADO
   Mencionar que el pipeline de CI ejecuta Ruff (Python) y ESLint (JS)
   como analizadores estáticos de seguridad compatible con la filosofía
   OWASP ("concebir, desarrollar y mantener aplicaciones confiables").
@@ -155,13 +155,13 @@ Nueva bibliografía añadida (SI + Redes + IA):
   que podrían añadirse al pipeline para un análisis más profundo.
   Coste: 2 líneas en la sección de calidad del código.
 
-[Redes T2 — HTTP RFCs] — Citar HTTP/1.1 en la sección REST:
+[Redes T2 — HTTP RFCs] — Citar HTTP/1.1 en la sección REST:  ✅ COMPLETADO
   La sección de API REST menciona los métodos HTTP pero no cita la
   especificación formal. Añadir: "HTTP/1.1 (RFC 2616 \cite{kurose}),
   protocolo de la capa de aplicación sobre el que se monta REST".
   Coste: 1 linea.
 
-[IA T1 — Evolución histórica] — Ampliar introducción al asistente IA:
+[IA T1 — Evolución histórica] — Ampliar introducción al asistente IA:  ✅ COMPLETADO
   Ya aplicado en esta sesión. Si se quiere ampliar: mencionar que
   el modelo de atención (\textit{attention}) del Transformer fue
   propuesto por Vaswani et al. (2017) — "Attention Is All You Need".
