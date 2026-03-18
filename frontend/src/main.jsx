@@ -15,6 +15,7 @@ import BancoPage from './components/BancoPage.jsx';
 import TransportePage from './components/TransportePage.jsx';
 import MovimientosPage from './components/MovimientosPage.jsx';
 import { SpeedInsights } from '@vercel/speed-insights/react';
+import './api/fetchInterceptor.js';
 import './index.css';
 
 const router = createBrowserRouter([

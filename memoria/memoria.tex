@@ -415,7 +415,7 @@ La solución desarrollada es una \textit{Single Page Application} (SPA) con arqu
 
 Entre las funcionalidades avanzadas destaca un motor de analíticas con segmentación de clientes mediante el modelo \textbf{RFM} (\textit{Recency-Frequency-Monetary}) y análisis de pares de productos frecuentemente comprados juntos (\textit{market basket analysis}). Se integra además un asistente de inteligencia artificial basado en la API de \textbf{Groq} con el modelo \textbf{Llama-3.1-8b-instant}, que recibe métricas de negocio en tiempo real y responde consultas en lenguaje natural. El sistema incorpora también integración de pagos con \textbf{Stripe Checkout}, generación de documentos PDF con \textbf{ReportLab} y notificaciones por correo electrónico mediante SMTP y la API de \textbf{Resend}.
 
-La aplicación se despliega en producción con el \textit{frontend} en \textbf{Vercel} y el \textit{backend} en \textbf{Railway}, con un flujo de integración y despliegue continuos (\textit{CI/CD}) articulado sobre \textbf{GitHub Actions}. La batería de pruebas automatizadas comprende 96 pruebas unitarias del \textit{backend} (pytest) y 87 del \textit{frontend} (Vitest), con cobertura de todos los módulos de la API.
+La aplicación se despliega en producción con el \textit{frontend} en \textbf{Vercel} y el \textit{backend} en \textbf{Railway}, con un flujo de integración y despliegue continuos (\textit{CI/CD}) articulado sobre \textbf{GitHub Actions}. La batería de pruebas automatizadas comprende 96 pruebas unitarias del \textit{backend} (pytest) y 94 del \textit{frontend} (Vitest), con cobertura de todos los módulos de la API.
 
 \mbox{} \bigskip
 
@@ -1439,8 +1439,9 @@ Las pruebas del \textit{frontend} emplean \textbf{Vitest} \cite{vitest} con \tex
     \texttt{Sidebar.test.jsx}       & 6 \\
     \texttt{LoginPage.test.jsx}      & 11 \\
     \texttt{auth.test.js}            & 12 \\
+    \texttt{fetchInterceptor.test.js} & 7 \\
     \hline
-    \textbf{Total}                  & \textbf{87} \\
+    \textbf{Total}                  & \textbf{94} \\
     \hline
   \end{tabular}
   \end{footnotesize}
@@ -1626,7 +1627,7 @@ La Tabla~\ref{tab:metricas_calidad} resume las métricas de calidad obtenidas al
     \textbf{Métrica} & \textbf{Valor} \\
     \hline
     Pruebas unitarias backend (pytest)         & 96 / 96 pasadas \\
-    Pruebas unitarias frontend (Vitest)        & 87 / 87 pasadas \\
+    Pruebas unitarias frontend (Vitest)        & 94 / 94 pasadas \\
     Avisos de Ruff (Python linter)             & 0 \\
     Avisos de ESLint (JavaScript linter)       & 0 \\
     Endpoints de la API cubiertos por pruebas  & 100\,\% \\
