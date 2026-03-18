@@ -733,6 +733,8 @@ La Tabla~\ref{tab:requisitos_funcionales} recoge los requisitos funcionales iden
     \hline
     RNF-06 & Seguridad & El sistema preserva los tres pilares clásicos de la seguridad de la información: \textbf{confidencialidad} (acceso únicamente a usuarios autorizados), \textbf{integridad} (datos no alterados sin autorización) y \textbf{disponibilidad} (servicio operable cuando se requiere)~\cite{owasp2021}. El \textit{backend} valida todos los datos de entrada con esquemas Pydantic~\cite{pydantic}, neutralizando inyecciones SQL y ataques XSS, recogidos en el \textbf{OWASP Top 10}~\cite{owasp2021} como las vulnerabilidades más críticas de las aplicaciones web. Las claves de API y credenciales se gestionan como variables de entorno y no se incluyen en el repositorio de código fuente. \\
     \hline
+    RNF-07 & Accesibilidad & La interfaz respetará las recomendaciones de accesibilidad \textbf{WCAG 2.1 nivel AA}: contraste de color mínimo 4{,}5:1 entre texto y fondo, navegación completa mediante teclado y atributos ARIA en los elementos interactivos. TailwindCSS~4 facilita el cumplimiento de los ratios de contraste mediante su sistema de paleta de colores calibrada. \\
+    \hline
   \end{tabular}
   \end{footnotesize}
 \end{table}

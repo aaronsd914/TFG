@@ -121,7 +121,7 @@ Nueva bibliografía añadida (SI + Redes + IA):
   mejor aún — ese es el método empírico de evaluación.
   Coste: 1 párrafo en Cap. 4.
 
-[IPO T5 — Accesibilidad] — Citar accesibilidad en RNF:
+[IPO T5 — Accesibilidad] — Citar accesibilidad en RNF:  ✅ COMPLETADO
   Añadir RNF-07: "La interfaz respetará las recomendaciones de
   accesibilidad WCAG 2.1 nivel AA: contraste de color mínimo 4.5:1,
   navegación por teclado, atributos ARIA en elementos interactivos."
