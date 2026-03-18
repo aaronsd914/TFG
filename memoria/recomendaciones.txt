@@ -1,7 +1,8 @@
 ===========================================================================
   RECOMENDACIONES PARA EL TFG — FURNIGEST
   Basadas en los temarios de: IS, AIS, SD, IPO, Bases de Datos,
-  Seguridad Informática, Redes de Computadores, Inteligencia Artificial (URJC)
+  Seguridad Informática, Redes de Computadores, Inteligencia Artificial,
+  DAA, POO, Sistemas Operativos, Bases de Datos (URJC)
   Divididas en: CAMBIOS FÁCILES A LA MEMORIA | COSAS A AÑADIR AL PROYECTO
 ===========================================================================
 
@@ -429,7 +430,534 @@ Ordenadas de mayor a menor impacto académico y alineadas con temarios:
                    de la sección de Pruebas o Calidad del código.
                    Añadir tabla con herramientas y resultados obtenidos.
                    Citar SI T9 + AIS T1.5 + OWASP \cite{owasp2021}.
+────────────────────────────────────────────────────────────────────────
+17. ANÁLISIS DE COMPLEJIDAD ALGORÍTMICA (Big-O en la memoria)
+    Asignatura: DAA T1-T2 (notación asintótica, O, Ω, Θ)
+               DAA T3 (divide y vencerás, mergesort → O(n log n))
+               DAA T5 (algoritmos voraces, programación dinámica)
+    Qué es: Documentar formalmente la complejidad de los algoritmos
+            ya implementados en FurniGest. No hay que cambiar código,
+            solo añadir el análisis en la memoria.
 
+    Algoritmos existentes y su complejidad:
+      ┌──────────────────────────────────────────────────────────────────────┐
+      │ Algoritmo              │ Complejidad │ Explicación                │
+      ├──────────────────────────────────────────────────────────────────────┤
+      │ RFM — cálculo de dims  │ O(n)        │ Un recorrido de albaranes  │
+      │ RFM — quintiles        │ O(n log n)  │ sorted() Python (Timsort)   │
+      │ RFM — total seg.       │ O(n)        │ Tabla de reglas => O(1) c/u │
+      ├──────────────────────────────────────────────────────────────────────┤
+      │ Market basket (pares)  │ O(n · k²)   │ n=albaranes, k=prods/alb.  │
+      │   con min_support filter│ O(p²)       │ p=productos total (filtrado)│
+      ├──────────────────────────────────────────────────────────────────────┤
+      │ Top-K productos        │ O(n log k)  │ heapq.nlargest en Python   │
+      │ Consulta SQL analytics │ O(n)        │ scan de albaranes con WHERE │
+      └──────────────────────────────────────────────────────────────────────┘
+
+    Por qué: DAA es la asignatura que más peso da a la notación
+            asintótica. Incluir el análisis Big-O de los algoritmos
+            existentes en la memoria demuestra rigor científico y conecta
+            directamente con el contenido de DAA T1-T5. El algoritmo de
+            cestas de la compra es O(n·k²) y podría mejorar a O(n·k)
+            con un hash set en vez de combinaciones por enumeración.
+    Coste estimado: 0 código. 1-2 horas redactando el análisis en la
+                    sección de cada algoritmo.
+    En la memoria: añadir párrafo Big-O en las subsubsecciones RFM y
+                   Market Basket. Nueva tabla como la de arriba.
+
+────────────────────────────────────────────────────────────────────────
+18. TRANSACCIONES ACID EN CREACIÓN DE ALBARÁN
+    Asignatura: BD T6 (diseño relacional, integridad)
+               BD T7 (SQL: BEGIN / COMMIT / ROLLBACK)
+               AIS T1.3 (pruebas de integración)
+    Problema real: cuando se crea un albarán, el backend realiza
+    tres operaciones distintas en secuencia:
+      1. INSERT en tabla albaranes + líneas
+      2. INSERT en tabla movimientos (registro de fianza)
+      3. Enviar email con PDF adjunto
+    Si la operación 2 ó 3 falla a mitad, el albarán puede quedar
+    creado sin el movimiento económico — inconsistencia de datos.
+
+    Solución: envolver las operaciones 1+2 en una única transacción
+    SQLAlchemy (el email queda fuera, ya que es I/O externo):
+
+      with db.begin():
+          db.add(albaran)
+          db.flush()   # obtener albaran.id
+          db.add(movimiento)
+      # Solo aquí, con la transacción confirmada, se envía el email
+      send_email(...)
+
+    BD T6/T7 definen las propiedades ACID:
+      A — Atomicidad: commit o rollback, nunca estado parcial
+      C — Consistencia: se respetan todas las restricciones declaradas
+      I — Aislamiento: otras sesiones no ven el estado intermedio
+      D — Durabilidad: confirmado =&gt; persiste aunque caiga el servidor
+
+    Por qué: Es un bug real del proyecto y la solución demuestra
+            conocimiento directo de BD T6/T7. Inúnicamente conexión
+            con las propiedades ACID que define la teoría de BD.
+    Coste estimado: 2-3 horas (refactorizar api/albaranes.py + 2 tests).
+    En la memoria: párrafo en sección Backend explicando las propiedades
+                   ACID y cómo se garantizan con el context manager db.begin().
+
+────────────────────────────────────────────────────────────────────────
+19. ÍNDICES EN BASE DE DATOS
+    Asignatura: BD T6 (diseño físico, índices)
+               BD T7 (SQL: CREATE INDEX, EXPLAIN ANALYZE)
+    Qué es: Añadir índices a las columnas más consultadas para acelerar
+            las queries de analíticas. Sin índices, PostgreSQL hace
+            un seq scan (O(n)); con índice B-Tree hace O(log n).
+
+    Índices recomendados (añadir en models o en una migración Alembic):
+
+      # En albaranes: las queries de analíticas filtran siempre por fecha
+      Index('ix_albaranes_fecha',   AlbaranDB.fecha)
+      Index('ix_albaranes_estado',  AlbaranDB.estado)
+      Index('ix_albaranes_cliente', AlbaranDB.cliente_id)
+
+      # En lineas_albaran: los JOINs se hacen por albaran_id y producto_id
+      Index('ix_lineas_albaran_id',   LineaAlbaranDB.albaran_id)
+      Index('ix_lineas_producto_id',  LineaAlbaranDB.producto_id)
+
+      # En movimientos: filtros por tipo y fecha en ContabilidadPage
+      Index('ix_movimientos_fecha', MovimientoDB.fecha)
+      Index('ix_movimientos_tipo',  MovimientoDB.tipo)
+
+    En SQLAlchemy, simplemente añadir al modelo:
+      __table_args__ = (Index('ix_albaranes_fecha', 'fecha'),)
+
+    BD T6 define el diseño físico como la última fase del diseño
+    relacional, donde se eligen las estructuras de almacenamiento
+    (índices B-Tree, hash) para optimizar el plan de ejecución.
+    Coste estimado: 1 hora (4-5 líneas en cada modelo + 0 lógica).
+    En la memoria: párrafo en Modelo de datos sobre diseño físico
+                   y índices. Incluir EXPLAIN ANALYZE antes/después.
+
+────────────────────────────────────────────────────────────────────────
+20. PATRONES DE DISEÑO (POO — solo memoria)
+    Asignatura: POO T5-T7 (patrones de diseño GoF: Creacional,
+                             Estructural, Comportamiento)
+               IS T4 (diseño de software, principios SOLID)
+    Qué es: FurniGest ya implementa varios patrones de diseño sin
+            haberlos nombrado formalmente. Solo hay que identificarlos
+            y mencionarlos en la memoria.
+
+    Patrones ya presentes en el código:
+      • Repository (GoF Estructural):
+          SQLAlchemy Session actua como repositorio de entidades.
+          Cada router delega la persistencia en get_db() + modelos.
+      • Dependency Injection (GoF Comportamiento / SOLID-D):
+          FastAPI Depends() inyecta la sesión de BD en cada endpoint.
+          Desacopla la lógica de negocio del acceso a datos.
+      • DTO — Data Transfer Object (Estructural):
+          Los esquemas Pydantic (*Create, *Response) son DTOs puros:
+          desacoplan la representación de la API del modelo de BD.
+      • Facade (GoF Estructural):
+          groq_llm.py exporta groq_chat() como fachada que oculta
+          los detalles de la petición HTTP al LLM.
+      • Strategy (GoF Comportamiento):
+          El endpoint /api/analytics acepta parámetro ?granularity=
+          (daily/weekly) — comportamiento intercambiable en tiempo real.
+
+    Principios SOLID visibles:
+      S — Single Responsibility: cada router tiene una sola responsabilidad
+      O — Open/Closed: añadir router nuevo no modifica routers existentes
+      D — Dependency Inversion: los endpoints dependen de la abstracción
+                                 Session, no de la implementación concreta
+
+    Coste estimado: 0 código. 1 hora redactando la subseción en memoria.
+    En la memoria: nueva subsección "Patrones de diseño" en Cap. 3
+                   Implementación. Tabla patrón / ubicación / propósito.
+
+────────────────────────────────────────────────────────────────────────
+21. WEBSOCKETS PARA NOTIFICACIONES EN TIEMPO REAL
+    Asignatura: SD T3 (comunicaciones en sistemas distribuidos:
+                       protocolos, sockets, modelos de comunicación)
+               Redes T2 (protocolos capa de aplicación, HTTP Upgrade)
+    Qué es: Cuando el estado de un albarán cambia (FIANZA → ALMACÉN
+            → RUTA → ENTREGADO), el frontend actualmente no se entera
+            hasta que el usuario recarga la página.
+            Con WebSockets (RFC 6455), el servidor puede emitir el
+            evento de cambio a todos los clientes conectados.
+
+    Implementación en FastAPI:
+      @app.websocket("/ws")
+      async def websocket_endpoint(ws: WebSocket):
+          await ws.accept()
+          while True:
+              # Escucha eventos de cambio de estado desde BD
+              msg = await get_next_state_change()
+              await ws.send_json({"albaran_id": msg.id,
+                                   "estado": msg.estado})
+
+    En el frontend React: useWebSocket hook + invalidar la cache de
+    React Query al recibir el evento (0 recarga manual).
+
+    WebSockets vs HTTP:
+      HTTP: siempre iniciado por el cliente (pull)
+      WebSocket: canal bidireccional full-duplex persistente (push)
+      SD T3 cubre este modelo de comunicación orientada a mensajes
+      frente al modelo petición-respuesta de HTTP.
+
+    Coste estimado: 1-2 días (endpoint WS + hook React + tests).
+    En la memoria: nueva subsección "Comunicación en tiempo real"
+                   citando SD T3 y RFC 6455. Diagrama de secuencia.
+
+────────────────────────────────────────────────────────────────────────
+22. DOCKER MULTI-STAGE BUILD
+    Asignatura: SD T4 (contenedores, Docker, optimización de imágenes)
+               SO Mód.1 T1 (sistema de ficheros, capas, procesos)
+    Qué es: La imagen Docker actual del backend instala todas las
+            dependencias de compilación en la imagen final. Con
+            multi-stage build se usan dos etapas:
+              Stage 1 (builder): instala pip + compila extensiones C
+              Stage 2 (runtime): copia solo el .venv, sin tools de build
+
+    Dockerfile multi-stage para el backend:
+
+      # Stage 1 — builder
+      FROM python:3.12-slim AS builder
+      WORKDIR /app
+      COPY requirements.txt .
+      RUN pip install --prefix=/install -r requirements.txt
+
+      # Stage 2 — runtime (imagen final)
+      FROM python:3.12-slim
+      WORKDIR /app
+      COPY --from=builder /install /usr/local
+      COPY . .
+      CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0"]
+
+    Beneficios técnicos:
+      • La imagen final no contiene gcc, pip, setuptools ni headers.
+      • Reducción de tamaño típica: de ~800 MB a ~150-200 MB.
+      • Menor superficie de ataque (SD T4 + SI).
+      • Arranque más rápido en Railway al hacer pull de imagen.
+
+    SO Mód.1 relaciona las capas de imagen Docker con el sistema
+    de ficheros en capas (UnionFS/OverlayFS), que es esencialmente
+    una aplicación del concepto de sistema de ficheros virtual
+    estudiado en SO Mód.4 (E/S y sistema de ficheros).
+    Coste estimado: 1-2 horas (reescribir Dockerfile + validar build).
+    En la memoria: párrafo en subsección Docker sobre multi-stage
+                   y tabla comparativa de tamaño antes/después.
+
+────────────────────────────────────────────────────────────────────────────
+23. VERSIONADO SEMÁNTICO (SemVer) + RELEASES EN GITHUB
+    Asignatura: AIS T3.5 (artefactos, repositorios y versiones:
+                           SemVer, ciclo SNAPSHOT → RELEASE/GA,
+                           trazabilidad commit → artefacto)
+    Qué es: FurniGest no tiene ninguna estrategia de versiones.
+            La imagen Docker solo tiene la etiqueta `:latest`, que no
+            permite saber qué versión está en producción ni hacer rollback.
+            AIS T3.5 define Semantic Versioning (SemVer — semver.org):
+              MAJOR.MINOR.PATCH — ejemplo: 1.0.0
+              • MAJOR: cambios incompatibles con versiones anteriores
+              • MINOR: nueva funcionalidad compatible hacia atrás
+              • PATCH: corrección de errores compatible hacia atrás
+            También define el ciclo de vida del artefacto:
+              BUILD/SNAPSHOT → ALPHA → BETA → RC (Release Candidate)
+                             → RELEASE / GA (General Availability)
+            Versiones pre-release en SemVer: X.Y.Z-identificador
+              Ejemplos: 1.0.0-alpha, 1.0.0-beta.1, 1.0.0-rc.1
+              Precedencia: 1.0.0-alpha < 1.0.0-beta < 1.0.0-rc.1 < 1.0.0
+
+    Implementación en FurniGest:
+      1. Crear tag inicial en git:
+           git tag -a v1.0.0 -m "Primera versión estable de FurniGest"
+           git push origin v1.0.0
+      2. Crear GitHub Release (desde GitHub.com) con changelog manual.
+      3. Publicar imagen Docker versionada en GitHub Actions:
+           - name: Build and push Docker image
+             uses: docker/build-push-action@v5
+             with:
+               tags: |
+                 ghcr.io/usuario/furnigest:latest
+                 ghcr.io/usuario/furnigest:${{ github.ref_name }}
+      4. Actualizar docker-compose.yml para usar imagen versionada:
+           image: ghcr.io/usuario/furnigest:1.0.0
+
+    Por qué: AIS T3.5 define la trazabilidad commit → artefacto como
+            requisito fundamental del proceso de CI/CD. Sin versiones, no
+            es posible hacer rollback, auditar qué hay en producción ni
+            comparar builds. Para el TFG, un GitHub Release con tag v1.0.0
+            le da al evaluador un punto de referencia formal y reproducible.
+    Coste estimado: 1-2 horas (git tag + GitHub Release + ajuste CI).
+    En la memoria: párrafo en sección CI/CD sobre estrategia de versiones.
+                   Tabla con ciclo de vida SNAPSHOT → RELEASE/GA y ejemplos
+                   de versiones pre-release. Citar semver.org.
+
+────────────────────────────────────────────────────────────────────────────
+24. ESTRATEGIA DE RAMAS Y PULL REQUESTS (Git Branching Models)
+    Asignatura: AIS T3.2 (desarrollo colaborativo con Git: modelos de
+                           ramas, Pull Requests, code review, integración
+                           continua y calidad de commits)
+    Qué es: FurniGest realiza commits directamente sobre `main`.
+            AIS T3.2 presenta dos modelos principales de branching:
+              Gitflow: main + develop + feature/* + release/* + hotfix/*
+              • Adecuado para proyectos con releases periódicas
+              • develop acumula features; main solo recibe releases estables
+              Trunk-Based Development (TBD): main + feature branches efímeras
+              • Cada feature branch vive < 1-2 días
+              • CI se ejecuta en cada PR antes de mergear a main
+              • Compatible con Entrega Continua (AIS T3.6)
+            AIS T3.2 también define las 7 reglas de los mensajes de commit
+            (Chris Beams, "How to Write a Git Commit Message"):
+              1. Separar asunto del cuerpo con una línea en blanco
+              2. Limitar el asunto a 50 caracteres
+              3. Iniciar el asunto con mayúsculas
+              4. No finalizar el asunto con punto
+              5. Usar el verbo imperativo en el asunto ("Add", "Fix", no "Added")
+              6. No usar líneas mayores de 72 caracteres en el cuerpo
+              7. El cuerpo explica QUÉ y POR QUÉ, no cómo (está en el código)
+
+    Implementación recomendada para FurniGest (Trunk-Based, más simple):
+      1. Proteger la rama main en GitHub:
+           Settings → Branches → Branch protection rule:
+           ✅ Require status checks to pass before merging
+           ✅ Require at least 1 pull request review before merging
+           ✅ Do not allow bypassing the above settings
+      2. Crear .github/PULL_REQUEST_TEMPLATE.md:
+           ## Descripción del cambio
+           ## Tipo: feat / fix / refactor / test / docs / chore
+           ## Tests añadidos o actualizados
+           ## ¿El pipeline de CI pasa? (✅/❌)
+      3. Adoptar Conventional Commits (conventionalcommits.org):
+           feat: añadir endpoint de presupuestos
+           fix: corregir cálculo de total en albaranes
+           test: añadir mocks para API de Groq
+           docs: actualizar README con instrucciones de despliegue
+
+    Por qué: El pipeline de CI actual se ejecuta en cada push a main,
+            pero no bloquea el merge si falla. Branch protection + PR
+            workflow garantiza que ningún commit roto llegue a producción,
+            que es el objetivo central de la Integración Continua (AIS T3.3).
+    Coste estimado: 1-2 horas (configuración en GitHub + template).
+    En la memoria: subsección "Desarrollo colaborativo" en Cap. 3 CI/CD.
+                   Comparar Gitflow vs Trunk-Based y justificar la elección.
+                   Mostrar ejemplo de mensaje de commit bien formado.
+
+────────────────────────────────────────────────────────────────────────────
+25. TIPOS DE MANTENIMIENTO IEEE EN LA MEMORIA (solo texto)
+    Asignatura: AIS T2.1 (mantenimiento del software: IEEE 1219, tipos
+                           de mantenimiento, leyes de Lehman y Belady,
+                           proyectos vs productos, retos del mantenimiento)
+    Qué es: IEEE define formalmente cuatro tipos de mantenimiento.
+            FurniGest ha pasado exactamente por todos ellos durante su
+            desarrollo iterativo — solo hay que nombrarlo en la memoria.
+
+    Los cuatro tipos IEEE de mantenimiento:
+      CORRECTIVO — Reparación de defectos y fallos detectados en producción
+      PERFECTIVO — Mejoras de funcionalidad o rendimiento sin corregir bugs
+      ADAPTATIVO — Adaptación a cambios en el entorno (nueva versión de
+                   librería, cambio en API externa, migración de plataforma)
+      PREVENTIVO — Restructuración del código para facilitar futuros
+                   cambios (refactorización, mejora de documentación,
+                   añadir tests que antes no existían)
+
+    Conexión con el historial de commits de FurniGest:
+      ✓ Correctivo: commits "fix: ..." (errores en endpoints, cálculos)
+      ✓ Perfectivo: commits "feat: ..." (añadir analíticas, módulo IA)
+      ✓ Adaptativo: actualizaciones de FastAPI, SQLAlchemy, Vite, React
+      ✓ Preventivo: refactorizaciones, type hints, tests a posteriori
+
+    Leyes de Lehman y Belady (AIS T2.1):
+      • Ley del cambio continuo: un software usado en un entorno real
+        debe cambiar; de lo contrario se vuelve progresivamente inútil.
+      • Ley del crecimiento continuo: la funcionalidad debe aumentar
+        continuamente para mantener la satisfacción de los usuarios.
+
+    FurniGest como "producto" (no "proyecto"):
+      AIS T2.1 distingue entre proyectos (con fin definido, 20-30% del
+      coste total es mantenimiento) y productos (en evolución constante,
+      60-80% del coste total es post-release). El TFG entregado que sigue
+      creciendo encaja en el modelo de "producto" con MVP + iteraciones,
+      y el propio desarrollo ágil se considera mantenimiento continuo.
+
+    Coste estimado: 0 código. 1-2 horas redactando en Cap. 2.
+    En la memoria: añadir subsección "Mantenimiento del software" en
+                   Cap. 2 Metodología. Tabla de 4 tipos con ejemplos reales
+                   del historial de commits de FurniGest. Mencionar las
+                   leyes de Lehman como justificación del diseño evolutivo.
+
+────────────────────────────────────────────────────────────────────────────
+26. DOBLES DE TEST (pytest-mock) EN SERVICIOS EXTERNOS
+    Asignatura: AIS T1.2 (pruebas unitarias: test doubles — mock, stub,
+                           spy, fake, dummy; estructura Given/When/Then;
+                           aislamiento del SUT; principio FIRST)
+    Qué es: Los tests actuales de FurniGest llaman directamente a:
+              • Groq API (test_analytics.py → endpoint de tendencias)
+              • Stripe API (test_stripe.py)
+              • Resend/email (test_albaranes.py → albarán con PDF)
+            Esto viola el principio de aislamiento de los tests unitarios:
+            fallan si la API externa está caída, si la cuota está agotada
+            o si las credenciales no están disponibles en CI.
+
+    AIS T1.2 define los tipos de Test Double (Gerard Meszaros, xUnit Test Patterns):
+      STUB    — Devuelve valores predeterminados; no verifica llamadas
+      MOCK    — Verifica que fue llamado con los parámetros correctos
+      SPY     — Como mock pero también ejecuta la implementación real
+      FAKE    — Implementación simplificada (e.g. BD SQLite en lugar de PG)
+      DUMMY   — Objeto vacío que se pasa pero no se usa en el test
+
+    Estructura Given/When/Then (AIS T1.2):
+      GIVEN (precondición): configurar el mock con la respuesta esperada
+      WHEN  (acción):       invocar el endpoint o función bajo prueba
+      THEN  (verificación): assert sobre la respuesta + assert sobre el mock
+
+    Implementación con pytest-mock (pip install pytest-mock):
+
+      # Mock de la API de Groq (en conftest.py o test_analytics.py)
+      def test_tendencias_con_mock(client, mocker):
+          # Given
+          mock_groq = mocker.patch(
+              'backend.app.utils.groq_llm.groq_chat',
+              return_value="Tendencia positiva en ventas de Q4"
+          )
+          # When
+          response = client.post("/api/analytics/tendencias", json={...})
+          # Then
+          assert response.status_code == 200
+          assert "Tendencia" in response.json()["respuesta"]
+          mock_groq.assert_called_once()   # Verifica que se llamó exactamente 1 vez
+
+      # Mock de Stripe (en test_stripe.py)
+      def test_create_checkout_con_mock(client, mocker):
+          mocker.patch(
+              'stripe.checkout.Session.create',
+              return_value=MagicMock(url="https://checkout.stripe.com/test123")
+          )
+          response = client.post("/api/stripe/create-checkout", json={...})
+          assert response.status_code == 200
+          assert "checkout.stripe.com" in response.json()["url"]
+
+    Ventajas:
+      • Tests independientes de servicios externos (no necesitan API keys)
+      • Tests deterministas — siempre devuelven el mismo resultado
+      • Tests rápidos — sin latencia de red
+      • Tests que pasan en CI sin exponer secrets de producción
+
+    Coste estimado: 2-3 horas (refactorizar tests existentes + nuevos).
+    En la memoria: ampliar sección de Pruebas con el concepto de
+                   test doubles (AIS T1.2). Tabla Mock/Stub/Spy/Fake.
+                   Añadir que los tests de servicios externos usan Mocks
+                   para garantizar el principio FIRST (Fast, Isolated...).
+
+────────────────────────────────────────────────────────────────────────────
+27. SONARCLOUD — QUALITY GATE EN EL PIPELINE DE CI
+    Asignatura: AIS P2 (SonarQube: integración con CI, quality gate,
+                         cobertura, bugs, code smells, vulnerabilidades)
+               AIS T1.4 (calidad del software, métricas objetivas de calidad)
+               AIS T1.5 (SCA — análisis estático de código más allá de Ruff)
+    Qué es: SonarCloud es SonarQube en la nube, gratuito para repos
+            públicos. Analiza el código en cada PR/push y genera un
+            informe unificado con:
+              • Cobertura de tests (%)
+              • Bugs detectados (análisis de flujo de datos)
+              • Code smells (mantenibilidad)
+              • Vulnerabilidades de seguridad (mapeadas a OWASP/CWE)
+              • Duplicación de código (%)
+            Define un "quality gate": el CI falla si la cobertura baja
+            de un umbral configurable (e.g., 80%) o si hay nuevos bugs
+            introducidos en el PR — esto es lo que AIS P2 denomina
+            "política de calidad del código" automatizada.
+
+    Implementación en .github/workflows/deploy.yml:
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=usuario_furnigest
+            -Dsonar.organization=usuario
+            -Dsonar.sources=backend,frontend/src
+            -Dsonar.python.coverage.reportPaths=coverage.xml
+            -Dsonar.javascript.lcov.reportPaths=frontend/coverage/lcov.info
+
+    Configurar sonar-project.properties en la raíz:
+      sonar.projectKey=usuario_furnigest
+      sonar.organization=usuario
+      sonar.sources=backend,frontend/src
+      sonar.exclusions=**/node_modules/**,**/__pycache__/**,**/migrations/**
+      sonar.python.version=3.12
+
+    Requisito previo: el step de pytest debe generar coverage.xml:
+      pytest --cov=backend --cov-report=xml:coverage.xml
+
+    Por qué: Ruff + ESLint (ya en el pipeline) son linters que detectan
+            problemas de estilo y errores evidentes. SonarCloud va más
+            lejos: detecta bugs semánticos (variables no usadas en todos
+            los caminos), vulnerabilidades OWASP y mide la cobertura en
+            un cuadro de mando. AIS T1.5 cita SonarQube explícitamente
+            como herramienta de SCA, y AIS P2 está dedicada íntegramente
+            a su integración en CI. SonarCloud es gratuito para repos
+            públicos — ideal para un TFG en GitHub.
+    Coste estimado: 2-3 horas (cuenta SonarCloud + configurar acción
+                    + resolver los issues iniciales del análisis).
+    En la memoria: nueva subsección "Quality Gate con SonarCloud" en
+                   Calidad del código o CI/CD. Captura del dashboard con
+                   las métricas obtenidas. Citar AIS T1.5 + AIS P2.
+
+────────────────────────────────────────────────────────────────────────────
+28. PLANIFICACIÓN ÁGIL: SPRINTS, STORY POINTS Y BURNDOWN (solo memoria)
+    Asignatura: AIS T4.1 (gestión de proyectos: WBS, estimación,
+                           story points, velocidad del equipo)
+               AIS T4.2 (planificación: sprint planning, burndown chart,
+                           retrospectiva, replanning)
+               AIS T5 (Scrum: sprint, product backlog, sprint backlog)
+    Qué es: FurniGest fue desarrollado en iteraciones que corresponden
+            naturalmente a sprints Scrum. Sin embargo, la memoria no
+            documenta la planificación ni el seguimiento de forma formal.
+
+    Elementos a añadir en la memoria (todos sin código nuevo):
+
+      1. Tabla resumen de sprints del TFG (AIS T4.2):
+           Sprint | Duración | Funcionalidades             | Story Pts | Velocidad
+             1    | 2 sem.   | CRUD productos/clientes/provs |   8 SP  | 4 SP/sem
+             2    | 2 sem.   | Albaranes + estados           |  13 SP  | 6.5 SP/sem
+             3    | 2 sem.   | Analíticas + módulo IA        |  13 SP  | 6.5 SP/sem
+             4    | 2 sem.   | CI/CD + Docker + despliegue   |   8 SP  | 4 SP/sem
+             5    | 2 sem.   | Stripe + email + PDF          |   8 SP  | 4 SP/sem
+
+      2. Burndown chart (gráfico en Cap. 2 Metodología):
+           Eje X: semanas del proyecto; Eje Y: story points restantes.
+           Línea ideal (descenso lineal) vs línea real (con imprevistos).
+           Permite visualizar si el proyecto estuvo por delante o detrás
+           del ritmo planificado.
+
+      3. WBS simplificado (Work Breakdown Structure — AIS T4.1):
+           Nivel 1: FurniGest
+           Nivel 2: Backend API / Frontend SPA / Persistencia / CI-CD /
+                    Pruebas / Documentación
+           Nivel 3: subcomponentes (e.g. Backend → endpoints CRUD /
+                    autenticación / analíticas / IA / pagos)
+
+      4. Velocidad del equipo (AIS T4.2):
+           Velocidad = story points completados por sprint.
+           Utilidad: permite proyectar fechas de entrega y replanificar
+           cuando se añaden historias al backlog.
+
+    Story points en FurniGest (escala de Fibonacci: 1, 2, 3, 5, 8, 13):
+      • Endpoint CRUD simple              → 1-2 SP
+      • Endpoint con lógica de negocio    → 3-5 SP
+      • Módulo completo (IA, pagos)       → 8-13 SP
+      • Pipeline de CI/CD completo        → 5-8 SP
+
+    Por qué: AIS T4.1 y T4.2 cubren la gestión y planificación de proyectos
+            ágiles. Incluir una tabla de sprints + burndown chart + WBS en
+            la memoria demuestra que el TFG no solo se desarrolló de forma
+            ágil, sino que también lo documenta con las herramientas de
+            seguimiento que define AIS T4. No requiere ningún software
+            específico (Jira, Azure DevOps) — una tabla LaTeX y un gráfico
+            TikZ/pgfplots ya son suficientes.
+    Coste estimado: 0 código. 2-3 horas redactando tablas y el burndown.
+    En la memoria: ampliar Cap. 2 Metodología con subsección
+                   "Planificación y seguimiento del desarrollo".
+                   Tablas de sprints + burndown chart + WBS.
 
 ╔══════════════════════════════════════════════════════════════════════════╗
 ║               RESUMEN RÁPIDO — POR ESFUERZO                            ║
@@ -450,6 +978,12 @@ BAJO ESFUERZO (< 4 horas, solo texto/config):
   - Mencionar metodología OWASP en sección CI/CD              [SI T9]
   - Citar HTTP/1.1 RFC 2616 en sección REST \cite{kurose}     [Redes T2]
   - Vaswani 2017 "Attention Is All You Need" para Transformer  [IA T11]
+  - Análisis Big-O de RFM + Market Basket (0 código)          [DAA T1-T5]
+  - Patrones de diseño: Repository, DI, DTO, Facade, Strategy [POO T5-T7]
+  - #23 SemVer git tag + GitHub Release + Docker tag          [AIS T3.5]
+  - #24 Branch protection + PR template + commit conventions  [AIS T3.2]
+  - #25 Tabla tipos mantenimiento IEEE + leyes de Lehman       [AIS T2.1]
+  - #28 Tabla sprints + burndown chart + WBS (solo memoria)   [AIS T4.1/T4.2]
 
 MEDIO ESFUERZO (1-2 días):
   - Migraciones Alembic                                       [BD T6]
@@ -459,11 +993,49 @@ MEDIO ESFUERZO (1-2 días):
   - HTTPS redirect middleware + HSTS header                   [SI T7]
   - Hash bcrypt/Argon2 cuando se implante auth                [SI T7]
   - SAST+SCA en CI: Bandit + pip-audit + npm audit + Trivy    [SI T9 / AIS T1.5]
+  - Transacciones ACID en creación de albarán                 [BD T6/T7]
+  - Índices en BD (fecha, estado, FKs)                        [BD T6/T7]
+  - Docker multi-stage build                                  [SD T4 / SO]
+  - WebSockets notificaciones en tiempo real                  [SD T3 / Redes T2]
+  - #26 Test doubles (pytest-mock) para Groq/Stripe/Resend    [AIS T1.2]
+  - #27 SonarCloud quality gate en CI                         [AIS P2 / T1.5]
 
 ALTO ESFUERZO (> 2 días, máximo impacto):
   - Autenticación JWT + roles                                 [SD T2 / IS T2]
   - Tests E2E Playwright                                      [AIS T1.3]
   - Caché Redis para analíticas                               [SD T5]
   - Analíticas predictivas ARIMA/Prophet                      [BD T1]
+
+===========================================================================
+ÍNDICE COMPLETO DE ITEMS (28 total):
+
+  #1  JWT + Roles de usuario (2-3 días)                       [SD T2 / IS T2]
+  #2  Migraciones Alembic (medio día)                         [BD T6/T7]
+  #3  Tests E2E Playwright (1 día)                            [AIS T1.3]
+  #4  Cobertura pytest-cov (2h)                               [AIS T1.4]
+  #5  Gestión de stock (1 día)                                [BD T4 / IS T2]
+  #6  Logging estructurado (2h)                               [AIS T1.4 / SD T1]
+  #7  Rate limiting slowapi (2h)                              [IS T2 / SD T1]
+  #8  Evaluación usabilidad Nielsen (medio día)               [IPO T4/T6]
+  #9  Módulo de presupuestos (1-2 días)                       [IS T2/T3 / BD T4]
+  #10 i18n + Accesibilidad WCAG (1-2 días)                    [IPO T5/T4]
+  #11 PWA (2-3h)                                              [IPO T2]
+  #12 Caché Redis para analíticas (1 día)                     [SD T5]
+  #13 Analíticas predictivas ARIMA/Prophet (2-3 días)         [BD T1]
+  #14 HTTPS/TLS middleware + HSTS (2-3h)                      [SI T7 / Redes]
+  #15 Hash bcrypt/Argon2 (1h)                                 [SI T7]
+  #16 SAST+SCA: Bandit + pip-audit + Trivy (3-4h)             [SI T9 / AIS T1.5]
+  #17 Big-O análisis RFM + Market Basket (0 código)           [DAA T1-T5]
+  #18 Transacciones ACID en albaranes (2-3h)                  [BD T6/T7]
+  #19 Índices en BD fecha/estado/FKs (1h)                     [BD T6/T7]
+  #20 Patrones GoF en memoria (0 código)                      [POO T5-T7]
+  #21 WebSockets notificaciones tiempo real (1-2 días)        [SD T3 / Redes]
+  #22 Docker multi-stage build (1-2h)                         [SD T4 / SO]
+  #23 SemVer + GitHub Releases + Docker tag (1-2h)            [AIS T3.5]
+  #24 Git branching + PR workflow + commit msg (1-2h)         [AIS T3.2]
+  #25 Tipos mantenimiento IEEE + leyes Lehman (0 código)      [AIS T2.1]
+  #26 Test doubles pytest-mock Groq/Stripe (2-3h)             [AIS T1.2]
+  #27 SonarCloud quality gate en CI (2-3h)                    [AIS P2/T1.5]
+  #28 Sprints + burndown chart + WBS (0 código)               [AIS T4.1/T4.2]
 
 ===========================================================================
