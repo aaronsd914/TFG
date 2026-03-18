@@ -133,7 +133,7 @@ Nueva bibliografía añadida (SI + Redes + IA):
   automáticamente). Añade profundidad técnica referenciando SD T3.
   Coste: 1 línea.
 
-[IPO T3 — DCU / Personas de usuario] — Añadir "persona" de usuario:
+[IPO T3 — DCU / Personas de usuario] — Añadir "persona" de usuario:  ✅ COMPLETADO
   En Cap. 2, al describir el problema, definir 2-3 perfiles de usuario
   (administrador de tienda, vendedor, repartidor) como se hace en DCU.
   Esto enriquece el análisis de requisitos y conecta con IPO T3A.
