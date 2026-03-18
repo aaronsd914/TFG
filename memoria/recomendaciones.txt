@@ -174,6 +174,179 @@ Nueva bibliografía añadida (SI + Redes + IA):
 Ordenadas de mayor a menor impacto académico y alineadas con temarios:
 
 ────────────────────────────────────────────────────────────────────────────
+26. DOBLES DE TEST (pytest-mock) EN SERVICIOS EXTERNOS
+    Asignatura: AIS T1.2 (pruebas unitarias: test doubles — mock, stub,
+                           spy, fake, dummy; estructura Given/When/Then;
+                           aislamiento del SUT; principio FIRST)
+    Qué es: Los tests actuales de FurniGest llaman directamente a:
+              • Groq API (test_analytics.py → endpoint de tendencias)
+              • Stripe API (test_stripe.py)
+              • Resend/email (test_albaranes.py → albarán con PDF)
+            Esto viola el principio de aislamiento de los tests unitarios:
+            fallan si la API externa está caída, si la cuota está agotada
+            o si las credenciales no están disponibles en CI.
+
+    AIS T1.2 define los tipos de Test Double (Gerard Meszaros, xUnit Test Patterns):
+      STUB    — Devuelve valores predeterminados; no verifica llamadas
+      MOCK    — Verifica que fue llamado con los parámetros correctos
+      SPY     — Como mock pero también ejecuta la implementación real
+      FAKE    — Implementación simplificada (e.g. BD SQLite en lugar de PG)
+      DUMMY   — Objeto vacío que se pasa pero no se usa en el test
+
+    Estructura Given/When/Then (AIS T1.2):
+      GIVEN (precondición): configurar el mock con la respuesta esperada
+      WHEN  (acción):       invocar el endpoint o función bajo prueba
+      THEN  (verificación): assert sobre la respuesta + assert sobre el mock
+
+    Implementación con pytest-mock (pip install pytest-mock):
+
+      # Mock de la API de Groq (en conftest.py o test_analytics.py)
+      def test_tendencias_con_mock(client, mocker):
+          # Given
+          mock_groq = mocker.patch(
+              'backend.app.utils.groq_llm.groq_chat',
+              return_value="Tendencia positiva en ventas de Q4"
+          )
+          # When
+          response = client.post("/api/analytics/tendencias", json={...})
+          # Then
+          assert response.status_code == 200
+          assert "Tendencia" in response.json()["respuesta"]
+          mock_groq.assert_called_once()   # Verifica que se llamó exactamente 1 vez
+
+      # Mock de Stripe (en test_stripe.py)
+      def test_create_checkout_con_mock(client, mocker):
+          mocker.patch(
+              'stripe.checkout.Session.create',
+              return_value=MagicMock(url="https://checkout.stripe.com/test123")
+          )
+          response = client.post("/api/stripe/create-checkout", json={...})
+          assert response.status_code == 200
+          assert "checkout.stripe.com" in response.json()["url"]
+
+    Ventajas:
+      • Tests independientes de servicios externos (no necesitan API keys)
+      • Tests deterministas — siempre devuelven el mismo resultado
+      • Tests rápidos — sin latencia de red
+      • Tests que pasan en CI sin exponer secrets de producción
+
+    Coste estimado: 2-3 horas (refactorizar tests existentes + nuevos).
+    En la memoria: ampliar sección de Pruebas con el concepto de
+                   test doubles (AIS T1.2). Tabla Mock/Stub/Spy/Fake.
+                   Añadir que los tests de servicios externos usan Mocks
+                   para garantizar el principio FIRST (Fast, Isolated...).
+
+────────────────────────────────────────────────────────────────────────────
+
+24. ESTRATEGIA DE RAMAS Y PULL REQUESTS (Git Branching Models)
+    Asignatura: AIS T3.2 (desarrollo colaborativo con Git: modelos de
+                           ramas, Pull Requests, code review, integración
+                           continua y calidad de commits)
+    Qué es: FurniGest realiza commits directamente sobre `main`.
+            AIS T3.2 presenta dos modelos principales de branching:
+              Gitflow: main + develop + feature/* + release/* + hotfix/*
+              • Adecuado para proyectos con releases periódicas
+              • develop acumula features; main solo recibe releases estables
+              Trunk-Based Development (TBD): main + feature branches efímeras
+              • Cada feature branch vive < 1-2 días
+              • CI se ejecuta en cada PR antes de mergear a main
+              • Compatible con Entrega Continua (AIS T3.6)
+            AIS T3.2 también define las 7 reglas de los mensajes de commit
+            (Chris Beams, "How to Write a Git Commit Message"):
+              1. Separar asunto del cuerpo con una línea en blanco
+              2. Limitar el asunto a 50 caracteres
+              3. Iniciar el asunto con mayúsculas
+              4. No finalizar el asunto con punto
+              5. Usar el verbo imperativo en el asunto ("Add", "Fix", no "Added")
+              6. No usar líneas mayores de 72 caracteres en el cuerpo
+              7. El cuerpo explica QUÉ y POR QUÉ, no cómo (está en el código)
+
+    Implementación recomendada para FurniGest (Trunk-Based, más simple):
+      1. Proteger la rama main en GitHub:
+           Settings → Branches → Branch protection rule:
+           ✅ Require status checks to pass before merging
+           ✅ Require at least 1 pull request review before merging
+           ✅ Do not allow bypassing the above settings
+      2. Crear .github/PULL_REQUEST_TEMPLATE.md:
+           ## Descripción del cambio
+           ## Tipo: feat / fix / refactor / test / docs / chore
+           ## Tests añadidos o actualizados
+           ## ¿El pipeline de CI pasa? (✅/❌)
+      3. Adoptar Conventional Commits (conventionalcommits.org):
+           feat: añadir endpoint de presupuestos
+           fix: corregir cálculo de total en albaranes
+           test: añadir mocks para API de Groq
+           docs: actualizar README con instrucciones de despliegue
+
+    Por qué: El pipeline de CI actual se ejecuta en cada push a main,
+            pero no bloquea el merge si falla. Branch protection + PR
+            workflow garantiza que ningún commit roto llegue a producción,
+            que es el objetivo central de la Integración Continua (AIS T3.3).
+    Coste estimado: 1-2 horas (configuración en GitHub + template).
+    En la memoria: subsección "Desarrollo colaborativo" en Cap. 3 CI/CD.
+                   Comparar Gitflow vs Trunk-Based y justificar la elección.
+                   Mostrar ejemplo de mensaje de commit bien formado.
+
+────────────────────────────────────────────────────────────────────────────
+27. SONARCLOUD — QUALITY GATE EN EL PIPELINE DE CI
+    Asignatura: AIS P2 (SonarQube: integración con CI, quality gate,
+                         cobertura, bugs, code smells, vulnerabilidades)
+               AIS T1.4 (calidad del software, métricas objetivas de calidad)
+               AIS T1.5 (SCA — análisis estático de código más allá de Ruff)
+    Qué es: SonarCloud es SonarQube en la nube, gratuito para repos
+            públicos. Analiza el código en cada PR/push y genera un
+            informe unificado con:
+              • Cobertura de tests (%)
+              • Bugs detectados (análisis de flujo de datos)
+              • Code smells (mantenibilidad)
+              • Vulnerabilidades de seguridad (mapeadas a OWASP/CWE)
+              • Duplicación de código (%)
+            Define un "quality gate": el CI falla si la cobertura baja
+            de un umbral configurable (e.g., 80%) o si hay nuevos bugs
+            introducidos en el PR — esto es lo que AIS P2 denomina
+            "política de calidad del código" automatizada.
+
+    Implementación en .github/workflows/deploy.yml:
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=usuario_furnigest
+            -Dsonar.organization=usuario
+            -Dsonar.sources=backend,frontend/src
+            -Dsonar.python.coverage.reportPaths=coverage.xml
+            -Dsonar.javascript.lcov.reportPaths=frontend/coverage/lcov.info
+
+    Configurar sonar-project.properties en la raíz:
+      sonar.projectKey=usuario_furnigest
+      sonar.organization=usuario
+      sonar.sources=backend,frontend/src
+      sonar.exclusions=**/node_modules/**,**/__pycache__/**,**/migrations/**
+      sonar.python.version=3.12
+
+    Requisito previo: el step de pytest debe generar coverage.xml:
+      pytest --cov=backend --cov-report=xml:coverage.xml
+
+    Por qué: Ruff + ESLint (ya en el pipeline) son linters que detectan
+            problemas de estilo y errores evidentes. SonarCloud va más
+            lejos: detecta bugs semánticos (variables no usadas en todos
+            los caminos), vulnerabilidades OWASP y mide la cobertura en
+            un cuadro de mando. AIS T1.5 cita SonarQube explícitamente
+            como herramienta de SCA, y AIS P2 está dedicada íntegramente
+            a su integración en CI. SonarCloud es gratuito para repos
+            públicos — ideal para un TFG en GitHub.
+    Coste estimado: 2-3 horas (cuenta SonarCloud + configurar acción
+                    + resolver los issues iniciales del análisis).
+    En la memoria: nueva subsección "Quality Gate con SonarCloud" en
+                   Calidad del código o CI/CD. Captura del dashboard con
+                   las métricas obtenidas. Citar AIS T1.5 + AIS P2.
+
+────────────────────────────────────────────────────────────────────────────
+                
 1. AUTENTICACIÓN JWT + ROLES DE USUARIO
    Asignatura: SD T2 (Spring Security / protección de endpoints)
                IS T2 (RNF de seguridad), AIS T1 (pruebas de seguridad)
@@ -688,55 +861,6 @@ Ordenadas de mayor a menor impacto académico y alineadas con temarios:
                    Tabla con ciclo de vida SNAPSHOT → RELEASE/GA y ejemplos
                    de versiones pre-release. Citar semver.org.
 
-────────────────────────────────────────────────────────────────────────────
-24. ESTRATEGIA DE RAMAS Y PULL REQUESTS (Git Branching Models)
-    Asignatura: AIS T3.2 (desarrollo colaborativo con Git: modelos de
-                           ramas, Pull Requests, code review, integración
-                           continua y calidad de commits)
-    Qué es: FurniGest realiza commits directamente sobre `main`.
-            AIS T3.2 presenta dos modelos principales de branching:
-              Gitflow: main + develop + feature/* + release/* + hotfix/*
-              • Adecuado para proyectos con releases periódicas
-              • develop acumula features; main solo recibe releases estables
-              Trunk-Based Development (TBD): main + feature branches efímeras
-              • Cada feature branch vive < 1-2 días
-              • CI se ejecuta en cada PR antes de mergear a main
-              • Compatible con Entrega Continua (AIS T3.6)
-            AIS T3.2 también define las 7 reglas de los mensajes de commit
-            (Chris Beams, "How to Write a Git Commit Message"):
-              1. Separar asunto del cuerpo con una línea en blanco
-              2. Limitar el asunto a 50 caracteres
-              3. Iniciar el asunto con mayúsculas
-              4. No finalizar el asunto con punto
-              5. Usar el verbo imperativo en el asunto ("Add", "Fix", no "Added")
-              6. No usar líneas mayores de 72 caracteres en el cuerpo
-              7. El cuerpo explica QUÉ y POR QUÉ, no cómo (está en el código)
-
-    Implementación recomendada para FurniGest (Trunk-Based, más simple):
-      1. Proteger la rama main en GitHub:
-           Settings → Branches → Branch protection rule:
-           ✅ Require status checks to pass before merging
-           ✅ Require at least 1 pull request review before merging
-           ✅ Do not allow bypassing the above settings
-      2. Crear .github/PULL_REQUEST_TEMPLATE.md:
-           ## Descripción del cambio
-           ## Tipo: feat / fix / refactor / test / docs / chore
-           ## Tests añadidos o actualizados
-           ## ¿El pipeline de CI pasa? (✅/❌)
-      3. Adoptar Conventional Commits (conventionalcommits.org):
-           feat: añadir endpoint de presupuestos
-           fix: corregir cálculo de total en albaranes
-           test: añadir mocks para API de Groq
-           docs: actualizar README con instrucciones de despliegue
-
-    Por qué: El pipeline de CI actual se ejecuta en cada push a main,
-            pero no bloquea el merge si falla. Branch protection + PR
-            workflow garantiza que ningún commit roto llegue a producción,
-            que es el objetivo central de la Integración Continua (AIS T3.3).
-    Coste estimado: 1-2 horas (configuración en GitHub + template).
-    En la memoria: subsección "Desarrollo colaborativo" en Cap. 3 CI/CD.
-                   Comparar Gitflow vs Trunk-Based y justificar la elección.
-                   Mostrar ejemplo de mensaje de commit bien formado.
 
 ────────────────────────────────────────────────────────────────────────────
 25. TIPOS DE MANTENIMIENTO IEEE EN LA MEMORIA (solo texto)
@@ -780,127 +904,6 @@ Ordenadas de mayor a menor impacto académico y alineadas con temarios:
                    Cap. 2 Metodología. Tabla de 4 tipos con ejemplos reales
                    del historial de commits de FurniGest. Mencionar las
                    leyes de Lehman como justificación del diseño evolutivo.
-
-────────────────────────────────────────────────────────────────────────────
-26. DOBLES DE TEST (pytest-mock) EN SERVICIOS EXTERNOS
-    Asignatura: AIS T1.2 (pruebas unitarias: test doubles — mock, stub,
-                           spy, fake, dummy; estructura Given/When/Then;
-                           aislamiento del SUT; principio FIRST)
-    Qué es: Los tests actuales de FurniGest llaman directamente a:
-              • Groq API (test_analytics.py → endpoint de tendencias)
-              • Stripe API (test_stripe.py)
-              • Resend/email (test_albaranes.py → albarán con PDF)
-            Esto viola el principio de aislamiento de los tests unitarios:
-            fallan si la API externa está caída, si la cuota está agotada
-            o si las credenciales no están disponibles en CI.
-
-    AIS T1.2 define los tipos de Test Double (Gerard Meszaros, xUnit Test Patterns):
-      STUB    — Devuelve valores predeterminados; no verifica llamadas
-      MOCK    — Verifica que fue llamado con los parámetros correctos
-      SPY     — Como mock pero también ejecuta la implementación real
-      FAKE    — Implementación simplificada (e.g. BD SQLite en lugar de PG)
-      DUMMY   — Objeto vacío que se pasa pero no se usa en el test
-
-    Estructura Given/When/Then (AIS T1.2):
-      GIVEN (precondición): configurar el mock con la respuesta esperada
-      WHEN  (acción):       invocar el endpoint o función bajo prueba
-      THEN  (verificación): assert sobre la respuesta + assert sobre el mock
-
-    Implementación con pytest-mock (pip install pytest-mock):
-
-      # Mock de la API de Groq (en conftest.py o test_analytics.py)
-      def test_tendencias_con_mock(client, mocker):
-          # Given
-          mock_groq = mocker.patch(
-              'backend.app.utils.groq_llm.groq_chat',
-              return_value="Tendencia positiva en ventas de Q4"
-          )
-          # When
-          response = client.post("/api/analytics/tendencias", json={...})
-          # Then
-          assert response.status_code == 200
-          assert "Tendencia" in response.json()["respuesta"]
-          mock_groq.assert_called_once()   # Verifica que se llamó exactamente 1 vez
-
-      # Mock de Stripe (en test_stripe.py)
-      def test_create_checkout_con_mock(client, mocker):
-          mocker.patch(
-              'stripe.checkout.Session.create',
-              return_value=MagicMock(url="https://checkout.stripe.com/test123")
-          )
-          response = client.post("/api/stripe/create-checkout", json={...})
-          assert response.status_code == 200
-          assert "checkout.stripe.com" in response.json()["url"]
-
-    Ventajas:
-      • Tests independientes de servicios externos (no necesitan API keys)
-      • Tests deterministas — siempre devuelven el mismo resultado
-      • Tests rápidos — sin latencia de red
-      • Tests que pasan en CI sin exponer secrets de producción
-
-    Coste estimado: 2-3 horas (refactorizar tests existentes + nuevos).
-    En la memoria: ampliar sección de Pruebas con el concepto de
-                   test doubles (AIS T1.2). Tabla Mock/Stub/Spy/Fake.
-                   Añadir que los tests de servicios externos usan Mocks
-                   para garantizar el principio FIRST (Fast, Isolated...).
-
-────────────────────────────────────────────────────────────────────────────
-27. SONARCLOUD — QUALITY GATE EN EL PIPELINE DE CI
-    Asignatura: AIS P2 (SonarQube: integración con CI, quality gate,
-                         cobertura, bugs, code smells, vulnerabilidades)
-               AIS T1.4 (calidad del software, métricas objetivas de calidad)
-               AIS T1.5 (SCA — análisis estático de código más allá de Ruff)
-    Qué es: SonarCloud es SonarQube en la nube, gratuito para repos
-            públicos. Analiza el código en cada PR/push y genera un
-            informe unificado con:
-              • Cobertura de tests (%)
-              • Bugs detectados (análisis de flujo de datos)
-              • Code smells (mantenibilidad)
-              • Vulnerabilidades de seguridad (mapeadas a OWASP/CWE)
-              • Duplicación de código (%)
-            Define un "quality gate": el CI falla si la cobertura baja
-            de un umbral configurable (e.g., 80%) o si hay nuevos bugs
-            introducidos en el PR — esto es lo que AIS P2 denomina
-            "política de calidad del código" automatizada.
-
-    Implementación en .github/workflows/deploy.yml:
-
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            -Dsonar.projectKey=usuario_furnigest
-            -Dsonar.organization=usuario
-            -Dsonar.sources=backend,frontend/src
-            -Dsonar.python.coverage.reportPaths=coverage.xml
-            -Dsonar.javascript.lcov.reportPaths=frontend/coverage/lcov.info
-
-    Configurar sonar-project.properties en la raíz:
-      sonar.projectKey=usuario_furnigest
-      sonar.organization=usuario
-      sonar.sources=backend,frontend/src
-      sonar.exclusions=**/node_modules/**,**/__pycache__/**,**/migrations/**
-      sonar.python.version=3.12
-
-    Requisito previo: el step de pytest debe generar coverage.xml:
-      pytest --cov=backend --cov-report=xml:coverage.xml
-
-    Por qué: Ruff + ESLint (ya en el pipeline) son linters que detectan
-            problemas de estilo y errores evidentes. SonarCloud va más
-            lejos: detecta bugs semánticos (variables no usadas en todos
-            los caminos), vulnerabilidades OWASP y mide la cobertura en
-            un cuadro de mando. AIS T1.5 cita SonarQube explícitamente
-            como herramienta de SCA, y AIS P2 está dedicada íntegramente
-            a su integración en CI. SonarCloud es gratuito para repos
-            públicos — ideal para un TFG en GitHub.
-    Coste estimado: 2-3 horas (cuenta SonarCloud + configurar acción
-                    + resolver los issues iniciales del análisis).
-    En la memoria: nueva subsección "Quality Gate con SonarCloud" en
-                   Calidad del código o CI/CD. Captura del dashboard con
-                   las métricas obtenidas. Citar AIS T1.5 + AIS P2.
 
 ────────────────────────────────────────────────────────────────────────────
 28. PLANIFICACIÓN ÁGIL: SPRINTS, STORY POINTS Y BURNDOWN (solo memoria)
@@ -959,6 +962,258 @@ Ordenadas de mayor a menor impacto académico y alineadas con temarios:
                    "Planificación y seguimiento del desarrollo".
                    Tablas de sprints + burndown chart + WBS.
 
+────────────────────────────────────────────────────────────────────────────
+29. ENDPOINT /health + READINESS PROBE EN RAILWAY
+    Asignatura: SD T1 (detección y recuperación de fallos en SSDD,
+                        disponibilidad, monitorización de servicios)
+               AIS T3.4 (pipelines de CI/CD, despliegue)
+               SD T4 (Docker, orquestación, contenedores en producción)
+    Qué es: FurniGest no expone ningún endpoint de salud.
+            Un health check es un endpoint estándar de la industria que
+            informa si el servicio está listo para atender peticiones:
+
+      @app.get("/health")
+      async def health_check(db: Session = Depends(get_db)):
+          try:
+              db.execute(text("SELECT 1"))      # Verifica BD activa
+              return {"status": "ok", "db": "connected"}
+          except Exception as e:
+              raise HTTPException(status_code=503, detail=str(e))
+
+    Railway puede usar este endpoint para:
+      - Reiniciar automáticamente la instancia si devuelve 503
+      - No enviar tráfico hasta que el servicio confirme readiness
+      - Garantizar zero-downtime deploys (sustituye contenedor viejo
+        solo cuando el nuevo responde 200 en /health)
+
+    Conexión académica:
+      SD T1 define la disponibilidad como propiedad fundamental de los
+      sistemas distribuidos y establece que "los fallos deben detectarse
+      y recuperarse automáticamente". El health check es la implementación
+      operacional de ese principio: el orquestador (Railway / Kubernetes)
+      detecta el fallo consultando periódicamente el endpoint y actúa
+      sin intervención humana.
+      En Kubernetes se llama "liveness probe" (¿está vivo?) y
+      "readiness probe" (¿está listo para recibir tráfico?) — conceptos
+      que extienden naturalmente SD T4 (contenedores) hacia orquestación.
+
+    Coste estimado: 30 minutos (10 líneas de código + config Railway).
+    En la memoria: párrafo en subsección Despliegue: "el servicio expone
+                   /health conforme al principio de detección automática
+                   de fallos de los sistemas distribuidos (SD T1)".
+
+────────────────────────────────────────────────────────────────────────────
+30. PAGINACIÓN EN ENDPOINTS DE LISTA
+    Asignatura: BD T6 (diseño físico, optimización de consultas)
+               SD T1 (escalabilidad en sistemas distribuidos)
+               IS T2 (RNF de rendimiento)
+    Qué es: Todos los endpoints GET del proyecto (albaranes, clientes,
+            productos, movimientos) devuelven TODOS los registros en una
+            sola respuesta. Con 10.000 albaranes esto provoca:
+              - Consulta SQL sin LIMIT → seq scan completo O(n)
+              - Payload JSON de varios MB innecesario
+              - El frontend renderiza una tabla enorme → UI bloqueada
+
+    Hay dos patrones estándar de paginación:
+
+      Offset pagination (más simple):
+        GET /api/albaranes?page=1&limit=20&sort=fecha&order=desc
+        Response: { "items": [...], "total": 843, "page": 1, "pages": 43 }
+
+        En FastAPI:
+          @router.get("/albaranes")
+          def get_albaranes(page: int = 1, limit: int = 20,
+                            db: Session = Depends(get_db)):
+              offset = (page - 1) * limit
+              total  = db.query(AlbaranDB).count()
+              items  = db.query(AlbaranDB).offset(offset).limit(limit).all()
+              return {"items": items, "total": total, "page": page,
+                      "pages": math.ceil(total / limit)}
+
+      Cursor pagination (más eficiente para grandes volúmenes):
+        Usa el id o fecha del último registro como cursor:
+        GET /api/albaranes?cursor=2024-03-15T10:00:00&limit=20
+        No necesita COUNT(*) ni calcula offsets → O(log n) con índice
+
+    Por qué:
+      BD T6 establece que el diseño físico debe optimizar los planes de
+      ejecución de las consultas más frecuentes. Una query sin LIMIT obliga
+      al motor a recuperar y transmitir todos los registros aunque el usuario
+      solo vea 20. Añadir LIMIT/OFFSET + el índice de fecha/estado (#19)
+      convierte un seq scan O(n) en un index range scan O(log n + k).
+      SD T1 define la escalabilidad como la capacidad del sistema de
+      soportar mayor carga sin degradación: sin paginación, el backend
+      escala mal aunque se tenga un clúster de contenedores.
+    Coste estimado: 3-4 horas (refactorizar endpoints + actualizar
+                    la tabla del frontend con controles de paginación).
+    En la memoria: párrafo en sección Backend sobre paginación.
+                   Comparativa offset vs cursor con complejidades.
+                   Mencionar como mejora de RNF-05 (rendimiento).
+
+────────────────────────────────────────────────────────────────────────────
+31. TWELVE-FACTOR APP (metodología cloud-native)
+    Asignatura: SD T1 (sistemas distribuidos, escalabilidad horizontal)
+               AIS T3 (CI/CD, despliegue continuo)
+               SO (procesos, variables de entorno, señales)
+               IS T2 (RNF de mantenibilidad, portabilidad)
+    Qué es: La metodología Twelve-Factor App (Heroku, 2011 —
+            https://12factor.net) define 12 principios para construir
+            software como servicio (SaaS) que sea escalable, portable
+            y mantenible. Es el estándar de facto de las aplicaciones
+            cloud-native. NO está en ningún temario, pero es la síntesis
+            práctica de lo que enseñan SD, AIS, SO e IS juntos.
+
+    Los 12 factores y su estado en FurniGest:
+    ┌────┬─────────────────────────────────┬──────────────┬──────────────────┐
+    │ #  │ Factor                          │ Estado       │ Asignatura       │
+    ├────┼─────────────────────────────────┼──────────────┼──────────────────┤
+    │ I  │ Codebase: un repo, múltiples    │ ✅ GitHub    │ AIS T3.2, T3.5   │
+    │    │ deploys                         │              │                  │
+    │ II │ Dependencies: declaradas y      │ ✅ req.txt + │ AIS T1.5 (SCA)   │
+    │    │ aisladas                        │ package.json │                  │
+    │III │ Config: en variables de entorno │ ✅ .env /    │ SI T7, SO env    │
+    │    │ nunca en el código              │ Railway vars │                  │
+    │ IV │ Backing services: BD, email,    │ ✅ via       │ SD T5 (persist.) │
+    │    │ Stripe como recursos externos   │ env DATABASE_│                  │
+    │    │                                 │ URL          │                  │
+    │ V  │ Build/Release/Run: separados    │ ⚠️ parcial   │ AIS T3.3, T3.7   │
+    │    │ (CI crea imagen, CD despliega)  │ (mejorar con │                  │
+    │    │                                 │ SemVer #23)  │                  │
+    │ VI │ Processes: sin estado, stateless│ ✅ FastAPI   │ SD T1 (stateless)│
+    │    │ (el estado en BD, no en memoria)│ stateless    │                  │
+    │VII │ Port binding: el servicio expone│ ✅ uvicorn   │ Redes T1 (TCP)   │
+    │    │ un puerto (no necesita proxy ext│ --port 8000  │                  │
+    │VIII│ Concurrency: escalar añadiendo  │ ✅ Railway   │ SD T1 (escalab.) │
+    │    │ procesos (horizontal scaling)   │ replicas     │                  │
+    │ IX │ Disposability: arranque rápido, │ ⚠️ mejorar  │ SO (señales SIGTERM│
+    │    │ apagado limpio (graceful shutdown│ con SIGTERM  │ SO T3 procesos)  │
+    │ X  │ Dev/Prod parity: entornos lo más│ ✅ Docker    │ SD T4, AIS T3    │
+    │    │ parecidos posible               │ Compose      │                  │
+    │ XI │ Logs: como flujo de eventos     │ ⚠️ mejorar  │ AIS T1.4 (logging│
+    │    │ (stdout, no ficheros)           │ con #6       │ estructurado)    │
+    │XII │ Admin processes: DB migrations, │ ⚠️ mejorar  │ BD T6 (Alembic   │
+    │    │ seed data como procesos únicos  │ con #2       │ migrations)      │
+    └────┴─────────────────────────────────┴──────────────┴──────────────────┘
+
+    Factor IX — graceful shutdown en uvicorn:
+      Cuando Railway para el contenedor envía SIGTERM. Si uvicorn
+      no lo maneja, las peticiones en vuelo se pierden. Solución:
+        CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0",
+             "--timeout-graceful-shutdown", "30"]
+
+    Por qué es valioso para el TFG:
+      La tabla anterior demuestra que FurniGest cumple 8/12 factores y
+      cómo cada gap conecta con una mejora concreta ya recogida en esta
+      lista (Alembic, logging, SemVer, SIGTERM). Es un marco excelente
+      para la sección de "Conclusiones y Trabajos futuros" del Cap. 5:
+      "FurniGest implementa los principios Twelve-Factor App en 8 de 12
+      dimensiones, siendo las mejoras pendientes...".
+    Coste estimado: 0 código (análisis). 1-2 horas redactando la tabla.
+                    + 30 min añadir --timeout-graceful-shutdown al CMD.
+    En la memoria: subsección "Cloud-native: Twelve-Factor App" en Cap. 3
+                   Despliegue. Tabla completa como la de arriba.
+
+────────────────────────────────────────────────────────────────────────────
+32. TAREAS EN SEGUNDO PLANO (FastAPI BackgroundTasks / Celery)
+    Asignatura: SO T2/T3 (procesos, hilos, concurrencia, scheduling)
+               SD T3 (comunicación asíncrona, colas de mensajes)
+               AIS T1 (pruebas de rendimiento, no-functional reqs)
+    Qué es: FurniGest envía el email con el PDF del albarán de forma
+            síncrona: el cliente HTTP espera hasta que el email se envía
+            antes de recibir la respuesta 201. Si el servidor de email
+            (Resend) tarda 2 segundos, la operación de crear un albarán
+            tarda 2 segundos de más.
+
+    El patrón correcto es ejecutar el envío de email en segundo plano:
+
+      Opción A — FastAPI BackgroundTasks (sin dependencias extra):
+        from fastapi import BackgroundTasks
+
+        @router.post("/albaranes")
+        async def create_albaran(data: AlbaranCreate,
+                                  background_tasks: BackgroundTasks,
+                                  db: Session = Depends(get_db)):
+            albaran = create_albaran_in_db(db, data)
+            # Respuesta inmediata al cliente
+            background_tasks.add_task(send_albaran_email, albaran)
+            return albaran   # 201 devuelto ANTES de que se envíe el email
+
+      Opción B — Celery + Redis (para proyectos con mayor escala):
+        La tarea de email se encola en Redis y la ejecuta un worker Celery
+        en un proceso separado. Permite reintentos automáticos si falla.
+        Relacionado con SD T3 (colas de mensajes, modelo productor/consumidor)
+        y SO T3 (procesos ligeros, comunicación entre procesos via IPC/queue).
+
+    Conexión académica:
+      SO T2 define el modelo de procesos: un proceso puede delegar trabajo
+      a otro proceso o hilo para continuar su ejecución sin bloquearse.
+      FastAPI BackgroundTasks es la implementación de este paradigma en
+      ASGI: el event loop despacha la tarea de I/O al background mientras
+      el handler principal libera el hilo al pool (SO T3: scheduling
+      cooperativo). SD T3 generaliza esto con colas de mensajes distribuidas
+      (modelo productor/consumidor, RabbitMQ, Celery).
+
+    Coste estimado: 1-2 horas (refactorizar api/albaranes.py para usar
+                    BackgroundTasks + adaptar tests con mock del background).
+    En la memoria: párrafo en sección Backend sobre "ejecución asíncrona
+                   de tareas I/O" citando SO T2/T3 y SD T3. Diagrama de
+                   secuencia comparando síncrono vs asíncrono.
+
+────────────────────────────────────────────────────────────────────────────
+33. PRUEBAS DE CARGA CON LOCUST
+    Asignatura: IS T2 (RNF de rendimiento: tiempo de respuesta, throughput)
+               AIS T1 (tipos de pruebas: funcionales vs no funcionales)
+               SD T1 (escalabilidad, comportamiento bajo carga)
+    Qué es: Las pruebas actuales de FurniGest son todas funcionales
+            (verifican si la lógica es correcta, no si es rápida).
+            Las pruebas de carga (load testing) verifican los RNF de
+            rendimiento: "el sistema debe responder en < 500ms con 50
+            usuarios concurrentes" (IS T2 — requisitos no funcionales).
+
+    Locust es una herramienta de load testing escrita en Python
+    (https://locust.io) donde el script de prueba es código Python puro:
+
+      # locustfile.py
+      from locust import HttpUser, task, between
+
+      class FurniGestUser(HttpUser):
+          wait_time = between(1, 3)   # Espera aleatoria 1-3s entre tasks
+
+          @task(3)                    # Peso 3: tarea más frecuente
+          def listar_albaranes(self):
+              self.client.get("/api/albaranes")
+
+          @task(1)                    # Peso 1: tarea menos frecuente
+          def analytics_summary(self):
+              self.client.get("/api/analytics/summary")
+
+    Ejecutar: locust --headless -u 50 -r 5 --run-time 1m
+              (50 usuarios, 5 nuevos por segundo, durante 1 minuto)
+
+    Métricas que genera Locust:
+      • Requests/second (throughput)
+      • Average/median/p95/p99 response time
+      • Failure rate (% de peticiones con error)
+      • Gráfico de evolución temporal de latencia
+
+    Conexión académica:
+      IS T2 define los RNF de rendimiento en términos de tiempo de
+      respuesta máximo y throughput mínimo. Sin pruebas de carga, estos
+      RNF son requisitos no verificados — Locust los convierte en
+      pruebas ejecutables y reproducibles, igual que pytest convierte
+      los RF en tests automatizados.
+      AIS T1 incluye explícitamente las pruebas no funcionales
+      (rendimiento, seguridad, escalabilidad) dentro de la pirámide de
+      pruebas en su nivel más alto (pruebas de sistema).
+      SD T1 define la escalabilidad: con Locust se puede medir si añadir
+      una réplica del backend en Railway realmente duplica el throughput.
+
+    Coste estimado: 2-3 horas (instalar Locust + escribir locustfile.py
+                    + interpretar y documentar los resultados).
+    En la memoria: subsección "Pruebas de rendimiento" en Cap. 3/4.
+                   Tabla con throughput y p95 latency bajo 50 usuarios.
+                   Screenshot del dashboard de Locust. Relacionar con RNF-05.
+
 ╔══════════════════════════════════════════════════════════════════════════╗
 ║               RESUMEN RÁPIDO — POR ESFUERZO                            ║
 ╚══════════════════════════════════════════════════════════════════════════╝
@@ -984,6 +1239,8 @@ BAJO ESFUERZO (< 4 horas, solo texto/config):
   - #24 Branch protection + PR template + commit conventions  [AIS T3.2]
   - #25 Tabla tipos mantenimiento IEEE + leyes de Lehman       [AIS T2.1]
   - #28 Tabla sprints + burndown chart + WBS (solo memoria)   [AIS T4.1/T4.2]
+  - #29 Endpoint /health + Railway readiness probe (30 min)   [SD T1 / AIS T3.4]
+  - #31 Twelve-Factor App: tabla 12 factores + SIGTERM (2h)   [SD / AIS / SO / IS]
 
 MEDIO ESFUERZO (1-2 días):
   - Migraciones Alembic                                       [BD T6]
@@ -999,6 +1256,9 @@ MEDIO ESFUERZO (1-2 días):
   - WebSockets notificaciones en tiempo real                  [SD T3 / Redes T2]
   - #26 Test doubles (pytest-mock) para Groq/Stripe/Resend    [AIS T1.2]
   - #27 SonarCloud quality gate en CI                         [AIS P2 / T1.5]
+  - #30 Paginación en endpoints (offset + cursor)             [BD T6 / SD T1]
+  - #32 BackgroundTasks para email (no bloquear respuesta)    [SO T2/T3 / SD T3]
+  - #33 Pruebas de carga con Locust                           [IS T2 / AIS T1]
 
 ALTO ESFUERZO (> 2 días, máximo impacto):
   - Autenticación JWT + roles                                 [SD T2 / IS T2]
@@ -1007,7 +1267,7 @@ ALTO ESFUERZO (> 2 días, máximo impacto):
   - Analíticas predictivas ARIMA/Prophet                      [BD T1]
 
 ===========================================================================
-ÍNDICE COMPLETO DE ITEMS (28 total):
+ÍNDICE COMPLETO DE ITEMS (33 total):
 
   #1  JWT + Roles de usuario (2-3 días)                       [SD T2 / IS T2]
   #2  Migraciones Alembic (medio día)                         [BD T6/T7]
@@ -1037,5 +1297,10 @@ ALTO ESFUERZO (> 2 días, máximo impacto):
   #26 Test doubles pytest-mock Groq/Stripe (2-3h)             [AIS T1.2]
   #27 SonarCloud quality gate en CI (2-3h)                    [AIS P2/T1.5]
   #28 Sprints + burndown chart + WBS (0 código)               [AIS T4.1/T4.2]
+  #29 Endpoint /health + Railway readiness probe (30 min)     [SD T1 / AIS T3.4]
+  #30 Paginación offset/cursor en endpoints (3-4h)            [BD T6 / SD T1]
+  #31 Twelve-Factor App — tabla 12 factores (1-2h)            [SD / AIS / SO / IS]
+  #32 BackgroundTasks para email asíncrono (1-2h)             [SO T2/T3 / SD T3]
+  #33 Pruebas de carga con Locust (2-3h)                      [IS T2 / AIS T1]
 
 ===========================================================================
