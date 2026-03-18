@@ -3,10 +3,21 @@
  * Verifica que el componente Sidebar renderiza todos los ítems de navegación
  * y que los enlaces apuntan a las rutas correctas.
  */
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Sidebar from '../src/components/Sidebar.jsx';
+
+// Mock useNavigate
+const mockNavigate = vi.fn();
+vi.mock('react-router-dom', async (importOriginal) => {
+  const actual = await importOriginal();
+  return { ...actual, useNavigate: () => mockNavigate };
+});
+
+// Mock removeToken
+vi.mock('../src/api/auth.js', () => ({ removeToken: vi.fn() }));
+import { removeToken } from '../src/api/auth.js';
 
 function renderSidebar(initialPath = '/') {
   return render(
@@ -70,5 +81,17 @@ describe('Sidebar', () => {
     renderSidebar();
     const links = screen.getAllByRole('link');
     expect(links).toHaveLength(9);
+  });
+
+  it('muestra el botón de Cerrar sesión', () => {
+    renderSidebar();
+    expect(screen.getByRole('button', { name: /cerrar sesi/i })).toBeInTheDocument();
+  });
+
+  it('al cerrar sesión llama a removeToken y redirige a /login', () => {
+    renderSidebar();
+    fireEvent.click(screen.getByRole('button', { name: /cerrar sesi/i }));
+    expect(removeToken).toHaveBeenCalledOnce();
+    expect(mockNavigate).toHaveBeenCalledWith('/login', { replace: true });
   });
 });

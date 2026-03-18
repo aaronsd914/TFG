@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { Toaster } from 'sileo';
 import App from './components/App.jsx';
+import LoginPage from './components/LoginPage.jsx';
+import ProtectedRoute from './components/ProtectedRoute.jsx';
 import Dashboard from './components/Dashboard.jsx';
 import NuevaVenta from './components/NuevaVenta.jsx';
 import ClientesPage from './components/ClientesPage.jsx';
@@ -17,8 +19,12 @@ import './index.css';
 
 const router = createBrowserRouter([
   {
+    path: '/login',
+    element: <LoginPage />,
+  },
+  {
     path: '/',
-    element: <App />,
+    element: <ProtectedRoute element={<App />} />,
     children: [
       { index: true, element: <Dashboard /> },
       { path: 'ventas/nueva', element: <NuevaVenta /> },

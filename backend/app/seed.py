@@ -14,6 +14,10 @@ from backend.app.entidades.producto import ProductoDB
 from backend.app.entidades.albaran import AlbaranDB
 from backend.app.entidades.linea_albaran import LineaAlbaranDB
 from backend.app.entidades.movimiento import MovimientoDB
+from backend.app.entidades.usuario import UsuarioDB
+from passlib.context import CryptContext
+
+_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 log = logging.getLogger("seed")
 
@@ -1098,6 +1102,19 @@ def _insert_orders(db: Session, clients: list):
 # ---------------------------------------------------------------------------
 def seed(db: Session):
     """Inserta los datos de demostración solo si la base de datos está vacía."""
+    # Ensure default admin user always exists
+    if not db.query(UsuarioDB).filter_by(username="admin").first():
+        db.add(
+            UsuarioDB(
+                username="admin",
+                hashed_password=_pwd_context.hash("admin123"),
+                role="admin",
+                is_active=True,
+            )
+        )
+        db.commit()
+        log.info("Usuario admin creado (admin/admin123).")
+
     if db.query(ProveedorDB).count() > 0:
         log.info("Seed omitido: la base de datos ya contiene datos.")
         return
