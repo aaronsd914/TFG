@@ -1472,6 +1472,8 @@ El flujo de trabajo en \texttt{deploy.yml} es:
   \item El job \texttt{deploy-frontend} sólo se ejecuta si el \textit{quality gate} de SonarCloud pasa (\texttt{needs: [sonarcloud]}).
 \end{enumerate}
 
+Además de \texttt{deploy.yml}, existe el workflow dedicado \texttt{sonarcloud.yml} que se activa en cada \textit{push} y \textit{Pull Request} de cualquier rama, permitiendo obtener \textit{feedback} de cobertura antes de mergear a \texttt{main}. Para que el análisis basado en CI funcione correctamente, es necesario desactivar la opción \textit{Automatic Analysis} en la configuración del proyecto de SonarCloud, ya que el modo automático no soporta la importación de cobertura externa.
+
 Esto garantiza que ningún commit con cobertura insuficiente o con nuevos bugs detectados por SonarCloud llegue a producción, implementando la \textbf{política de calidad automatizada} descrita en AIS P2.
 
 
