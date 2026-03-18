@@ -900,8 +900,6 @@ export default function ProductosPage() {
                   Mostrando {(safePage - 1) * Number(pageSize || 12) + 1}–{Math.min(safePage * Number(pageSize || 12), filteredBase.length)} de{' '}
                   {filteredBase.length}
                 </div>
-
-              <div className="mt-4">
                 <Pagination
                   page={safePage}
                   total={filteredBase.length}
