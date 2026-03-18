@@ -50,7 +50,7 @@ def _aggregate_sales_weekly(sales: list[dict]) -> list[dict]:
         ds = r.get("date")
         try:
             dt = datetime.fromisoformat(ds).date()  # YYYY-MM-DD
-        except Exception:
+        except ValueError:
             continue
         year, week, _ = dt.isocalendar()
         key = f"{year}-W{week:02d}"

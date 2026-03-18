@@ -21,7 +21,7 @@ log = logging.getLogger("albaran_pdf")
 def eur(n: float) -> str:
     try:
         return f"{float(n):.2f} €"
-    except Exception:
+    except (TypeError, ValueError):
         return "0.00 €"
 
 
@@ -30,10 +30,7 @@ def _fmt_fecha(value) -> str:
         return ""
     if isinstance(value, (datetime, date)):
         return value.strftime("%d/%m/%Y")
-    try:
-        return str(value)
-    except Exception:
-        return ""
+    return str(value)
 
 
 def _safe(s) -> str:

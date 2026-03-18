@@ -28,7 +28,7 @@ def _eur(n: float) -> str:
     """Formatea un número como cadena de euros con dos decimales."""
     try:
         return f"{float(n):.2f} €"
-    except Exception:
+    except (TypeError, ValueError):
         return "0.00 €"
 
 
