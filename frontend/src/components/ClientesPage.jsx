@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sileo } from 'sileo';
-import { Pagination } from './ui/Pagination.jsx';
 
 import { API_URL } from '../config.js';
 
@@ -89,9 +88,6 @@ export default function ClientesPage() {
   const [sort, setSort] = useState('az'); // az|za|id_up|id_down
   const [selectedDomains, setSelectedDomains] = useState([]);
   const [idRange, setIdRange] = useState([0, 999999]);
-  const [page, setPage] = useState(1);
-  const PAGE_SIZE = 20;
-
   const navigate = useNavigate();
 
   // detalle (modal centrado)
@@ -199,8 +195,6 @@ export default function ClientesPage() {
   const defaultMax = data.length ? Math.max(...data.map((d) => d.id)) : 999999;
 
   // Aplicación de buscador + filtros + orden
-  // Reset page when filters change
-  useEffect(() => { setPage(1); }, [q, sort, selectedDomains, idRange]);
 
   const filtered = useMemo(() => {
     let list = [...data];
@@ -413,7 +407,7 @@ export default function ClientesPage() {
               </li>
             )}
             {!loading && !error && filtered.length === 0 && <li className="p-6 text-gray-500">Sin resultados</li>}
-            {filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((c) => (
+            {filtered.map((c) => (
               <li
                 key={c.id}
                 className="grid grid-cols-12 px-4 py-3 border-t hover:bg-gray-50 cursor-pointer transition-colors"
@@ -427,7 +421,6 @@ export default function ClientesPage() {
             ))}
           </ul>
         </div>
-        <Pagination page={page} total={filtered.length} pageSize={PAGE_SIZE} onChange={setPage} />
       </div>
 
       {/* Modal de filtros */}
