@@ -34,6 +34,7 @@ def get_current_user(
 
 def require_role(*roles: str):
     """Dependencia de roles: require_role('admin') o require_role('admin','vendedor')."""
+
     def checker(current_user: UsuarioDB = Depends(get_current_user)) -> UsuarioDB:
         if current_user.role not in roles:
             raise HTTPException(
@@ -41,4 +42,5 @@ def require_role(*roles: str):
                 detail=f"Rol requerido: {', '.join(roles)}",
             )
         return current_user
+
     return checker

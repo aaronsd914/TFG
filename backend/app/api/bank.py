@@ -16,7 +16,9 @@ from backend.app.bank_settings import (
 )
 from backend.app.dependencies import get_current_user
 
-router = APIRouter(prefix="/api/bank/caixa", tags=["bank"], dependencies=[Depends(get_current_user)])
+router = APIRouter(
+    prefix="/api/bank/caixa", tags=["bank"], dependencies=[Depends(get_current_user)]
+)
 log = logging.getLogger("bank")
 
 # Token global en memoria (solo demo/sandbox)

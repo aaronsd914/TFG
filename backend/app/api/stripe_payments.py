@@ -24,7 +24,9 @@ from backend.app.stripe_settings import (
 
 log = logging.getLogger("stripe")
 
-router = APIRouter(prefix="/api/stripe", tags=["stripe"], dependencies=[Depends(get_current_user)])
+router = APIRouter(
+    prefix="/api/stripe", tags=["stripe"], dependencies=[Depends(get_current_user)]
+)
 
 
 class CheckoutIn(BaseModel):

@@ -19,7 +19,9 @@ from reportlab.lib.units import mm
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 
-router = APIRouter(prefix="/transporte", tags=["Transporte"], dependencies=[Depends(get_current_user)])
+router = APIRouter(
+    prefix="/transporte", tags=["Transporte"], dependencies=[Depends(get_current_user)]
+)
 
 
 # -----------------------

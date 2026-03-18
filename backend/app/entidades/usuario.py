@@ -10,7 +10,9 @@ class UsuarioDB(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
-    role = Column(String, nullable=False, default="vendedor")  # admin | vendedor | repartidor
+    role = Column(
+        String, nullable=False, default="vendedor"
+    )  # admin | vendedor | repartidor
     is_active = Column(Boolean, default=True)
 
 
