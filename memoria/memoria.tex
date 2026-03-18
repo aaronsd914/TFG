@@ -1527,6 +1527,19 @@ Se añadieron 8 tests en \texttt{test/backend/test\_auth.py} que cubren los esce
 
 Los tests usan un cliente HTTP sin el \textit{override} de \texttt{get\_current\_user} para ejercitar el flujo de autenticación real. El \textit{fixture} \texttt{client} del \texttt{conftest} global, en cambio, reemplaza \texttt{get\_current\_user} por un usuario admin directo para que los tests de negocio preexistentes no necesiten gestionar tokens.
 
+\subsubsection*{Integración en el frontend: página de inicio de sesión}
+
+El frontal React incluye una pantalla de inicio de sesión (\ texttt{LoginPage.jsx}) que complementa la capa de seguridad del backend. Las piezas principales son:
+
+\begin{itemize}
+  \item \texttt{api/auth.js}: módulo que encapsula la llamada \texttt{POST /api/auth/login}, el almacenamiento del token en \texttt{localStorage} y la función \texttt{isAuthenticated()}, que decodifica el payload JWT (Base64url) sin biblioteca adicional para verificar la expiración del token antes de redirigir.
+  \item \texttt{LoginPage.jsx}: formulario de inicio de sesión con diseño \textit{glassmorphism} (tarjeta semi-transparente con \texttt{backdrop-blur}), blobs decorativos, campo de contraseña con alternancia de visibilidad y botón con gradiente marrón/Manrope coherente con la paleta de la aplicación. Al recibir el token, lo persiste y redirige al Dashboard.
+  \item \texttt{ProtectedRoute}: componente en \texttt{main.jsx} que comprueba \texttt{isAuthenticated()} y redirige a \texttt{/login} si el token ha expirado o no existe, protegiendo todas las rutas de negocio.
+  \item \texttt{api/http.js}: las funciones \texttt{apiFetch} y \texttt{apiFetchBlob} inyectan automáticamente la cabecera \texttt{Authorization: Bearer <token>} en cada petición, transparente para el resto de los módulos de la capa API.
+  \item \textbf{Cierre de sesión}: el botón 	extit{Cerrar sesión} en la barra lateral elimina el token de \texttt{localStorage} y redirige al formulario de login.
+  \item \textbf{Usuario por defecto}: \texttt{seed.py} crea automáticamente el usuario \texttt{admin}/\texttt{admin123} si no existe ninguno en la tabla \texttt{usuarios}, garantizando que la primera ejecución sea directamente funcional.
+\end{itemize}
+
 
 % ==============================================================
 % CAPÍTULO 4 — RESULTADOS
@@ -1689,8 +1702,6 @@ En el \textit{frontend}, el patrón \texttt{useState} + \texttt{useEffect} de Re
 Las siguientes líneas de trabajo ampliarían significativamente las capacidades de FurniGest:
 
 \begin{enumerate}
-  \item \textbf{Autenticación y control de acceso:} FurniGest opera actualmente sin capa de autenticación. La incorporación de \textit{JSON Web Tokens} (JWT) con FastAPI Security permitiría diferenciar roles (administrador, vendedor, repartidor) y auditar las acciones de cada usuario.
-
   \item \textbf{Aplicación móvil nativa:} la API REST existente podría consumirse desde una aplicación \textit{React Native} o \textit{Flutter} que mejore la experiencia de los repartidores al gestionar las entregas desde un teléfono en campo.
 
   \item \textbf{Gestión de stock e inventario:} actualmente el catálogo de productos almacena precios y descripciones pero no un nivel de stock real. La extensión del modelo con un campo de inventario, alertas de stock mínimo y un flujo de recepción de mercancía completaría el ciclo de producto.
