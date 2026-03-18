@@ -2,7 +2,7 @@
  * LoginPage.test.jsx
  * Tests de renderizado y comportamiento del formulario de login.
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import LoginPage from '../src/components/LoginPage.jsx';

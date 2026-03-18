@@ -1,9 +1,10 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { Toaster } from 'sileo';
 import App from './components/App.jsx';
 import LoginPage from './components/LoginPage.jsx';
+import ProtectedRoute from './components/ProtectedRoute.jsx';
 import Dashboard from './components/Dashboard.jsx';
 import NuevaVenta from './components/NuevaVenta.jsx';
 import ClientesPage from './components/ClientesPage.jsx';
@@ -14,12 +15,7 @@ import BancoPage from './components/BancoPage.jsx';
 import TransportePage from './components/TransportePage.jsx';
 import MovimientosPage from './components/MovimientosPage.jsx';
 import { SpeedInsights } from '@vercel/speed-insights/react';
-import { isAuthenticated } from './api/auth.js';
 import './index.css';
-
-function ProtectedRoute({ element }) {
-  return isAuthenticated() ? element : <Navigate to="/login" replace />;
-}
 
 const router = createBrowserRouter([
   {
