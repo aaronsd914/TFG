@@ -94,14 +94,14 @@ Nueva bibliografía añadida (SI + Redes + IA):
 ║    PARTE 2 — CAMBIOS FÁCILES PENDIENTES (sólo texto en la memoria)     ║
 ╚══════════════════════════════════════════════════════════════════════════╝
 
-[BD T1] — Mentionar "Sistema de Información" en Cap. 1:
+[BD T1] — Mentionar "Sistema de Información" en Cap. 1:  ✅ COMPLETADO
   En la introducción del Cap. 1 puedes añadir una oración que califique
   FurniGest como "Sistema de Información para la Gestión" (SIG), ya que
   el Tema 1 de BD define exactamente este concepto: captura, almacena,
   procesa y distribuye información para apoyar la toma de decisiones.
   Coste: 2 líneas.
 
-[BD T7b / Normalización] — Mencionar normalización en el modelo de datos:
+[BD T7b / Normalización] — Mencionar normalización en el modelo de datos:  ✅ COMPLETADO
   Indicar que el esquema de la BD cumple la 3ª Forma Normal (3FN)
   (o Forma Normal de Boyce-Codd si aplica). Esto demuestra que el
   diseño evita redundancias y anomalías de actualización/inserción/borrado.

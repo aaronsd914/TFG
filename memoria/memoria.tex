@@ -866,6 +866,8 @@ La Tabla~\ref{tab:entidades} resume las entidades y sus relaciones principales.
   \end{footnotesize}
 \end{table}
 
+El esquema de la base de datos cumple la \textbf{tercera forma normal (3FN)}: cada atributo no clave depende únicamente de la clave primaria de su tabla y no de otros atributos no clave. Esta propiedad elimina redundancias y evita las anomalías de actualización, inserción y borrado que surgen en esquemas sin normalizar. Por ejemplo, los datos del proveedor no se repiten en cada fila de la tabla de productos, sino que se referencian mediante la clave foránea \texttt{proveedor\_id}; del mismo modo, el precio de cada línea de albarán se almacena de forma independiente al precio de catálogo del producto, preservando el histórico de ventas sin acoplar ambas tablas.
+
 
 \subsection{Diseño de la API REST}
 
