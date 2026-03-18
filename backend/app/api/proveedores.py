@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from backend.app.entidades.proveedor import Proveedor, ProveedorCreate, ProveedorDB
 from backend.app.database import get_db
+from backend.app.dependencies import get_current_user
 from typing import List
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 @router.post("/proveedores/post", response_model=Proveedor)

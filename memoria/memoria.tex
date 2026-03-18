@@ -1483,6 +1483,50 @@ Tras el primer análisis de SonarCloud, se corrigieron los \textit{issues} de ma
 
 Esto garantiza que ningún commit con cobertura insuficiente o con nuevos bugs detectados por SonarCloud llegue a producción, implementando la \textbf{política de calidad automatizada} descrita en AIS P2.
 
+% --------------------------------------------------------------
+\subsection{Seguridad y control de acceso: autenticación JWT}
+\label{sec:jwt}
+% --------------------------------------------------------------
+
+La API de FurniGest dispone de un sistema de autenticación basado en \textbf{JSON Web Tokens} (JWT)~\cite{rfc7519} mediante las bibliotecas \texttt{python-jose} y \texttt{passlib[bcrypt]}. El estándar JWT define un formato compacto para transmitir afirmaciones (\textit{claims}) de forma segura entre partes mediante una firma criptográfica HMAC-SHA-256.
+
+\subsubsection*{Modelo de usuario y tabla \texttt{usuarios}}
+
+Se creó la entidad \texttt{UsuarioDB} (SQLAlchemy) con los campos \texttt{username}, \texttt{hashed\_password}, \texttt{role} (\texttt{admin}\,|\,\texttt{vendedor}\,|\,\texttt{repartidor}) e \texttt{is\_active}. Las contraseñas nunca se almacenan en texto plano; se guardan como hash \textbf{bcrypt} mediante el contexto \texttt{CryptContext} de \texttt{passlib}.
+
+\subsubsection*{Flujo de autenticación}
+
+\begin{enumerate}
+  \item El cliente envía \texttt{POST /api/auth/login} con \texttt{username} y \texttt{password} mediante el formulario OAuth2 (\texttt{application/x-www-form-urlencoded}).
+  \item El endpoint verifica el hash bcrypt. Si es correcto, genera un \textit{access token} con \texttt{jwt.encode()} firmado con la clave secreta almacenada en la variable de entorno \texttt{JWT\_SECRET\_KEY}.
+  \item El token incluye los \textit{claims} \texttt{sub} (nombre de usuario) y \texttt{exp} (expiración a 60 minutos).
+  \item El cliente adjunta el token en la cabecera \texttt{Authorization: Bearer <token>} en todas las peticiones posteriores.
+  \item La dependencia \texttt{get\_current\_user()} extraeccion el token, lo decodifica con \texttt{jwt.decode()} y recupera el usuario de la base de datos. Si el token es inválido, expirado o el usuario está inactivo, se lanza HTTP 401.
+\end{enumerate}
+
+\subsubsection*{Protección de endpoints}
+
+Todos los routers de negocio (\texttt{clientes}, \texttt{productos}, \texttt{proveedores}, \texttt{albaranes}, \texttt{movimientos}, \texttt{analytics}, \texttt{ai}, \texttt{transportes}, \texttt{bank}, \texttt{stripe\_payments}) incorporan \texttt{dependencies=[Depends(get\_current\_user)]} a nivel de \texttt{APIRouter}, protegiendo todos sus endpoints de forma declarativa sin modificar cada función individualmente. El único endpoint públic es \texttt{POST /api/auth/login}.
+
+La dependencia auxiliar \texttt{require\_role(*roles)} permite restringir un endpoint a uno o varios roles concretos, devolviendo HTTP 403 si el usuario autenticado no pertenece al conjunto permitido.
+
+\subsubsection*{Tests de autenticación}
+
+Se añadieron 8 tests en \texttt{test/backend/test\_auth.py} que cubren los escenarios principales:
+
+\begin{itemize}
+  \item Login correcto → token devuelto.
+  \item Contraseña incorrecta → 401.
+  \item Usuario inexistente → 401.
+  \item \texttt{GET /api/auth/me} con token válido → datos del usuario.
+  \item Endpoint protegido sin token → 401.
+  \item Endpoint protegido con token válido → 200.
+  \item Token con firma manipulada → 401.
+  \item Usuario inactivo con token válido → 401.
+\end{itemize}
+
+Los tests usan un cliente HTTP sin el \textit{override} de \texttt{get\_current\_user} para ejercitar el flujo de autenticación real. El \textit{fixture} \texttt{client} del \texttt{conftest} global, en cambio, reemplaza \texttt{get\_current\_user} por un usuario admin directo para que los tests de negocio preexistentes no necesiten gestionar tokens.
+
 
 % ==============================================================
 % CAPÍTULO 4 — RESULTADOS

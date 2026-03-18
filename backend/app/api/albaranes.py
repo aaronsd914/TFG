@@ -17,12 +17,13 @@ from sqlalchemy import func
 from backend.app.utils.emailer import send_email_with_pdf
 from backend.app.utils.albaran_pdf import generar_pdf_albaran
 from backend.app.utils.templates import render
+from backend.app.dependencies import get_current_user
 
 from pydantic import BaseModel
 from datetime import date
 import logging
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 log = logging.getLogger("albaranes")
 
 

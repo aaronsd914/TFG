@@ -3,9 +3,10 @@ from sqlalchemy.orm import Session
 from typing import List
 from backend.app.entidades.movimiento import Movimiento, MovimientoCreate
 from backend.app.database import get_db
+from backend.app.dependencies import get_current_user
 from backend.app.services import movimientos_service
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 @router.post("/movimientos/post", response_model=Movimiento)

@@ -1,0 +1,7 @@
+[run]
+relative_files = True
+
+[paths]
+source =
+    backend/app
+    */backend/app

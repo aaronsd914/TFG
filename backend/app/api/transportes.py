@@ -7,6 +7,7 @@ from datetime import datetime, date
 from pydantic import BaseModel
 
 from backend.app.database import get_db
+from backend.app.dependencies import get_current_user
 from backend.app.entidades.albaran import AlbaranDB, Albaran
 from backend.app.entidades.cliente import ClienteDB
 from backend.app.entidades.albaran_ruta import AlbaranRutaDB
@@ -18,7 +19,9 @@ from reportlab.lib.units import mm
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 
-router = APIRouter(prefix="/transporte", tags=["Transporte"])
+router = APIRouter(
+    prefix="/transporte", tags=["Transporte"], dependencies=[Depends(get_current_user)]
+)
 
 
 # -----------------------
