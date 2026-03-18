@@ -48,6 +48,11 @@ import backend.app.entidades.movimiento     # noqa: F401
 import backend.app.entidades.producto       # noqa: F401
 import backend.app.entidades.proveedor      # noqa: F401
 import backend.app.entidades.stripe_checkout  # noqa: F401
+import backend.app.entidades.usuario        # noqa: F401
+
+from backend.app.entidades.usuario import UsuarioDB
+from backend.app.dependencies import get_current_user
+from backend.app.utils.jwt_utils import create_access_token
 
 
 # ── Override de get_db ───────────────────────────────────────────────────────
@@ -69,9 +74,30 @@ def setup_db():
 
 
 @pytest.fixture()
-def client(setup_db):
-    """TestClient con BD sobreescrita y seed desactivado."""
+def admin_user(setup_db):
+    """Inserta un usuario admin en la BD de prueba y devuelve el objeto ORM."""
+    db = TestingSessionLocal()
+    user = UsuarioDB(username="admin", hashed_password="hashed", role="admin", is_active=True)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    db.close()
+    return user
+
+
+@pytest.fixture()
+def auth_headers(admin_user):
+    """Cabeceras HTTP con token JWT válido para el usuario admin."""
+    token = create_access_token({"sub": admin_user.username, "role": admin_user.role})
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture()
+def client(setup_db, admin_user, auth_headers):
+    """TestClient con BD sobreescrita, seed desactivado y usuario admin cargado."""
     app.dependency_overrides[get_db] = override_get_db
+    # Bypass de get_current_user para que los tests existentes no necesiten token
+    app.dependency_overrides[get_current_user] = lambda: admin_user
     # Neutralizamos el seed para que la BD empiece vacía en cada test
     with patch("backend.app.main.seed", return_value=None):
         with TestClient(app, raise_server_exceptions=True) as c:

@@ -8,6 +8,7 @@ from backend.app.api import (
     movimientos,
     analytics,
     ai,
+    auth,
     bank,
     transportes,
     stripe_payments,
@@ -48,6 +49,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router, prefix="/api")
 app.include_router(clientes.router, prefix="/api")
 app.include_router(productos.router, prefix="/api")
 app.include_router(proveedores.router, prefix="/api")

@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from backend.app.database import get_db
+from backend.app.dependencies import get_current_user
 from backend.app.entidades.movimiento import MovimientoDB
 from backend.app.entidades.stripe_checkout import StripeCheckoutDB
 from backend.app.stripe_settings import (
@@ -23,7 +24,7 @@ from backend.app.stripe_settings import (
 
 log = logging.getLogger("stripe")
 
-router = APIRouter(prefix="/api/stripe", tags=["stripe"])
+router = APIRouter(prefix="/api/stripe", tags=["stripe"], dependencies=[Depends(get_current_user)])
 
 
 class CheckoutIn(BaseModel):

@@ -16,8 +16,9 @@ from backend.app.entidades.cliente import ClienteDB
 
 from backend.app.utils.groq_llm import groq_chat
 from backend.app.utils.tendencias_pdf import generar_pdf_tendencias
+from backend.app.dependencies import get_current_user
 
-router = APIRouter(prefix="/analytics", tags=["analytics"])
+router = APIRouter(prefix="/analytics", tags=["analytics"], dependencies=[Depends(get_current_user)])
 log = logging.getLogger("analytics")
 
 

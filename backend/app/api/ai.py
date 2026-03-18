@@ -19,8 +19,9 @@ from backend.app.api.analytics import (
     to_iso,
 )
 from backend.app.utils.groq_llm import groq_chat
+from backend.app.dependencies import get_current_user
 
-router = APIRouter(prefix="/ai", tags=["ai"])
+router = APIRouter(prefix="/ai", tags=["ai"], dependencies=[Depends(get_current_user)])
 log = logging.getLogger("ai")
 
 

@@ -1,5 +1,5 @@
 # backend/app/api/bank.py
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 import requests
 import uuid
 import logging
@@ -14,8 +14,9 @@ from backend.app.bank_settings import (
     ASPSP_CODE,
     REQUEST_TIMEOUT,
 )
+from backend.app.dependencies import get_current_user
 
-router = APIRouter(prefix="/api/bank/caixa", tags=["bank"])
+router = APIRouter(prefix="/api/bank/caixa", tags=["bank"], dependencies=[Depends(get_current_user)])
 log = logging.getLogger("bank")
 
 # Token global en memoria (solo demo/sandbox)

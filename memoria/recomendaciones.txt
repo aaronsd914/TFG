@@ -362,7 +362,7 @@ Ordenadas de mayor a menor impacto académico y alineadas con temarios:
    En la memoria: nueva fila en tabla de pruebas, diagrama de pirámide.
 
 ────────────────────────────────────────────────────────────────────────────
-                
+✅ COMPLETADO — rama: feat/test-doubles
 1. AUTENTICACIÓN JWT + ROLES DE USUARIO
    Asignatura: SD T2 (Spring Security / protección de endpoints)
                IS T2 (RNF de seguridad), AIS T1 (pruebas de seguridad)

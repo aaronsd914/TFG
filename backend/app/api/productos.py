@@ -2,10 +2,11 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from backend.app.entidades.producto import Producto, ProductoCreate, ProductoDB
 from backend.app.database import get_db
+from backend.app.dependencies import get_current_user
 from backend.app.services import productos_service
 from typing import List
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 @router.post("/productos/post", response_model=Producto)
