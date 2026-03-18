@@ -238,7 +238,7 @@ Ordenadas de mayor a menor impacto académico y alineadas con temarios:
                    para garantizar el principio FIRST (Fast, Isolated...).
 
 ────────────────────────────────────────────────────────────────────────────
-
+✅ COMPLETADO — rama: feat/test-doubles
 24. ESTRATEGIA DE RAMAS Y PULL REQUESTS (Git Branching Models)
     Asignatura: AIS T3.2 (desarrollo colaborativo con Git: modelos de
                            ramas, Pull Requests, code review, integración
@@ -347,6 +347,20 @@ Ordenadas de mayor a menor impacto académico y alineadas con temarios:
                    las métricas obtenidas. Citar AIS T1.5 + AIS P2.
 
 ────────────────────────────────────────────────────────────────────────────
+
+3. TESTS E2E CON PLAYWRIGHT
+   Asignatura: AIS T1.3 (Pruebas de sistema/E2E), Práctica 2 AIS
+   Qué es: Automatizar el navegador para verificar flujos completos
+           de usuario (crear venta → cambiar estado → ver en contabilidad).
+   Por qué: Completa la pirámide de pruebas con el nivel más alto.
+           AIS T1 trata exactamente este tipo de prueba (Selenium/Playwright).
+   Flujos críticos sugeridos:
+     - Crear un albarán y verificar que aparece en la lista
+     - Avanzar estado FIANZA → ENTREGADO y verificar el movimiento
+   Coste estimado: 1 día + integración en el pipeline de CI.
+   En la memoria: nueva fila en tabla de pruebas, diagrama de pirámide.
+
+────────────────────────────────────────────────────────────────────────────
                 
 1. AUTENTICACIÓN JWT + ROLES DE USUARIO
    Asignatura: SD T2 (Spring Security / protección de endpoints)
@@ -370,19 +384,6 @@ Ordenadas de mayor a menor impacto académico y alineadas con temarios:
            Es una técnica fundamental de mantenimiento de BD (BD T6).
    Coste estimado: medio día para configurar + 1 migración inicial.
    En la memoria: subsección en CI/CD sobre "migraciones automáticas".
-
-────────────────────────────────────────────────────────────────────────────
-3. TESTS E2E CON PLAYWRIGHT
-   Asignatura: AIS T1.3 (Pruebas de sistema/E2E), Práctica 2 AIS
-   Qué es: Automatizar el navegador para verificar flujos completos
-           de usuario (crear venta → cambiar estado → ver en contabilidad).
-   Por qué: Completa la pirámide de pruebas con el nivel más alto.
-           AIS T1 trata exactamente este tipo de prueba (Selenium/Playwright).
-   Flujos críticos sugeridos:
-     - Crear un albarán y verificar que aparece en la lista
-     - Avanzar estado FIANZA → ENTREGADO y verificar el movimiento
-   Coste estimado: 1 día + integración en el pipeline de CI.
-   En la memoria: nueva fila en tabla de pruebas, diagrama de pirámide.
 
 ────────────────────────────────────────────────────────────────────────────
 4. COBERTURA DE CÓDIGO (pytest-cov + badge en README)
