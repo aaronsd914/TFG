@@ -1306,6 +1306,8 @@ Docker Compose \cite{docker} define tres servicios: \texttt{db} (PostgreSQL~16),
 
 \textbf{Docker} implementa el paradigma de \textbf{virtualización basada en contenedores}: a diferencia de las máquinas virtuales que emulan hardware completo mediante un \textit{hypervisor}, los contenedores comparten el núcleo del sistema operativo anfitrión aislando únicamente el espacio de procesos, sistema de ficheros y red~\cite{docker}. Esto reduce drásticamente el tiempo de arranque y el consumo de recursos, siendo especialmente adecuado para arquitecturas de servicios distribuidos como la de FurniGest.
 
+En producción, toda la comunicación entre el cliente y el servidor se protege con \textbf{TLS} (\textit{Transport Layer Security})~\cite{kurose} mediante el certificado gestionado automáticamente por Railway. TLS cifra el tráfico HTTP mediante \textbf{AES} (cifrado simétrico de sesión) y garantiza la autenticidad del servidor a través de certificados \textbf{X.509}, cumpliendo los principios de confidencialidad e integridad de la tríada CIA establecida en el RNF-06.
+
 
 \section{Pruebas}
 
