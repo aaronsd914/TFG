@@ -877,7 +877,7 @@ El esquema de la base de datos cumple la \textbf{tercera forma normal (3FN)}: ca
 
 La API REST de FurniGest sigue el estilo arquitectónico \textbf{REST} (\textit{Representational State Transfer}), descrito por Roy Fielding en su tesis doctoral en el año 2000~\cite{fieldingREST}. REST define un conjunto de restricciones para el diseño de servicios web distribuidos: sin estado (\textit{stateless}), interfaz uniforme basada en \textbf{recursos} identificados por \textbf{URIs}, y uso de los métodos estándar del protocolo HTTP (GET, POST, PUT, PATCH, DELETE). El carácter \textit{stateless} implica que cada petición del cliente contiene toda la información necesaria para ser procesada, sin que el servidor mantenga estado de sesión entre peticiones. Esta restricción facilita la escalabilidad horizontal del servidor: dado que no existe estado compartido entre instancias, es posible añadir nodos al servicio sin coordinación entre ellos.
 
-La API REST se sirve en \texttt{http://\{host\}:8000}. Todos los endpoints de dominio llevan el prefijo \texttt{/api}. La Tabla~\ref{tab:api_resumen} recoge un resumen de los endpoints principales.
+La API REST se sirve en \texttt{http://\{host\}:8000}. Todos los endpoints de dominio llevan el prefijo \texttt{/api}. El protocolo de transporte utilizado es \textbf{HTTP/1.1}~\cite{kurose}, el estándar de la capa de aplicación sobre el que se construye REST. En producción, Railway inyecta \textbf{TLS} (\textit{Transport Layer Security}) de forma automática, de modo que toda la comunicación entre el cliente y el servidor discurre cifrada mediante HTTPS. La Tabla~\ref{tab:api_resumen} recoge un resumen de los endpoints principales.
 
 \begin{table}[H]
   \centering

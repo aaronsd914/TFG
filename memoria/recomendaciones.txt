@@ -127,7 +127,7 @@ Nueva bibliografía añadida (SI + Redes + IA):
   navegación por teclado, atributos ARIA en elementos interactivos."
   TailwindCSS facilita esto. Coste: 1 fila en la tabla de RNF.
 
-[SD T3 — Comunicación] — Nombrar protocolo HTTP/1.1 en la API:
+[SD T3 — Comunicación] — Nombrar protocolo HTTP/1.1 en la API:  ✅ COMPLETADO
   En la descripción de la API REST, indicar que la comunicación
   usa HTTP/1.1 sobre TLS (HTTPS) en producción (Railway inyecta TLS
   automáticamente). Añade profundidad técnica referenciando SD T3.
