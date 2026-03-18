@@ -14,6 +14,12 @@ export default defineConfig({
     setupFiles: './src/test-setup.js',
     css: false,
     include: ['test/**/*.test.{js,jsx}'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov'],
+      include: ['src/**/*.{js,jsx}'],
+      exclude: ['src/main.jsx', 'src/config.js'],
+    },
   },
 })
   

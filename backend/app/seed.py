@@ -4,6 +4,7 @@ La función seed() borra todos los datos existentes antes de insertar los nuevos
 garantizando un estado limpio y reproducible en cada arranque.
 """
 
+import logging
 from datetime import date, timedelta
 import random
 from sqlalchemy.orm import Session
@@ -13,6 +14,8 @@ from backend.app.entidades.producto import ProductoDB
 from backend.app.entidades.albaran import AlbaranDB
 from backend.app.entidades.linea_albaran import LineaAlbaranDB
 from backend.app.entidades.movimiento import MovimientoDB
+
+log = logging.getLogger("seed")
 
 random.seed(42)  # Reproducible entre reinicios
 
@@ -1096,14 +1099,16 @@ def _insert_orders(db: Session, clients: list):
 def seed(db: Session):
     """Inserta los datos de demostración solo si la base de datos está vacía."""
     if db.query(ProveedorDB).count() > 0:
-        print("Seed omitido: la base de datos ya contiene datos.")
+        log.info("Seed omitido: la base de datos ya contiene datos.")
         return
 
     _insert_providers_and_products(db)
     clients = _insert_clients(db, n=100)
     db.flush()
     _insert_orders(db, clients)
-    print(
-        f"Seed completado: {len(PROVEEDORES)} proveedores, {len(PRODUCTOS)} productos, "
-        f"100 clientes, albaranes y movimientos generados."
+    log.info(
+        "Seed completado: %d proveedores, %d productos, "
+        "100 clientes, albaranes y movimientos generados.",
+        len(PROVEEDORES),
+        len(PRODUCTOS),
     )

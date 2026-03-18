@@ -65,7 +65,7 @@ def _aggregate_sales_weekly(sales: list[dict]) -> list[dict]:
         ds = r.get("date")
         try:
             dt = datetime.fromisoformat(ds).date()
-        except Exception:
+        except ValueError:
             continue
         year, week, _ = dt.isocalendar()
         key = f"{year}-W{week:02d}"
@@ -179,7 +179,7 @@ def call_llm_ask(
             if isinstance(data, dict) and isinstance(data.get("charts"), list):
                 charts.extend(data["charts"])
                 return ""
-        except Exception:
+        except (ValueError, KeyError):
             pass
         return text
 

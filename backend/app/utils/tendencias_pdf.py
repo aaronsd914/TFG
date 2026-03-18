@@ -28,7 +28,7 @@ def _safe(s):
 def eur(n: float) -> str:
     try:
         return f"{float(n):.2f} €"
-    except Exception:
+    except (TypeError, ValueError):
         return "0.00 €"
 
 

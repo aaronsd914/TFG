@@ -289,6 +289,7 @@ Ordenadas de mayor a menor impacto académico y alineadas con temarios:
                    Mostrar ejemplo de mensaje de commit bien formado.
 
 ────────────────────────────────────────────────────────────────────────────
+✅ COMPLETADO — rama: feat/test-doubles
 27. SONARCLOUD — QUALITY GATE EN EL PIPELINE DE CI
     Asignatura: AIS P2 (SonarQube: integración con CI, quality gate,
                          cobertura, bugs, code smells, vulnerabilidades)

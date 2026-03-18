@@ -1459,6 +1459,30 @@ La ausencia de \textit{code smells} ---indicadores de degradación de la calidad
 
 Esta práctica de análisis estático continuo es coherente con la filosofía de \textbf{desarrollo seguro} que promueve OWASP~\cite{owasp2021}: «concebir, desarrollar y mantener aplicaciones confiables». Ruff y ESLint actúan como herramientas SCA \textit{shift-left}, detectando defectos potenciales en el momento del \textit{commit} antes de que lleguen a producción, en la misma línea que herramientas del ecosistema OWASP como PMD, FlawFinder o LAPSE.
 
+\subsubsection{Quality gate con SonarCloud}
+
+FurniGest integra \textbf{SonarCloud}~\cite{sonarcloud}, la versión en la nube de \textbf{SonarQube}, como \textit{quality gate} en el pipeline de despliegue. SonarCloud va más allá de Ruff y ESLint: realiza \textbf{análisis de flujo de datos} para detectar bugs semánticos, mide la \textbf{cobertura agregada} de Python y JavaScript en un mismo cuadro de mando, e identifica \textbf{vulnerabilidades de seguridad} mapeadas a OWASP y CWE \cite{owasp2021}. AIS P2 está dedicada íntegramente a la integración de SonarQube en pipelines de CI, y AIS T1.5 lo cita como herramienta de SCA de referencia.
+
+El flujo de trabajo en \texttt{deploy.yml} es:
+
+\begin{enumerate}
+  \item El job \texttt{backend-tests} genera \texttt{coverage-backend.xml} mediante \texttt{pytest --cov}.
+  \item El job \texttt{frontend-tests} genera \texttt{frontend/coverage/lcov.info} mediante \texttt{vitest run --coverage} (proveedor V8).
+  \item El job \texttt{sonarcloud} (dependiente de los dos anteriores) ejecuta la acción oficial \texttt{SonarSource/sonarcloud-github-action@v3} con la configuración definida en \texttt{sonar-project.properties}.
+  \item El job \texttt{deploy-frontend} sólo se ejecuta si el \textit{quality gate} de SonarCloud pasa (\texttt{needs: [sonarcloud]}).
+\end{enumerate}
+
+Además de \texttt{deploy.yml}, existe el workflow dedicado \texttt{sonarcloud.yml} que se activa en cada \textit{push} y \textit{Pull Request} de cualquier rama, permitiendo obtener \textit{feedback} de cobertura antes de mergear a \texttt{main}. Para que el análisis basado en CI funcione correctamente, es necesario desactivar la opción \textit{Automatic Analysis} en la configuración del proyecto de SonarCloud, ya que el modo automático no soporta la importación de cobertura externa.
+
+Tras el primer análisis de SonarCloud, se corrigieron los \textit{issues} de mayor impacto en fiabilidad:
+
+\begin{itemize}
+  \item \textbf{Sentencias \texttt{print()} de depuración en código de producción:} \texttt{groq\_llm.py} contenía cuatro llamadas \texttt{print("DEBUG ...")} que exponían información de configuración en los logs. Se eliminaron y se reemplazaron por el módulo estándar \texttt{logging} en \texttt{seed.py}.
+  \item \textbf{Cláusulas \texttt{except Exception} demasiado amplias:} las funciones de formato numérico (\texttt{eur()}, \texttt{\_eur()}) y las funciones de agregación de fechas (\texttt{\_aggregate\_sales\_weekly()}) capturaban \texttt{Exception} de forma genérica, ocultando errores inesperados. Se acotaron a \texttt{except (TypeError, ValueError)} y \texttt{except ValueError} respectivamente, que son las únicas excepciones que pueden producirse en esos contextos. Los bloques \texttt{except Exception as e} en los \textit{fallbacks} de API externas (Groq, Stripe, email) se mantienen porque registran el error con \texttt{log.warning()} y proporcionan una respuesta alternativa, lo cual SonarCloud considera un patrón aceptable.
+\end{itemize}
+
+Esto garantiza que ningún commit con cobertura insuficiente o con nuevos bugs detectados por SonarCloud llegue a producción, implementando la \textbf{política de calidad automatizada} descrita en AIS P2.
+
 
 % ==============================================================
 % CAPÍTULO 4 — RESULTADOS

@@ -7,19 +7,9 @@ from backend.app.ia_settings import (
     REQUEST_TIMEOUT,
 )
 
-import os
-
-print("DEBUG GROQ_API_KEY exists?", bool(os.getenv("GROQ_API_KEY")))
-print("DEBUG GROQ_API_KEY length:", len(os.getenv("GROQ_API_KEY") or ""))
-
 
 def groq_chat(messages, temperature: float = 0.2, model: str | None = None) -> str:
     """Llamada a Groq usando el endpoint OpenAI-compatible /chat/completions."""
-    import os
-
-    print("DEBUG GROQ_API_KEY exists?", bool(os.getenv("GROQ_API_KEY")))
-    print("DEBUG GROQ_API_KEY length:", len(os.getenv("GROQ_API_KEY") or ""))
-
     if not GROQ_API_KEY:
         raise RuntimeError("GROQ_API_KEY no configurado")
 

@@ -120,9 +120,16 @@ jobs:
         working-directory: frontend
         run: npm ci
 
-      - name: Ejecutar tests
+      - name: Ejecutar tests con cobertura
         working-directory: frontend
-        run: npm test
+        run: npm run test:coverage
+
+      - name: Subir informe de cobertura (LCOV)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-frontend
+          path: frontend/coverage/lcov.info
 
         # Los tests están en frontend/test/ y se ejecutan con vitest run
 
