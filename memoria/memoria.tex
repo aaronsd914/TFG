@@ -1308,6 +1308,45 @@ Docker Compose \cite{docker} define tres servicios: \texttt{db} (PostgreSQL~16),
 
 En producción, toda la comunicación entre el cliente y el servidor se protege con \textbf{TLS} (\textit{Transport Layer Security})~\cite{kurose} mediante el certificado gestionado automáticamente por Railway. TLS cifra el tráfico HTTP mediante \textbf{AES} (cifrado simétrico de sesión) y garantiza la autenticidad del servidor a través de certificados \textbf{X.509}, cumpliendo los principios de confidencialidad e integridad de la tríada CIA establecida en el RNF-06.
 
+\subsection{Desarrollo colaborativo con Git}
+\label{sec:git_colaborativo}
+
+El modelo de ramas de FurniGest sigue el enfoque \textbf{Trunk-Based Development} (TBD)~\cite{tbd}: la rama \texttt{main} es la única rama de larga duración; cada funcionalidad se desarrolla en una \textit{feature branch} de vida corta que se integra mediante un \textit{Pull Request} (PR). AIS T3.2 presenta dos alternativas principales:
+
+\begin{table}[H]
+  \centering
+  \caption{Comparativa de modelos de ramas: Gitflow vs.\ Trunk-Based Development.}
+  \label{tab:branching}
+  \renewcommand{\arraystretch}{1.4}
+  \begin{footnotesize}
+  \begin{tabular}{|l|p{4.5cm}|p{4.5cm}|}
+    \hline
+    & \textbf{Gitflow} & \textbf{Trunk-Based (TBD)} \\
+    \hline
+    Ramas permanentes & \texttt{main} + \texttt{develop} + \texttt{release/*} + \texttt{hotfix/*} & Solo \texttt{main} \\
+    Vida de feature branch & Días o semanas & $<$ 1--2 días \\
+    Releases & Periódicas, coordinadas & Continuas, cada PR \\
+    Coste de integración & Alto (merges frecuentes entre ramas) & Bajo (integración diaria) \\
+    Adecuado para & Proyectos con ciclos de versión fijos & Entrega continua (CD) \\
+    \hline
+  \end{tabular}
+  \end{footnotesize}
+\end{table}
+
+Se eligió TBD porque FurniGest aplica \textbf{despliegue continuo}: cada PR mergeado a \texttt{main} activa automáticamente el workflow \texttt{deploy.yml}, publicando la nueva versión sin intervención humana. Gitflow añadiría la rama \texttt{develop} y ramas de release sin beneficio en un proyecto unipersonal.
+
+Todos los mensajes de commit siguen la especificación \textbf{Conventional Commits}~\cite{conventionalcommits}, que estandariza el formato del asunto:
+
+\begin{verbatim}
+<tipo>[ámbito opcional]: <descripción imperativa en minúsculas>
+
+[cuerpo opcional — explica QUÉ y POR QUÉ, no cómo]
+\end{verbatim}
+
+Los tipos usados en FurniGest son: \texttt{feat} (nueva funcionalidad), \texttt{fix} (corrección de bug), \texttt{refactor}, \texttt{test}, \texttt{docs} y \texttt{chore} (mantenimiento). Esta convención facilita la generación automática de \textit{changelogs} y hace que el historial sea autoexplicativo~\cite{beams}.
+
+Cada PR rellena una plantilla estructurada (\texttt{.github/PULL\_REQUEST\_TEMPLATE.md}) que incluye: descripción del cambio, tipo de commit, lista de ficheros modificados, confirmación de que los tests locales pasan y confirmación de que el pipeline de CI es verde. Esto garantiza que ningún commit roto llegue a producción, alineándose con la definición de \textbf{Integración Continua} de Fowler~\cite{fowlerCI}.
+
 
 \section{Pruebas}
 
