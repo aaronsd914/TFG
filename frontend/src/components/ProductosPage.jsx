@@ -1,6 +1,7 @@
 // frontend/src/components/ProductosPage.jsx
 import React, { useEffect, useMemo, useState } from 'react';
 import { sileo } from 'sileo';
+import { Pagination } from './ui/Pagination.jsx';
 import { API_URL } from '../config.js';
 
 // ===== Helpers =====
@@ -900,28 +901,13 @@ export default function ProductosPage() {
                   {filteredBase.length}
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <Button variant="secondary" onClick={() => setPage(1)} disabled={safePage === 1} type="button">
-                    «
-                  </Button>
-                  <Button variant="secondary" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={safePage === 1} type="button">
-                    Anterior
-                  </Button>
-                  <div className="text-sm text-gray-700 px-2">
-                    Página <b>{safePage}</b> / {totalPages}
-                  </div>
-                  <Button
-                    variant="secondary"
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={safePage === totalPages}
-                    type="button"
-                  >
-                    Siguiente
-                  </Button>
-                  <Button variant="secondary" onClick={() => setPage(totalPages)} disabled={safePage === totalPages} type="button">
-                    »
-                  </Button>
-                </div>
+              <div className="mt-4">
+                <Pagination
+                  page={safePage}
+                  total={filteredBase.length}
+                  pageSize={Number(pageSize || 12)}
+                  onChange={setPage}
+                />
               </div>
             </>
           ) : (

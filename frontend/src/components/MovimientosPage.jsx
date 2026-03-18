@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { sileo } from 'sileo';
+import { Pagination } from './ui/Pagination.jsx';
 
 import { API_URL } from '../config.js';
 
@@ -64,6 +65,8 @@ export default function MovimientosPage() {
   const [fechaErr, setFechaErr] = useState(false);
   const [conceptoErr, setConceptoErr] = useState(false);
   const [cantidadErr, setCantidadErr] = useState(false);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 20;
 
   async function fetchMovs() {
     try {
@@ -139,6 +142,7 @@ export default function MovimientosPage() {
   }
 
   const movsFiltrados = useMemo(() => {
+    setPage(1);
     const query = (q || '').trim().toLowerCase();
     const dFrom = desde ? new Date(desde) : null;
     const dTo = hasta ? new Date(hasta) : null;
@@ -253,7 +257,7 @@ export default function MovimientosPage() {
                 {hasta && <Chip label={`Hasta: ${hasta}`} onRemove={() => setHasta('')} />}
                 <button
                   type="button"
-                  className="text-sm text-gray-600 underline ml-1"
+                  className="text-sm text-gray-600 underline ml-1 hover:text-gray-900 transition-colors"
                   onClick={() => { setTipoFiltro('TODOS'); setDesde(''); setHasta(''); }}
                 >
                   Limpiar todo
@@ -424,7 +428,7 @@ export default function MovimientosPage() {
           {!loading && !err && movs.length === 0 && (
             <li className="p-6 text-gray-500">No hay movimientos aún.</li>
           )}
-          {movsFiltrados.map((mv) => {
+          {movsFiltrados.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((mv) => {
             const meta = TIPO_META[mv.tipo] || { label: mv.tipo, className: 'bg-gray-100 text-gray-700 border-gray-300' };
             return (
               <li key={mv.id} className="grid grid-cols-12 px-4 py-3 border-t">
@@ -438,6 +442,7 @@ export default function MovimientosPage() {
             );
           })}
         </ul>
+        <Pagination page={page} total={movsFiltrados.length} pageSize={PAGE_SIZE} onChange={setPage} />
         </div>
         </div>
       </div>

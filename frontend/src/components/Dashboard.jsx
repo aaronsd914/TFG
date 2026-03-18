@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Line, Pie } from 'react-chartjs-2';
 import 'chart.js/auto';
 import { API_URL } from '../config.js';
@@ -27,6 +28,7 @@ export default function Dashboard() {
   const [almacen, setAlmacen] = useState([]);
   const [_ruta, setRuta] = useState([]); // se mantiene para métricas/estados, aunque no se muestre sección
   const [clientes, setClientes] = useState([]);
+  const [productos, setProductos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
   // UI
@@ -47,12 +49,13 @@ export default function Dashboard() {
 
       setErr(null);
 
-      const [rMovs, rAlbs, rAlmacen, rRuta, rClientes] = await Promise.all([
+      const [rMovs, rAlbs, rAlmacen, rRuta, rClientes, rProductos] = await Promise.all([
         fetch(`${API_URL}movimientos/get`),
         fetch(`${API_URL}albaranes/get`),
         fetch(`${API_URL}transporte/almacen`),
         fetch(`${API_URL}transporte/ruta`),
         fetch(`${API_URL}clientes/get`),
+        fetch(`${API_URL}productos/get`),
       ]);
 
       if (!rMovs.ok) throw new Error(`Movimientos HTTP ${rMovs.status}`);
@@ -61,12 +64,14 @@ export default function Dashboard() {
 
       const almacenData = rAlmacen.ok ? await rAlmacen.json() : [];
       const rutaData = rRuta.ok ? await rRuta.json() : [];
+      const productosData = rProductos.ok ? await rProductos.json() : [];
 
       setMovs(await rMovs.json());
       setAlbaranes(await rAlbs.json());
       setAlmacen(Array.isArray(almacenData) ? almacenData : []);
       setRuta(Array.isArray(rutaData) ? rutaData : []);
       setClientes(await rClientes.json());
+      setProductos(Array.isArray(productosData) ? productosData : []);
       setLastUpdated(new Date());
     } catch (e) {
       setErr(e?.message || 'Error desconocido');
@@ -309,6 +314,65 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Bento Grid */}
+      {!loading && !err && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <Link
+            to="/clientes"
+            className="group bg-white border border-gray-200 rounded-2xl p-5 flex flex-col gap-3 hover:border-gray-400 hover:shadow-md transition-all duration-200"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Clientes</span>
+              <span className="text-lg">👥</span>
+            </div>
+            <div className="text-4xl font-bold tabular-nums text-gray-900">{clientes.length}</div>
+            <div className="text-sm text-gray-500 mt-auto">registrados en total</div>
+            <div className="text-xs text-gray-400 group-hover:text-gray-600 transition-colors">Ver clientes →</div>
+          </Link>
+
+          <Link
+            to="/albaranes"
+            className="group bg-white border border-gray-200 rounded-2xl p-5 flex flex-col gap-3 hover:border-gray-400 hover:shadow-md transition-all duration-200"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Albaranes</span>
+              <span className="text-lg">📄</span>
+            </div>
+            <div className="text-4xl font-bold tabular-nums text-gray-900">{albaranes.length}</div>
+            <div className="text-sm text-gray-500 mt-auto">
+              {albaranes.filter(a => a.estado === 'FIANZA').length} pendientes de pago
+            </div>
+            <div className="text-xs text-gray-400 group-hover:text-gray-600 transition-colors">Ver albaranes →</div>
+          </Link>
+
+          <Link
+            to="/productos"
+            className="group bg-white border border-gray-200 rounded-2xl p-5 flex flex-col gap-3 hover:border-gray-400 hover:shadow-md transition-all duration-200"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Productos</span>
+              <span className="text-lg">📦</span>
+            </div>
+            <div className="text-4xl font-bold tabular-nums text-gray-900">{productos.length}</div>
+            <div className="text-sm text-gray-500 mt-auto">en catálogo</div>
+            <div className="text-xs text-gray-400 group-hover:text-gray-600 transition-colors">Ver productos →</div>
+          </Link>
+
+          <Link
+            to="/transporte"
+            className="group bg-white border border-gray-200 rounded-2xl p-5 flex flex-col gap-3 hover:border-gray-400 hover:shadow-md transition-all duration-200"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Transporte</span>
+              <span className="text-lg">🚚</span>
+            </div>
+            <div className="text-4xl font-bold tabular-nums text-gray-900">{almacen.length}</div>
+            <div className="text-sm text-gray-500 mt-auto">pedidos en almacén</div>
+            <div className="text-xs text-gray-400 group-hover:text-gray-600 transition-colors">Organizar rutas →</div>
+          </Link>
+        </div>
+      )}
+
       {/* Gráficas */}
       {!err && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
@@ -543,6 +607,42 @@ function SkeletonCard() {
 }
 
 function StatCard({ title, value, delta, deltaLabel, hint, invertColors = false }) {
+  const [displayed, setDisplayed] = useState('…');
+
+  useEffect(() => {
+    // Try to extract a number from the value string to animate
+    const numMatch = value.replace(/\./g, '').replace(',', '.').match(/-?[\d.]+/);
+    const target = numMatch ? parseFloat(numMatch[0]) : null;
+
+    if (target === null || target === 0) {
+      setDisplayed(value);
+      return;
+    }
+
+    const duration = 600;
+    const start = performance.now();
+
+    const tick = (now) => {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      // ease-out
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = target * eased;
+
+      // Re-format in the same style as the final value
+      const formatted = value.replace(
+        numMatch[0],
+        current.toLocaleString('es-ES', { maximumFractionDigits: 2 })
+      );
+      setDisplayed(formatted);
+
+      if (progress < 1) requestAnimationFrame(tick);
+      else setDisplayed(value);
+    };
+
+    requestAnimationFrame(tick);
+  }, [value]);
+
   let deltaText = null;
   let deltaCls = 'text-gray-600';
 
@@ -568,7 +668,7 @@ function StatCard({ title, value, delta, deltaLabel, hint, invertColors = false 
           </div>
         )}
       </div>
-      <p className="text-xl font-bold mt-2">{value}</p>
+      <p className="text-xl font-bold mt-2 tabular-nums">{displayed}</p>
       <div className="mt-2 text-xs text-gray-500">{deltaText && deltaLabel ? deltaLabel : hint || ' '}</div>
     </div>
   );

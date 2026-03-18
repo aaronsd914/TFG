@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sileo } from 'sileo';
+import { Badge } from './ui/Badge.jsx';
+import { Pagination } from './ui/Pagination.jsx';
 
 import { API_URL } from '../config.js';
 
@@ -62,10 +64,10 @@ function formatDate(d) {
 }
 
 const ESTADO_META = {
-  FIANZA: { label: 'Fianza', className: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
-  ALMACEN: { label: 'Almacén', className: 'bg-blue-100 text-blue-800 border-blue-300' },
-  TRANSPORTE: { label: 'Ruta', className: 'bg-purple-100 text-purple-800 border-purple-300' },
-  ENTREGADO: { label: 'Entregado', className: 'bg-green-100 text-green-800 border-green-300' },
+  FIANZA:      { label: 'Fianza',     variant: 'warning' },
+  ALMACEN:     { label: 'Almacén',    variant: 'info' },
+  TRANSPORTE:  { label: 'Ruta',       variant: 'purple' },
+  ENTREGADO:   { label: 'Entregado',  variant: 'success' },
 };
 
 // ===== Página =====
@@ -77,6 +79,9 @@ export default function AlbaranesPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 20;
 
   // buscador + filtros
   const [query, setQuery] = useState('');
@@ -93,6 +98,8 @@ export default function AlbaranesPage() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
+  // Reset page when filters change
+  useEffect(() => { setPage(1); }, [q, sort, selectedDomains, selectedEstados, totalRange, dateFrom, dateTo]);
   // detalle
   const [detailOpen, setDetailOpen] = useState(false);
   const [selected, setSelected] = useState(null);
@@ -451,7 +458,7 @@ export default function AlbaranesPage() {
             {activeChips.map((ch) => (
               <Chip key={ch.key} label={ch.label} onRemove={ch.onRemove} />
             ))}
-            <button className="text-sm text-gray-600 underline ml-2" onClick={clearAll} type="button">
+            <button className="text-sm text-gray-600 underline ml-2 hover:text-gray-900 transition-colors" onClick={clearAll} type="button">
               Limpiar todo
             </button>
           </div>
@@ -482,14 +489,13 @@ export default function AlbaranesPage() {
 
               {!loading && !error && filtered.length === 0 && <li className="p-6 text-gray-500">Sin resultados</li>}
 
-              {filtered.map((a) => {
+              {filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((a) => {
                 const cli = clientesById.get(a.cliente_id);
-                const meta =
-                  ESTADO_META[a.estado] || { label: a.estado, className: 'bg-gray-100 text-gray-700 border-gray-300' };
+                const meta = ESTADO_META[a.estado] || { label: a.estado, variant: 'secondary' };
                 return (
                   <li
                     key={a.id}
-                    className="grid grid-cols-12 px-4 py-3 border-t hover:bg-gray-50 cursor-pointer"
+                    className="grid grid-cols-12 px-4 py-3 border-t hover:bg-gray-50 cursor-pointer transition-colors"
                     onClick={() => openDetail(a)}
                   >
                     <div className="col-span-2">#{a.id}</div>
@@ -508,9 +514,7 @@ export default function AlbaranesPage() {
                     <div className="col-span-2">{formatEUR(a.total)}</div>
 
                     <div className="col-span-2">
-                      <span className={`inline-block border px-2 py-1 rounded-lg text-xs text-center ${meta.className}`}>
-                        {meta.label}
-                      </span>
+                      <Badge variant={meta.variant}>{meta.label}</Badge>
                     </div>
                   </li>
                 );
@@ -518,6 +522,8 @@ export default function AlbaranesPage() {
             </ul>
           </div>
         </div>
+
+        <Pagination page={page} total={filtered.length} pageSize={PAGE_SIZE} onChange={setPage} />
 
         {/* Modal filtros */}
         <ModalCenter isOpen={filtersOpen} onClose={() => setFiltersOpen(false)} maxWidth="max-w-lg">
@@ -644,7 +650,7 @@ export default function AlbaranesPage() {
             </button>
             <button
               onClick={() => setFiltersOpen(false)}
-              className="px-4 py-2 rounded-xl bg-black text-white"
+              className="px-4 py-2 rounded-xl bg-black text-white hover:opacity-90"
               type="button"
             >
               Aplicar
