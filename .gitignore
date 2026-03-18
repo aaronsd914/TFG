@@ -4,3 +4,8 @@ backend/app/bank_settings.py
 backend/app/stripe_settings.py
 backend/app/stripe_config.py
 memoria/recomendaciones.txt
+
+# Coverage reports
+frontend/coverage/
+coverage-backend.xml
+.coverage
