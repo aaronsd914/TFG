@@ -582,6 +582,28 @@ La tienda de muebles que sirve de caso de uso contaba, antes del inicio de este 
 
 Esta situación generaba ineficiencias tangibles: tiempo perdido en tareas administrativas repetitivas, errores en los importes reflejados en los albaranes, falta de coordinación entre el personal de tienda y los repartidores, y ausencia total de capacidad analítica para la toma de decisiones.
 
+Siguiendo la metodología del \textbf{Diseño Centrado en el Usuario (DCU)}~\cite{iso9241}, se identificaron tres perfiles de usuario («personas») que representan los distintos actores del sistema:
+
+\begin{table}[H]
+  \centering
+  \caption{Perfiles de usuario (\textit{personas}) del sistema FurniGest.}
+  \label{tab:personas}
+  \renewcommand{\arraystretch}{1.4}
+  \begin{footnotesize}
+  \begin{tabular}{|l|p{4.5cm}|p{5cm}|}
+    \hline
+    \textbf{Perfil} & \textbf{Descripción} & \textbf{Necesidades principales} \\
+    \hline
+    \textbf{Encargado de tienda} & Gestiona el negocio, supervisa ventas, analiza tendencias y toma decisiones estratégicas. Uso diario del sistema en ordenador de sobremesa. & Visión consolidada de ingresos y gastos; analíticas y segmentación de clientes; acceso al asistente IA para consultas sobre el negocio. \\
+    \hline
+    \textbf{Vendedor} & Atiende a los clientes en tienda, crea nuevos pedidos y gestiona el estado de los albaranes. Uso frecuente durante la jornada laboral. & Creación rápida de pedidos; búsqueda ágil de clientes y productos; actualización del estado de los albaranes sin conocimientos técnicos. \\
+    \hline
+    \textbf{Repartidor} & Recoge las rutas asignadas, gestiona las entregas y registra la liquidación de cada camión. Uso puntual desde el módulo de transporte. & Consulta del manifiesto de carga por camión; cambio de estado de los albaranes en ruta; descarga de la factura PDF de liquidación. \\
+    \hline
+  \end{tabular}
+  \end{footnotesize}
+\end{table}
+
 El objetivo global del proyecto es diseñar e implementar un sistema de información web que digitalice de forma integral todos estos procesos. El sistema debe ser accesible desde cualquier ordenador de la red local de la tienda sin necesidad de instalar ningún software adicional, y debe poder operar también de forma remota a través de internet una vez desplegado en la nube.
 
 \section{Estudio de alternativas}
@@ -877,7 +899,7 @@ El esquema de la base de datos cumple la \textbf{tercera forma normal (3FN)}: ca
 
 La API REST de FurniGest sigue el estilo arquitectónico \textbf{REST} (\textit{Representational State Transfer}), descrito por Roy Fielding en su tesis doctoral en el año 2000~\cite{fieldingREST}. REST define un conjunto de restricciones para el diseño de servicios web distribuidos: sin estado (\textit{stateless}), interfaz uniforme basada en \textbf{recursos} identificados por \textbf{URIs}, y uso de los métodos estándar del protocolo HTTP (GET, POST, PUT, PATCH, DELETE). El carácter \textit{stateless} implica que cada petición del cliente contiene toda la información necesaria para ser procesada, sin que el servidor mantenga estado de sesión entre peticiones. Esta restricción facilita la escalabilidad horizontal del servidor: dado que no existe estado compartido entre instancias, es posible añadir nodos al servicio sin coordinación entre ellos.
 
-La API REST se sirve en \texttt{http://\{host\}:8000}. Todos los endpoints de dominio llevan el prefijo \texttt{/api}. El protocolo de transporte utilizado es \textbf{HTTP/1.1}~\cite{kurose}, el estándar de la capa de aplicación sobre el que se construye REST. En producción, Railway inyecta \textbf{TLS} (\textit{Transport Layer Security}) de forma automática, de modo que toda la comunicación entre el cliente y el servidor discurre cifrada mediante HTTPS. La Tabla~\ref{tab:api_resumen} recoge un resumen de los endpoints principales.
+La API REST se sirve en \texttt{http://\{host\}:8000}. Todos los endpoints de dominio llevan el prefijo \texttt{/api}. El protocolo de transporte utilizado es \textbf{HTTP/1.1} (RFC~2616)~\cite{kurose}, el estándar de la capa de aplicación sobre el que se construye REST. En producción, Railway inyecta \textbf{TLS} (\textit{Transport Layer Security}) de forma automática, de modo que toda la comunicación entre el cliente y el servidor discurre cifrada mediante HTTPS. La Tabla~\ref{tab:api_resumen} recoge un resumen de los endpoints principales.
 
 \begin{table}[H]
   \centering
@@ -1149,7 +1171,7 @@ El análisis de \textit{market basket} \cite{agrawal1994} identifica pares de pr
 
 El asistente de IA está implementado en \texttt{backend/app/api/ai.py} y se apoya en la API de \textbf{Groq} \cite{groq} con el modelo \textbf{Llama-3.1-8b-instant} \cite{llama2}. Groq proporciona una infraestructura de inferencia de ultra baja latencia (típicamente inferior a 500\,ms para el modelo 8B) mediante unidades de procesamiento LPU (\textit{Language Processing Unit}).
 
-\textbf{Llama-3} pertenece a la familia de \textit{Large Language Models} (LLMs), que constituyen la aplicación más reciente del \textbf{aprendizaje profundo} (\textit{deep learning})~\cite{goodfellow2016}: redes neuronales con múltiples capas de transformación no lineal entrenadas sobre corpus de texto de escala masiva. Esta familia recoge la evolución histórica del campo desde los primeros sistemas expertos basados en reglas de los años 80 hasta las redes neuronales profundas actuales, pasando por los perceptrones multicapa (MLP) y la arquitectura \textit{Transformer}. El uso de Llama-3 en FurniGest ilustra el paradigma del \textbf{\textit{transfer learning}}: un modelo preentrenado con billones de tokens es reutilizado en una tarea específica de razonamiento analítico mediante \textit{prompt engineering} sin necesidad de reentrenamiento \textit{fine-tuning}.
+\textbf{Llama-3} pertenece a la familia de \textit{Large Language Models} (LLMs), que constituyen la aplicación más reciente del \textbf{aprendizaje profundo} (\textit{deep learning})~\cite{goodfellow2016}: redes neuronales con múltiples capas de transformación no lineal entrenadas sobre corpus de texto de escala masiva. Esta familia recoge la evolución histórica del campo desde los primeros sistemas expertos basados en reglas de los años 80 hasta las redes neuronales profundas actuales, pasando por los perceptrones multicapa (MLP) y la arquitectura \textit{Transformer}. El mecanismo de \textbf{atención} (\textit{attention}) que subyace a los Transformers fue propuesto por Vaswani et al.\ en 2017 en el artículo \textit{Attention Is All You Need}~\cite{vaswani2017}, y es el componente central que permite a los LLMs capturar dependencias de largo alcance en el texto. El uso de Llama-3 en FurniGest ilustra el paradigma del \textbf{\textit{transfer learning}}: un modelo preentrenado con billones de tokens es reutilizado en una tarea específica de razonamiento analítico mediante \textit{prompt engineering} sin necesidad de reentrenamiento \textit{fine-tuning}.
 
 La integración sigue un patrón de \textit{prompt engineering} estructurado en dos capas:
 
@@ -1284,6 +1306,8 @@ Docker Compose \cite{docker} define tres servicios: \texttt{db} (PostgreSQL~16),
 
 \textbf{Docker} implementa el paradigma de \textbf{virtualización basada en contenedores}: a diferencia de las máquinas virtuales que emulan hardware completo mediante un \textit{hypervisor}, los contenedores comparten el núcleo del sistema operativo anfitrión aislando únicamente el espacio de procesos, sistema de ficheros y red~\cite{docker}. Esto reduce drásticamente el tiempo de arranque y el consumo de recursos, siendo especialmente adecuado para arquitecturas de servicios distribuidos como la de FurniGest.
 
+En producción, toda la comunicación entre el cliente y el servidor se protege con \textbf{TLS} (\textit{Transport Layer Security})~\cite{kurose} mediante el certificado gestionado automáticamente por Railway. TLS cifra el tráfico HTTP mediante \textbf{AES} (cifrado simétrico de sesión) y garantiza la autenticidad del servidor a través de certificados \textbf{X.509}, cumpliendo los principios de confidencialidad e integridad de la tríada CIA establecida en el RNF-06.
+
 
 \section{Pruebas}
 
@@ -1365,6 +1389,8 @@ El \textbf{análisis estático de código (SCA, \textit{Static Code Analysis})} 
 \end{itemize}
 
 La ausencia de \textit{code smells} ---indicadores de degradación de la calidad interna identificados por Martin Fowler \cite{fowlerRefactoring}, como funciones demasiado largas, nombres poco expresivos o código duplicado--- se mantiene mediante refactorizaciones periódicas durante el desarrollo siguiendo la \textit{Regla del Boy Scout}: dejar el código siempre en mejor estado del que se encontró.
+
+Esta práctica de análisis estático continuo es coherente con la filosofía de \textbf{desarrollo seguro} que promueve OWASP~\cite{owasp2021}: «concebir, desarrollar y mantener aplicaciones confiables». Ruff y ESLint actúan como herramientas SCA \textit{shift-left}, detectando defectos potenciales en el momento del \textit{commit} antes de que lleguen a producción, en la misma línea que herramientas del ecosistema OWASP como PMD, FlawFinder o LAPSE.
 
 
 % ==============================================================
