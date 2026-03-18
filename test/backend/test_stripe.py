@@ -31,16 +31,20 @@ class TestStripeCheckout:
 
     def test_checkout_ok_con_mock(self, client):
         """Simula la respuesta de Stripe para no depender de la API real."""
-        fake_session = MagicMock()
-        fake_session.id = "cs_test_fake123"
-        fake_session.url = "https://checkout.stripe.com/fake"
+        # Given
+        mock_create = MagicMock()
+        mock_create.id = "cs_test_fake123"
+        mock_create.url = "https://checkout.stripe.com/fake"
 
-        with patch("stripe.checkout.Session.create", return_value=fake_session):
+        with patch("stripe.checkout.Session.create", return_value=mock_create) as spy_create:
+            # When
             r = client.post("/api/stripe/checkout", json={"amount": 49.99, "description": "Pago test"})
+        # Then
         assert r.status_code == 200
         body = r.json()
         assert body["id"] == "cs_test_fake123"
         assert "url" in body
+        spy_create.assert_called_once()  # spy: Stripe fue llamado exactamente 1 vez
 
 
 class TestStripeConfirm:

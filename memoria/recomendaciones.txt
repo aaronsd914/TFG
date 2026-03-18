@@ -174,6 +174,7 @@ Nueva bibliografía añadida (SI + Redes + IA):
 Ordenadas de mayor a menor impacto académico y alineadas con temarios:
 
 ────────────────────────────────────────────────────────────────────────────
+✅ COMPLETADO — rama: feat/test-doubles
 26. DOBLES DE TEST (pytest-mock) EN SERVICIOS EXTERNOS
     Asignatura: AIS T1.2 (pruebas unitarias: test doubles — mock, stub,
                            spy, fake, dummy; estructura Given/When/Then;

@@ -1345,6 +1345,34 @@ Las pruebas del \textit{backend} son \textbf{pruebas de integración HTTP} imple
 
 El \texttt{conftest.py} define los \textit{fixtures} compartidos y el esquema de la base de datos de prueba. Los tests más complejos (albaranes, transportes) verifican no solo los códigos de respuesta HTTP sino también los \textbf{efectos laterales}: creación automática de movimientos, transiciones de estado y asignación de camiones. Esto constituye \textbf{prueba de caja negra} sobre el endpoint: se verifica el comportamiento observable sin depender de la implementación interna.
 
+\subsubsection{Dobles de test en servicios externos}
+
+Varios endpoints de FurniGest llaman a servicios externos: la API de \textbf{Groq} (\textit{analytics}), la API de \textbf{Stripe} (\textit{pagos}) y el servicio de \textbf{email} (\textit{albaranes}). Invocar esas APIs reales en los tests violaría el principio \textbf{FIRST} de las pruebas unitarias~\cite{cohn}: los tests dejarían de ser \textit{Isolated} (dependerían de keys externas) y de ser \textit{Fast} (latencia de red).
+
+Para resolver esto, FurniGest utiliza \textbf{dobles de test} (\textit{test doubles}), según la taxonomía de Gerard Meszaros (\textit{xUnit Test Patterns}), implementados con la librería \textbf{pytest-mock}:
+
+\begin{table}[H]
+  \centering
+  \caption{Tipos de doble de test usados en FurniGest.}
+  \label{tab:test_doubles}
+  \renewcommand{\arraystretch}{1.4}
+  \begin{footnotesize}
+  \begin{tabular}{|l|p{4.5cm}|p{5cm}|}
+    \hline
+    \textbf{Tipo} & \textbf{Definición} & \textbf{Uso en FurniGest} \\
+    \hline
+    \textit{Stub}  & Devuelve valores fijos; no verifica llamadas & \texttt{groq\_chat} devuelve un informe predefinido en los tests de analíticas \\
+    \textit{Mock}  & Verifica que fue llamado con los parámetros correctos & \texttt{stripe.checkout.Session.create} verificado exactamente 1 vez \\
+    \textit{Spy}   & Como mock pero también ejecuta la implementación real & \texttt{mock.assert\_called\_once()} sobre la sesión de Stripe \\
+    \textit{Fake}  & Implementación simplificada & SQLite en memoria como sustituto de PostgreSQL \\
+    \textit{Dummy} & Objeto vacío, nunca se usa realmente & Respuesta vacía de email (\texttt{return\_value=None}) \\
+    \hline
+  \end{tabular}
+  \end{footnotesize}
+\end{table}
+
+Los tests siguen la estructura \textbf{Given / When / Then} (AIS T1.2): el bloque \textit{Given} configura el doble con \texttt{mocker.patch()}, el bloque \textit{When} invoca el endpoint, y el bloque \textit{Then} verifica tanto la respuesta HTTP como las llamadas al doble (\texttt{mock.assert\_called\_once()}).
+
 \subsection{Pruebas del frontend}
 
 Las pruebas del \textit{frontend} emplean \textbf{Vitest} \cite{vitest} con \textit{happy-dom} como entorno de DOM y \texttt{@testing-library/react} para la interacción con componentes. Se encuentran en \texttt{frontend/test/} con un fichero por componente de página.
