@@ -415,7 +415,7 @@ La solución desarrollada es una \textit{Single Page Application} (SPA) con arqu
 
 Entre las funcionalidades avanzadas destaca un motor de analíticas con segmentación de clientes mediante el modelo \textbf{RFM} (\textit{Recency-Frequency-Monetary}) y análisis de pares de productos frecuentemente comprados juntos (\textit{market basket analysis}). Se integra además un asistente de inteligencia artificial basado en la API de \textbf{Groq} con el modelo \textbf{Llama-3.1-8b-instant}, que recibe métricas de negocio en tiempo real y responde consultas en lenguaje natural. El sistema incorpora también integración de pagos con \textbf{Stripe Checkout}, generación de documentos PDF con \textbf{ReportLab} y notificaciones por correo electrónico mediante SMTP y la API de \textbf{Resend}.
 
-La aplicación se despliega en producción con el \textit{frontend} en \textbf{Vercel} y el \textit{backend} en \textbf{Railway}, con un flujo de integración y despliegue continuos (\textit{CI/CD}) articulado sobre \textbf{GitHub Actions}. La batería de pruebas automatizadas comprende 104 pruebas unitarias del \textit{backend} (pytest) y 97 del \textit{frontend} (Vitest), con cobertura de todos los módulos de la API.
+La aplicación se despliega en producción con el \textit{frontend} en \textbf{Vercel} y el \textit{backend} en \textbf{Railway}, con un flujo de integración y despliegue continuos (\textit{CI/CD}) articulado sobre \textbf{GitHub Actions}. La batería de pruebas automatizadas comprende 150 pruebas unitarias del \textit{backend} (pytest) y 144 del \textit{frontend} (Vitest), con cobertura de todos los módulos de la API.
 
 \mbox{} \bigskip
 
@@ -1461,18 +1461,21 @@ Las pruebas del \textit{backend} son \textbf{pruebas de integración HTTP} imple
     \hline
     \textbf{Módulo} & \textbf{N.º de pruebas} \\
     \hline
-    \texttt{test\_clientes.py}     & 12 \\
-    \texttt{test\_productos.py}    & 11 \\
-    \texttt{test\_proveedores.py}  & 8  \\
-    \texttt{test\_albaranes.py}    & 15 \\
-    \texttt{test\_movimientos.py}  & 10 \\
-    \texttt{test\_transportes.py}  & 14 \\
-    \texttt{test\_analytics.py}    & 10 \\
-    \texttt{test\_bank.py}         & 8  \\
-    \texttt{test\_stripe.py}       & 8  \\
-    \texttt{test\_auth.py}         & 8  \\
+    \texttt{test\_clientes.py}          & 8  \\
+    \texttt{test\_proveedores.py}         & 8  \\
+    \texttt{test\_productos.py}           & 8  \\
+    \texttt{test\_movimientos.py}         & 9  \\
+    \texttt{test\_albaranes.py}           & 16 \\
+    \texttt{test\_analytics.py}          & 9  \\
+    \texttt{test\_transportes.py}         & 13 \\
+    \texttt{test\_stripe.py}             & 10 \\
+    \texttt{test\_bank.py}              & 3  \\
+    \texttt{test\_auth.py}              & 13 \\
+    \texttt{test\_configuracion.py}      & 12 \\
+    \texttt{test\_emailer.py}           & 7  \\
+    \texttt{test\_resumen\_semanal.py}   & 22 \\
     \hline
-    \textbf{Total}                 & \textbf{104} \\
+    \textbf{Total}                      & \textbf{150} \\
     \hline
   \end{tabular}
   \end{footnotesize}
@@ -1522,22 +1525,25 @@ Las pruebas del \textit{frontend} emplean \textbf{Vitest} \cite{vitest} con \tex
     \hline
     \textbf{Componente} & \textbf{N.º de pruebas} \\
     \hline
-    \texttt{App.test.jsx}           & 6 \\
-    \texttt{Dashboard.test.jsx}     & 7 \\
-    \texttt{ClientesPage.test.jsx}  & 6 \\
-    \texttt{AlbaranesPage.test.jsx} & 7 \\
-    \texttt{MovimientosPage.test.jsx} & 6 \\
-    \texttt{ProductosPage.test.jsx} & 6 \\
-    \texttt{NuevaVenta.test.jsx}    & 5 \\
-    \texttt{Tendencias.test.jsx}    & 5 \\
-    \texttt{TransportePage.test.jsx}& 5 \\
-    \texttt{BancoPage.test.jsx}     & 4 \\
-    \texttt{Sidebar.test.jsx}       & 6 \\
-    \texttt{LoginPage.test.jsx}      & 11 \\
-    \texttt{auth.test.js}            & 13 \\
-    \texttt{fetchInterceptor.test.js} & 9 \\
+    \texttt{App.test.jsx}                & 5  \\
+    \texttt{Sidebar.test.jsx}             & 9  \\
+    \texttt{Dashboard.test.jsx}           & 4  \\
+    \texttt{ClientesPage.test.jsx}        & 6  \\
+    \texttt{AlbaranesPage.test.jsx}       & 5  \\
+    \texttt{MovimientosPage.test.jsx}     & 6  \\
+    \texttt{ProductosPage.test.jsx}       & 6  \\
+    \texttt{NuevaVenta.test.jsx}          & 5  \\
+    \texttt{Tendencias.test.jsx}          & 6  \\
+    \texttt{TransportePage.test.jsx}      & 6  \\
+    \texttt{BancoPage.test.jsx}           & 5  \\
+    \texttt{LoginPage.test.jsx}           & 12 \\
+    \texttt{auth.test.js}                & 13 \\
+    \texttt{fetchInterceptor.test.js}     & 9  \\
+    \texttt{PersonalizacionPage.test.jsx} & 19 \\
+    \texttt{PerfilPage.test.jsx}          & 17 \\
+    \texttt{ThemeContext.test.jsx}        & 11 \\
     \hline
-    \textbf{Total}                  & \textbf{97} \\
+    \textbf{Total}                       & \textbf{144} \\
     \hline
   \end{tabular}
   \end{footnotesize}
@@ -1802,8 +1808,8 @@ La Tabla~\ref{tab:metricas_calidad} resume las métricas de calidad obtenidas al
     \hline
     \textbf{Métrica} & \textbf{Valor} \\
     \hline
-    Pruebas unitarias backend (pytest)         & 104 / 104 pasadas \\
-    Pruebas unitarias frontend (Vitest)        & 111 / 111 pasadas \\
+    Pruebas unitarias backend (pytest)         & 150 / 150 pasadas \\
+    Pruebas unitarias frontend (Vitest)        & 144 / 144 pasadas \\
     Pruebas E2E (Selenium)                     & $\sim$62 pasadas \\
     Avisos de Ruff (Python linter)             & 0 \\
     Avisos de ESLint (JavaScript linter)       & 0 \\
