@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '../api/http.js';
 
 const DEFAULTS = {
@@ -24,22 +24,24 @@ export function ConfigProvider({ children }) {
       .catch(() => {});
   }, []);
 
-  async function updateConfig(key, value) {
+  const updateConfig = useCallback(async (key, value) => {
     await apiFetch(`config/${key}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ key, value }),
     });
     setConfig(prev => ({ ...prev, [key]: value }));
-  }
+  }, []);
 
+  const contextValue = useMemo(() => ({ config, updateConfig }), [config, updateConfig]);
   return (
-    <ConfigContext.Provider value={{ config, updateConfig }}>
+    <ConfigContext.Provider value={contextValue}>
       {children}
     </ConfigContext.Provider>
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAppConfig() {
   return useContext(ConfigContext);
 }

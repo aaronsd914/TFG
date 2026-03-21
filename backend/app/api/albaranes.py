@@ -118,7 +118,9 @@ def _send_albaran_email_task(albaran_id: int):
         )
 
         pdf_bytes = generar_pdf_albaran(
-            albaran, cliente, lineas_ext,
+            albaran,
+            cliente,
+            lineas_ext,
             tienda_nombre=tienda_nombre,
             logo_base64=logo_base64,
         )

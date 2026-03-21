@@ -41,7 +41,9 @@ def _safe(s) -> str:
     return str(s).strip()
 
 
-def _build_header_footer(canvas, doc, tienda_nombre: str, right_text: str, logo_base64: str | None = None):
+def _build_header_footer(
+    canvas, doc, tienda_nombre: str, right_text: str, logo_base64: str | None = None
+):
     """
     Header + footer en todas las páginas.
     - Izquierda: nombre de tienda
@@ -65,9 +67,14 @@ def _build_header_footer(canvas, doc, tienda_nombre: str, right_text: str, logo_
             raw = logo_base64.split(",")[-1]
             img_reader = ImageReader(BytesIO(base64.b64decode(raw)))
             canvas.drawImage(
-                img_reader, doc.leftMargin, header_y - 6,
-                width=28 * mm, height=8 * mm,
-                preserveAspectRatio=True, anchor="sw", mask="auto",
+                img_reader,
+                doc.leftMargin,
+                header_y - 6,
+                width=28 * mm,
+                height=8 * mm,
+                preserveAspectRatio=True,
+                anchor="sw",
+                mask="auto",
             )
         except Exception:
             canvas.setFillColor(colors.HexColor("#111827"))

@@ -114,7 +114,11 @@ def send_email_with_pdf(
 
 
 def _send_via_resend(
-    to_email: str, subject: str, html_body: str, pdf_bytes: bytes, pdf_filename: str
+    to_email: str,
+    subject: str,
+    html_body: str,
+    pdf_bytes: bytes | None,
+    pdf_filename: str,
 ):
     """Envía usando la API HTTP de Resend (no usa SMTP — funciona en Railway)."""
     try:

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { apiFetch } from '../api/http.js';
-import { getToken, saveToken, removeToken } from '../api/auth.js';
+import { getToken, removeToken } from '../api/auth.js';
 import { useNavigate } from 'react-router-dom';
 
 export default function PerfilPage() {

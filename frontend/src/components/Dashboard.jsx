@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { Line, Pie } from 'react-chartjs-2';
 import 'chart.js/auto';
 import { API_URL } from '../config.js';

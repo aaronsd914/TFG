@@ -36,7 +36,7 @@ def set_value(db: Session, key: str, value: str) -> None:
     db.commit()
 
 
-@router.get("", response_model=dict[str, Any])
+@router.get("")
 def read_config(db: Session = Depends(get_db)) -> dict[str, Any]:
     rows = db.query(ConfiguracionDB).all()
     result = dict(DEFAULTS)

@@ -71,7 +71,7 @@ export default function PersonalizacionPage() {
   // Decode current username from JWT
   const currentUsername = (() => {
     try {
-      const b64 = getToken().split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      const b64 = getToken().split('.')[1].replaceAll('-', '+').replaceAll('_', '/');
       return JSON.parse(atob(b64)).sub ?? '';
     } catch { return ''; }
   })();
@@ -292,10 +292,11 @@ export default function PersonalizacionPage() {
             value={emailDest} onChange={setEmailDest}
             placeholder="tu@email.com" required />
           <div className="flex flex-col gap-1">
-            <label className="text-sm text-gray-600">
+            <label htmlFor="email-intervalo" className="text-sm text-gray-600">
               Intervalo de envío (días)
             </label>
             <input
+              id="email-intervalo"
               type="number"
               min={1}
               max={365}

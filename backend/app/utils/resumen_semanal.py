@@ -5,6 +5,7 @@ El APScheduler lo invoca cada día a las 08:30. La función comprueba si
 han transcurrido `resumen_intervalo_dias` días desde el último envío; si
 no toca, retorna sin hacer nada.
 """
+
 import logging
 from datetime import date, timedelta
 
@@ -68,7 +69,9 @@ def _run(db: Session) -> None:
             dias_desde = (hoy - last).days
             if dias_desde < intervalo:
                 log.info(
-                    "[resumen] Aún no toca (%d/%d días). Omitido.", dias_desde, intervalo
+                    "[resumen] Aún no toca (%d/%d días). Omitido.",
+                    dias_desde,
+                    intervalo,
                 )
                 return
         except ValueError:
@@ -121,9 +124,20 @@ def _run(db: Session) -> None:
         log.warning("[resumen] No se pudo generar insight IA: %s", exc)
 
     html = _build_html(
-        tienda, desde, hoy, ingresos, egresos, balance, n_albs, total_ventas, insight, intervalo
+        tienda,
+        desde,
+        hoy,
+        ingresos,
+        egresos,
+        balance,
+        n_albs,
+        total_ventas,
+        insight,
+        intervalo,
     )
-    subject = f"📊 Resumen {tienda} · {desde.strftime('%d/%m')}–{hoy.strftime('%d/%m/%Y')}"
+    subject = (
+        f"📊 Resumen {tienda} · {desde.strftime('%d/%m')}–{hoy.strftime('%d/%m/%Y')}"
+    )
     send_email_simple(email_destino, subject, html)
 
     _set(db, "resumen_ultima_vez", hoy.isoformat())
@@ -135,7 +149,16 @@ def _eur(n: float) -> str:
 
 
 def _build_html(
-    tienda, desde, hasta, ingresos, egresos, balance, n_albs, total_ventas, insight, intervalo
+    tienda,
+    desde,
+    hasta,
+    ingresos,
+    egresos,
+    balance,
+    n_albs,
+    total_ventas,
+    insight,
+    intervalo,
 ) -> str:
     bal_color = "#16a34a" if balance >= 0 else "#dc2626"
     bal_sign = "+" if balance >= 0 else ""
@@ -167,7 +190,7 @@ def _build_html(
             Resumen de actividad · últimos {intervalo} días
           </div>
           <div style="color:#64748b;font-size:11px;margin-top:2px;">
-            {desde.strftime('%d/%m/%Y')} – {hasta.strftime('%d/%m/%Y')}
+            {desde.strftime("%d/%m/%Y")} – {hasta.strftime("%d/%m/%Y")}
           </div>
         </td>
       </tr>

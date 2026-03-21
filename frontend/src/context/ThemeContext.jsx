@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 const ThemeContext = createContext({
   isDark: false,
@@ -23,17 +23,22 @@ export function ThemeProvider({ children }) {
   }, [isDark]);
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-palette', palette);
+    document.documentElement.dataset.palette = palette;
     localStorage.setItem('fg-palette', palette);
   }, [palette]);
 
+  const contextValue = useMemo(
+    () => ({ isDark, setIsDark, palette, setPalette }),
+    [isDark, setIsDark, palette, setPalette],
+  );
   return (
-    <ThemeContext.Provider value={{ isDark, setIsDark, palette, setPalette }}>
+    <ThemeContext.Provider value={contextValue}>
       {children}
     </ThemeContext.Provider>
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useTheme() {
   return useContext(ThemeContext);
 }
