@@ -73,51 +73,67 @@ def test_productos_tab_gestion_carga(logged_in_browser):
     wait = WebDriverWait(logged_in_browser, 15)
     tab_gestion = wait.until(
         EC.element_to_be_clickable(
-            (By.XPATH, "//*[contains(normalize-space(.), 'Gestión') or contains(normalize-space(.), 'Gestion')]")
+            (By.XPATH, "//button[normalize-space()='Gestión' or normalize-space()='Gestion']")
         )
     )
     tab_gestion.click()
-    time.sleep(0.5)
-    # Tras cambiar de pestaña debe haber un formulario de creación
+    # Confirmar que el contenido exclusivo de la pestaña Gestión es visible
+    wait.until(
+        EC.presence_of_element_located(
+            (By.XPATH, "//*[contains(normalize-space(.), 'Gestionar productos')]")
+        )
+    )
     body_text = logged_in_browser.find_element(By.TAG_NAME, "body").text
-    assert "Gestión" in body_text or "Gestion" in body_text or "Crear" in body_text or "Añadir" in body_text
+    assert "Gestionar productos" in body_text
 
 
 def test_productos_crear_producto(logged_in_browser):
     """Se puede crear un producto nuevo desde la pestaña Gestión."""
+    import requests as req_lib
     from selenium.webdriver.support.ui import Select as SeleniumSelect
+    BACKEND_URL = __import__('os').environ.get("E2E_BACKEND_URL", "http://localhost:8000")
     logged_in_browser.get(f"{BASE_URL}/productos")
     wait = WebDriverWait(logged_in_browser, 15)
-    # Ir a Gestión
-    wait.until(
+    # Cambiar a la pestaña Gestión usando el botón exacto (el Modal está dentro de esta rama)
+    tab_btn = wait.until(
         EC.element_to_be_clickable(
-            (By.XPATH, "//*[contains(normalize-space(.), 'Gestión') or contains(normalize-space(.), 'Gestion')]")
+            (By.XPATH, "//button[normalize-space()='Gestión' or normalize-space()='Gestion']")
         )
-    ).click()
-    time.sleep(0.5)
-    # Abrir modal de creación pulsando el botón 'Nuevo producto'
+    )
+    tab_btn.click()
+    # Confirmar que la pestaña Gestión está activa esperando el contenido exclusivo de ella
+    wait.until(
+        EC.presence_of_element_located(
+            (By.XPATH, "//*[contains(normalize-space(.), 'Gestionar productos')]")
+        )
+    )
+    # Abrir el modal de creación pulsando 'Nuevo producto'
     wait.until(
         EC.element_to_be_clickable(
             (By.XPATH, "//button[normalize-space()='Nuevo producto']")
         )
     ).click()
-    # Rellenar nombre del producto (dentro del modal)
+    # Rellenar nombre del producto (input dentro del modal)
     nombre_input = wait.until(
-        EC.presence_of_element_located(
+        EC.visibility_of_element_located(
             (By.XPATH, "//input[@placeholder='Ej: Mesa de comedor']")
         )
     )
     nombre_input.clear()
     nombre_input.send_keys(PROD_NAME)
     # Precio (input type=number con placeholder 'Ej: 199.99')
-    price_input = logged_in_browser.find_element(
-        By.XPATH, "//input[@placeholder='Ej: 199.99']"
+    price_input = wait.until(
+        EC.visibility_of_element_located(
+            (By.XPATH, "//input[@placeholder='Ej: 199.99']")
+        )
     )
     price_input.clear()
     price_input.send_keys(PROD_PRICE)
     # Seleccionar el primer proveedor disponible (campo obligatorio)
-    prov_select = logged_in_browser.find_element(
-        By.XPATH, "//select[option[normalize-space()='Selecciona proveedor']]"
+    prov_select = wait.until(
+        EC.presence_of_element_located(
+            (By.XPATH, "//select[option[normalize-space()='Selecciona proveedor']]")
+        )
     )
     sel = SeleniumSelect(prov_select)
     if len(sel.options) > 1:
@@ -128,13 +144,13 @@ def test_productos_crear_producto(logged_in_browser):
             (By.XPATH, "//button[@type='submit' and contains(normalize-space(), 'Crear producto')]")
         )
     ).click()
-    # Esperar a que el modal se cierre (el botón 'Nuevo producto' vuelve a ser visible)
+    # Esperar a que el modal se cierre (input desaparece del DOM)
     wait.until(
-        EC.element_to_be_clickable(
-            (By.XPATH, "//button[normalize-space()='Nuevo producto']")
+        EC.invisibility_of_element_located(
+            (By.XPATH, "//input[@placeholder='Ej: Mesa de comedor']")
         )
     )
-    time.sleep(1)
+    time.sleep(0.5)
     # Navegar al listado y verificar que el producto aparece
     logged_in_browser.get(f"{BASE_URL}/productos")
     time.sleep(1)
@@ -146,13 +162,17 @@ def test_productos_eliminar_producto_test(logged_in_browser):
     """Se puede eliminar el producto creado por el test (limpieza)."""
     logged_in_browser.get(f"{BASE_URL}/productos")
     wait = WebDriverWait(logged_in_browser, 15)
-    # Ir a Gestión
+    # Ir a Gestión usando el botón exacto del tab
     wait.until(
         EC.element_to_be_clickable(
-            (By.XPATH, "//*[contains(normalize-space(.), 'Gestión') or contains(normalize-space(.), 'Gestion')]")
+            (By.XPATH, "//button[normalize-space()='Gestión' or normalize-space()='Gestion']")
         )
     ).click()
-    time.sleep(0.5)
+    wait.until(
+        EC.presence_of_element_located(
+            (By.XPATH, "//*[contains(normalize-space(.), 'Gestionar productos')]")
+        )
+    )
     # Buscar el producto de test
     prod_row = logged_in_browser.find_elements(
         By.XPATH, f"//*[contains(normalize-space(.), '{PROD_NAME}')]"
