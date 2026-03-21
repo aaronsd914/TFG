@@ -132,7 +132,7 @@
 | 12 | **Stripe payment collection** | Generate a Stripe Checkout Session for any amount, redirect the customer, and confirm the payment server-side. Confirmed payments are automatically recorded as income movements. |
 | 13 | **PDF generation** | ReportLab-powered PDF exports: delivery note, route invoice and analytics trends report. |
 | 14 | **Personalisation & dark mode** | Full theming system: 3 colour palettes selectable at runtime, dark / light mode toggle (persisted in `localStorage`), store name and logo configurable from the UI. |
-| 15 | **Weekly AI business summary** | APScheduler `BackgroundScheduler` fires every day at 21:00 (Europe/Madrid). When the configured interval has elapsed, it calls Groq/Llama-3 with a live snapshot of the business metrics and emails the summary to a configurable address. |
+| 15 | **Weekly AI business summary** | APScheduler `BackgroundScheduler` fires every day at 22:00 (Europe/Madrid). When the configured interval has elapsed, it calls Groq/Llama-3 with a live snapshot of the business metrics and emails the summary to a configurable address. |
 | 16 | **User profile & store settings** | `GET/PUT /api/auth/me` — update own password. `GET/PUT /api/config` — read and write the key-value `configuracion` table (store name, logo URL, email signature, weekly summary recipient and interval). |
 
 ---
@@ -306,6 +306,7 @@ TFG/
 │       ├── settings_email.py    # SMTP configuration
 │       ├── ia_settings.py       # Groq API configuration
 │       ├── api/                 # Route handlers — thin HTTP layer (one file per domain)
+│       │   ├── auth.py          # JWT login, me GET/PUT
 │       │   ├── clientes.py
 │       │   ├── productos.py
 │       │   ├── proveedores.py
@@ -315,6 +316,7 @@ TFG/
 │       │   ├── analytics.py
 │       │   ├── ai.py
 │       │   ├── bank.py
+│       │   ├── configuracion.py # Key-value store GET/PUT
 │       │   └── stripe_payments.py
 │       ├── services/            # Business logic layer (Option B)
 │       │   ├── clientes_service.py
@@ -350,9 +352,13 @@ TFG/
         │   ├── useClientes.js
         │   ├── useProductos.js
         │   └── useMovimientos.js
+        ├── context/             # React context providers
+        │   ├── ThemeContext.jsx  # Dark mode + palette (persisted in localStorage)
+        │   └── ConfigContext.jsx # Store config from /api/config
         └── components/
             ├── App.jsx          # Shell with Sidebar + <Outlet>
             ├── Sidebar.jsx      # Navigation sidebar
+            ├── LoginPage.jsx    # JWT login form
             ├── Dashboard.jsx    # KPIs + charts overview
             ├── NuevaVenta.jsx   # New order wizard
             ├── ClientesPage.jsx # Customer management
@@ -361,7 +367,9 @@ TFG/
             ├── MovimientosPage.jsx # Financial ledger
             ├── Tendencias.jsx   # Analytics, AI assistant, PDF export
             ├── TransportePage.jsx  # Logistics / transport module
-            └── BancoPage.jsx    # Stripe payments panel
+            ├── BancoPage.jsx    # Stripe payments panel
+            ├── PerfilPage.jsx   # Change username / password
+            └── PersonalizacionPage.jsx # Theme, palette, store identity
 ```
 
 ---
@@ -1268,7 +1276,9 @@ pytest test/backend/ --cov=backend/app --cov-report=term-missing
 | `test_transportes.py` | 13 | Almacén listing, route CRUD, assign/unassign, liquidate |
 | `test_stripe.py` | 10 | Checkout, confirm, list — all Stripe calls mocked |
 | `test_bank.py` | 3 | Debug info, status (no token), link (mocked HTTP) |
-| **Total** | **96** | |
+| `test_auth.py` | 8 | Login OK/fail, `/api/auth/me` GET/PUT, protected endpoint, expired/tampered token |
+| `test_configuracion.py` | 12 | GET defaults, GET/PUT round-trip, unknown key 400, overwrite, `ultima_vez` timestamp |
+| **Total** | **116** | |
 
 > Tests exercise both the original router layer and the new `services/` layer — the service functions are called through the same HTTP endpoints, so the existing test suite validates both layers without requiring new test files.
 
@@ -1306,7 +1316,12 @@ npm run test:watch  # watch mode
 | `ProductosPage.test.jsx` | 5 | Mounts without error, both API calls (productos + proveedores) on mount, `<h1>` heading, no visible errors, network-error resilience |
 | `Tendencias.test.jsx` | 6 | Mounts without error, API called on mount, page heading, "Asistente IA" section present, chat welcome message, network-error resilience |
 | `TransportePage.test.jsx` | 6 | Mounts without error, all three initial API calls (almacén/rutas/clientes), page heading, trucks column, network-error resilience |
-| **Total** | **61** | |
+| `LoginPage.test.jsx` | 12 | Form renders, type in fields, toggle password visibility, login OK/fail, redirect, error message |
+| `auth.test.js` | 13 | `saveToken`, `getToken`, `removeToken`, `isTokenValid` (expired/tampered/valid/Base64url), `login` fetch call |
+| `fetchInterceptor.test.js` | 9 | Auth header injection, skips external URLs, 401 → `removeToken` + redirect, preserves existing headers |
+| `PersonalizacionPage.test.jsx` | 14 | Renders sections, dark mode toggle, palettes, username/password fields, save buttons, email signature |
+| `PerfilPage.test.jsx` | 13 | Renders sections, JWT username decode, password fields, submit buttons, mismatched-password validation |
+| **Total** | **122** | |
 
 **Key isolation strategies:**
 
@@ -1344,7 +1359,7 @@ A coverage XML report is uploaded as a build artifact after every backend run.
 | `actions/setup-python@v5` | Installs Python 3.12 with pip cache |
 | `pip install -r requirements.txt` | Installs all backend dependencies |
 | **Create dummy config files** | Generates placeholder `.py` config files (see below) |
-| `pytest --cov` | Runs the 96-test suite and produces a coverage XML report |
+| `pytest --cov` | Runs the 116-test suite and produces a coverage XML report |
 | `actions/upload-artifact@v4` | Saves `coverage-backend.xml` as a downloadable artifact |
 
 ###### Why dummy config files are needed in CI
