@@ -131,6 +131,9 @@
 | 11 | **Transport / logistics module** | Assign delivery notes to numbered trucks, view per-truck manifests, liquidate routes (registers a 7 % transport cost as an expense), and download a PDF route invoice. |
 | 12 | **Stripe payment collection** | Generate a Stripe Checkout Session for any amount, redirect the customer, and confirm the payment server-side. Confirmed payments are automatically recorded as income movements. |
 | 13 | **PDF generation** | ReportLab-powered PDF exports: delivery note, route invoice and analytics trends report. |
+| 14 | **Personalisation & dark mode** | Full theming system: 3 colour palettes selectable at runtime, dark / light mode toggle (persisted in `localStorage`), store name and logo configurable from the UI. |
+| 15 | **Weekly AI business summary** | APScheduler `BackgroundScheduler` fires every day at 21:00 (Europe/Madrid). When the configured interval has elapsed, it calls Groq/Llama-3 with a live snapshot of the business metrics and emails the summary to a configurable address. |
+| 16 | **User profile & store settings** | `GET/PUT /api/auth/me` — update own password. `GET/PUT /api/config` — read and write the key-value `configuracion` table (store name, logo URL, email signature, weekly summary recipient and interval). |
 
 ---
 
@@ -156,12 +159,14 @@ StripeCheckout (idempotency record for Stripe sessions)
 | `Movimiento` | `movimientos` | Standalone income/expense record; auto-created by business logic |
 | `AlbaranRuta` | `albaran_rutas` | Maps one `Albaran` to a truck (`camion_id`) |
 | `StripeCheckout` | `stripe_checkouts` | Audit record per Stripe Checkout Session (prevents duplicate payments) |
+| `Usuario` | `usuarios` | Staff account with hashed password for JWT authentication |
+| `Configuracion` | `configuracion` | Key-value store for application settings (store name, logo, email signature, scheduler config) |
 
 ---
 
 ### User types & permissions
 
-> **Design note:** FurniGest is an internal tool used exclusively by store staff. There is no public-facing interface and **no authentication layer** has been implemented. All endpoints and all screens are accessible to anyone who can reach the application. This is a deliberate architectural decision for an intranet deployment.
+> **Design note:** FurniGest is an internal tool used exclusively by store staff. Authentication is enforced via **JWT tokens** — all API endpoints require a valid `Authorization: Bearer <token>` header. The login page is available at `/login`; a default `admin` account is created by `seed.py` on first run.
 
 The three canonical user types from the template map as follows:
 
@@ -536,6 +541,21 @@ The API is served at `http://localhost:8000`. All domain endpoints are prefixed 
 |--------|------|-------------|
 | `GET` | `/health` | Railway / Docker healthcheck probe — returns `{"status": "ok"}` |
 
+#### Authentication — `/api/auth`
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/auth/login` | Obtain a JWT token (`username` + `password` form fields) |
+| `GET` | `/api/auth/me` | Return the current user's profile |
+| `PUT` | `/api/auth/me` | Update own password |
+
+#### Store configuration — `/api/config`
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/config` | Return all key-value settings from the `configuracion` table |
+| `PUT` | `/api/config/{key}` | Update a single configuration key |
+
 ---
 
 ### Frontend — React SPA
@@ -554,15 +574,17 @@ export const API_URL  = `${BASE_URL}/api/`;
 #### Navigation
 
 ```
-/                  → Dashboard       (KPIs, revenue chart, status pie)
-/ventas/nueva      → NuevaVenta      (new order wizard)
-/clientes          → ClientesPage    (customer list, order history)
-/albaranes         → AlbaranesPage   (delivery note list, state control)
-/productos         → ProductosPage   (products + suppliers)
-/movimientos       → MovimientosPage (financial ledger)
-/tendencias        → Tendencias      (analytics, AI chat, PDF export)
-/transporte        → TransportePage  (logistics, truck management)
-/banco             → BancoPage       (Stripe payments)
+/                  → Dashboard           (KPIs, revenue chart, status pie)
+/ventas/nueva      → NuevaVenta          (new order wizard)
+/clientes          → ClientesPage        (customer list, order history)
+/albaranes         → AlbaranesPage       (delivery note list, state control)
+/productos         → ProductosPage       (products + suppliers)
+/movimientos       → MovimientosPage     (financial ledger)
+/tendencias        → Tendencias          (analytics, AI chat, PDF export)
+/transporte        → TransportePage      (logistics, truck management)
+/banco             → BancoPage           (Stripe payments)
+/perfil            → PerfilPage          (change own password)
+/personalizacion   → PersonalizacionPage (dark mode, palettes, store branding, weekly summary)
 ```
 
 ---
@@ -1441,16 +1463,16 @@ Until these secrets are added, the deploy jobs are skipped but tests still run n
 
 | Workflow | Trigger | Purpose | Secrets needed |
 |----------|---------|---------|----------------|
-| `tests.yml` | push / PR / cron / manual | Run 96 backend + 97 frontend tests + upload coverage artifacts | None |
-| `e2e.yml` | push / PR / manual | Selenium E2E tests (~62 tests) against real backend + frontend in CI | None |
-| `lint.yml` | push / PR | Ruff + ESLint code quality | None |
-| `docker.yml` | push to main | Build & push images to ghcr.io | None (GITHUB_TOKEN) |
-| `sonarcloud.yml` | push / PR (all branches) | Generate coverage + SonarCloud quality gate | `SONAR_TOKEN` |
-| `deploy.yml` | push to main | Tests + SonarCloud gate + deploy to Railway + Vercel | 6 secrets |
+| `tests.yml` | PR / manual | Run 104 backend + 111 frontend tests + upload coverage artifacts | None |
+| `e2e.yml` | PR / manual | Selenium E2E tests (~62 tests) against real backend + frontend in CI | None |
+| `lint.yml` | PR / manual | Ruff + ESLint code quality | None |
+| `docker.yml` | PR / manual | Build & push images to ghcr.io | None (GITHUB_TOKEN) |
+| `sonarcloud.yml` | PR / manual | Generate coverage + SonarCloud quality gate | `SONAR_TOKEN` |
+| `deploy.yml` | PR / manual | Tests + SonarCloud gate + deploy to Railway + Vercel | 6 secrets |
 
 #### SonarCloud quality gate
 
-FurniGest integrates **SonarCloud** (the cloud-hosted version of SonarQube) as a quality gate in the `deploy.yml` pipeline. The dedicated `sonarcloud.yml` workflow runs on every push and PR (all branches) so coverage feedback is available before merging. The `sonarcloud` job in `deploy.yml` additionally blocks the deploy if the quality gate fails.
+FurniGest integrates **SonarCloud** (the cloud-hosted version of SonarQube) as a quality gate in the `deploy.yml` pipeline. The dedicated `sonarcloud.yml` workflow runs on every Pull Request and can also be triggered manually (`workflow_dispatch`) so coverage feedback is available before merging. The `sonarcloud` job in `deploy.yml` additionally blocks the deploy if the quality gate fails.
 
 > **Prerequisite — disable Automatic Analysis:** In SonarCloud → Administration → Analysis Method, **uncheck "SonarCloud Automatic Analysis"**. Automatic Analysis does not support external coverage import. CI-based analysis (GitHub Actions) must be used instead.
 

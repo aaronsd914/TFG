@@ -888,11 +888,19 @@ La Tabla~\ref{tab:entidades} resume las entidades y sus relaciones principales.
     \hline
     Stripe Checkout & \texttt{stripe\_checkouts} & Registro de idempotencia; atributos: session\textunderscore id, importe, estado, fecha \\
     \hline
+    Usuario & \texttt{usuarios} & Cuenta de personal de tienda; atributos: username, hashed\textunderscore password (bcrypt), is\textunderscore active \\
+    \hline
+    Configuración & \texttt{configuracion} & Almacén clave-valor de ajustes de la aplicación: nombre de la tienda, logo, firma de correo, destinatario del resumen semanal e intervalo de días \\
+    \hline
   \end{tabular}
   \end{footnotesize}
 \end{table}
 
 El esquema de la base de datos cumple la \textbf{tercera forma normal (3FN)}: cada atributo no clave depende únicamente de la clave primaria de su tabla y no de otros atributos no clave. Esta propiedad elimina redundancias y evita las anomalías de actualización, inserción y borrado que surgen en esquemas sin normalizar. Por ejemplo, los datos del proveedor no se repiten en cada fila de la tabla de productos, sino que se referencian mediante la clave foránea \texttt{proveedor\_id}; del mismo modo, el precio de cada línea de albarán se almacena de forma independiente al precio de catálogo del producto, preservando el histórico de ventas sin acoplar ambas tablas.
+
+\paragraph{Tabla de configuración}
+\label{sec:configuracion}
+Además de las entidades de dominio, el esquema incluye la tabla \textbf{\texttt{configuracion}}, un almacén clave-valor de ajustes de la aplicación. Cada fila tiene los campos \texttt{clave} (texto, clave primaria) y \texttt{valor} (texto). Las claves reconocidas son: \texttt{tienda\_nombre}, \texttt{logo\_empresa} (URL pública), \texttt{firma\_email}, \texttt{resumen\_email\_destino}, \texttt{resumen\_intervalo\_dias} y \texttt{resumen\_ultima\_vez}. Este diseño permite añadir nuevas opciones de configuración mediante una migración Alembic sin alterar modelos de dominio.
 
 
 \subsection{Diseño de la API REST}
@@ -936,6 +944,10 @@ La API REST se sirve en \texttt{http://\{host\}:8000}. Todos los endpoints de do
     POST   & \texttt{/api/ai/chat}                    & Chat multi-turno con el asistente IA \\
     POST   & \texttt{/api/stripe/checkout}            & Crea sesión de pago Stripe \\
     POST   & \texttt{/api/stripe/confirm}             & Verifica pago y registra ingreso \\
+    POST   & \texttt{/api/auth/login}                 & Autenticación; devuelve JWT (OAuth2 Password flow) \\
+    PUT    & \texttt{/api/auth/me}                    & Actualiza la contraseña del usuario en sesión \\
+    GET    & \texttt{/api/config}                     & Lee todos los ajustes de la tabla \texttt{configuracion} \\
+    PUT    & \texttt{/api/config/\{key\}}              & Actualiza un ajuste concreto \\
     GET    & \texttt{/health}                         & Sonda de salud para Railway \\
     \hline
   \end{tabular}
@@ -1059,11 +1071,16 @@ const router = createBrowserRouter([
       { path: 'clientes',       element: <ClientesPage /> },
       { path: 'albaranes',      element: <AlbaranesPage /> },
       { path: 'movimientos',    element: <MovimientosPage /> },
+      { path: 'productos',      element: <ProductosPage /> },
       { path: 'tendencias',     element: <Tendencias /> },
       { path: 'transporte',     element: <TransportePage /> },
       { path: 'banco',          element: <BancoPage /> },
+      { path: 'perfil',         element: <PerfilPage /> },
+      { path: 'personalizacion',element: <PersonalizacionPage /> },
     ],
   },
+  { path: '/login',             element: <LoginPage /> },
+  { path: '/ventas/nueva',      element: <NuevaVenta /> },
 ]);
 \end{lstlisting}
 
@@ -1072,6 +1089,31 @@ El componente \texttt{App.jsx} actúa de \textit{shell}: renderiza el \texttt{Si
 El estilado utiliza \textbf{TailwindCSS~4} \cite{tailwindcss} en su variante \textit{utility-first}: cada clase se genera en tiempo de compilación de forma que en producción no llega ningún CSS sin usar al navegador. La versión 4 de TailwindCSS eliminó el fichero \texttt{tailwind.config.js} en favor de directivas CSS nativas (\texttt{@theme}), lo que simplificó la configuración del proyecto.
 
 Las notificaciones visuales (confirmaciones, errores, advertencias) se muestran con la biblioteca \textbf{sileo} mediante un único componente \texttt{<Toaster>} instanciado en \texttt{main.jsx}.
+
+\subsubsection{Personalización, modo oscuro y configuración de la tienda}
+\label{sec:personalizacion}
+
+FurniGest incorpora un módulo de personalización completo que permite al responsable de la tienda adaptar la apariencia y el comportamiento del sistema sin necesidad de modificar código fuente.
+
+\paragraph{Sistema de temas}
+El sistema de temas está implementado mediante dos contextos React:
+
+\begin{itemize}
+  \item \textbf{\texttt{ThemeContext}} gestiona el modo de color (claro/oscuro) y la paleta activa. El estado se persiste en \texttt{localStorage} para sobrevivir a rigas recargas del navegador. El modo oscuro se activa añadiendo la clase CSS \texttt{.dark} al elemento \texttt{<html>}; la paleta se selecciona mediante el atributo \texttt{data-palette} con tres valores posibles: \texttt{warm} (tonos crema-ocre), \texttt{forest} (verdes naturales) y \texttt{ocean} (azules costeros). Todas las variables de color de la interfaz están definidas como \textit{CSS custom properties} (\texttt{--fg-bg}, \texttt{--fg-sidebar}, \texttt{--fg-active}, \texttt{--fg-accent}) en \texttt{src/index.css}, lo que permite cambiar la paleta completa cambiando únicamente el atributo \texttt{data-palette} del documento.
+  \item \textbf{\texttt{ConfigContext}} obtiene del \textit{backend} los ajustes de la tienda almacenados en la tabla \texttt{configuracion} (véase \S\ref{sec:configuracion}) y los pone a disposición de todos los componentes mediante el hook \texttt{useAppConfig()}. El nombre de la tienda se muestra en el \textit{sidebar}; el logo se incrusta en los PDFs generados; la firma se adjunta a los correos salientes.
+\end{itemize}
+
+\paragraph{Página de personalización}
+La ruta \texttt{/personalizacion} renderiza \texttt{PersonalizacionPage.jsx}, que organiza los ajustes en cuatro secciones:
+
+\begin{enumerate}
+  \item \textbf{Apariencia:} selector de modo claro/oscuro y elección de paleta de colores.
+  \item \textbf{Datos de la tienda:} nombre, URL del logo y firma de correo.
+  \item \textbf{Resumen semanal:} dirección de correo destinataria e intervalo de envío en días.
+  \item \textbf{Perfil de usuario:} enlace a la página \texttt{/perfil} para cambiar la contraseña.
+\end{enumerate}
+
+Todas las modificaciones se persisten inmediatamente mediante \texttt{PUT /api/config/\{clave\}} y el contexto \texttt{ConfigContext} se actualiza de forma optimista para reflejar el cambio en la UI sin necesidad de recargar la página.
 
 
 \subsection{Motor de analíticas y algoritmos avanzados}
@@ -1264,7 +1306,19 @@ El módulo \texttt{utils/emailer.py} implementa una estrategia dual:
   \item \textbf{Producción (Railway):} Railway bloquea las conexiones SMTP salientes. Cuando se detecta la variable \texttt{RESEND\_API\_KEY} en el entorno, el módulo cambia automáticamente al proveedor \textbf{Resend} \cite{resend}, cuya API HTTP opera sobre el puerto 443, nunca bloqueado. El cuerpo HTML del mensaje y el PDF adjunto en \textit{base64} se envían a la API de Resend mediante una petición POST.
 \end{itemize}
 
-El cuerpo del correo se renderiza a partir de la plantilla Jinja2 \texttt{templates/albaran\_email.html}, que incluye los datos del cliente, el resumen del pedido y el importe total.
+El cuerpo del correo se renderiza a partir de la plantilla Jinja2 \texttt{templates/albaran\_email.html}, que incluye los datos del cliente, el resumen del pedido y el importe total. Cuando la tabla \texttt{configuracion} tiene definida una \texttt{firma\_email}, el módulo la añade automáticamente al pie de todos los correos salientes.
+
+\paragraph{Resumen semanal generado por IA}
+El módulo \texttt{utils/resumen\_semanal.py} implementa un informe periódico de negocio enviado de forma automática al correo configurado en \texttt{resumen\_email\_destino}. El proceso se apoya en \textbf{APScheduler}~\cite{apscheduler}: en el arranque de la aplicación se registra un \texttt{BackgroundScheduler} con un \texttt{CronTrigger} que se dispara cada día a las~21:00 (zona horaria \texttt{Europe/Madrid}):
+
+\begin{enumerate}
+  \item Se consulta \texttt{resumen\_ultima\_vez} en la tabla \texttt{configuracion}; si ha pasado menos tiempo del intervalo configurado (\texttt{resumen\_intervalo\_dias}), el trabajo termina sin hacer nada.
+  \item Se obtiene de la base de datos el resumen de métricas del periodo: total de ingresos y gastos, número de albaranes por estado y los diez productos más vendidos.
+  \item Las métricas se envían a \textbf{Groq/Llama-3} con la instrucción de redactar un breve análisis del estado del negocio en lenguaje natural, destacando tendencias positivas y áreas de mejora.
+  \item El texto generado se envía por correo electrónico al destinatario configurado y se actualiza \texttt{resumen\_ultima\_vez} en la base de datos.
+\end{enumerate}
+
+Este componente integra, en un único flujo, la capa de persistencia (\S\ref{sec:alembic}), el asistente de IA (\S\ref{sec:ia}) y el sistema de correo, demostrando la composición de servicios independientes característica de la arquitectura de microservicios distribuidos~\cite{tanenbaum}.
 
 
 \subsection{Despliegue y CI/CD}
@@ -1273,7 +1327,7 @@ El cuerpo del correo se renderiza a partir de la plantilla Jinja2 \texttt{templa
 La infraestructura de despliegue aplica los tres niveles del modelo de \textbf{entrega de software continua} \cite{fowlerCI}:
 
 \begin{itemize}
-  \item \textbf{Integración continua (CI):} cada \textit{push} a la rama \texttt{main} desencadena la ejecución automática de la batería de pruebas. Martin Fowler (2006) \cite{fowlerCI} define la integración continua como la práctica en la que ``cada miembro del equipo integra su trabajo al repositorio principal al menos una vez al día, siendo verificado por un proceso de \textit{build} automatizado que detecta errores lo antes posible''. En FurniGest, este proceso está orquestado por \textbf{GitHub Actions} \cite{githubactions}.
+  \item \textbf{Integración continua (CI):} cada \textit{Pull Request} hacia la rama \texttt{main} desencadena la ejecución automática de la batería de pruebas. Martin Fowler (2006) \cite{fowlerCI} define la integración continua como la práctica en la que ``cada miembro del equipo integra su trabajo al repositorio principal al menos una vez al día, siendo verificado por un proceso de \textit{build} automatizado que detecta errores lo antes posible''. En FurniGest, este proceso está orquestado por \textbf{GitHub Actions} \cite{githubactions}. Los \textit{workflows} están configurados para dispararse únicamente en Pull Requests (y manualmente mediante \texttt{workflow\_dispatch}), evitando ejecuciones innecesarias en ramas de trabajo.
   \item \textbf{Entrega continua (\textit{Continuous Delivery}):} si todos los tests pasan, los artefactos compilados (imagen Docker del \textit{backend}, \_bundle\_ estático del \textit{frontend}) están listos para ser desplegados en cualquier momento con un único paso manual.
   \item \textbf{Despliegue continuo (\textit{Continuous Deployment}):} en FurniGest el despliegue es completamente automático, sin intervención humana. \textbf{Vercel} \cite{vercel} recibe el \textit{bundle} del \textit{frontend} (SPA estática generada por \texttt{vite build}) y lo sirve desde su CDN global. \textbf{Railway} \cite{railway} construye y arranca el contenedor Docker del \textit{backend} directamente desde GitHub, inyectando la variable \texttt{DATABASE\_URL} y gestionando la instancia PostgreSQL~16.
 \end{itemize}
@@ -1517,7 +1571,7 @@ El flujo de trabajo en \texttt{deploy.yml} es:
   \item El job \texttt{deploy-frontend} sólo se ejecuta si el \textit{quality gate} de SonarCloud pasa (\texttt{needs: [sonarcloud]}).
 \end{enumerate}
 
-Además de \texttt{deploy.yml}, existe el workflow dedicado \texttt{sonarcloud.yml} que se activa en cada \textit{push} y \textit{Pull Request} de cualquier rama, permitiendo obtener \textit{feedback} de cobertura antes de mergear a \texttt{main}. Para que el análisis basado en CI funcione correctamente, es necesario desactivar la opción \textit{Automatic Analysis} en la configuración del proyecto de SonarCloud, ya que el modo automático no soporta la importación de cobertura externa.
+Además de \texttt{deploy.yml}, existe el workflow dedicado \texttt{sonarcloud.yml} que se activa en cada \textit{Pull Request} o mediante \texttt{workflow\_dispatch}, permitiendo obtener \textit{feedback} de cobertura antes de mergear a \texttt{main}. Para que el análisis basado en CI funcione correctamente, es necesario desactivar la opción \textit{Automatic Analysis} en la configuración del proyecto de SonarCloud, ya que el modo automático no soporta la importación de cobertura externa.
 
 Tras el primer análisis de SonarCloud, se corrigieron los \textit{issues} de mayor impacto en fiabilidad:
 
@@ -1676,7 +1730,7 @@ Este capítulo presenta los módulos funcionales de FurniGest desplegados en pro
 
 \section{Módulos funcionales implementados}
 
-La aplicación desplegada en producción ofrece todos los módulos definidos en los objetivos. A continuación se describe brevemente cada pantalla principal.
+La aplicación desplegada en producción ofrece todos los módulos definidos en los objetivos, incluyendo el módulo de personalización con soporte de modo oscuro, tres paletas de colores intercambiables, configuración de la identidad de la tienda y resumen semanal automatizado generado por IA.
 
 \textbf{Dashboard.} La página de inicio muestra cuatro KPI en tarjetas (ingresos del mes, gastos del mes, pedidos activos y clientes activos), una gráfica de líneas con la evolución de la facturación en los últimos 30~días y un gráfico de tarta con la distribución de estados de los albaranes activos. Desde esta pantalla es posible navegar directamente a cualquier albarán concreto.
 
@@ -1748,9 +1802,9 @@ La Tabla~\ref{tab:metricas_calidad} resume las métricas de calidad obtenidas al
     \hline
     \textbf{Métrica} & \textbf{Valor} \\
     \hline
-    Pruebas unitarias backend (pytest)         & 96 / 96 pasadas \\
-    Pruebas unitarias frontend (Vitest)        & 97 / 97 pasadas \\
-    Pruebas E2E (Selenium)                     & $\sim$70 pasadas \\
+    Pruebas unitarias backend (pytest)         & 104 / 104 pasadas \\
+    Pruebas unitarias frontend (Vitest)        & 111 / 111 pasadas \\
+    Pruebas E2E (Selenium)                     & $\sim$62 pasadas \\
     Avisos de Ruff (Python linter)             & 0 \\
     Avisos de ESLint (JavaScript linter)       & 0 \\
     Endpoints de la API cubiertos por pruebas  & 100\,\% \\
@@ -1804,7 +1858,7 @@ Además de las métricas de calidad de código y pruebas, la interfaz de FurniGe
 
 \section{Logros alcanzados}
 
-FurniGest cumple íntegramente los doce objetivos específicos enunciados en el Capítulo~2. La aplicación está desplegada en producción, es accesible desde cualquier navegador web y ha sido validada con una batería de 157~pruebas automatizadas que se ejecutan en cada \textit{commit}.
+FurniGest cumple íntegramente los doce objetivos específicos enunciados en el Capítulo~2. La aplicación está desplegada en producción, es accesible desde cualquier navegador web y ha sido validada con una batería de 277~pruebas automatizadas que se ejecutan en cada \textit{commit}.
 
 Desde el punto de vista funcional, el sistema transforma los flujos de trabajo de la tienda en procesos digitales completos: la creación de un pedido activa simultáneamente el registro contable, la generación del PDF y el envío del correo al cliente; la entrega de los artículos liquida automáticamente el saldo pendiente; y la asignación de un camión crea el albarán de transporte y registra su coste sin intervención manual adicional.
 

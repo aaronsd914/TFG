@@ -13,6 +13,25 @@
 
 Los siguientes cambios ya han sido incorporados a memoria.tex:
 
+✅ COMPLETADO — rama: feat/alembic-migrations
+[AIS T3 / Personalización] Cap. 3 — Frontend:
+  - \subsubsection{Personalización, modo oscuro y configuración de la tienda}
+  - ThemeContext (dark mode, 3 paletas CSS var), ConfigContext (/api/config)
+  - PersonalizacionPage descrita con sus 4 secciones
+  - Router actualizado con rutas /perfil, /personalizacion, /ventas/nueva
+  - Tabla configuracion añadida al Modelo de datos (§ Tabla de configuración)
+  - Resumen semanal IA (APScheduler, CronTrigger 21:00) en Notificaciones
+  - Métricas actualizadas: 96→104 backend, 97→111 frontend, ~70→~62 E2E
+  - Logros: "157 pruebas" → "277 pruebas"
+  - CI/CD: actualizado "cada push" → "cada Pull Request"
+  - SonarCloud workflow: "push y PR" → "Pull Request o manual"
+
+✅ COMPLETADO — rama: feat/alembic-migrations
+[CI / AIS T3] GitHub Actions solo en Pull Request + workflow_dispatch:
+  - tests.yml, lint.yml, e2e.yml, sonarcloud.yml, docker.yml, deploy.yml
+  - Eliminados: push triggers, schedule cron
+  - Añadido: workflow_dispatch en los que no lo tenían
+
 [AIS T2/T5] Cap. 2 — Metodología reescrita:
   - Se menciona el Manifiesto Ágil (Beck et al., 2001) y Scrum \cite{schwaber}
   - La Fase 0 se llama ahora "Elicitación y análisis de requisitos" (IS T3)
