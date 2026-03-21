@@ -3,9 +3,10 @@
  * Tests de renderizado e interacción para la página de perfil de usuario.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import PerfilPage from '../../frontend/src/components/PerfilPage.jsx';
+import { apiFetch } from '../../frontend/src/api/http.js';
 
 // Mock del módulo de auth para controlar getToken
 vi.mock('../../frontend/src/api/auth.js', () => ({
@@ -103,5 +104,88 @@ describe('PerfilPage', () => {
     // El try/catch del componente maneja tokens inválidos sin lanzar error
     renderPage();
     expect(document.body).toBeTruthy();
+  });
+});
+
+describe('PerfilPage — Formularios', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('envía el formulario de cambio de usuario y llama a la API', async () => {
+    renderPage();
+    const forms = document.querySelectorAll('form');
+    const usernameForm = forms[0];
+    const inputs = usernameForm.querySelectorAll('input');
+
+    await act(async () => {
+      fireEvent.change(inputs[0], { target: { value: 'mipassword' } });
+      fireEvent.change(inputs[1], { target: { value: 'nuevonombre' } });
+      fireEvent.submit(usernameForm);
+    });
+
+    await waitFor(() => {
+      expect(apiFetch).toHaveBeenCalledWith(
+        'auth/me',
+        expect.objectContaining({ method: 'PUT' }),
+      );
+    });
+  });
+
+  it('envía el formulario de cambio de contraseña exitosamente', async () => {
+    renderPage();
+    const forms = document.querySelectorAll('form');
+    const pwForm = forms[1];
+    const inputs = pwForm.querySelectorAll('input');
+
+    await act(async () => {
+      fireEvent.change(inputs[0], { target: { value: 'actual123' } });
+      fireEvent.change(inputs[1], { target: { value: 'nueva12345' } });
+      fireEvent.change(inputs[2], { target: { value: 'nueva12345' } });
+      fireEvent.submit(pwForm);
+    });
+
+    await waitFor(() => {
+      expect(apiFetch).toHaveBeenCalledWith(
+        'auth/me',
+        expect.objectContaining({ method: 'PUT' }),
+      );
+    });
+  });
+
+  it('muestra error cuando las contraseñas nueva y confirmación no coinciden', async () => {
+    renderPage();
+    const forms = document.querySelectorAll('form');
+    const pwForm = forms[1];
+    const inputs = pwForm.querySelectorAll('input');
+
+    fireEvent.change(inputs[0], { target: { value: 'actual' } });
+    fireEvent.change(inputs[1], { target: { value: 'nueva12345' } });
+    fireEvent.change(inputs[2], { target: { value: 'diferente' } });
+    fireEvent.submit(pwForm);
+
+    await waitFor(() => {
+      expect(screen.getByText(/contraseñas nuevas no coinciden/i)).toBeInTheDocument();
+    });
+    expect(apiFetch).not.toHaveBeenCalled();
+  });
+
+  it('muestra error cuando la API falla en cambio de contraseña', async () => {
+    apiFetch.mockRejectedValueOnce(new Error('Error del servidor'));
+    renderPage();
+    const forms = document.querySelectorAll('form');
+    const pwForm = forms[1];
+    const inputs = pwForm.querySelectorAll('input');
+
+    await act(async () => {
+      fireEvent.change(inputs[0], { target: { value: 'actual' } });
+      fireEvent.change(inputs[1], { target: { value: 'nueva12345' } });
+      fireEvent.change(inputs[2], { target: { value: 'nueva12345' } });
+      fireEvent.submit(pwForm);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/error del servidor/i)).toBeInTheDocument();
+    });
   });
 });

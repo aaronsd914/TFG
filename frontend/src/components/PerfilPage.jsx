@@ -19,7 +19,7 @@ export default function PerfilPage() {
 
   // ── Change username ────────────────────────────────────────────────────────
   const [uForm, setUForm] = useState({ current_password: '', new_username: '' });
-  const [uStatus, setUStatus] = useState(null); // { ok, msg }
+  const [uStatus, setUStatus] = useState(null);
   const [uLoading, setULoading] = useState(false);
 
   async function handleUsernameSubmit(e) {

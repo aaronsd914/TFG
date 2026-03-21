@@ -132,7 +132,7 @@
 | 12 | **Stripe payment collection** | Generate a Stripe Checkout Session for any amount, redirect the customer, and confirm the payment server-side. Confirmed payments are automatically recorded as income movements. |
 | 13 | **PDF generation** | ReportLab-powered PDF exports: delivery note, route invoice and analytics trends report. |
 | 14 | **Personalisation & dark mode** | Full theming system: 3 colour palettes selectable at runtime, dark / light mode toggle (persisted in `localStorage`), store name and logo configurable from the UI. |
-| 15 | **Weekly AI business summary** | APScheduler `BackgroundScheduler` fires every day at 22:00 (Europe/Madrid). When the configured interval has elapsed, it calls Groq/Llama-3 with a live snapshot of the business metrics and emails the summary to a configurable address. |
+| 15 | **Weekly AI business summary** | APScheduler `BackgroundScheduler` fires every day at 22:30 (Europe/Madrid). When the configured interval has elapsed, it calls Groq/Llama-3 with a live snapshot of the business metrics and emails the summary to a configurable address. |
 | 16 | **User profile & store settings** | `GET/PUT /api/auth/me` — update own password. `GET/PUT /api/config` — read and write the key-value `configuracion` table (store name, logo URL, email signature, weekly summary recipient and interval). |
 
 ---
@@ -1276,9 +1276,11 @@ pytest test/backend/ --cov=backend/app --cov-report=term-missing
 | `test_transportes.py` | 13 | Almacén listing, route CRUD, assign/unassign, liquidate |
 | `test_stripe.py` | 10 | Checkout, confirm, list — all Stripe calls mocked |
 | `test_bank.py` | 3 | Debug info, status (no token), link (mocked HTTP) |
-| `test_auth.py` | 8 | Login OK/fail, `/api/auth/me` GET/PUT, protected endpoint, expired/tampered token |
+| `test_auth.py` | 13 | Login OK/fail, `/api/auth/me` GET, all PUT /me branches (password OK, wrong password, username OK, conflict 409, too-short 422), protected endpoint, expired/tampered token |
 | `test_configuracion.py` | 12 | GET defaults, GET/PUT round-trip, unknown key 400, overwrite, `ultima_vez` timestamp |
-| **Total** | **116** | |
+| `test_emailer.py` | 7 | `_html_to_text` (empty, strip tags, strip script, entities), `send_email_simple` (SMTP path, Resend path, captures recipient) |
+| `test_resumen_semanal.py` | 22 | `_get`/`_set` round-trips, `_eur` formatting, `_build_html` with/without insight + red balance, `_run` skip conditions + execution + Groq error handling + `ultima_vez` update, `job_resumen_semanal` exception capture |
+| **Total** | **150** | |
 
 > Tests exercise both the original router layer and the new `services/` layer — the service functions are called through the same HTTP endpoints, so the existing test suite validates both layers without requiring new test files.
 
@@ -1305,7 +1307,7 @@ npm run test:watch  # watch mode
 
 | File | Tests | Coverage area |
 |------|-------|---------------|
-| `Sidebar.test.jsx` | 7 | App name, all nav links present, correct `href` values, active/inactive CSS class tokens |
+| `Sidebar.test.jsx` | 9 | App name, all nav links present, correct `href` values, active/inactive CSS class tokens, logout button, logout calls `removeToken` and redirects |
 | `App.test.jsx` | 5 | Root renders, title present, layout classes, `<main>` and `<aside>` in DOM |
 | `Dashboard.test.jsx` | 4 | Mounts without error, `fetch` called on mount, empty-data grace, network-error resilience |
 | `AlbaranesPage.test.jsx` | 5 | Mounts without error, API called on mount, page heading, no visible errors, network-error resilience |
@@ -1313,15 +1315,16 @@ npm run test:watch  # watch mode
 | `ClientesPage.test.jsx` | 6 | Mounts without error, API called on mount, `<h1>` heading, search input present, empty-list grace, network-error resilience |
 | `MovimientosPage.test.jsx` | 6 | Mounts without error, API called on mount, page heading, monthly summary cards (ingresos/egresos/balance), quick-add form, network-error resilience |
 | `NuevaVenta.test.jsx` | 5 | Mounts without error, "Nueva venta" heading, customer search mode present, checkbox controls, network-error resilience |
-| `ProductosPage.test.jsx` | 5 | Mounts without error, both API calls (productos + proveedores) on mount, `<h1>` heading, no visible errors, network-error resilience |
+| `ProductosPage.test.jsx` | 6 | Mounts without error, both API calls (productos + proveedores) on mount, `<h1>` heading, "Nuevo producto" button in header, no visible errors, network-error resilience |
 | `Tendencias.test.jsx` | 6 | Mounts without error, API called on mount, page heading, "Asistente IA" section present, chat welcome message, network-error resilience |
 | `TransportePage.test.jsx` | 6 | Mounts without error, all three initial API calls (almacén/rutas/clientes), page heading, trucks column, network-error resilience |
 | `LoginPage.test.jsx` | 12 | Form renders, type in fields, toggle password visibility, login OK/fail, redirect, error message |
 | `auth.test.js` | 13 | `saveToken`, `getToken`, `removeToken`, `isTokenValid` (expired/tampered/valid/Base64url), `login` fetch call |
 | `fetchInterceptor.test.js` | 9 | Auth header injection, skips external URLs, 401 → `removeToken` + redirect, preserves existing headers |
-| `PersonalizacionPage.test.jsx` | 14 | Renders sections, dark mode toggle, palettes, username/password fields, save buttons, email signature |
-| `PerfilPage.test.jsx` | 13 | Renders sections, JWT username decode, password fields, submit buttons, mismatched-password validation |
-| **Total** | **122** | |
+| `PersonalizacionPage.test.jsx` | 19 | Renders sections, dark mode toggle, palettes, username/password fields, save buttons, email signature, form submissions (password, username, email config), mismatch validation, API error handling |
+| `PerfilPage.test.jsx` | 17 | Renders sections, JWT username decode, password fields, submit buttons, mismatched-password validation, form submissions (username, password), API error handling |
+| `ThemeContext.test.jsx` | 11 | Default values (isDark, palette), `localStorage` read on init, `setIsDark` updates value + DOM class + persists, `setPalette` updates value + `dataset.palette` + persists |
+| **Total** | **144** | |
 
 **Key isolation strategies:**
 
@@ -1359,7 +1362,7 @@ A coverage XML report is uploaded as a build artifact after every backend run.
 | `actions/setup-python@v5` | Installs Python 3.12 with pip cache |
 | `pip install -r requirements.txt` | Installs all backend dependencies |
 | **Create dummy config files** | Generates placeholder `.py` config files (see below) |
-| `pytest --cov` | Runs the 116-test suite and produces a coverage XML report |
+| `pytest --cov` | Runs the 150-test suite and produces a coverage XML report |
 | `actions/upload-artifact@v4` | Saves `coverage-backend.xml` as a downloadable artifact |
 
 ###### Why dummy config files are needed in CI

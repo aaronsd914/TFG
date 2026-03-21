@@ -166,3 +166,69 @@ def test_usuario_inactivo_devuelve_401(raw_client, usuario_inactivo):
     token = create_access_token({"sub": "inactivo", "role": "vendedor"})
     r = raw_client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
     assert r.status_code == 401
+
+
+# ── Tests PUT /api/auth/me ────────────────────────────────────────────────────
+def test_put_me_cambia_contrasena(raw_client, usuario_admin):
+    """PUT /me con contraseña actual correcta y nueva contraseña actualiza el hash."""
+    token = create_access_token({"sub": "admin_test", "role": "admin"})
+    r = raw_client.put(
+        "/api/auth/me",
+        json={"current_password": "secreto123", "new_password": "nueva_password_ok"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 200
+    assert r.json()["username"] == "admin_test"
+
+
+def test_put_me_contrasena_actual_incorrecta(raw_client, usuario_admin):
+    """PUT /me con contraseña incorrecta devuelve 400."""
+    token = create_access_token({"sub": "admin_test", "role": "admin"})
+    r = raw_client.put(
+        "/api/auth/me",
+        json={"current_password": "mala_pass"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 400
+
+
+def test_put_me_cambia_username(raw_client, usuario_admin):
+    """PUT /me con nuevo username disponible lo actualiza correctamente."""
+    token = create_access_token({"sub": "admin_test", "role": "admin"})
+    r = raw_client.put(
+        "/api/auth/me",
+        json={"current_password": "secreto123", "new_username": "admin_nuevo"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 200
+    assert r.json()["username"] == "admin_nuevo"
+
+
+def test_put_me_username_en_uso_devuelve_409(raw_client, usuario_admin, db_session):
+    """PUT /me con username ya existente devuelve 409 Conflict."""
+    otro = UsuarioDB(
+        username="otro_usuario",
+        hashed_password=pwd_context.hash("pass"),
+        role="admin",
+        is_active=True,
+    )
+    db_session.add(otro)
+    db_session.commit()
+    token = create_access_token({"sub": "admin_test", "role": "admin"})
+    r = raw_client.put(
+        "/api/auth/me",
+        json={"current_password": "secreto123", "new_username": "otro_usuario"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 409
+
+
+def test_put_me_contrasena_muy_corta_devuelve_422(raw_client, usuario_admin):
+    """PUT /me con nueva contraseña < 8 caracteres devuelve 422."""
+    token = create_access_token({"sub": "admin_test", "role": "admin"})
+    r = raw_client.put(
+        "/api/auth/me",
+        json={"current_password": "secreto123", "new_password": "corta"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 422

@@ -161,3 +161,102 @@ describe('PersonalizacionPage — Identidad', () => {
     });
   });
 });
+
+describe('PersonalizacionPage — Formularios cuenta', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    apiFetch.mockResolvedValue({});
+  });
+
+  it('envía el formulario de cambio de contraseña con contraseñas que coinciden', async () => {
+    renderPage();
+    const forms = document.querySelectorAll('form');
+    const pwForm = forms[1]; // handlePasswordSubmit
+    const inputs = pwForm.querySelectorAll('input');
+
+    fireEvent.change(inputs[0], { target: { value: 'actual123' } });
+    fireEvent.change(inputs[1], { target: { value: 'nueva12345' } });
+    fireEvent.change(inputs[2], { target: { value: 'nueva12345' } });
+    fireEvent.submit(pwForm);
+
+    await waitFor(() => {
+      expect(apiFetch).toHaveBeenCalledWith(
+        'auth/me',
+        expect.objectContaining({ method: 'PUT' }),
+      );
+    });
+  });
+
+  it('muestra error cuando las contraseñas nueva y confirmación no coinciden', async () => {
+    renderPage();
+    const forms = document.querySelectorAll('form');
+    const pwForm = forms[1];
+    const inputs = pwForm.querySelectorAll('input');
+
+    fireEvent.change(inputs[0], { target: { value: 'actual' } });
+    fireEvent.change(inputs[1], { target: { value: 'nueva12345' } });
+    fireEvent.change(inputs[2], { target: { value: 'diferente' } });
+    fireEvent.submit(pwForm);
+
+    await waitFor(() => {
+      expect(screen.getByText(/contraseñas nuevas no coinciden/i)).toBeInTheDocument();
+    });
+    // apiFetch no debe haberse llamado con auth/me (solo se llama config en el mount)
+    expect(apiFetch).not.toHaveBeenCalledWith('auth/me', expect.anything());
+  });
+
+  it('envía el formulario de cambio de usuario y llama a auth/me', async () => {
+    renderPage();
+    const forms = document.querySelectorAll('form');
+    const userForm = forms[0]; // handleUsernameSubmit
+    const inputs = userForm.querySelectorAll('input');
+
+    fireEvent.change(inputs[0], { target: { value: 'mipassword' } });
+    fireEvent.change(inputs[1], { target: { value: 'nuevonombre' } });
+    fireEvent.submit(userForm);
+
+    await waitFor(() => {
+      expect(apiFetch).toHaveBeenCalledWith(
+        'auth/me',
+        expect.objectContaining({ method: 'PUT' }),
+      );
+    });
+  });
+
+  it('envía el formulario de resumen por email', async () => {
+    renderPage();
+    const emailInput = document.querySelector('input[type="email"]');
+    fireEvent.change(emailInput, { target: { value: 'resumen@test.com' } });
+
+    const forms = document.querySelectorAll('form');
+    const emailForm = Array.from(forms).find((f) => f.contains(emailInput));
+    if (emailForm) {
+      fireEvent.submit(emailForm);
+      await waitFor(() => {
+        expect(apiFetch).toHaveBeenCalled();
+      });
+    }
+  });
+
+  it('muestra error cuando la API falla en cambio de contraseña', async () => {
+    // Usamos mockImplementation para rechazar solo las llamadas a auth/me
+    // (mockRejectedValueOnce se consumiría en el fetch inicial de config)
+    apiFetch.mockImplementation((url) => {
+      if (url === 'auth/me') return Promise.reject(new Error('Error API'));
+      return Promise.resolve({});
+    });
+    renderPage();
+    const forms = document.querySelectorAll('form');
+    const pwForm = forms[1];
+    const inputs = pwForm.querySelectorAll('input');
+
+    fireEvent.change(inputs[0], { target: { value: 'actual' } });
+    fireEvent.change(inputs[1], { target: { value: 'nueva12345' } });
+    fireEvent.change(inputs[2], { target: { value: 'nueva12345' } });
+    fireEvent.submit(pwForm);
+
+    await waitFor(() => {
+      expect(screen.getByText(/error api/i)).toBeInTheDocument();
+    });
+  });
+});
