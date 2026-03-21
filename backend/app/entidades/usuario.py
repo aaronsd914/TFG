@@ -30,3 +30,9 @@ class UsuarioCreate(BaseModel):
     username: str
     password: str
     role: str = "vendedor"
+
+
+class UpdateMe(BaseModel):
+    current_password: str
+    new_username: str | None = None
+    new_password: str | None = None

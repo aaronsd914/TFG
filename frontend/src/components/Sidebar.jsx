@@ -20,6 +20,7 @@ export default function Sidebar({ open, setOpen }) {
     { icon: '🧰', label: 'Productos', to: '/productos' },
     { icon: '🏦', label: 'Banco', to: '/banco' },
     { icon: '📊', label: 'Tendencias', to: '/tendencias' },
+    { icon: '⚙️', label: 'Mi perfil', to: '/perfil' },
   ];
 
   return (

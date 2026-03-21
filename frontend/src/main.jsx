@@ -14,6 +14,7 @@ import ProductosPage from './components/ProductosPage.jsx';
 import BancoPage from './components/BancoPage.jsx';
 import TransportePage from './components/TransportePage.jsx';
 import MovimientosPage from './components/MovimientosPage.jsx';
+import PerfilPage from './components/PerfilPage.jsx';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import './api/fetchInterceptor.js';
 import './index.css';
@@ -36,6 +37,7 @@ const router = createBrowserRouter([
       { path: 'tendencias', element: <Tendencias /> },
       { path: 'productos', element: <ProductosPage /> },
       { path: 'banco', element: <BancoPage /> },
+      { path: 'perfil', element: <PerfilPage /> },
     ],
   },
 ]);

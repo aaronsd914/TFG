@@ -28,7 +28,6 @@ export default function Dashboard() {
   const [almacen, setAlmacen] = useState([]);
   const [_ruta, setRuta] = useState([]); // se mantiene para métricas/estados, aunque no se muestre sección
   const [clientes, setClientes] = useState([]);
-  const [productos, setProductos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
   // UI
@@ -49,13 +48,12 @@ export default function Dashboard() {
 
       setErr(null);
 
-      const [rMovs, rAlbs, rAlmacen, rRuta, rClientes, rProductos] = await Promise.all([
+      const [rMovs, rAlbs, rAlmacen, rRuta, rClientes] = await Promise.all([
         fetch(`${API_URL}movimientos/get`),
         fetch(`${API_URL}albaranes/get`),
         fetch(`${API_URL}transporte/almacen`),
         fetch(`${API_URL}transporte/ruta`),
         fetch(`${API_URL}clientes/get`),
-        fetch(`${API_URL}productos/get`),
       ]);
 
       if (!rMovs.ok) throw new Error(`Movimientos HTTP ${rMovs.status}`);
@@ -64,14 +62,12 @@ export default function Dashboard() {
 
       const almacenData = rAlmacen.ok ? await rAlmacen.json() : [];
       const rutaData = rRuta.ok ? await rRuta.json() : [];
-      const productosData = rProductos.ok ? await rProductos.json() : [];
 
       setMovs(await rMovs.json());
       setAlbaranes(await rAlbs.json());
       setAlmacen(Array.isArray(almacenData) ? almacenData : []);
       setRuta(Array.isArray(rutaData) ? rutaData : []);
       setClientes(await rClientes.json());
-      setProductos(Array.isArray(productosData) ? productosData : []);
       setLastUpdated(new Date());
     } catch (e) {
       setErr(e?.message || 'Error desconocido');
@@ -314,64 +310,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Bento Grid */}
-      {!loading && !err && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <Link
-            to="/clientes"
-            className="group bg-white border border-gray-200 rounded-2xl p-5 flex flex-col gap-3 hover:border-gray-400 hover:shadow-md transition-all duration-200"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Clientes</span>
-              <span className="text-lg">👥</span>
-            </div>
-            <div className="text-4xl font-bold tabular-nums text-gray-900">{clientes.length}</div>
-            <div className="text-sm text-gray-500 mt-auto">registrados en total</div>
-            <div className="text-xs text-gray-400 group-hover:text-gray-600 transition-colors">Ver clientes →</div>
-          </Link>
 
-          <Link
-            to="/albaranes"
-            className="group bg-white border border-gray-200 rounded-2xl p-5 flex flex-col gap-3 hover:border-gray-400 hover:shadow-md transition-all duration-200"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Albaranes</span>
-              <span className="text-lg">📄</span>
-            </div>
-            <div className="text-4xl font-bold tabular-nums text-gray-900">{albaranes.length}</div>
-            <div className="text-sm text-gray-500 mt-auto">
-              {albaranes.filter(a => a.estado === 'FIANZA').length} pendientes de pago
-            </div>
-            <div className="text-xs text-gray-400 group-hover:text-gray-600 transition-colors">Ver albaranes →</div>
-          </Link>
-
-          <Link
-            to="/productos"
-            className="group bg-white border border-gray-200 rounded-2xl p-5 flex flex-col gap-3 hover:border-gray-400 hover:shadow-md transition-all duration-200"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Productos</span>
-              <span className="text-lg">📦</span>
-            </div>
-            <div className="text-4xl font-bold tabular-nums text-gray-900">{productos.length}</div>
-            <div className="text-sm text-gray-500 mt-auto">en catálogo</div>
-            <div className="text-xs text-gray-400 group-hover:text-gray-600 transition-colors">Ver productos →</div>
-          </Link>
-
-          <Link
-            to="/transporte"
-            className="group bg-white border border-gray-200 rounded-2xl p-5 flex flex-col gap-3 hover:border-gray-400 hover:shadow-md transition-all duration-200"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Transporte</span>
-              <span className="text-lg">🚚</span>
-            </div>
-            <div className="text-4xl font-bold tabular-nums text-gray-900">{almacen.length}</div>
-            <div className="text-sm text-gray-500 mt-auto">pedidos en almacén</div>
-            <div className="text-xs text-gray-400 group-hover:text-gray-600 transition-colors">Organizar rutas →</div>
-          </Link>
-        </div>
-      )}
 
       {/* Gráficas */}
       {!err && (
