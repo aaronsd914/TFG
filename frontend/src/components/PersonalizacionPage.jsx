@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { apiFetch } from '../api/http.js';
 import { getToken, removeToken } from '../api/auth.js';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext.jsx';
 import { useAppConfig } from '../context/ConfigContext.jsx';
 
-// ─── small helpers ────────────────────────────────────────────────────────────
 function Section({ title, children }) {
   return (
     <section className="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col gap-4">
@@ -14,6 +14,10 @@ function Section({ title, children }) {
     </section>
   );
 }
+Section.propTypes = {
+  title: PropTypes.string.isRequired,
+  children: PropTypes.node.isRequired,
+};
 
 function Field({ label, type = 'text', value, onChange, required, minLength, placeholder }) {
   return (
@@ -31,6 +35,15 @@ function Field({ label, type = 'text', value, onChange, required, minLength, pla
     </div>
   );
 }
+Field.propTypes = {
+  label: PropTypes.string.isRequired,
+  type: PropTypes.string,
+  value: PropTypes.string.isRequired,
+  onChange: PropTypes.func.isRequired,
+  required: PropTypes.bool,
+  minLength: PropTypes.number,
+  placeholder: PropTypes.string,
+};
 
 function Alert({ ok, msg }) {
   if (!msg) return null;
@@ -42,6 +55,10 @@ function Alert({ ok, msg }) {
     </div>
   );
 }
+Alert.propTypes = {
+  ok: PropTypes.bool,
+  msg: PropTypes.string,
+};
 
 function SaveBtn({ loading, label = 'Guardar' }) {
   return (
@@ -54,6 +71,10 @@ function SaveBtn({ loading, label = 'Guardar' }) {
     </button>
   );
 }
+SaveBtn.propTypes = {
+  loading: PropTypes.bool.isRequired,
+  label: PropTypes.string,
+};
 
 // ─── Palettes ─────────────────────────────────────────────────────────────────
 const PALETTES = [

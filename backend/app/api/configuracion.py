@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import Any
+from typing import Annotated, Any
 
 from backend.app.database import get_db
 from backend.app.entidades.configuracion import ConfiguracionDB, ConfiguracionItem
@@ -37,7 +37,7 @@ def set_value(db: Session, key: str, value: str) -> None:
 
 
 @router.get("")
-def read_config(db: Session = Depends(get_db)) -> dict[str, Any]:
+def read_config(db: Annotated[Session, Depends(get_db)]) -> dict[str, Any]:
     rows = db.query(ConfiguracionDB).all()
     result = dict(DEFAULTS)
     for r in rows:
@@ -45,8 +45,14 @@ def read_config(db: Session = Depends(get_db)) -> dict[str, Any]:
     return result
 
 
-@router.put("/{key}", response_model=ConfiguracionItem)
-def write_config(key: str, item: ConfiguracionItem, db: Session = Depends(get_db)):
+@router.put(
+    "/{key}",
+    response_model=ConfiguracionItem,
+    responses={400: {"description": "Clave desconocida"}},
+)
+def write_config(
+    key: str, item: ConfiguracionItem, db: Annotated[Session, Depends(get_db)]
+):
     if key not in DEFAULTS:
         raise HTTPException(status_code=400, detail=f"Clave desconocida: {key}")
     set_value(db, key, item.value or "")

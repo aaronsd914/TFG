@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import PropTypes from 'prop-types';
 import { apiFetch } from '../api/http.js';
 
 const DEFAULTS = {
@@ -40,6 +41,10 @@ export function ConfigProvider({ children }) {
     </ConfigContext.Provider>
   );
 }
+
+ConfigProvider.propTypes = {
+  children: PropTypes.node.isRequired,
+};
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function useAppConfig() {

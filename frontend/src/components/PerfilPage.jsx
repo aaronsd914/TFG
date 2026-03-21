@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 import { apiFetch } from '../api/http.js';
 import { getToken, removeToken } from '../api/auth.js';
 import { useNavigate } from 'react-router-dom';
@@ -9,7 +10,7 @@ export default function PerfilPage() {
   // Decode current username from JWT
   const currentUsername = (() => {
     try {
-      const b64 = getToken().split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      const b64 = getToken().split('.')[1].replaceAll('-', '+').replaceAll('_', '/');
       return JSON.parse(atob(b64)).sub ?? '';
     } catch {
       return '';
@@ -181,6 +182,14 @@ function Field({ label, type, value, onChange, required, minLength }) {
     </div>
   );
 }
+Field.propTypes = {
+  label: PropTypes.string.isRequired,
+  type: PropTypes.string,
+  value: PropTypes.string.isRequired,
+  onChange: PropTypes.func.isRequired,
+  required: PropTypes.bool,
+  minLength: PropTypes.number,
+};
 
 function Alert({ ok, msg }) {
   return (
@@ -189,3 +198,7 @@ function Alert({ ok, msg }) {
     </div>
   );
 }
+Alert.propTypes = {
+  ok: PropTypes.bool,
+  msg: PropTypes.string,
+};
