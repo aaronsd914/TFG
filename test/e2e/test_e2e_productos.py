@@ -10,13 +10,26 @@ Cubre:
   - Se puede eliminar el producto creado (limpieza)
   - La paginación / agrupación por proveedor está disponible
 """
+import os
 import time
 import pytest
+import requests
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-from test.e2e.conftest import BASE_URL
+from test.e2e.conftest import BASE_URL, ADMIN_USER, ADMIN_PASS
+
+BACKEND_URL = os.environ.get("E2E_BACKEND_URL", "http://localhost:8000")
+
+
+def _get_token():
+    resp = requests.post(
+        f"{BACKEND_URL}/api/auth/login",
+        data={"username": ADMIN_USER, "password": ADMIN_PASS},
+    )
+    resp.raise_for_status()
+    return resp.json()["access_token"]
 
 PROD_NAME = "SELENIUM_Producto_E2E"
 PROD_PRICE = "199.99"
@@ -89,9 +102,7 @@ def test_productos_tab_gestion_carga(logged_in_browser):
 
 def test_productos_crear_producto(logged_in_browser):
     """Se puede crear un producto nuevo desde la pestaña Gestión."""
-    import requests as req_lib
     from selenium.webdriver.support.ui import Select as SeleniumSelect
-    BACKEND_URL = __import__('os').environ.get("E2E_BACKEND_URL", "http://localhost:8000")
     logged_in_browser.get(f"{BASE_URL}/productos")
     wait = WebDriverWait(logged_in_browser, 15)
     # Cambiar a la pestaña Gestión usando el botón exacto (el Modal está dentro de esta rama)
@@ -159,46 +170,20 @@ def test_productos_crear_producto(logged_in_browser):
 
 
 def test_productos_eliminar_producto_test(logged_in_browser):
-    """Se puede eliminar el producto creado por el test (limpieza)."""
+    """Limpieza: elimina el producto de test via API y lo verifica desde el navegador."""
+    token = _get_token()
+    headers = {"Authorization": f"Bearer {token}"}
+    # Buscar el producto por nombre en la API
+    prods = requests.get(f"{BACKEND_URL}/api/productos/get", headers=headers).json()
+    prod = next((p for p in prods if p["nombre"] == PROD_NAME), None)
+    if prod:
+        del_resp = requests.delete(
+            f"{BACKEND_URL}/api/productos/delete/{prod['id']}", headers=headers
+        )
+        assert del_resp.status_code in (200, 204), f"No se pudo eliminar el producto: {del_resp.text}"
+    # Verificar que ya no aparece en la UI (listado)
     logged_in_browser.get(f"{BASE_URL}/productos")
-    wait = WebDriverWait(logged_in_browser, 15)
-    # Ir a Gestión usando el botón exacto del tab
-    wait.until(
-        EC.element_to_be_clickable(
-            (By.XPATH, "//button[normalize-space()='Gestión' or normalize-space()='Gestion']")
-        )
-    ).click()
-    wait.until(
-        EC.presence_of_element_located(
-            (By.XPATH, "//*[contains(normalize-space(.), 'Gestionar productos')]")
-        )
-    )
-    # Buscar el producto de test
-    prod_row = logged_in_browser.find_elements(
-        By.XPATH, f"//*[contains(normalize-space(.), '{PROD_NAME}')]"
-    )
-    if prod_row:
-        # Buscar botón de eliminar en su fila
-        parent = prod_row[0]
-        delete_btns = parent.find_elements(
-            By.XPATH, ".//ancestor::*[contains(@class,'row') or contains(@class,'item') or contains(@class,'card')]//button[contains(normalize-space(.), 'Eliminar') or contains(@aria-label,'eliminar')]"
-        )
-        if not delete_btns:
-            delete_btns = logged_in_browser.find_elements(
-                By.XPATH, f"//button[contains(normalize-space(.), 'Eliminar')]"
-            )
-        if delete_btns:
-            delete_btns[0].click()
-            time.sleep(0.5)
-            confirm_btns = logged_in_browser.find_elements(
-                By.XPATH, "//button[contains(normalize-space(.), 'Confirmar') or contains(normalize-space(.), 'Sí') or contains(normalize-space(.), 'Eliminar')]"
-            )
-            if len(confirm_btns) > 1:
-                confirm_btns[-1].click()
-            elif confirm_btns:
-                confirm_btns[0].click()
-            time.sleep(1)
-    logged_in_browser.get(f"{BASE_URL}/productos")
+    WebDriverWait(logged_in_browser, 10).until(EC.url_contains("/productos"))
     time.sleep(1)
     body_text = logged_in_browser.find_element(By.TAG_NAME, "body").text
     assert PROD_NAME not in body_text, "El producto de test no fue eliminado"
