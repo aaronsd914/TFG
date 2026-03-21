@@ -8,6 +8,10 @@
 | **Tutor** | Nicolás Hernán Rodríguez Uribe |
 | **Academic year** | 2025 / 2026 |
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=aaronsd914_TFG&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=aaronsd914_TFG)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=aaronsd914_TFG&metric=coverage)](https://sonarcloud.io/summary/new_code?id=aaronsd914_TFG)
+[![Tests](https://github.com/aaronsd914/TFG/actions/workflows/tests.yml/badge.svg)](https://github.com/aaronsd914/TFG/actions/workflows/tests.yml)
+
 ---
 
 ## Table of Contents
