@@ -1545,6 +1545,86 @@ El frontal React incluye una pantalla de inicio de sesión (\ texttt{LoginPage.j
 
 
 % ==============================================================
+% PRUEBAS E2E CON SELENIUM
+% ==============================================================
+\subsection{Pruebas de extremo a extremo con Selenium}
+\label{sec:e2e}
+
+Las pruebas unitarias e de integración descritas en las secciones anteriores verifican el comportamiento de funciones aisladas y módulos completos, pero no comprueban si el flujo \textbf{completo} —usuario, navegador, frontend, backend, base de datos— funciona correctamente como un sistema integrado. Este nivel superior corresponde a las \textbf{pruebas de extremo a extremo (E2E)} definidas en la cúspide de la pirámide de pruebas de Cohn~\cite{cohn}.
+
+FurniGest implementa pruebas E2E con \textbf{Selenium~4} \cite{selenium}, la biblioteca de referencia para automatización de navegadores, utilizando la API Python del WebDriver con Chrome en modo \textit{headless}. A partir de Selenium~4.6, el componente \textbf{Selenium Manager} descarga automáticamente el ChromeDriver compatible con la versión de Chrome instalada, eliminando la dependencia de gestores externos.
+
+\subsubsection*{Estructura de los tests E2E}
+
+Los tests se encuentran en \texttt{test/e2e/} e incluyen diez módulos de test, uno por cada sección funcional de la aplicación:
+
+\begin{table}[H]
+  \centering
+  \begin{footnotesize}
+  \begin{tabular}{ll}
+    \hline
+    \textbf{Módulo} & \textbf{Nº de tests} \\
+    \hline
+    \texttt{test\_e2e\_login.py}       & 11 \\
+    \texttt{test\_e2e\_dashboard.py}   & 8 \\
+    \texttt{test\_e2e\_clientes.py}    & 7 \\
+    \texttt{test\_e2e\_productos.py}   & 7 \\
+    \texttt{test\_e2e\_movimientos.py} & 6 \\
+    \texttt{test\_e2e\_albaranes.py}   & 6 \\
+    \texttt{test\_e2e\_nueva\_venta.py} & 8 \\
+    \texttt{test\_e2e\_transporte.py}  & 6 \\
+    \texttt{test\_e2e\_tendencias.py}  & 6 \\
+    \texttt{test\_e2e\_banco.py}       & 5 \\
+    \hline
+    \textbf{Total}                     & \textbf{$\sim$70} \\
+    \hline
+  \end{tabular}
+  \end{footnotesize}
+  \caption{Distribución de tests E2E por módulo funcional.}
+\end{table}
+
+\subsubsection*{Flujos cubiertos}
+
+Las pruebas E2E cubren los siguientes escenarios:
+
+\begin{itemize}
+  \item \textbf{Autenticación:} renderizado del formulario de login, campo \textit{show/hide} de contraseña, credenciales incorrectas, login correcto, protección de todas las rutas (redirección a \texttt{/login} sin token) y cierre de sesión.
+  \item \textbf{Dashboard:} carga después del login, presencia de tarjetas KPI, gráficos (canvas), barra lateral completa y navegación a otras páginas.
+  \item \textbf{CRUD de clientes:} listado con datos del \textit{seed}, buscador, apertura del modal de detalle, creación de un cliente nuevo, verificación en la lista y eliminación (limpieza).
+  \item \textbf{CRUD de productos:} pestaña Listado, pestaña Gestión, creación de un producto de prueba y eliminación.
+  \item \textbf{Movimientos:} resumen mensual, botón de añadir, creación de movimientos INGRESO y EGRESO, panel de filtros.
+  \item \textbf{Albaranes:} lista con datos del \textit{seed}, buscador, filtros de estado, apertura del modal de detalle y acceso al botón de exportación PDF.
+  \item \textbf{Nueva Venta:} secciones de cliente y productos, toggle nuevo cliente, campos del formulario, sección de fianza y botón de envío.
+  \item \textbf{Transporte:} pestañas Almacén / En ruta / Camiones, buscador y sección de gestión de camiones.
+  \item \textbf{Tendencias:} selector de fechas, gráficos, estadísticas de resumen, exportación PDF y apertura del chat con IA.
+  \item \textbf{Banco:} estado de la integración Stripe, formulario de checkout y sección de sesiones recientes.
+\end{itemize}
+
+\subsubsection*{Infraestructura del \textit{conftest}}
+
+El fichero \texttt{test/e2e/conftest.py} proporciona:
+
+\begin{itemize}
+  \item \texttt{browser}: \textit{fixture} de alcance de sesión que crea y destruye el WebDriver Chrome una sola vez.
+  \item \texttt{logged\_in\_browser}: \textit{fixture} derivado que realiza el login con \texttt{admin/admin123} antes del primer test.
+  \item Hook \texttt{pytest\_runtest\_makereport}: captura automáticamente una pantalla (\textit{screenshot}) al fracasar cualquier test, guardada en \texttt{test/e2e/screenshots/}, y se sube como artefacto en GitHub Actions para facilitar la depuración.
+\end{itemize}
+
+\subsubsection*{Integración en CI con GitHub Actions}
+
+El workflow \texttt{.github/workflows/e2e.yml} ejecuta los tests E2E en cada \textit{push} y \textit{Pull Request} a \texttt{main}:
+
+\begin{enumerate}
+  \item Instala las dependencias Python (incluyendo \texttt{selenium}) y Node.js.
+  \item Genera el \textit{bundle} de producción del frontend con \texttt{npm run build} apuntando al backend local (\texttt{VITE\_API\_BASE\_URL=http://localhost:8000}).
+  \item Arranca el backend con \texttt{uvicorn} sobre SQLite (\texttt{DATABASE\_URL=sqlite:///./e2e\_test.db}). El \textit{seed} crea automáticamente el usuario \texttt{admin/admin123} y los datos de demostración.
+  \item Sirve el frontend con \texttt{vite preview --host --port 5173}.
+  \item Espera a que ambos servicios respondan (bucle de reintentos con \texttt{curl}).
+  \item Ejecuta \texttt{pytest test/e2e/ -v --tb=short} con Chrome en modo \textit{headless}.
+  \item En caso de fallo, sube las capturas de pantalla como artefacto del \textit{workflow}.
+\end{enumerate}
+
+% ==============================================================
 % CAPÍTULO 4 — RESULTADOS
 % ==============================================================
 \chapter{Resultados}
@@ -1628,6 +1708,7 @@ La Tabla~\ref{tab:metricas_calidad} resume las métricas de calidad obtenidas al
     \hline
     Pruebas unitarias backend (pytest)         & 96 / 96 pasadas \\
     Pruebas unitarias frontend (Vitest)        & 97 / 97 pasadas \\
+    Pruebas E2E (Selenium)                     & $\sim$70 pasadas \\
     Avisos de Ruff (Python linter)             & 0 \\
     Avisos de ESLint (JavaScript linter)       & 0 \\
     Endpoints de la API cubiertos por pruebas  & 100\,\% \\
