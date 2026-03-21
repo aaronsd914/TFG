@@ -1,11 +1,11 @@
 /**
- * ClientesPage.test.jsx
- * Verifica el layout inicial, llamadas a la API y controles de búsqueda.
+ * AlbaranesPage.test.jsx
+ * Verifica el layout inicial, llamadas a la API y comportamiento básico.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import ClientesPage from '../src/components/ClientesPage.jsx';
+import AlbaranesPage from '../../frontend/src/components/AlbaranesPage.jsx';
 
 vi.mock('sileo', () => ({
   sileo: Object.assign(vi.fn(), {
@@ -15,10 +15,14 @@ vi.mock('sileo', () => ({
 }));
 
 function renderPage() {
-  return render(<MemoryRouter><ClientesPage /></MemoryRouter>);
+  return render(
+    <MemoryRouter>
+      <AlbaranesPage />
+    </MemoryRouter>
+  );
 }
 
-describe('ClientesPage', () => {
+describe('AlbaranesPage', () => {
   beforeEach(() => {
     fetch.mockResolvedValue({
       ok: true,
@@ -38,25 +42,17 @@ describe('ClientesPage', () => {
     });
   });
 
-  it('muestra el encabezado de clientes', async () => {
+  it('muestra el encabezado de la página', async () => {
     renderPage();
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /clientes/i })).toBeInTheDocument();
+      expect(screen.getByText(/albar/i)).toBeInTheDocument();
     });
   });
 
-  it('contiene un campo de búsqueda', async () => {
+  it('no muestra errores visibles con respuestas vacías', async () => {
     renderPage();
     await waitFor(() => {
-      expect(screen.getByRole('textbox', { hidden: true })).toBeInTheDocument();
-    });
-  });
-
-  it('muestra mensaje de lista vacía cuando no hay clientes', async () => {
-    renderPage();
-    await waitFor(() => {
-      // Con lista vacía no debería mostrar filas de tabla
-      expect(screen.queryAllByRole('row')).toHaveLength(0);
+      expect(screen.queryByText(/error/i)).not.toBeInTheDocument();
     });
   });
 

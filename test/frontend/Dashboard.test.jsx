@@ -6,7 +6,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import Dashboard from '../src/components/Dashboard.jsx';
+import Dashboard from '../../frontend/src/components/Dashboard.jsx';
 
 // chart.js necesita canvas — lo mockeamos para happy-dom
 vi.mock('react-chartjs-2', () => ({

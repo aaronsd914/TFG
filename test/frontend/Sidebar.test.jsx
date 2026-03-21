@@ -6,7 +6,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import Sidebar from '../src/components/Sidebar.jsx';
+import Sidebar from '../../frontend/src/components/Sidebar.jsx';
 
 // Mock useNavigate
 const mockNavigate = vi.fn();
@@ -16,8 +16,8 @@ vi.mock('react-router-dom', async (importOriginal) => {
 });
 
 // Mock removeToken
-vi.mock('../src/api/auth.js', () => ({ removeToken: vi.fn() }));
-import { removeToken } from '../src/api/auth.js';
+vi.mock('../../frontend/src/api/auth.js', () => ({ removeToken: vi.fn() }));
+import { removeToken } from '../../frontend/src/api/auth.js';
 
 function renderSidebar(initialPath = '/') {
   return render(
