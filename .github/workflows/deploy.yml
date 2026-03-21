@@ -1,7 +1,7 @@
 name: Deploy — Producción
 
 on:
-  push:
+  pull_request:
     branches: [main, master]
     paths-ignore:
       - '**.md'

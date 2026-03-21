@@ -1,18 +1,13 @@
 name: E2E Tests — Selenium
 
 on:
-  push:
-    branches: [main, master]
-    paths-ignore:
-      - 'README.md'
-      - '**.md'
-      - 'memoria/**'
   pull_request:
     branches: [main, master]
     paths-ignore:
       - 'README.md'
       - '**.md'
       - 'memoria/**'
+  workflow_dispatch:
   workflow_dispatch:
 
 jobs:

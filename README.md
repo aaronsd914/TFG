@@ -131,6 +131,9 @@
 | 11 | **Transport / logistics module** | Assign delivery notes to numbered trucks, view per-truck manifests, liquidate routes (registers a 7 % transport cost as an expense), and download a PDF route invoice. |
 | 12 | **Stripe payment collection** | Generate a Stripe Checkout Session for any amount, redirect the customer, and confirm the payment server-side. Confirmed payments are automatically recorded as income movements. |
 | 13 | **PDF generation** | ReportLab-powered PDF exports: delivery note, route invoice and analytics trends report. |
+| 14 | **Personalisation & dark mode** | Full theming system: 3 colour palettes selectable at runtime, dark / light mode toggle (persisted in `localStorage`), store name and logo configurable from the UI. |
+| 15 | **Weekly AI business summary** | APScheduler `BackgroundScheduler` fires every day at 22:30 (Europe/Madrid). When the configured interval has elapsed, it calls Groq/Llama-3 with a live snapshot of the business metrics and emails the summary to a configurable address. |
+| 16 | **User profile & store settings** | `GET/PUT /api/auth/me` — update own password. `GET/PUT /api/config` — read and write the key-value `configuracion` table (store name, logo URL, email signature, weekly summary recipient and interval). |
 
 ---
 
@@ -156,12 +159,14 @@ StripeCheckout (idempotency record for Stripe sessions)
 | `Movimiento` | `movimientos` | Standalone income/expense record; auto-created by business logic |
 | `AlbaranRuta` | `albaran_rutas` | Maps one `Albaran` to a truck (`camion_id`) |
 | `StripeCheckout` | `stripe_checkouts` | Audit record per Stripe Checkout Session (prevents duplicate payments) |
+| `Usuario` | `usuarios` | Staff account with hashed password for JWT authentication |
+| `Configuracion` | `configuracion` | Key-value store for application settings (store name, logo, email signature, scheduler config) |
 
 ---
 
 ### User types & permissions
 
-> **Design note:** FurniGest is an internal tool used exclusively by store staff. There is no public-facing interface and **no authentication layer** has been implemented. All endpoints and all screens are accessible to anyone who can reach the application. This is a deliberate architectural decision for an intranet deployment.
+> **Design note:** FurniGest is an internal tool used exclusively by store staff. Authentication is enforced via **JWT tokens** — all API endpoints require a valid `Authorization: Bearer <token>` header. The login page is available at `/login`; a default `admin` account is created by `seed.py` on first run.
 
 The three canonical user types from the template map as follows:
 
@@ -301,6 +306,7 @@ TFG/
 │       ├── settings_email.py    # SMTP configuration
 │       ├── ia_settings.py       # Groq API configuration
 │       ├── api/                 # Route handlers — thin HTTP layer (one file per domain)
+│       │   ├── auth.py          # JWT login, me GET/PUT
 │       │   ├── clientes.py
 │       │   ├── productos.py
 │       │   ├── proveedores.py
@@ -310,6 +316,7 @@ TFG/
 │       │   ├── analytics.py
 │       │   ├── ai.py
 │       │   ├── bank.py
+│       │   ├── configuracion.py # Key-value store GET/PUT
 │       │   └── stripe_payments.py
 │       ├── services/            # Business logic layer (Option B)
 │       │   ├── clientes_service.py
@@ -345,9 +352,13 @@ TFG/
         │   ├── useClientes.js
         │   ├── useProductos.js
         │   └── useMovimientos.js
+        ├── context/             # React context providers
+        │   ├── ThemeContext.jsx  # Dark mode + palette (persisted in localStorage)
+        │   └── ConfigContext.jsx # Store config from /api/config
         └── components/
             ├── App.jsx          # Shell with Sidebar + <Outlet>
             ├── Sidebar.jsx      # Navigation sidebar
+            ├── LoginPage.jsx    # JWT login form
             ├── Dashboard.jsx    # KPIs + charts overview
             ├── NuevaVenta.jsx   # New order wizard
             ├── ClientesPage.jsx # Customer management
@@ -356,7 +367,9 @@ TFG/
             ├── MovimientosPage.jsx # Financial ledger
             ├── Tendencias.jsx   # Analytics, AI assistant, PDF export
             ├── TransportePage.jsx  # Logistics / transport module
-            └── BancoPage.jsx    # Stripe payments panel
+            ├── BancoPage.jsx    # Stripe payments panel
+            ├── PerfilPage.jsx   # Change username / password
+            └── PersonalizacionPage.jsx # Theme, palette, store identity
 ```
 
 ---
@@ -536,6 +549,21 @@ The API is served at `http://localhost:8000`. All domain endpoints are prefixed 
 |--------|------|-------------|
 | `GET` | `/health` | Railway / Docker healthcheck probe — returns `{"status": "ok"}` |
 
+#### Authentication — `/api/auth`
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/auth/login` | Obtain a JWT token (`username` + `password` form fields) |
+| `GET` | `/api/auth/me` | Return the current user's profile |
+| `PUT` | `/api/auth/me` | Update own password |
+
+#### Store configuration — `/api/config`
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/config` | Return all key-value settings from the `configuracion` table |
+| `PUT` | `/api/config/{key}` | Update a single configuration key |
+
 ---
 
 ### Frontend — React SPA
@@ -554,15 +582,17 @@ export const API_URL  = `${BASE_URL}/api/`;
 #### Navigation
 
 ```
-/                  → Dashboard       (KPIs, revenue chart, status pie)
-/ventas/nueva      → NuevaVenta      (new order wizard)
-/clientes          → ClientesPage    (customer list, order history)
-/albaranes         → AlbaranesPage   (delivery note list, state control)
-/productos         → ProductosPage   (products + suppliers)
-/movimientos       → MovimientosPage (financial ledger)
-/tendencias        → Tendencias      (analytics, AI chat, PDF export)
-/transporte        → TransportePage  (logistics, truck management)
-/banco             → BancoPage       (Stripe payments)
+/                  → Dashboard           (KPIs, revenue chart, status pie)
+/ventas/nueva      → NuevaVenta          (new order wizard)
+/clientes          → ClientesPage        (customer list, order history)
+/albaranes         → AlbaranesPage       (delivery note list, state control)
+/productos         → ProductosPage       (products + suppliers)
+/movimientos       → MovimientosPage     (financial ledger)
+/tendencias        → Tendencias          (analytics, AI chat, PDF export)
+/transporte        → TransportePage      (logistics, truck management)
+/banco             → BancoPage           (Stripe payments)
+/perfil            → PerfilPage          (change own password)
+/personalizacion   → PersonalizacionPage (dark mode, palettes, store branding, weekly summary)
 ```
 
 ---
@@ -1246,7 +1276,11 @@ pytest test/backend/ --cov=backend/app --cov-report=term-missing
 | `test_transportes.py` | 13 | Almacén listing, route CRUD, assign/unassign, liquidate |
 | `test_stripe.py` | 10 | Checkout, confirm, list — all Stripe calls mocked |
 | `test_bank.py` | 3 | Debug info, status (no token), link (mocked HTTP) |
-| **Total** | **96** | |
+| `test_auth.py` | 13 | Login OK/fail, `/api/auth/me` GET, all PUT /me branches (password OK, wrong password, username OK, conflict 409, too-short 422), protected endpoint, expired/tampered token |
+| `test_configuracion.py` | 12 | GET defaults, GET/PUT round-trip, unknown key 400, overwrite, `ultima_vez` timestamp |
+| `test_emailer.py` | 7 | `_html_to_text` (empty, strip tags, strip script, entities), `send_email_simple` (SMTP path, Resend path, captures recipient) |
+| `test_resumen_semanal.py` | 22 | `_get`/`_set` round-trips, `_eur` formatting, `_build_html` with/without insight + red balance, `_run` skip conditions + execution + Groq error handling + `ultima_vez` update, `job_resumen_semanal` exception capture |
+| **Total** | **150** | |
 
 > Tests exercise both the original router layer and the new `services/` layer — the service functions are called through the same HTTP endpoints, so the existing test suite validates both layers without requiring new test files.
 
@@ -1273,7 +1307,7 @@ npm run test:watch  # watch mode
 
 | File | Tests | Coverage area |
 |------|-------|---------------|
-| `Sidebar.test.jsx` | 7 | App name, all nav links present, correct `href` values, active/inactive CSS class tokens |
+| `Sidebar.test.jsx` | 9 | App name, all nav links present, correct `href` values, active/inactive CSS class tokens, logout button, logout calls `removeToken` and redirects |
 | `App.test.jsx` | 5 | Root renders, title present, layout classes, `<main>` and `<aside>` in DOM |
 | `Dashboard.test.jsx` | 4 | Mounts without error, `fetch` called on mount, empty-data grace, network-error resilience |
 | `AlbaranesPage.test.jsx` | 5 | Mounts without error, API called on mount, page heading, no visible errors, network-error resilience |
@@ -1281,10 +1315,16 @@ npm run test:watch  # watch mode
 | `ClientesPage.test.jsx` | 6 | Mounts without error, API called on mount, `<h1>` heading, search input present, empty-list grace, network-error resilience |
 | `MovimientosPage.test.jsx` | 6 | Mounts without error, API called on mount, page heading, monthly summary cards (ingresos/egresos/balance), quick-add form, network-error resilience |
 | `NuevaVenta.test.jsx` | 5 | Mounts without error, "Nueva venta" heading, customer search mode present, checkbox controls, network-error resilience |
-| `ProductosPage.test.jsx` | 5 | Mounts without error, both API calls (productos + proveedores) on mount, `<h1>` heading, no visible errors, network-error resilience |
+| `ProductosPage.test.jsx` | 6 | Mounts without error, both API calls (productos + proveedores) on mount, `<h1>` heading, "Nuevo producto" button in header, no visible errors, network-error resilience |
 | `Tendencias.test.jsx` | 6 | Mounts without error, API called on mount, page heading, "Asistente IA" section present, chat welcome message, network-error resilience |
 | `TransportePage.test.jsx` | 6 | Mounts without error, all three initial API calls (almacén/rutas/clientes), page heading, trucks column, network-error resilience |
-| **Total** | **61** | |
+| `LoginPage.test.jsx` | 12 | Form renders, type in fields, toggle password visibility, login OK/fail, redirect, error message |
+| `auth.test.js` | 13 | `saveToken`, `getToken`, `removeToken`, `isTokenValid` (expired/tampered/valid/Base64url), `login` fetch call |
+| `fetchInterceptor.test.js` | 9 | Auth header injection, skips external URLs, 401 → `removeToken` + redirect, preserves existing headers |
+| `PersonalizacionPage.test.jsx` | 19 | Renders sections, dark mode toggle, palettes, username/password fields, save buttons, email signature, form submissions (password, username, email config), mismatch validation, API error handling |
+| `PerfilPage.test.jsx` | 17 | Renders sections, JWT username decode, password fields, submit buttons, mismatched-password validation, form submissions (username, password), API error handling |
+| `ThemeContext.test.jsx` | 11 | Default values (isDark, palette), `localStorage` read on init, `setIsDark` updates value + DOM class + persists, `setPalette` updates value + `dataset.palette` + persists |
+| **Total** | **144** | |
 
 **Key isolation strategies:**
 
@@ -1322,7 +1362,7 @@ A coverage XML report is uploaded as a build artifact after every backend run.
 | `actions/setup-python@v5` | Installs Python 3.12 with pip cache |
 | `pip install -r requirements.txt` | Installs all backend dependencies |
 | **Create dummy config files** | Generates placeholder `.py` config files (see below) |
-| `pytest --cov` | Runs the 96-test suite and produces a coverage XML report |
+| `pytest --cov` | Runs the 150-test suite and produces a coverage XML report |
 | `actions/upload-artifact@v4` | Saves `coverage-backend.xml` as a downloadable artifact |
 
 ###### Why dummy config files are needed in CI
@@ -1441,16 +1481,16 @@ Until these secrets are added, the deploy jobs are skipped but tests still run n
 
 | Workflow | Trigger | Purpose | Secrets needed |
 |----------|---------|---------|----------------|
-| `tests.yml` | push / PR / cron / manual | Run 96 backend + 97 frontend tests + upload coverage artifacts | None |
-| `e2e.yml` | push / PR / manual | Selenium E2E tests (~62 tests) against real backend + frontend in CI | None |
-| `lint.yml` | push / PR | Ruff + ESLint code quality | None |
-| `docker.yml` | push to main | Build & push images to ghcr.io | None (GITHUB_TOKEN) |
-| `sonarcloud.yml` | push / PR (all branches) | Generate coverage + SonarCloud quality gate | `SONAR_TOKEN` |
-| `deploy.yml` | push to main | Tests + SonarCloud gate + deploy to Railway + Vercel | 6 secrets |
+| `tests.yml` | PR / manual | Run 104 backend + 111 frontend tests + upload coverage artifacts | None |
+| `e2e.yml` | PR / manual | Selenium E2E tests (~62 tests) against real backend + frontend in CI | None |
+| `lint.yml` | PR / manual | Ruff + ESLint code quality | None |
+| `docker.yml` | PR / manual | Build & push images to ghcr.io | None (GITHUB_TOKEN) |
+| `sonarcloud.yml` | PR / manual | Generate coverage + SonarCloud quality gate | `SONAR_TOKEN` |
+| `deploy.yml` | PR / manual | Tests + SonarCloud gate + deploy to Railway + Vercel | 6 secrets |
 
 #### SonarCloud quality gate
 
-FurniGest integrates **SonarCloud** (the cloud-hosted version of SonarQube) as a quality gate in the `deploy.yml` pipeline. The dedicated `sonarcloud.yml` workflow runs on every push and PR (all branches) so coverage feedback is available before merging. The `sonarcloud` job in `deploy.yml` additionally blocks the deploy if the quality gate fails.
+FurniGest integrates **SonarCloud** (the cloud-hosted version of SonarQube) as a quality gate in the `deploy.yml` pipeline. The dedicated `sonarcloud.yml` workflow runs on every Pull Request and can also be triggered manually (`workflow_dispatch`) so coverage feedback is available before merging. The `sonarcloud` job in `deploy.yml` additionally blocks the deploy if the quality gate fails.
 
 > **Prerequisite — disable Automatic Analysis:** In SonarCloud → Administration → Analysis Method, **uncheck "SonarCloud Automatic Analysis"**. Automatic Analysis does not support external coverage import. CI-based analysis (GitHub Actions) must be used instead.
 

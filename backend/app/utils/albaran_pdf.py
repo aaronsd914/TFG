@@ -1,4 +1,5 @@
 # backend/app/utils/albaran_pdf.py
+import base64
 import logging
 from io import BytesIO
 from datetime import date, datetime
@@ -7,6 +8,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.utils import ImageReader
 from reportlab.platypus import (
     SimpleDocTemplate,
     Paragraph,
@@ -39,7 +41,9 @@ def _safe(s) -> str:
     return str(s).strip()
 
 
-def _build_header_footer(canvas, doc, tienda_nombre: str, right_text: str):
+def _build_header_footer(
+    canvas, doc, tienda_nombre: str, right_text: str, logo_base64: str | None = None
+):
     """
     Header + footer en todas las páginas.
     - Izquierda: nombre de tienda
@@ -57,10 +61,29 @@ def _build_header_footer(canvas, doc, tienda_nombre: str, right_text: str):
         doc.leftMargin, header_y - 8, doc.pagesize[0] - doc.rightMargin, header_y - 8
     )
 
-    # Texto header (izq: tienda)
-    canvas.setFillColor(colors.HexColor("#111827"))
-    canvas.setFont("Helvetica-Bold", 11)
-    canvas.drawString(doc.leftMargin, header_y, tienda_nombre)
+    # Texto header (izq: tienda o logo)
+    if logo_base64:
+        try:
+            raw = logo_base64.split(",")[-1]
+            img_reader = ImageReader(BytesIO(base64.b64decode(raw)))
+            canvas.drawImage(
+                img_reader,
+                doc.leftMargin,
+                header_y - 6,
+                width=28 * mm,
+                height=8 * mm,
+                preserveAspectRatio=True,
+                anchor="sw",
+                mask="auto",
+            )
+        except Exception:
+            canvas.setFillColor(colors.HexColor("#111827"))
+            canvas.setFont("Helvetica-Bold", 11)
+            canvas.drawString(doc.leftMargin, header_y, tienda_nombre)
+    else:
+        canvas.setFillColor(colors.HexColor("#111827"))
+        canvas.setFont("Helvetica-Bold", 11)
+        canvas.drawString(doc.leftMargin, header_y, tienda_nombre)
 
     # Texto header (dcha)
     canvas.setFillColor(colors.HexColor("#6B7280"))
@@ -91,7 +114,13 @@ def _build_header_footer(canvas, doc, tienda_nombre: str, right_text: str):
     canvas.restoreState()
 
 
-def generar_pdf_albaran(albaran, cliente, lineas_con_nombre):
+def generar_pdf_albaran(
+    albaran,
+    cliente,
+    lineas_con_nombre,
+    tienda_nombre: str = "FurniGest",
+    logo_base64: str | None = None,
+):
     """
     PDF profesional:
     - Header con nombre de tienda ("Tienda")
@@ -354,16 +383,15 @@ def generar_pdf_albaran(albaran, cliente, lineas_con_nombre):
         story.append(obs_tbl)
 
     # Header/footer en cada página
-    tienda_nombre = "Tienda"  # ✅ nombre de la tienda por ahora
     right_text = f"#{albaran_id} · {fecha}"
 
     doc.build(
         story,
         onFirstPage=lambda canv, d: _build_header_footer(
-            canv, d, tienda_nombre, right_text
+            canv, d, tienda_nombre, right_text, logo_base64
         ),
         onLaterPages=lambda canv, d: _build_header_footer(
-            canv, d, tienda_nombre, right_text
+            canv, d, tienda_nombre, right_text, logo_base64
         ),
     )
 

@@ -1,12 +1,9 @@
 name: SonarCloud — Quality Gate
 
 on:
-  push:
-    branches: [main, master, 'feat/**', 'fix/**', 'docs/**']
-    paths-ignore:
-      - '**.md'
   pull_request:
     types: [opened, synchronize, reopened]
+  workflow_dispatch:
 
 jobs:
   sonarcloud:

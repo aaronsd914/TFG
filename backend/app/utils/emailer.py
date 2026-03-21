@@ -47,6 +47,26 @@ def _html_to_text(html: str) -> str:
     return text
 
 
+def send_email_simple(to_email: str, subject: str, html_body: str) -> None:
+    """Envía un email HTML sin adjunto PDF."""
+    log.info("[emailer] Email simple → to=%s subject=%s", to_email, subject)
+    if RESEND_API_KEY:
+        _send_via_resend(to_email, subject, html_body, None, "")
+        return
+
+    msg = MIMEMultipart("mixed")
+    msg["From"] = f"{EMAIL_SENDER_NAME} <{EMAIL_FROM}>"
+    msg["To"] = to_email
+    msg["Subject"] = subject
+    msg["Date"] = formatdate(localtime=True)
+    msg["Message-ID"] = make_msgid()
+    alt = MIMEMultipart("alternative")
+    alt.attach(MIMEText(_html_to_text(html_body), "plain", "utf-8"))
+    alt.attach(MIMEText(html_body, "html", "utf-8"))
+    msg.attach(alt)
+    _send_via_smtp(msg, to_email)
+
+
 def send_email_with_pdf(
     to_email: str, subject: str, html_body: str, pdf_bytes: bytes, pdf_filename: str
 ):
@@ -94,7 +114,11 @@ def send_email_with_pdf(
 
 
 def _send_via_resend(
-    to_email: str, subject: str, html_body: str, pdf_bytes: bytes, pdf_filename: str
+    to_email: str,
+    subject: str,
+    html_body: str,
+    pdf_bytes: bytes | None,
+    pdf_filename: str,
 ):
     """Envía usando la API HTTP de Resend (no usa SMTP — funciona en Railway)."""
     try:

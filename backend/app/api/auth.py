@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+from typing import Annotated
 from passlib.context import CryptContext
 from backend.app.database import get_db
-from backend.app.entidades.usuario import UsuarioDB, Usuario
+from backend.app.entidades.usuario import UsuarioDB, Usuario, UpdateMe
 from backend.app.utils.jwt_utils import create_access_token
 from backend.app.dependencies import get_current_user
 
@@ -22,8 +23,8 @@ def hash_password(plain: str) -> str:
 
 @router.post("/login")
 def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db),
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    db: Annotated[Session, Depends(get_db)],
 ):
     user = db.query(UsuarioDB).filter(UsuarioDB.username == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
@@ -37,5 +38,41 @@ def login(
 
 
 @router.get("/me", response_model=Usuario)
-def me(current_user: UsuarioDB = Depends(get_current_user)):
+def me(current_user: Annotated[UsuarioDB, Depends(get_current_user)]):
+    return current_user
+
+
+@router.put("/me", response_model=Usuario)
+def update_me(
+    data: UpdateMe,
+    current_user: Annotated[UsuarioDB, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+):
+    if not verify_password(data.current_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Contraseña actual incorrecta",
+        )
+
+    if data.new_username and data.new_username != current_user.username:
+        clash = (
+            db.query(UsuarioDB).filter(UsuarioDB.username == data.new_username).first()
+        )
+        if clash:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Ese nombre de usuario ya está en uso",
+            )
+        current_user.username = data.new_username
+
+    if data.new_password:
+        if len(data.new_password) < 8:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="La contraseña debe tener al menos 8 caracteres",
+            )
+        current_user.hashed_password = hash_password(data.new_password)
+
+    db.commit()
+    db.refresh(current_user)
     return current_user
