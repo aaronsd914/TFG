@@ -74,34 +74,28 @@ def test_movimientos_anadir_ingreso(logged_in_browser):
     btn.click()
     time.sleep(0.5)
     # Rellenar concepto
+    # Rellenar concepto — usar placeholder exacto para evitar el buscador de la página
     inputs = logged_in_browser.find_elements(
-        By.XPATH, "//input[@name='concepto' or @placeholder[contains(.,'oncepto')] or @placeholder[contains(.,'escripci')]]"
+        By.XPATH, "//input[@placeholder='Concepto']"
     )
     if inputs:
         inputs[0].clear()
         inputs[0].send_keys(MOV_CONCEPTO_ING)
     # Rellenar cantidad
     cant_inputs = logged_in_browser.find_elements(
-        By.XPATH, "//input[@name='cantidad' or @type='number' or @placeholder[contains(.,'antidad')]]"
+        By.XPATH, "//input[@type='number']"
     )
     if cant_inputs:
         cant_inputs[0].clear()
         cant_inputs[0].send_keys(MOV_CANTIDAD)
-    # Seleccionar tipo INGRESO (si hay selector)
-    tipo_selects = logged_in_browser.find_elements(By.CSS_SELECTOR, "select[name='tipo']")
+    # Seleccionar tipo INGRESO (ya es el valor por defecto, se confirma explícitamente)
+    from selenium.webdriver.support.ui import Select
+    tipo_selects = logged_in_browser.find_elements(By.CSS_SELECTOR, "select")
     if tipo_selects:
-        from selenium.webdriver.support.ui import Select
-        Select(tipo_selects[0]).select_by_visible_text("INGRESO")
-    else:
-        # Puede ser un radio/button
-        ingreso_btns = logged_in_browser.find_elements(
-            By.XPATH, "//button[contains(normalize-space(.), 'INGRESO')] | //label[contains(normalize-space(.), 'INGRESO')] | //input[@value='INGRESO']"
-        )
-        if ingreso_btns:
-            ingreso_btns[0].click()
+        Select(tipo_selects[0]).select_by_visible_text("Ingreso")
     # Guardar
     submit_btns = logged_in_browser.find_elements(
-        By.XPATH, "//button[@type='submit' or contains(normalize-space(.), 'Guardar') or contains(normalize-space(.), 'Añadir') or contains(normalize-space(.), 'Crear')]"
+        By.XPATH, "//button[@type='submit' or contains(normalize-space(.), 'Guardar')]"
     )
     if submit_btns:
         submit_btns[-1].click()
@@ -123,30 +117,25 @@ def test_movimientos_anadir_egreso(logged_in_browser):
     )
     btn.click()
     time.sleep(0.5)
+    # Rellenar concepto — usar placeholder exacto para evitar el buscador de la página
     inputs = logged_in_browser.find_elements(
-        By.XPATH, "//input[@name='concepto' or @placeholder[contains(.,'oncepto')]]"
+        By.XPATH, "//input[@placeholder='Concepto']"
     )
     if inputs:
         inputs[0].clear()
         inputs[0].send_keys(MOV_CONCEPTO_EGR)
     cant_inputs = logged_in_browser.find_elements(
-        By.XPATH, "//input[@name='cantidad' or @type='number' or @placeholder[contains(.,'antidad')]]"
+        By.XPATH, "//input[@type='number']"
     )
     if cant_inputs:
         cant_inputs[0].clear()
         cant_inputs[0].send_keys(MOV_CANTIDAD)
-    egreso_btns = logged_in_browser.find_elements(
-        By.XPATH, "//button[contains(normalize-space(.), 'EGRESO')] | //label[contains(normalize-space(.), 'EGRESO')] | //input[@value='EGRESO']"
-    )
-    if egreso_btns:
-        egreso_btns[0].click()
-    else:
-        tipo_selects = logged_in_browser.find_elements(By.CSS_SELECTOR, "select[name='tipo']")
-        if tipo_selects:
-            from selenium.webdriver.support.ui import Select
-            Select(tipo_selects[0]).select_by_visible_text("EGRESO")
+    from selenium.webdriver.support.ui import Select
+    tipo_selects = logged_in_browser.find_elements(By.CSS_SELECTOR, "select")
+    if tipo_selects:
+        Select(tipo_selects[0]).select_by_visible_text("Egreso")
     submit_btns = logged_in_browser.find_elements(
-        By.XPATH, "//button[@type='submit' or contains(normalize-space(.), 'Guardar') or contains(normalize-space(.), 'Añadir')]"
+        By.XPATH, "//button[@type='submit' or contains(normalize-space(.), 'Guardar')]"
     )
     if submit_btns:
         submit_btns[-1].click()

@@ -44,9 +44,7 @@ def test_nueva_venta_toggle_nuevo_cliente(logged_in_browser):
     toggle = wait.until(
         EC.element_to_be_clickable(
             (By.XPATH,
-             "//button[contains(normalize-space(.), 'Nuevo') or contains(normalize-space(.), 'nuevo')] | "
-             "//label[contains(normalize-space(.), 'Nuevo cliente')] | "
-             "//input[@type='checkbox'][following-sibling::*[contains(., 'Nuevo')]]")
+             "//label[contains(normalize-space(.), 'Usar existente')]")
         )
     )
     toggle.click()
@@ -62,9 +60,7 @@ def test_nueva_venta_campos_nuevo_cliente(logged_in_browser):
     wait = WebDriverWait(logged_in_browser, 15)
     toggle = wait.until(
         EC.element_to_be_clickable(
-            (By.XPATH,
-             "//button[contains(normalize-space(.), 'Nuevo') or contains(normalize-space(.), 'nuevo')] | "
-             "//label[contains(normalize-space(.), 'Nuevo cliente')]")
+            (By.XPATH, "//label[contains(normalize-space(.), 'Usar existente')]")
         )
     )
     toggle.click()

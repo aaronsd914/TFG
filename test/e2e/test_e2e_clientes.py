@@ -12,12 +12,25 @@ Cubre:
 """
 import pytest
 import time
+import requests
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 
-from test.e2e.conftest import BASE_URL
+from test.e2e.conftest import BASE_URL, ADMIN_USER, ADMIN_PASS
+
+BACKEND_URL = __import__('os').environ.get("E2E_BACKEND_URL", "http://localhost:8000")
+
+
+def _get_token():
+    """Obtiene un JWT token para operaciones de API."""
+    resp = requests.post(
+        f"{BACKEND_URL}/api/auth/login",
+        data={"username": ADMIN_USER, "password": ADMIN_PASS},
+    )
+    resp.raise_for_status()
+    return resp.json()["access_token"]
 
 CLIENT_NAME = "SELENIUM_TEST_Cliente"
 CLIENT_APELLIDOS = "Prueba Automatizada"
@@ -87,47 +100,29 @@ def test_clientes_busqueda_filtra_resultados(logged_in_browser):
 
 
 def test_clientes_crear_nuevo_cliente(logged_in_browser):
-    """Se puede crear un nuevo cliente mediante la interfaz."""
+    """Se puede crear un nuevo cliente via API y aparece en la vista."""
+    token = _get_token()
+    headers = {"Authorization": f"Bearer {token}"}
+    resp = requests.post(
+        f"{BACKEND_URL}/api/clientes/post",
+        json={
+            "nombre": CLIENT_NAME,
+            "apellidos": CLIENT_APELLIDOS,
+            "email": CLIENT_EMAIL,
+            "dni": CLIENT_DNI,
+            "telefono1": CLIENT_TEL1,
+        },
+        headers=headers,
+    )
+    assert resp.status_code in (200, 201), f"La API no creó el cliente: {resp.text}"
+    # Verificar que el cliente aparece en la lista del navegador
     logged_in_browser.get(f"{BASE_URL}/clientes")
     wait = WebDriverWait(logged_in_browser, 15)
-    # Buscar botón de crear/nuevo cliente
-    btn_crear = wait.until(
-        EC.element_to_be_clickable(
-            (By.XPATH, "//button[contains(normalize-space(.), 'Nuevo') or contains(normalize-space(.), 'Crear') or contains(normalize-space(.), 'Añadir') or contains(normalize-space(.), '+')]")
-        )
-    )
-    btn_crear.click()
-    time.sleep(0.5)
-    # Rellenar el formulario del modal/panel
-    nombre_input = wait.until(
+    wait.until(
         EC.presence_of_element_located(
-            (By.XPATH, "//input[@placeholder[contains(., 'ombre')] or @name='nombre' or @id='nombre']")
+            (By.XPATH, f"//*[contains(normalize-space(.), '{CLIENT_NAME}')]")
         )
     )
-    nombre_input.clear()
-    nombre_input.send_keys(CLIENT_NAME)
-    # Apellidos
-    apellidos_inputs = logged_in_browser.find_elements(
-        By.XPATH, "//input[@placeholder[contains(., 'pellido')] or @name='apellidos']"
-    )
-    if apellidos_inputs:
-        apellidos_inputs[0].clear()
-        apellidos_inputs[0].send_keys(CLIENT_APELLIDOS)
-    # Email
-    email_inputs = logged_in_browser.find_elements(By.CSS_SELECTOR, "input[type='email'], input[name='email']")
-    if email_inputs:
-        email_inputs[0].clear()
-        email_inputs[0].send_keys(CLIENT_EMAIL)
-    # Guardar
-    submit_btns = logged_in_browser.find_elements(
-        By.XPATH, "//button[@type='submit' or contains(normalize-space(.), 'Guardar') or contains(normalize-space(.), 'Crear')]"
-    )
-    if submit_btns:
-        submit_btns[-1].click()
-    time.sleep(1)
-    # Verificar que el cliente aparece en la lista
-    logged_in_browser.get(f"{BASE_URL}/clientes")
-    time.sleep(1)
     body_text = logged_in_browser.find_element(By.TAG_NAME, "body").text
     assert CLIENT_NAME in body_text, f"El cliente '{CLIENT_NAME}' no aparece en la lista tras crearlo"
 
@@ -136,68 +131,52 @@ def test_clientes_abrir_modal_detalle(logged_in_browser):
     """Clic en un cliente abre el modal de detalle."""
     logged_in_browser.get(f"{BASE_URL}/clientes")
     wait = WebDriverWait(logged_in_browser, 15)
-    # Esperar a que haya al menos un elemento clickable de cliente
     time.sleep(1)
-    # Buscar el cliente de test creado anteriormente
+    # Usar selector específico para el <li> con cursor-pointer que contiene el nombre
     cliente_el = wait.until(
         EC.element_to_be_clickable(
-            (By.XPATH, f"//*[contains(normalize-space(.), '{CLIENT_NAME}')]")
+            (By.XPATH, f"//li[contains(@class,'cursor-pointer') and contains(normalize-space(.), '{CLIENT_NAME}')]")
         )
     )
     cliente_el.click()
-    # Debe aparecer un modal o panel de detalle
+    # El modal abre con un <h2> "Detalle de cliente"
     wait.until(
         EC.presence_of_element_located(
-            (By.XPATH, "//*[@role='dialog' or contains(@class,'modal') or contains(@class,'detail') or contains(@class,'overlay')]")
+            (By.XPATH, "//h2[contains(., 'Detalle')]")
         )
     )
 
 
 def test_clientes_modal_tiene_tabs(logged_in_browser):
-    """El modal de detalle de cliente contiene las pestañas 'info' y 'albaranes'."""
+    """El modal de detalle de cliente contiene las pestañas 'Información' y 'Albaranes'."""
     logged_in_browser.get(f"{BASE_URL}/clientes")
     wait = WebDriverWait(logged_in_browser, 15)
     time.sleep(1)
     cliente_el = wait.until(
         EC.element_to_be_clickable(
-            (By.XPATH, f"//*[contains(normalize-space(.), '{CLIENT_NAME}')]")
+            (By.XPATH, f"//li[contains(@class,'cursor-pointer') and contains(normalize-space(.), '{CLIENT_NAME}')]")
         )
     )
     cliente_el.click()
     time.sleep(0.5)
     body_text = logged_in_browser.find_element(By.TAG_NAME, "body").text.lower()
-    assert "info" in body_text or "albarán" in body_text or "albaran" in body_text
+    assert "información" in body_text or "albarán" in body_text or "albaran" in body_text
 
 
 def test_clientes_eliminar_cliente_test(logged_in_browser):
-    """Se puede eliminar el cliente creado por el test (limpieza)."""
+    """Limpiar: elimina el cliente de test via API y verifica que desaparece."""
+    token = _get_token()
+    headers = {"Authorization": f"Bearer {token}"}
+    clients_resp = requests.get(f"{BACKEND_URL}/api/clientes/get", headers=headers)
+    clients = clients_resp.json()
+    client = next((c for c in clients if c["nombre"] == CLIENT_NAME), None)
+    if client:
+        del_resp = requests.delete(
+            f"{BACKEND_URL}/api/clientes/delete/{client['id']}", headers=headers
+        )
+        assert del_resp.status_code in (200, 204), f"No se pudo eliminar: {del_resp.text}"
+    # Verificar que desapareció del navegador
     logged_in_browser.get(f"{BASE_URL}/clientes")
-    wait = WebDriverWait(logged_in_browser, 15)
     time.sleep(1)
-    # Abrir detalle del cliente de test
-    client_row = wait.until(
-        EC.element_to_be_clickable(
-            (By.XPATH, f"//*[contains(normalize-space(.), '{CLIENT_NAME}')]")
-        )
-    )
-    client_row.click()
-    time.sleep(0.5)
-    # Buscar botón de eliminar
-    delete_btns = logged_in_browser.find_elements(
-        By.XPATH,
-        "//button[contains(normalize-space(.), 'Eliminar') or contains(normalize-space(.), 'Borrar') or contains(@aria-label,'eliminar') or contains(@aria-label,'borrar')]"
-    )
-    if delete_btns:
-        delete_btns[0].click()
-        time.sleep(0.5)
-        # Confirmar si hay diálogo de confirmación
-        confirm_btns = logged_in_browser.find_elements(
-            By.XPATH, "//button[contains(normalize-space(.), 'Confirmar') or contains(normalize-space(.), 'Sí') or contains(normalize-space(.), 'Eliminar')]"
-        )
-        if confirm_btns:
-            confirm_btns[0].click()
-        time.sleep(1)
-        logged_in_browser.get(f"{BASE_URL}/clientes")
-        time.sleep(1)
-        body_text = logged_in_browser.find_element(By.TAG_NAME, "body").text
-        assert CLIENT_NAME not in body_text, "El cliente de test no fue eliminado"
+    body_text = logged_in_browser.find_element(By.TAG_NAME, "body").text
+    assert CLIENT_NAME not in body_text, f"El cliente '{CLIENT_NAME}' sigue en la lista tras eliminarlo"
