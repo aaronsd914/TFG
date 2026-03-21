@@ -7,6 +7,7 @@ Create Date: 2024-12-01 00:00:00.000000
 Crea todas las tablas del esquema inicial de FurniGest tal y como
 quedan definidas por los modelos SQLAlchemy en backend/app/entidades/.
 """
+
 from alembic import op
 import sqlalchemy as sa
 
@@ -27,7 +28,9 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(op.f("ix_proveedores_id"), "proveedores", ["id"], unique=False)
-    op.create_index(op.f("ix_proveedores_nombre"), "proveedores", ["nombre"], unique=False)
+    op.create_index(
+        op.f("ix_proveedores_nombre"), "proveedores", ["nombre"], unique=False
+    )
 
     # ── clientes ─────────────────────────────────────────────────────────────
     op.create_table(
@@ -47,9 +50,13 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("dni"),
     )
-    op.create_index(op.f("ix_clientes_apellidos"), "clientes", ["apellidos"], unique=False)
+    op.create_index(
+        op.f("ix_clientes_apellidos"), "clientes", ["apellidos"], unique=False
+    )
     op.create_index(op.f("ix_clientes_ciudad"), "clientes", ["ciudad"], unique=False)
-    op.create_index(op.f("ix_clientes_codigo_postal"), "clientes", ["codigo_postal"], unique=False)
+    op.create_index(
+        op.f("ix_clientes_codigo_postal"), "clientes", ["codigo_postal"], unique=False
+    )
     op.create_index(op.f("ix_clientes_dni"), "clientes", ["dni"], unique=False)
     op.create_index(op.f("ix_clientes_email"), "clientes", ["email"], unique=False)
     op.create_index(op.f("ix_clientes_id"), "clientes", ["id"], unique=False)
@@ -93,7 +100,9 @@ def upgrade() -> None:
         sa.UniqueConstraint("username"),
     )
     op.create_index(op.f("ix_usuarios_id"), "usuarios", ["id"], unique=False)
-    op.create_index(op.f("ix_usuarios_username"), "usuarios", ["username"], unique=False)
+    op.create_index(
+        op.f("ix_usuarios_username"), "usuarios", ["username"], unique=False
+    )
 
     # ── stripe_checkouts ─────────────────────────────────────────────────────
     op.create_table(
@@ -108,8 +117,15 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(op.f("ix_stripe_checkouts_id"), "stripe_checkouts", ["id"], unique=False)
-    op.create_index(op.f("ix_stripe_checkouts_session_id"), "stripe_checkouts", ["session_id"], unique=True)
+    op.create_index(
+        op.f("ix_stripe_checkouts_id"), "stripe_checkouts", ["id"], unique=False
+    )
+    op.create_index(
+        op.f("ix_stripe_checkouts_session_id"),
+        "stripe_checkouts",
+        ["session_id"],
+        unique=True,
+    )
 
     # ── albaranes ─────────────────────────────────────────────────────────────
     op.create_table(
@@ -137,9 +153,21 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["producto_id"], ["productos.id"]),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(op.f("ix_lineas_albaran_albaran_id"), "lineas_albaran", ["albaran_id"], unique=False)
-    op.create_index(op.f("ix_lineas_albaran_id"), "lineas_albaran", ["id"], unique=False)
-    op.create_index(op.f("ix_lineas_albaran_producto_id"), "lineas_albaran", ["producto_id"], unique=False)
+    op.create_index(
+        op.f("ix_lineas_albaran_albaran_id"),
+        "lineas_albaran",
+        ["albaran_id"],
+        unique=False,
+    )
+    op.create_index(
+        op.f("ix_lineas_albaran_id"), "lineas_albaran", ["id"], unique=False
+    )
+    op.create_index(
+        op.f("ix_lineas_albaran_producto_id"),
+        "lineas_albaran",
+        ["producto_id"],
+        unique=False,
+    )
 
     # ── albaran_rutas ─────────────────────────────────────────────────────────
     op.create_table(
