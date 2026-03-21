@@ -71,6 +71,18 @@ describe('isAuthenticated', () => {
     localStorage.setItem('token', validToken);
     expect(isAuthenticated()).toBe(true);
   });
+
+  it('maneja correctamente tokens con caracteres Base64url (- y _)', () => {
+    // Build a token whose payload encodes to Base64url with - or _
+    // by using a payload that produces those chars
+    const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    const exp = Math.floor(Date.now() / 1000) + 3600;
+    const payload = btoa(JSON.stringify({ sub: 'admin', exp }))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    localStorage.setItem('token', `${header}.${payload}.signature`);
+    expect(isAuthenticated()).toBe(true);
+  });
 });
 
 // ── login() ──────────────────────────────────────────────────────────────────
