@@ -34,7 +34,7 @@ def _get_token():
 
 CLIENT_NAME = "SELENIUM_TEST_Cliente"
 CLIENT_APELLIDOS = "Prueba Automatizada"
-CLIENT_EMAIL = "selenium_test@furnigest.test"
+CLIENT_EMAIL = "selenium_test@gmail.com"
 CLIENT_DNI = "99999999Z"
 CLIENT_TEL1 = "666000000"
 

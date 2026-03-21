@@ -85,6 +85,7 @@ def test_productos_tab_gestion_carga(logged_in_browser):
 
 def test_productos_crear_producto(logged_in_browser):
     """Se puede crear un producto nuevo desde la pestaña Gestión."""
+    from selenium.webdriver.support.ui import Select as SeleniumSelect
     logged_in_browser.get(f"{BASE_URL}/productos")
     wait = WebDriverWait(logged_in_browser, 15)
     # Ir a Gestión
@@ -94,36 +95,47 @@ def test_productos_crear_producto(logged_in_browser):
         )
     ).click()
     time.sleep(0.5)
-    # Rellenar nombre del producto
+    # Abrir modal de creación pulsando el botón 'Nuevo producto'
+    wait.until(
+        EC.element_to_be_clickable(
+            (By.XPATH, "//button[normalize-space()='Nuevo producto']")
+        )
+    ).click()
+    # Rellenar nombre del producto (dentro del modal)
     nombre_input = wait.until(
         EC.presence_of_element_located(
-            (By.XPATH, "//input[@placeholder[contains(., 'ombre')] or @name='nombre' or @placeholder[contains(.,'producto')]]")
+            (By.XPATH, "//input[@placeholder='Ej: Mesa de comedor']")
         )
     )
     nombre_input.clear()
     nombre_input.send_keys(PROD_NAME)
-    # Descripción
-    desc_inputs = logged_in_browser.find_elements(
-        By.XPATH, "//input[@name='descripcion'] | //textarea[@name='descripcion'] | //input[@placeholder[contains(.,'escripci')]] | //textarea"
+    # Precio (input type=number con placeholder 'Ej: 199.99')
+    price_input = logged_in_browser.find_element(
+        By.XPATH, "//input[@placeholder='Ej: 199.99']"
     )
-    if desc_inputs:
-        desc_inputs[0].clear()
-        desc_inputs[0].send_keys(PROD_DESC)
-    # Precio
-    price_inputs = logged_in_browser.find_elements(
-        By.XPATH, "//input[@name='precio'] | //input[@type='number'] | //input[@placeholder[contains(.,'recio')]]"
+    price_input.clear()
+    price_input.send_keys(PROD_PRICE)
+    # Seleccionar el primer proveedor disponible (campo obligatorio)
+    prov_select = logged_in_browser.find_element(
+        By.XPATH, "//select[option[normalize-space()='Selecciona proveedor']]"
     )
-    if price_inputs:
-        price_inputs[0].clear()
-        price_inputs[0].send_keys(PROD_PRICE)
-    # Enviar
-    submit_btns = logged_in_browser.find_elements(
-        By.XPATH, "//button[@type='submit' or contains(normalize-space(.), 'Crear') or contains(normalize-space(.), 'Añadir') or contains(normalize-space(.), 'Guardar')]"
+    sel = SeleniumSelect(prov_select)
+    if len(sel.options) > 1:
+        sel.select_by_index(1)
+    # Enviar el formulario del modal
+    wait.until(
+        EC.element_to_be_clickable(
+            (By.XPATH, "//button[@type='submit' and contains(normalize-space(), 'Crear producto')]")
+        )
+    ).click()
+    # Esperar a que el modal se cierre (el botón 'Nuevo producto' vuelve a ser visible)
+    wait.until(
+        EC.element_to_be_clickable(
+            (By.XPATH, "//button[normalize-space()='Nuevo producto']")
+        )
     )
-    if submit_btns:
-        submit_btns[-1].click()
     time.sleep(1)
-    # Navegar a listado y verificar
+    # Navegar al listado y verificar que el producto aparece
     logged_in_browser.get(f"{BASE_URL}/productos")
     time.sleep(1)
     body_text = logged_in_browser.find_element(By.TAG_NAME, "body").text
