@@ -5,16 +5,16 @@
  */
 import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 
-vi.mock('../src/config.js', () => ({ BASE_URL: 'https://api.example.com' }));
-vi.mock('../src/api/auth.js', () => ({ getToken: vi.fn(), removeToken: vi.fn() }));
+vi.mock('../../frontend/src/config.js', () => ({ BASE_URL: 'https://api.example.com' }));
+vi.mock('../../frontend/src/api/auth.js', () => ({ getToken: vi.fn(), removeToken: vi.fn() }));
 
-import { getToken, removeToken } from '../src/api/auth.js';
+import { getToken, removeToken } from '../../frontend/src/api/auth.js';
 
 const nativeFetch = globalThis.fetch;
 let interceptedFetch;
 
 beforeAll(async () => {
-  await import('../src/api/fetchInterceptor.js');
+  await import('../../frontend/src/api/fetchInterceptor.js');
   interceptedFetch = globalThis.fetch;
 });
 

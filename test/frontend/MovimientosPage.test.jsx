@@ -1,11 +1,10 @@
 /**
- * AlbaranesPage.test.jsx
- * Verifica el layout inicial, llamadas a la API y comportamiento básico.
+ * MovimientosPage.test.jsx
+ * Verifica el layout, el resumen mensual y el formulario de alta manual.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, act } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
-import AlbaranesPage from '../src/components/AlbaranesPage.jsx';
+import MovimientosPage from '../../frontend/src/components/MovimientosPage.jsx';
 
 vi.mock('sileo', () => ({
   sileo: Object.assign(vi.fn(), {
@@ -15,14 +14,10 @@ vi.mock('sileo', () => ({
 }));
 
 function renderPage() {
-  return render(
-    <MemoryRouter>
-      <AlbaranesPage />
-    </MemoryRouter>
-  );
+  return render(<MovimientosPage />);
 }
 
-describe('AlbaranesPage', () => {
+describe('MovimientosPage', () => {
   beforeEach(() => {
     fetch.mockResolvedValue({
       ok: true,
@@ -38,21 +33,30 @@ describe('AlbaranesPage', () => {
   it('llama a la API al montar', async () => {
     renderPage();
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalled();
+      expect(fetch).toHaveBeenCalledWith(expect.stringContaining('movimientos'));
     });
   });
 
-  it('muestra el encabezado de la página', async () => {
+  it('muestra el título "Movimientos"', async () => {
     renderPage();
     await waitFor(() => {
-      expect(screen.getByText(/albar/i)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /movimientos/i })).toBeInTheDocument();
     });
   });
 
-  it('no muestra errores visibles con respuestas vacías', async () => {
+  it('muestra las tarjetas de resumen mensual', async () => {
     renderPage();
     await waitFor(() => {
-      expect(screen.queryByText(/error/i)).not.toBeInTheDocument();
+      expect(screen.getByText(/ingresos/i)).toBeInTheDocument();
+      expect(screen.getByText(/egresos/i)).toBeInTheDocument();
+      expect(screen.getByText(/balance/i)).toBeInTheDocument();
+    });
+  });
+
+  it('muestra el formulario de alta manual', async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText(/añadir movimiento/i)).toBeInTheDocument();
     });
   });
 

@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, act, fireEvent } from '@testing-library/react';
-import TendenciasPage from '../src/components/Tendencias.jsx';
+import TendenciasPage from '../../frontend/src/components/Tendencias.jsx';
 
 vi.mock('sileo', () => ({
   sileo: Object.assign(vi.fn(), {

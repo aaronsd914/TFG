@@ -5,7 +5,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import LoginPage from '../src/components/LoginPage.jsx';
+import LoginPage from '../../frontend/src/components/LoginPage.jsx';
 
 // Mock useNavigate
 const mockNavigate = vi.fn();
@@ -15,12 +15,12 @@ vi.mock('react-router-dom', async (importOriginal) => {
 });
 
 // Mock api/auth
-vi.mock('../src/api/auth.js', () => ({
+vi.mock('../../frontend/src/api/auth.js', () => ({
   login: vi.fn(),
   saveToken: vi.fn(),
 }));
 
-import { login, saveToken } from '../src/api/auth.js';
+import { login, saveToken } from '../../frontend/src/api/auth.js';
 
 function renderLogin() {
   return render(

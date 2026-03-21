@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, act } from '@testing-library/react';
-import ProductosPage from '../src/components/ProductosPage.jsx';
+import ProductosPage from '../../frontend/src/components/ProductosPage.jsx';
 
 vi.mock('sileo', () => ({
   sileo: Object.assign(vi.fn(), {

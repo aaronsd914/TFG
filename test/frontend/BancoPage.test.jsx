@@ -1,10 +1,10 @@
 /**
- * NuevaVenta.test.jsx
- * Verifica el layout del wizard de nueva venta y la disponibilidad del formulario.
+ * BancoPage.test.jsx
+ * Verifica el layout inicial y las llamadas a la API de Stripe.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, act } from '@testing-library/react';
-import NuevaVenta from '../src/components/NuevaVenta.jsx';
+import BancoPage from '../../frontend/src/components/BancoPage.jsx';
 
 vi.mock('sileo', () => ({
   sileo: Object.assign(vi.fn(), {
@@ -14,14 +14,14 @@ vi.mock('sileo', () => ({
 }));
 
 function renderPage() {
-  return render(<NuevaVenta />);
+  return render(<BancoPage />);
 }
 
-describe('NuevaVenta', () => {
+describe('BancoPage', () => {
   beforeEach(() => {
     fetch.mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve([]),
+      json: () => Promise.resolve({ configured: false, currency: 'eur' }),
     });
   });
 
@@ -30,25 +30,25 @@ describe('NuevaVenta', () => {
     expect(document.body).toBeTruthy();
   });
 
-  it('muestra el título "Nueva venta"', async () => {
+  it('llama a la API de Stripe al montar', async () => {
     renderPage();
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /nueva venta/i })).toBeInTheDocument();
+      expect(fetch).toHaveBeenCalledWith(expect.stringContaining('stripe'));
     });
   });
 
-  it('muestra el campo de búsqueda de cliente', async () => {
+  it('consulta tanto el estado como los checkouts', async () => {
     renderPage();
     await waitFor(() => {
-      expect(screen.getByPlaceholderText(/busca por nombre/i)).toBeInTheDocument();
+      expect(fetch).toHaveBeenCalledWith(expect.stringContaining('stripe/status'));
+      expect(fetch).toHaveBeenCalledWith(expect.stringContaining('stripe/checkouts'));
     });
   });
 
-  it('muestra el checkbox para usar cliente existente', async () => {
+  it('no muestra errores visibles cuando Stripe no está configurado', async () => {
     renderPage();
     await waitFor(() => {
-      const checkboxes = screen.getAllByRole('checkbox');
-      expect(checkboxes.length).toBeGreaterThan(0);
+      expect(screen.queryByText(/error/i)).not.toBeInTheDocument();
     });
   });
 

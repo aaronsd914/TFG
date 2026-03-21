@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import App from '../src/components/App.jsx';
+import App from '../../frontend/src/components/App.jsx';
 
 function renderApp() {
   return render(

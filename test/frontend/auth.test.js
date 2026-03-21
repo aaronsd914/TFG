@@ -10,7 +10,7 @@ import {
   getToken,
   removeToken,
   isAuthenticated,
-} from '../src/api/auth.js';
+} from '../../frontend/src/api/auth.js';
 
 // ── helpers ─────────────────────────────────────────────────────────────────
 

@@ -1,10 +1,11 @@
 /**
- * MovimientosPage.test.jsx
- * Verifica el layout, el resumen mensual y el formulario de alta manual.
+ * ClientesPage.test.jsx
+ * Verifica el layout inicial, llamadas a la API y controles de búsqueda.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, act } from '@testing-library/react';
-import MovimientosPage from '../src/components/MovimientosPage.jsx';
+import { MemoryRouter } from 'react-router-dom';
+import ClientesPage from '../../frontend/src/components/ClientesPage.jsx';
 
 vi.mock('sileo', () => ({
   sileo: Object.assign(vi.fn(), {
@@ -14,10 +15,10 @@ vi.mock('sileo', () => ({
 }));
 
 function renderPage() {
-  return render(<MovimientosPage />);
+  return render(<MemoryRouter><ClientesPage /></MemoryRouter>);
 }
 
-describe('MovimientosPage', () => {
+describe('ClientesPage', () => {
   beforeEach(() => {
     fetch.mockResolvedValue({
       ok: true,
@@ -33,30 +34,29 @@ describe('MovimientosPage', () => {
   it('llama a la API al montar', async () => {
     renderPage();
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith(expect.stringContaining('movimientos'));
+      expect(fetch).toHaveBeenCalled();
     });
   });
 
-  it('muestra el título "Movimientos"', async () => {
+  it('muestra el encabezado de clientes', async () => {
     renderPage();
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /movimientos/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /clientes/i })).toBeInTheDocument();
     });
   });
 
-  it('muestra las tarjetas de resumen mensual', async () => {
+  it('contiene un campo de búsqueda', async () => {
     renderPage();
     await waitFor(() => {
-      expect(screen.getByText(/ingresos/i)).toBeInTheDocument();
-      expect(screen.getByText(/egresos/i)).toBeInTheDocument();
-      expect(screen.getByText(/balance/i)).toBeInTheDocument();
+      expect(screen.getByRole('textbox', { hidden: true })).toBeInTheDocument();
     });
   });
 
-  it('muestra el formulario de alta manual', async () => {
+  it('muestra mensaje de lista vacía cuando no hay clientes', async () => {
     renderPage();
     await waitFor(() => {
-      expect(screen.getByText(/añadir movimiento/i)).toBeInTheDocument();
+      // Con lista vacía no debería mostrar filas de tabla
+      expect(screen.queryAllByRole('row')).toHaveLength(0);
     });
   });
 
