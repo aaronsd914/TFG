@@ -18,6 +18,7 @@ from backend.app.utils.emailer import send_email_with_pdf
 from backend.app.utils.albaran_pdf import generar_pdf_albaran
 from backend.app.utils.templates import render
 from backend.app.dependencies import get_current_user
+from backend.app.api.configuracion import get_value as get_cfg
 
 from pydantic import BaseModel
 from datetime import date
@@ -100,6 +101,11 @@ def _send_albaran_email_task(albaran_id: int):
                 }
             )
 
+        # Fetch store config for email + PDF
+        tienda_nombre = get_cfg(db, "tienda_nombre")
+        logo_base64 = get_cfg(db, "logo_empresa") or None
+        firma_email = get_cfg(db, "firma_email")
+
         html = render(
             "albaran_email.html",
             albaran=albaran,
@@ -107,9 +113,15 @@ def _send_albaran_email_task(albaran_id: int):
             lineas=lineas_ext,
             fecha_humana=albaran.fecha.strftime("%d/%m/%Y"),
             total_eur=f"{(albaran.total or total):.2f} €",
+            tienda_nombre=tienda_nombre,
+            firma_email=firma_email,
         )
 
-        pdf_bytes = generar_pdf_albaran(albaran, cliente, lineas_ext)
+        pdf_bytes = generar_pdf_albaran(
+            albaran, cliente, lineas_ext,
+            tienda_nombre=tienda_nombre,
+            logo_base64=logo_base64,
+        )
         subject = f"Albarán #{albaran.id} - {albaran.fecha.strftime('%d/%m/%Y')}"
         filename = f"albaran_{albaran.id}.pdf"
 

@@ -33,7 +33,7 @@ function renderLogin() {
 describe('LoginPage — renderizado', () => {
   it('muestra el título de la aplicación', () => {
     renderLogin();
-    expect(screen.getByText('Financias')).toBeInTheDocument();
+    expect(screen.getByText('FurniGest')).toBeInTheDocument();
   });
 
   it('muestra el campo usuario', () => {

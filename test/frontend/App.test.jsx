@@ -22,7 +22,7 @@ describe('App layout', () => {
 
   it('muestra el Sidebar con el nombre de la app', () => {
     renderApp();
-    expect(screen.getAllByText('Financias')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('FurniGest')[0]).toBeInTheDocument();
   });
 
   it('tiene el contenedor raíz con flex y h-screen', () => {

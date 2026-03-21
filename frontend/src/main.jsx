@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { Toaster } from 'sileo';
+import { ThemeProvider } from './context/ThemeContext.jsx';
 import App from './components/App.jsx';
 import LoginPage from './components/LoginPage.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
@@ -15,6 +16,7 @@ import BancoPage from './components/BancoPage.jsx';
 import TransportePage from './components/TransportePage.jsx';
 import MovimientosPage from './components/MovimientosPage.jsx';
 import PerfilPage from './components/PerfilPage.jsx';
+import PersonalizacionPage from './components/PersonalizacionPage.jsx';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import './api/fetchInterceptor.js';
 import './index.css';
@@ -38,28 +40,31 @@ const router = createBrowserRouter([
       { path: 'productos', element: <ProductosPage /> },
       { path: 'banco', element: <BancoPage /> },
       { path: 'perfil', element: <PerfilPage /> },
+      { path: 'personalizacion', element: <PersonalizacionPage /> },
     ],
   },
 ]);
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <Toaster position="top-right"
-      options={{
-        fill: '#171717',
-        autopilot: {
-          expand: 500,
-          collapse: 5000,
-        },
-        styles: {
-          title: 'text-white! select-none',
-          description: 'text-white/75! select-none',
-          badge: 'bg-white/10!',
-          button: 'bg-white/10! hover:bg-white/15!',
-        },
-      }}
-    />
-      <RouterProvider router={router} />
-      <SpeedInsights />
+    <ThemeProvider>
+      <Toaster position="top-right"
+        options={{
+          fill: '#171717',
+          autopilot: {
+            expand: 500,
+            collapse: 5000,
+          },
+          styles: {
+            title: 'text-white! select-none',
+            description: 'text-white/75! select-none',
+            badge: 'bg-white/10!',
+            button: 'bg-white/10! hover:bg-white/15!',
+          },
+        }}
+      />
+        <RouterProvider router={router} />
+        <SpeedInsights />
+    </ThemeProvider>
   </StrictMode>
 );

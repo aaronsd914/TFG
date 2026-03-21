@@ -39,6 +39,7 @@ import backend.app.entidades.producto  # noqa: F401
 import backend.app.entidades.proveedor  # noqa: F401
 import backend.app.entidades.stripe_checkout  # noqa: F401
 import backend.app.entidades.usuario  # noqa: F401
+import backend.app.entidades.configuracion  # noqa: F401
 
 target_metadata = Base.metadata
 

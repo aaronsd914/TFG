@@ -13,11 +13,16 @@ from backend.app.api import (
     transportes,
     stripe_payments,
 )
+from backend.app.api import configuracion
+from backend.app.utils.resumen_semanal import job_resumen_semanal
 from contextlib import asynccontextmanager
 import logging
 
 from backend.app.database import Base, engine, SessionLocal
 from backend.app.seed import seed
+
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
 
 
 @asynccontextmanager
@@ -27,7 +32,13 @@ async def lifespan(app: FastAPI):
     with SessionLocal() as db:
         seed(db)
 
+    scheduler = BackgroundScheduler(timezone="Europe/Madrid")
+    scheduler.add_job(job_resumen_semanal, CronTrigger(hour=8, minute=30))
+    scheduler.start()
+
     yield
+
+    scheduler.shutdown(wait=False)
 
 
 app = FastAPI(lifespan=lifespan)
@@ -60,6 +71,7 @@ app.include_router(ai.router, prefix="/api")
 app.include_router(transportes.router, prefix="/api")
 app.include_router(bank.router)
 app.include_router(stripe_payments.router)
+app.include_router(configuracion.router, prefix="/api")
 
 
 @app.get("/health")

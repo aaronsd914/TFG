@@ -1,9 +1,11 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { removeToken } from '../api/auth.js';
+import { useAppConfig } from '../context/ConfigContext.jsx';
 
 export default function Sidebar({ open, setOpen }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const { config } = useAppConfig();
 
   function handleLogout() {
     removeToken();
@@ -20,19 +22,19 @@ export default function Sidebar({ open, setOpen }) {
     { icon: '🧰', label: 'Productos', to: '/productos' },
     { icon: '🏦', label: 'Banco', to: '/banco' },
     { icon: '📊', label: 'Tendencias', to: '/tendencias' },
-    { icon: '⚙️', label: 'Mi perfil', to: '/perfil' },
+    { icon: '⚙️', label: 'Personalizar', to: '/personalizacion' },
   ];
 
   return (
     <aside
       className={`
-        w-[220px] bg-[#f5f1e8] p-6 h-[calc(100vh-32px)] m-4 rounded-2xl shadow-md flex flex-col
+        w-[220px] p-6 h-[calc(100vh-32px)] m-4 rounded-2xl shadow-md flex flex-col
         fixed top-0 left-0 z-30 transition-transform duration-300
         md:static md:translate-x-0
         ${open ? 'translate-x-0' : '-translate-x-full'}
         md:block
       `}
-      style={{ maxWidth: 260 }}
+      style={{ backgroundColor: 'var(--fg-sidebar)', maxWidth: 260 }}
       aria-label="Sidebar"
     >
       {/* Close button for mobile */}
@@ -45,7 +47,16 @@ export default function Sidebar({ open, setOpen }) {
           <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
-      <h2 className="text-xl mb-8 font-semibold">Financias</h2>
+
+      {/* Logo / name */}
+      <div className="mb-8 flex items-center gap-2">
+        {config?.logo_empresa ? (
+          <img src={config.logo_empresa} alt="Logo" className="h-8 object-contain rounded" />
+        ) : (
+          <h2 className="text-xl font-semibold text-gray-900">FurniGest</h2>
+        )}
+      </div>
+
       <nav className="flex flex-col gap-2 flex-1">
         {items.map((item) => {
           const active = pathname === item.to;
@@ -54,7 +65,10 @@ export default function Sidebar({ open, setOpen }) {
               key={item.label}
               to={item.to}
               className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-300
-                ${active ? 'bg-[#e0dcd3] text-black' : 'text-gray-600 hover:bg-[#e0dcd3] hover:text-black'}`}
+                ${active ? 'text-black' : 'text-gray-600 hover:text-black'}`}
+              style={active ? { backgroundColor: 'var(--fg-active)' } : {}}
+              onMouseEnter={e => { if (!active) e.currentTarget.style.backgroundColor = 'var(--fg-active)'; }}
+              onMouseLeave={e => { if (!active) e.currentTarget.style.backgroundColor = ''; }}
               onClick={() => setOpen(false)}
             >
               <span>{item.icon}</span>

@@ -60,7 +60,7 @@ export default function LoginPage() {
               className="text-3xl font-bold tracking-tight"
               style={{ fontFamily: 'Manrope, sans-serif', color: '#2c1f0e' }}
             >
-              Financias
+              FurniGest
             </h1>
             <p className="text-sm text-gray-400 mt-1">Panel de gestión</p>
           </div>

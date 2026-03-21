@@ -30,7 +30,7 @@ function renderSidebar(initialPath = '/') {
 describe('Sidebar', () => {
   it('muestra el nombre de la app', () => {
     renderSidebar();
-    expect(screen.getByText('Financias')).toBeInTheDocument();
+    expect(screen.getByText('FurniGest')).toBeInTheDocument();
   });
 
   it('renderiza todos los ítems de navegación', () => {
@@ -45,6 +45,7 @@ describe('Sidebar', () => {
       'Productos',
       'Banco',
       'Tendencias',
+      'Personalizar',
     ];
     labels.forEach((label) => {
       expect(screen.getByText(label)).toBeInTheDocument();
@@ -63,24 +64,22 @@ describe('Sidebar', () => {
     expect(link).toHaveAttribute('href', '/clientes');
   });
 
-  it('el ítem activo tiene la clase de resaltado', () => {
+  it('el ítem activo tiene el estilo de resaltado', () => {
     renderSidebar('/clientes');
     const link = screen.getByRole('link', { name: /clientes/i });
-    expect(link.className).toContain('bg-[#e0dcd3]');
+    expect(link.style.backgroundColor).toBe('var(--fg-active)');
   });
 
-  it('los ítems inactivos no tienen la clase de resaltado', () => {
+  it('los ítems inactivos no tienen el estilo de resaltado', () => {
     renderSidebar('/');
     const link = screen.getByRole('link', { name: /clientes/i });
-    // Los inactivos tienen 'hover:bg-[#e0dcd3]' pero NO 'bg-[#e0dcd3]' como clase propia
-    const classes = link.className.split(/\s+/);
-    expect(classes).not.toContain('bg-[#e0dcd3]');
+    expect(link.style.backgroundColor).toBeFalsy();
   });
 
-  it('tiene exactamente 9 enlaces de navegación', () => {
+  it('tiene exactamente 10 enlaces de navegación', () => {
     renderSidebar();
     const links = screen.getAllByRole('link');
-    expect(links).toHaveLength(9);
+    expect(links).toHaveLength(10);
   });
 
   it('muestra el botón de Cerrar sesión', () => {
