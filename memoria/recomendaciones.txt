@@ -415,7 +415,7 @@ Ordenadas de mayor a menor impacto académico y alineadas con temarios:
    - README.md: sección "Database migrations — Alembic"
 
 ────────────────────────────────────────────────────────────────────────────
-4. COBERTURA DE CÓDIGO (pytest-cov + badge en README)
+4. COBERTURA DE CÓDIGO (pytest-cov + badge en README)           ✅ COMPLETADO
    Asignatura: AIS T1.4 (Calidad del software), AIS T1.5 (SCA/SonarQube)
    Qué es: pytest --cov genera informe línea a línea de cobertura.
            Se puede subir a Codecov o mostrar en GitHub Actions.
@@ -423,19 +423,11 @@ Ordenadas de mayor a menor impacto académico y alineadas con temarios:
             SonarQube (AIS T1.5) usa la cobertura como KPI clave.
    Coste estimado: 2 horas (pip install pytest-cov + config en CI).
    En la memoria: añadir % de cobertura en tabla métricas Cap. 4.
-
-────────────────────────────────────────────────────────────────────────────
-5. GESTIÓN DE STOCK / INVENTARIO
-   Asignatura: BD T4/T5 (modelo E/R, modelo relacional)
-               IS T2 (requisitos funcionales no implementados)
-   Qué es: El campo `stock` ya existe en `productos` pero no se descuenta
-           al crear líneas de albarán ni se controla el stock mínimo.
-   Sugerencias:
-     - Descontar stock al crear cada línea de albarán
-     - Reposición de stock al crear un movimiento de compra a proveedor
-     - Alertas visuales cuando stock < umbral mínimo configurable
-   Coste estimado: 1 día (lógica en api/albaranes.py + 4-5 tests).
-   En la memoria: nuevo RF-14, nueva entidad o atributo en tabla E/R.
+   Implementado: 75 % de cobertura backend medida con pytest-cov.
+                 Badges de SonarCloud (Quality Gate + Coverage) y CI
+                 añadidos al encabezado del README.md.
+                 Cobertura documentada en memoria.tex (sección SonarCloud).
+                 Rama: feat/alembic-migrations
 
 ────────────────────────────────────────────────────────────────────────────
 6. LOGGING ESTRUCTURADO
