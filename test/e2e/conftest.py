@@ -20,9 +20,17 @@ ADMIN_PASS = os.environ.get("E2E_PASS", "admin123")
 
 
 def make_driver() -> webdriver.Chrome:
-    """Crea un WebDriver Chrome headless listo para usar."""
+    """Crea un WebDriver Chrome listo para usar.
+
+    Por defecto corre en modo headless. Para ver el navegador en local:
+        $env:E2E_HEADLESS='false'  (PowerShell)
+        set E2E_HEADLESS=false     (cmd)
+    O usa el flag:  .\run_e2e.ps1 -NonHeadless
+    """
+    headless = os.environ.get("E2E_HEADLESS", "true").lower() != "false"
     opts = Options()
-    opts.add_argument("--headless")
+    if headless:
+        opts.add_argument("--headless")
     opts.add_argument("--no-sandbox")
     opts.add_argument("--disable-dev-shm-usage")
     opts.add_argument("--disable-gpu")
