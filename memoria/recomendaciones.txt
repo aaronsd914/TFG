@@ -391,6 +391,7 @@ Ordenadas de mayor a menor impacto académico y alineadas con temarios:
                   nuevo RNF-07, tests de autenticación.
 
 ────────────────────────────────────────────────────────────────────────────
+✅ COMPLETADO — rama: feat/alembic-migrations
 2. MIGRACIONES DE BD CON ALEMBIC
    Asignatura: BD T6/T7 (diseño relacional, evolución del esquema)
                AIS T2 (mantenimiento y evolución del software)
@@ -401,6 +402,17 @@ Ordenadas de mayor a menor impacto académico y alineadas con temarios:
            Es una técnica fundamental de mantenimiento de BD (BD T6).
    Coste estimado: medio día para configurar + 1 migración inicial.
    En la memoria: subsección en CI/CD sobre "migraciones automáticas".
+
+   Implementado:
+   - alembic.ini en raíz del proyecto
+   - backend/alembic/env.py con DATABASE_URL y todos los modelos
+   - backend/alembic/versions/20241201_a1b2c3d4e5f6_initial_schema.py
+   - start.sh: ejecuta 'alembic upgrade head' antes de uvicorn
+   - requirements.txt: alembic==1.18.4 + Mako==1.3.10
+   - memoria.tex: \subsubsection{Migraciones automáticas con Alembic}
+     con \cite{alembic}, análisis de limitación de create_all(),
+     upgrade/downgrade, autogeneración y relación con CI/CD
+   - README.md: sección "Database migrations — Alembic"
 
 ────────────────────────────────────────────────────────────────────────────
 4. COBERTURA DE CÓDIGO (pytest-cov + badge en README)

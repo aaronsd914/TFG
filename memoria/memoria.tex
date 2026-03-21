@@ -1308,6 +1308,47 @@ Docker Compose \cite{docker} define tres servicios: \texttt{db} (PostgreSQL~16),
 
 En producción, toda la comunicación entre el cliente y el servidor se protege con \textbf{TLS} (\textit{Transport Layer Security})~\cite{kurose} mediante el certificado gestionado automáticamente por Railway. TLS cifra el tráfico HTTP mediante \textbf{AES} (cifrado simétrico de sesión) y garantiza la autenticidad del servidor a través de certificados \textbf{X.509}, cumpliendo los principios de confidencialidad e integridad de la tríada CIA establecida en el RNF-06.
 
+\subsubsection{Migraciones automáticas de base de datos con Alembic}
+\label{sec:alembic}
+
+La evolución del esquema de datos a lo largo del ciclo de vida del software es un problema estudiado en BD T6/T7 (diseño relacional, evolución del esquema) y en AIS T2 (mantenimiento y evolución del software). En FurniGest este problema se resuelve con \textbf{Alembic}~\cite{alembic}, la herramienta de migraciones del ecosistema SQLAlchemy.
+
+\paragraph{Limitación de \texttt{create\_all()}}
+El mecanismo convencional de inicialización del esquema en SQLAlchemy es \mypythoninline{Base.metadata.create_all(bind=engine)}, que crea las tablas si no existen. Sin embargo, este mecanismo \textbf{no puede modificar tablas ya existentes}: si en una versión posterior se añade una columna a un modelo, \texttt{create\_all()} la ignorará silenciosamente en una base de datos ya creada. En producción esto provoca que el esquema real diverja del esquema esperado por el código, causando errores en tiempo de ejecución (BD T7: problema de evolución del esquema relacional).
+
+\paragraph{Solución: migraciones versionadas}
+Alembic resuelve este problema representando cada cambio de esquema como un \textbf{fichero de migración} con dos funciones reversibles:
+
+\begin{mypython}[caption={Estructura de una migración Alembic (\texttt{backend/alembic/versions/}).},label={cod:alembic}]
+def upgrade() -> None:
+    # Se aplica al avanzar de versión
+    op.add_column("productos", sa.Column("stock", sa.Integer(), default=0))
+
+def downgrade() -> None:
+    # Se revierte al retroceder de versión
+    op.drop_column("productos", "stock")
+\end{mypython}
+
+Alembic registra qué migraciones han sido aplicadas en la tabla \texttt{alembic\_version} de PostgreSQL. En cada arranque del servidor, el script \texttt{backend/start.sh} ejecuta:
+
+\begin{verbatim}
+alembic upgrade head
+\end{verbatim}
+
+Este comando aplica todas las migraciones pendientes antes de que Uvicorn empiece a servir peticiones, garantizando que el esquema de la base de datos esté siempre sincronizado con el código desplegado \emph{sin pérdida de datos}.
+
+\paragraph{Autogeneración}
+Alembic puede comparar el esquema actual de la base de datos con los modelos SQLAlchemy y generar automáticamente el fichero de migración necesario:
+
+\begin{verbatim}
+alembic revision --autogenerate -m "add stock column to productos"
+\end{verbatim}
+
+Esto alinea la gestión de migraciones con el principio \textbf{DRY} (\textit{Don't Repeat Yourself}): el modelo SQLAlchemy es la única fuente de verdad sobre el esquema, y Alembic deduce los cambios a partir de él.
+
+\paragraph{Relación con el CI/CD}
+La ejecución automática de \texttt{alembic upgrade head} en cada despliegue a Railway constituye una etapa del pipeline de \textbf{despliegue continuo}: el esquema de producción evoluciona de forma controlada y reproducible con cada \textit{merge} a \texttt{main}, completando el ciclo CI/CD con la dimensión de la persistencia de datos.
+
 \subsection{Desarrollo colaborativo con Git}
 \label{sec:git_colaborativo}
 

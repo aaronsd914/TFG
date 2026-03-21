@@ -52,6 +52,10 @@ REQUEST_TIMEOUT = ${BANK_REQUEST_TIMEOUT:-30}
 DEMO = not bool("${CAIXA_CLIENT_ID}")
 EOF
 
-echo ">>> Config files generated. Starting server..."
+echo ">>> Config files generated. Running database migrations..."
+
+alembic upgrade head
+
+echo ">>> Migrations done. Starting server..."
 
 exec uvicorn backend.app.main:app --host 0.0.0.0 --port "${PORT:-8000}"
