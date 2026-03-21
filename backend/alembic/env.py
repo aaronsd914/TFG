@@ -1,9 +1,13 @@
-﻿"""
+﻿# ruff: noqa: E402
+"""
 Alembic environment for FurniGest.
 
 - DATABASE_URL is read from the environment variable (same as the app).
 - All SQLAlchemy models are imported so that Base.metadata is complete
   before autogenerate or upgrade runs.
+
+E402 is suppressed because Alembic's env.py requires initialising
+`context.config` before the app models can be safely imported.
 """
 import os
 from logging.config import fileConfig
