@@ -46,10 +46,10 @@ Accordion.propTypes = {
 // â”€â”€â”€ Schedule preview utility â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function computeNextDates(startDateStr, intervalDays, count = 6) {
   if (!startDateStr || !intervalDays) return [];
-  const interval = parseInt(intervalDays);
+  const interval = Number.parseInt(intervalDays, 10);
   if (!interval || interval < 1) return [];
   const start = new Date(startDateStr);
-  if (isNaN(start.getTime())) return [];
+  if (Number.isNaN(start.getTime())) return [];
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const diff = Math.floor((today - start) / 86400000);
   const cycles = diff > 0 ? Math.ceil(diff / interval) : 0;
@@ -369,8 +369,9 @@ export default function PersonalizacionPage() {
           {/* Fecha inicio + intervalo */}
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
-              <label className="text-sm text-gray-600">Fecha de inicio</label>
+              <label htmlFor="email-fecha-inicio" className="text-sm text-gray-600">Fecha de inicio</label>
               <input
+                id="email-fecha-inicio"
                 type="date"
                 value={fechaInicio}
                 onChange={e => setFechaInicio(e.target.value)}
@@ -378,8 +379,9 @@ export default function PersonalizacionPage() {
               />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-sm text-gray-600">Intervalo (dÃ­as)</label>
+              <label htmlFor="email-intervalo-dias" className="text-sm text-gray-600">Intervalo (días)</label>
               <input
+                id="email-intervalo-dias"
                 type="number"
                 min={1}
                 max={365}
@@ -392,8 +394,9 @@ export default function PersonalizacionPage() {
 
           {/* Hora de envÃ­o */}
           <div className="flex flex-col gap-1">
-            <label className="text-sm text-gray-600">Hora de envÃ­o</label>
+            <label htmlFor="email-hora-envio" className="text-sm text-gray-600">Hora de envío</label>
             <input
+              id="email-hora-envio"
               type="time"
               value={horaEnvio}
               onChange={e => setHoraEnvio(e.target.value)}
@@ -403,14 +406,14 @@ export default function PersonalizacionPage() {
 
           {/* Schedule preview */}
           {nextDates.length > 0 && (
-            <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 flex flex-col gap-2">
+            <div data-testid="schedule-preview" className="rounded-xl border border-gray-200 bg-gray-50 p-3 flex flex-col gap-2">
               <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                 PrÃ³ximos envÃ­os programados
               </div>
               <div className="flex flex-wrap gap-2">
-                {nextDates.map((d, i) => (
+                {nextDates.map((d) => (
                   <div
-                    key={i}
+                    key={d.toISOString()}
                     className="bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-center"
                   >
                     <div className="text-xs font-semibold text-gray-700">

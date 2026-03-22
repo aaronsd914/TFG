@@ -280,3 +280,112 @@ describe('PersonalizacionPage â€” Formularios cuenta', () => {
   });
 });
 
+// ── Accordion behaviour ────────────────────────────────────────────────────
+
+describe('PersonalizacionPage — Accordion', () => {
+  beforeEach(() => { vi.clearAllMocks(); });
+
+  it('las secciones empiezan cerradas (contenido no visible)', () => {
+    renderPage();
+    // Toggle is in the button label, not in the content area
+    expect(screen.queryByLabelText(/toggle dark mode/i)).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/ej: furnigest/i)).not.toBeInTheDocument();
+  });
+
+  it('abre y cierra una sección al hacer clic dos veces', () => {
+    renderPage();
+    openSection('Apariencia');
+    expect(screen.getByLabelText(/toggle dark mode/i)).toBeInTheDocument();
+    // Close it
+    openSection('Apariencia');
+    expect(screen.queryByLabelText(/toggle dark mode/i)).not.toBeInTheDocument();
+  });
+
+  it('abre varias secciones independientemente', () => {
+    renderPage();
+    openSection('Apariencia');
+    openSection('Identidad');
+    expect(screen.getByLabelText(/toggle dark mode/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/ej: furnigest/i)).toBeInTheDocument();
+  });
+});
+
+// ── Resumen email: nuevos campos ───────────────────────────────────────────
+
+describe('PersonalizacionPage — Resumen email nuevos campos', () => {
+  beforeEach(() => { vi.clearAllMocks(); apiFetch.mockResolvedValue({}); });
+
+  it('muestra el campo fecha de inicio', () => {
+    renderPage();
+    openSection('Resumen por email');
+    expect(document.getElementById('email-fecha-inicio')).toBeInTheDocument();
+  });
+
+  it('muestra el campo hora de envío', () => {
+    renderPage();
+    openSection('Resumen por email');
+    expect(document.getElementById('email-hora-envio')).toBeInTheDocument();
+  });
+
+  it('no muestra previsualización sin fecha de inicio', () => {
+    renderPage();
+    openSection('Resumen por email');
+    expect(screen.queryByText(/próximos envíos programados/i)).not.toBeInTheDocument();
+  });
+
+  it('muestra previsualización al introducir fecha de inicio válida', async () => {
+    // Pre-populate fecha so config async reload doesn't clear our change
+    apiFetch.mockImplementation((url) => {
+      if (url === 'config') return Promise.resolve({ resumen_fecha_inicio: '2024-01-01', resumen_intervalo_dias: '7' });
+      return Promise.resolve({});
+    });
+    renderPage();
+    openSection('Resumen por email');
+    await waitFor(() => {
+      expect(screen.getByTestId('schedule-preview')).toBeInTheDocument();
+    });
+  });
+
+  it('guarda fecha de inicio y hora de envío al guardar', async () => {
+    renderPage();
+    openSection('Resumen por email');
+    const emailInput = await screen.findByPlaceholderText('tu@email.com');
+    fireEvent.change(emailInput, { target: { value: 'test@test.com' } });
+    const fechaInput = document.getElementById('email-fecha-inicio');
+    fireEvent.change(fechaInput, { target: { value: '2026-01-01' } });
+    const horaInput = document.getElementById('email-hora-envio');
+    fireEvent.change(horaInput, { target: { value: '08:30' } });
+
+    fireEvent.submit(emailInput.closest('form'));
+
+    await waitFor(() => {
+      expect(apiFetch).toHaveBeenCalledWith(
+        expect.stringContaining('config/resumen_fecha_inicio'),
+        expect.objectContaining({ method: 'PUT' }),
+      );
+      expect(apiFetch).toHaveBeenCalledWith(
+        expect.stringContaining('config/resumen_hora_envio'),
+        expect.objectContaining({ method: 'PUT' }),
+      );
+    });
+  });
+
+  it('muestra error cuando la API falla al guardar email config', async () => {
+    renderPage();
+    openSection('Resumen por email');
+    const emailInput = await screen.findByPlaceholderText('tu@email.com');
+    fireEvent.change(emailInput, { target: { value: 'test@test.com' } });
+
+    // Override mock to reject config PUT calls
+    apiFetch.mockImplementation((url) => {
+      if (url.includes('config/')) return Promise.reject(new Error('Fallo servidor'));
+      return Promise.resolve({});
+    });
+
+    fireEvent.submit(emailInput.closest('form'));
+    await waitFor(() => {
+      expect(screen.getByText(/fallo servidor/i)).toBeInTheDocument();
+    });
+  });
+});
+
