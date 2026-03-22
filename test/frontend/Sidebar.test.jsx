@@ -45,7 +45,7 @@ describe('Sidebar', () => {
       'Productos',
       'Banco',
       'Tendencias',
-      'Personalizar',
+      'Configuración',
     ];
     labels.forEach((label) => {
       expect(screen.getByText(label)).toBeInTheDocument();

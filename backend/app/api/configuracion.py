@@ -18,6 +18,8 @@ DEFAULTS: dict[str, str] = {
     "firma_email": "",
     "resumen_email_destino": "",
     "resumen_intervalo_dias": "7",
+    "resumen_fecha_inicio": "",
+    "resumen_hora_envio": "09:00",
     "resumen_ultima_vez": "",
 }
 
