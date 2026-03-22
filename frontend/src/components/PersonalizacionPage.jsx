@@ -5,6 +5,7 @@ import { getToken, removeToken } from '../api/auth.js';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext.jsx';
 import { useAppConfig } from '../context/ConfigContext.jsx';
+import { sileo } from 'sileo';
 
 // ─── Collapsible accordion section ────────────────────────────────────────────
 function Accordion({ title, icon, children, defaultOpen = false }) {
@@ -90,20 +91,6 @@ Field.propTypes = {
   placeholder: PropTypes.string,
 };
 
-function Alert({ ok, msg }) {
-  if (!msg) return null;
-  return (
-    <div className={`rounded-lg px-3 py-2 text-sm ${ok
-      ? 'bg-green-50 text-green-800 border border-green-200'
-      : 'bg-red-50 text-red-700 border border-red-200'}`}>
-      {msg}
-    </div>
-  );
-}
-Alert.propTypes = {
-  ok: PropTypes.bool,
-  msg: PropTypes.string,
-};
 
 function SaveBtn({ loading, label = 'Guardar' }) {
   return (
@@ -144,12 +131,11 @@ export default function PersonalizacionPage() {
 
   // ── Mi cuenta: username ──────────────────────────────────────────────────
   const [uForm, setUForm] = useState({ current_password: '', new_username: '' });
-  const [uStatus, setUStatus] = useState(null);
   const [uLoading, setULoading] = useState(false);
 
   async function handleUsernameSubmit(e) {
     e.preventDefault();
-    setULoading(true); setUStatus(null);
+    setULoading(true);
     try {
       await apiFetch('auth/me', {
         method: 'PUT',
@@ -159,31 +145,30 @@ export default function PersonalizacionPage() {
       removeToken();
       navigate('/login', { replace: true });
     } catch (err) {
-      setUStatus({ ok: false, msg: err.message || 'Error al actualizar' });
+      sileo.error({ title: 'Error', description: err.message || 'Error al actualizar' });
     } finally { setULoading(false); }
   }
 
   // ── Mi cuenta: password ──────────────────────────────────────────────────
   const [pForm, setPForm] = useState({ current_password: '', new_password: '', confirm: '' });
-  const [pStatus, setPStatus] = useState(null);
   const [pLoading, setPLoading] = useState(false);
 
   async function handlePasswordSubmit(e) {
     e.preventDefault();
     if (pForm.new_password !== pForm.confirm) {
-      setPStatus({ ok: false, msg: 'Las contraseñas nuevas no coinciden' }); return;
+      sileo.warning({ title: 'Aviso', description: 'Las contraseñas nuevas no coinciden' }); return;
     }
-    setPLoading(true); setPStatus(null);
+    setPLoading(true);
     try {
       await apiFetch('auth/me', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ current_password: pForm.current_password, new_password: pForm.new_password }),
       });
-      setPStatus({ ok: true, msg: 'Contraseña actualizada' });
+      sileo.success({ title: 'Listo', description: 'Contraseña actualizada' });
       setPForm({ current_password: '', new_password: '', confirm: '' });
     } catch (err) {
-      setPStatus({ ok: false, msg: err.message || 'Error al actualizar' });
+      sileo.error({ title: 'Error', description: err.message || 'Error al actualizar' });
     } finally { setPLoading(false); }
   }
 
@@ -192,7 +177,6 @@ export default function PersonalizacionPage() {
   const [intervalo, setIntervalo] = useState('7');
   const [fechaInicio, setFechaInicio] = useState('');
   const [horaEnvio, setHoraEnvio] = useState('09:00');
-  const [emailStatus, setEmailStatus] = useState(null);
   const [emailLoading, setEmailLoading] = useState(false);
 
   useEffect(() => {
@@ -204,36 +188,33 @@ export default function PersonalizacionPage() {
 
   async function handleEmailSave(e) {
     e.preventDefault();
-    setEmailLoading(true); setEmailStatus(null);
+    setEmailLoading(true);
     try {
       await updateConfig('resumen_email_destino', emailDest);
       await updateConfig('resumen_intervalo_dias', intervalo);
       await updateConfig('resumen_fecha_inicio', fechaInicio);
       await updateConfig('resumen_hora_envio', horaEnvio);
-      setEmailStatus({ ok: true, msg: 'Configuración guardada' });
+      sileo.success({ title: 'Listo', description: 'Configuración guardada' });
     } catch (err) {
-      setEmailStatus({ ok: false, msg: err.message || 'Error al guardar' });
+      sileo.error({ title: 'Error', description: err.message || 'Error al guardar' });
     } finally { setEmailLoading(false); }
   }
 
   const nextDates = computeNextDates(fechaInicio, intervalo);
 
-  // ── Identidad: logo ──────────────────────────────────────────────────────
-  const [logoStatus, setLogoStatus] = useState(null);
-
   function handleLogoUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
     if (file.size > 200 * 1024) {
-      setLogoStatus({ ok: false, msg: 'El archivo es demasiado grande (máx. 200 KB)' }); return;
+      sileo.warning({ title: 'Archivo demasiado grande', description: 'El archivo es demasiado grande (máx. 200 KB)' }); return;
     }
     const reader = new FileReader();
     reader.onload = async (ev) => {
       try {
         await updateConfig('logo_empresa', ev.target.result);
-        setLogoStatus({ ok: true, msg: 'Logo guardado' });
+        sileo.success({ title: 'Listo', description: 'Logo guardado' });
       } catch (err) {
-        setLogoStatus({ ok: false, msg: err.message || 'Error al guardar el logo' });
+        sileo.error({ title: 'Error', description: err.message || 'Error al guardar el logo' });
       }
     };
     reader.readAsDataURL(file);
@@ -242,27 +223,26 @@ export default function PersonalizacionPage() {
   async function handleLogoRemove() {
     try {
       await updateConfig('logo_empresa', '');
-      setLogoStatus({ ok: true, msg: 'Logo eliminado' });
+      sileo.success({ title: 'Listo', description: 'Logo eliminado' });
     } catch (err) {
-      setLogoStatus({ ok: false, msg: err.message || 'Error' });
+      sileo.error({ title: 'Error', description: err.message || 'Error' });
     }
   }
 
   // ── Identidad: firma ─────────────────────────────────────────────────────
   const [firma, setFirma] = useState('');
-  const [firmaStatus, setFirmaStatus] = useState(null);
   const [firmaLoading, setFirmaLoading] = useState(false);
 
   useEffect(() => { setFirma(config.firma_email || ''); }, [config]);
 
   async function handleFirmaSave(e) {
     e.preventDefault();
-    setFirmaLoading(true); setFirmaStatus(null);
+    setFirmaLoading(true);
     try {
       await updateConfig('firma_email', firma);
-      setFirmaStatus({ ok: true, msg: 'Firma guardada' });
+      sileo.success({ title: 'Listo', description: 'Firma guardada' });
     } catch (err) {
-      setFirmaStatus({ ok: false, msg: err.message || 'Error al guardar' });
+      sileo.error({ title: 'Error', description: err.message || 'Error al guardar' });
     } finally { setFirmaLoading(false); }
   }
 
@@ -287,7 +267,6 @@ export default function PersonalizacionPage() {
             onChange={v => setUForm(f => ({ ...f, current_password: v }))} required />
           <Field label="Nuevo nombre de usuario" type="text" value={uForm.new_username}
             onChange={v => setUForm(f => ({ ...f, new_username: v }))} required minLength={3} />
-          <Alert {...(uStatus || {})} />
           <SaveBtn loading={uLoading} label="Cambiar usuario" />
         </form>
 
@@ -300,7 +279,6 @@ export default function PersonalizacionPage() {
             onChange={v => setPForm(f => ({ ...f, new_password: v }))} required minLength={8} />
           <Field label="Confirmar nueva contraseña" type="password" value={pForm.confirm}
             onChange={v => setPForm(f => ({ ...f, confirm: v }))} required minLength={8} />
-          <Alert {...(pStatus || {})} />
           <SaveBtn loading={pLoading} label="Cambiar contraseña" />
         </form>
       </Accordion>
@@ -431,7 +409,6 @@ export default function PersonalizacionPage() {
               ? `Último envío: ${config.resumen_ultima_vez}`
               : 'Aún no se ha enviado ningún resumen'}
           </span>
-          <Alert {...(emailStatus || {})} />
           <SaveBtn loading={emailLoading} />
         </form>
       </Accordion>
@@ -468,7 +445,6 @@ export default function PersonalizacionPage() {
             {config.logo_empresa ? 'Cambiar logo' : 'Subir logo'}
             <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
           </label>
-          <Alert {...(logoStatus || {})} />
         </div>
 
         <hr className="border-gray-200" />
@@ -486,7 +462,6 @@ export default function PersonalizacionPage() {
             placeholder="Ej: FurniGest · Calle Mayor 10 · Tel: 666 123 456"
             className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 resize-none"
           />
-          <Alert {...(firmaStatus || {})} />
           <SaveBtn loading={firmaLoading} label="Guardar firma" />
         </form>
       </Accordion>

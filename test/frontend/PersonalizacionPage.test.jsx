@@ -30,6 +30,12 @@ vi.mock('../../frontend/src/api/http.js', () => ({
 }));
 import { apiFetch } from '../../frontend/src/api/http.js';
 
+// Mock sileo
+vi.mock('sileo', () => ({
+  sileo: { success: vi.fn(), error: vi.fn(), warning: vi.fn(), promise: vi.fn() },
+}));
+import { sileo } from 'sileo';
+
 // ThemeContext default (safe) values are used automatically
 // ConfigContext default (safe) values are used automatically
 
@@ -227,13 +233,15 @@ describe('PersonalizacionPage â€” Formularios cuenta', () => {
     const pwForm = forms[1];
     const inputs = pwForm.querySelectorAll('input');
 
-    fireEvent.change(inputs[0], { target: { value: 'actual' } });
-    fireEvent.change(inputs[1], { target: { value: 'nueva12345' } });
-    fireEvent.change(inputs[2], { target: { value: 'diferente' } });
-    fireEvent.submit(pwForm);
+    await act(async () => {
+      fireEvent.change(inputs[0], { target: { value: 'actual' } });
+      fireEvent.change(inputs[1], { target: { value: 'nueva12345' } });
+      fireEvent.change(inputs[2], { target: { value: 'diferente' } });
+      fireEvent.submit(pwForm);
+    });
 
     await waitFor(() => {
-      expect(screen.getByText(/contraseñas nuevas no coinciden/i)).toBeInTheDocument();
+      expect(sileo.warning).toHaveBeenCalledWith(expect.objectContaining({ description: expect.stringMatching(/no coinciden/i) }));
     });
     // apiFetch no debe haberse llamado con auth/me (solo se llama config en el mount)
     expect(apiFetch).not.toHaveBeenCalledWith('auth/me', expect.anything());
@@ -287,13 +295,15 @@ describe('PersonalizacionPage â€” Formularios cuenta', () => {
     const pwForm = forms[1];
     const inputs = pwForm.querySelectorAll('input');
 
-    fireEvent.change(inputs[0], { target: { value: 'actual' } });
-    fireEvent.change(inputs[1], { target: { value: 'nueva12345' } });
-    fireEvent.change(inputs[2], { target: { value: 'nueva12345' } });
-    fireEvent.submit(pwForm);
+    await act(async () => {
+      fireEvent.change(inputs[0], { target: { value: 'actual' } });
+      fireEvent.change(inputs[1], { target: { value: 'nueva12345' } });
+      fireEvent.change(inputs[2], { target: { value: 'nueva12345' } });
+      fireEvent.submit(pwForm);
+    });
 
     await waitFor(() => {
-      expect(screen.getByText(/error api/i)).toBeInTheDocument();
+      expect(sileo.error).toHaveBeenCalledWith(expect.objectContaining({ description: expect.stringMatching(/error api/i) }));
     });
   });
 });
@@ -402,7 +412,7 @@ describe('PersonalizacionPage — Resumen email nuevos campos', () => {
 
     fireEvent.submit(emailInput.closest('form'));
     await waitFor(() => {
-      expect(screen.getByText(/fallo servidor/i)).toBeInTheDocument();
+      expect(sileo.error).toHaveBeenCalledWith(expect.objectContaining({ description: expect.stringMatching(/fallo servidor/i) }));
     });
   });
 
@@ -530,7 +540,7 @@ describe('PersonalizacionPage — Mi cuenta éxito/error', () => {
     fireEvent.change(inputs[1], { target: { value: 'nuevonombre' } });
     fireEvent.submit(userForm);
     await waitFor(() => {
-      expect(screen.getByText(/usuario en uso/i)).toBeInTheDocument();
+      expect(sileo.error).toHaveBeenCalledWith(expect.objectContaining({ description: expect.stringMatching(/usuario en uso/i) }));
     });
   });
 });
@@ -548,7 +558,7 @@ describe('PersonalizacionPage — Identidad edge cases', () => {
     const saveBtn = screen.getByText('Guardar firma');
     fireEvent.click(saveBtn);
     await waitFor(() => {
-      expect(screen.getByText(/firma guardada/i)).toBeInTheDocument();
+      expect(sileo.success).toHaveBeenCalledWith(expect.objectContaining({ description: expect.stringMatching(/firma guardada/i) }));
     });
   });
 
@@ -563,7 +573,7 @@ describe('PersonalizacionPage — Identidad edge cases', () => {
     fireEvent.change(textarea, { target: { value: 'Mi firma' } });
     fireEvent.click(screen.getByText('Guardar firma'));
     await waitFor(() => {
-      expect(screen.getByText(/error firma/i)).toBeInTheDocument();
+      expect(sileo.error).toHaveBeenCalledWith(expect.objectContaining({ description: expect.stringMatching(/error firma/i) }));
     });
   });
 
@@ -574,7 +584,7 @@ describe('PersonalizacionPage — Identidad edge cases', () => {
     const bigFile = new File(['a'], 'big.png', { type: 'image/png' });
     Object.defineProperty(bigFile, 'size', { value: 201 * 1024, configurable: true });
     fireEvent.change(fileInput, { target: { files: [bigFile] } });
-    expect(screen.getByText(/demasiado grande/i)).toBeInTheDocument();
+    expect(sileo.warning).toHaveBeenCalledWith(expect.objectContaining({ description: expect.stringMatching(/demasiado grande/i) }));
   });
 
   it('muestra el logo existente y el botón Eliminar cuando hay logo', async () => {
@@ -618,7 +628,7 @@ describe('PersonalizacionPage — Identidad edge cases', () => {
     await waitFor(() => expect(screen.getByText('Eliminar')).toBeInTheDocument());
     fireEvent.click(screen.getByText('Eliminar'));
     await waitFor(() => {
-      expect(screen.getByText(/logo eliminado/i)).toBeInTheDocument();
+      expect(sileo.success).toHaveBeenCalledWith(expect.objectContaining({ description: expect.stringMatching(/logo eliminado/i) }));
     });
   });
 
@@ -633,7 +643,7 @@ describe('PersonalizacionPage — Identidad edge cases', () => {
     await waitFor(() => expect(screen.getByText('Eliminar')).toBeInTheDocument());
     fireEvent.click(screen.getByText('Eliminar'));
     await waitFor(() => {
-      expect(screen.getByText(/error logo/i)).toBeInTheDocument();
+      expect(sileo.error).toHaveBeenCalledWith(expect.objectContaining({ description: expect.stringMatching(/error logo/i) }));
     });
   });
 
@@ -689,7 +699,7 @@ describe('PersonalizacionPage — Identidad edge cases', () => {
     fireEvent.change(fileInput);
 
     await waitFor(() => {
-      expect(screen.getByText(/error subida/i)).toBeInTheDocument();
+      expect(sileo.error).toHaveBeenCalledWith(expect.objectContaining({ description: expect.stringMatching(/error subida/i) }));
     });
 
     globalThis.FileReader = OriginalFileReader;

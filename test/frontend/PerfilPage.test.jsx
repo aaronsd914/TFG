@@ -8,6 +8,12 @@ import { MemoryRouter } from 'react-router-dom';
 import PerfilPage from '../../frontend/src/components/PerfilPage.jsx';
 import { apiFetch } from '../../frontend/src/api/http.js';
 
+// Mock sileo
+vi.mock('sileo', () => ({
+  sileo: { success: vi.fn(), error: vi.fn(), warning: vi.fn(), promise: vi.fn() },
+}));
+import { sileo } from 'sileo';
+
 // Mock del módulo de auth para controlar getToken
 vi.mock('../../frontend/src/api/auth.js', () => ({
   getToken: () => 'header.eyJzdWIiOiJhZG1pbiJ9.signature',
@@ -159,13 +165,15 @@ describe('PerfilPage — Formularios', () => {
     const pwForm = forms[1];
     const inputs = pwForm.querySelectorAll('input');
 
-    fireEvent.change(inputs[0], { target: { value: 'actual' } });
-    fireEvent.change(inputs[1], { target: { value: 'nueva12345' } });
-    fireEvent.change(inputs[2], { target: { value: 'diferente' } });
-    fireEvent.submit(pwForm);
+    await act(async () => {
+      fireEvent.change(inputs[0], { target: { value: 'actual' } });
+      fireEvent.change(inputs[1], { target: { value: 'nueva12345' } });
+      fireEvent.change(inputs[2], { target: { value: 'diferente' } });
+      fireEvent.submit(pwForm);
+    });
 
     await waitFor(() => {
-      expect(screen.getByText(/contraseñas nuevas no coinciden/i)).toBeInTheDocument();
+      expect(sileo.warning).toHaveBeenCalledWith(expect.objectContaining({ description: expect.stringMatching(/no coinciden/i) }));
     });
     expect(apiFetch).not.toHaveBeenCalled();
   });
@@ -185,7 +193,7 @@ describe('PerfilPage — Formularios', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText(/error del servidor/i)).toBeInTheDocument();
+      expect(sileo.error).toHaveBeenCalledWith(expect.objectContaining({ description: expect.stringMatching(/error del servidor/i) }));
     });
   });
 });

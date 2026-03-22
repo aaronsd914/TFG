@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { apiFetch } from '../api/http.js';
 import { getToken, removeToken } from '../api/auth.js';
 import { useNavigate } from 'react-router-dom';
+import { sileo } from 'sileo';
 
 export default function PerfilPage() {
   const navigate = useNavigate();
@@ -19,13 +20,11 @@ export default function PerfilPage() {
 
   // ── Change username ────────────────────────────────────────────────────────
   const [uForm, setUForm] = useState({ current_password: '', new_username: '' });
-  const [uStatus, setUStatus] = useState(null);
   const [uLoading, setULoading] = useState(false);
 
   async function handleUsernameSubmit(e) {
     e.preventDefault();
     setULoading(true);
-    setUStatus(null);
     try {
       await apiFetch('auth/me', {
         method: 'PUT',
@@ -39,7 +38,7 @@ export default function PerfilPage() {
       removeToken();
       navigate('/login', { replace: true });
     } catch (err) {
-      setUStatus({ ok: false, msg: err.message || 'Error al actualizar usuario' });
+      sileo.error({ title: 'Error', description: err.message || 'Error al actualizar usuario' });
     } finally {
       setULoading(false);
     }
@@ -47,17 +46,15 @@ export default function PerfilPage() {
 
   // ── Change password ────────────────────────────────────────────────────────
   const [pForm, setPForm] = useState({ current_password: '', new_password: '', confirm: '' });
-  const [pStatus, setPStatus] = useState(null);
   const [pLoading, setPLoading] = useState(false);
 
   async function handlePasswordSubmit(e) {
     e.preventDefault();
     if (pForm.new_password !== pForm.confirm) {
-      setPStatus({ ok: false, msg: 'Las contraseñas nuevas no coinciden' });
+      sileo.warning({ title: 'Aviso', description: 'Las contraseñas nuevas no coinciden' });
       return;
     }
     setPLoading(true);
-    setPStatus(null);
     try {
       await apiFetch('auth/me', {
         method: 'PUT',
@@ -67,10 +64,10 @@ export default function PerfilPage() {
           new_password: pForm.new_password,
         }),
       });
-      setPStatus({ ok: true, msg: 'Contraseña actualizada correctamente' });
+      sileo.success({ title: 'Listo', description: 'Contraseña actualizada correctamente' });
       setPForm({ current_password: '', new_password: '', confirm: '' });
     } catch (err) {
-      setPStatus({ ok: false, msg: err.message || 'Error al actualizar contraseña' });
+      sileo.error({ title: 'Error', description: err.message || 'Error al actualizar contraseña' });
     } finally {
       setPLoading(false);
     }
@@ -111,9 +108,7 @@ export default function PerfilPage() {
             required
             minLength={3}
           />
-          {uStatus && (
-            <Alert ok={uStatus.ok} msg={uStatus.msg} />
-          )}
+
           <button
             type="submit"
             disabled={uLoading}
@@ -151,9 +146,7 @@ export default function PerfilPage() {
             required
             minLength={8}
           />
-          {pStatus && (
-            <Alert ok={pStatus.ok} msg={pStatus.msg} />
-          )}
+
           <button
             type="submit"
             disabled={pLoading}
@@ -189,16 +182,4 @@ Field.propTypes = {
   onChange: PropTypes.func.isRequired,
   required: PropTypes.bool,
   minLength: PropTypes.number,
-};
-
-function Alert({ ok, msg }) {
-  return (
-    <div className={`rounded-lg px-3 py-2 text-sm ${ok ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
-      {msg}
-    </div>
-  );
-}
-Alert.propTypes = {
-  ok: PropTypes.bool,
-  msg: PropTypes.string,
 };
