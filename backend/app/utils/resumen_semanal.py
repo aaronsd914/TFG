@@ -1,14 +1,15 @@
 """
 resumen_semanal.py — Genera y envía el resumen periódico de actividad.
 
-El APScheduler lo invoca cada día a las 08:30. La función comprueba si
-han transcurrido `resumen_intervalo_dias` días desde el último envío; si
-no toca, retorna sin hacer nada.
+El APScheduler lo invoca cada minuto. La función comprueba si la hora
+actual coincide con `resumen_hora_envio` (Europe/Madrid) y si han
+transcurrido `resumen_intervalo_dias` días desde el último envío.
 """
 
 import logging
 import re
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from sqlalchemy.orm import Session
 
@@ -43,6 +44,7 @@ _DEFAULTS = {
     "resumen_intervalo_dias": "7",
     "resumen_email_destino": "",
     "resumen_ultima_vez": "",
+    "resumen_hora_envio": "08:30",
     "tienda_nombre": "FurniGest",
 }
 
@@ -62,9 +64,13 @@ def _set(db: Session, key: str, value: str) -> None:
 
 
 def job_resumen_semanal() -> None:
-    """Entry point invocado por APScheduler (hilo de background)."""
+    """Entry point invocado por APScheduler (cada minuto)."""
     db = SessionLocal()
     try:
+        hora_envio = _get(db, "resumen_hora_envio") or "08:30"
+        now_hhmm = datetime.now(tz=ZoneInfo("Europe/Madrid")).strftime("%H:%M")
+        if now_hhmm != hora_envio:
+            return
         _run(db)
     except Exception as exc:
         log.exception("[resumen] Error en job_resumen_semanal: %s", exc)

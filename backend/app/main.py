@@ -33,7 +33,7 @@ async def lifespan(app: FastAPI):
         seed(db)
 
     scheduler = BackgroundScheduler(timezone="Europe/Madrid")
-    scheduler.add_job(job_resumen_semanal, CronTrigger(hour=23, minute=0))
+    scheduler.add_job(job_resumen_semanal, CronTrigger(minute="*"))
     scheduler.start()
 
     yield

@@ -205,8 +205,8 @@ export default function PersonalizacionPage() {
   function handleLogoUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 200 * 1024) {
-      sileo.warning({ title: 'Archivo demasiado grande', description: 'El archivo es demasiado grande (máx. 200 KB)' }); return;
+    if (file.size > 4 * 1024 * 1024) {
+      sileo.warning({ title: 'Archivo demasiado grande', description: 'El archivo es demasiado grande (máx. 4 MB)' }); return;
     }
     const reader = new FileReader();
     reader.onload = async (ev) => {

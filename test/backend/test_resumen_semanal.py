@@ -276,7 +276,12 @@ class TestRun:
 # ── job_resumen_semanal ───────────────────────────────────────────────────────
 class TestJobResumenSemanal:
     def test_llama_a_run_sin_lanzar_excepcion(self):
-        with patch("backend.app.utils.resumen_semanal._run") as mock_run:
+        fake_now = MagicMock()
+        fake_now.strftime.return_value = "08:30"
+        with patch("backend.app.utils.resumen_semanal._run") as mock_run, \
+             patch("backend.app.utils.resumen_semanal.datetime") as mock_dt, \
+             patch("backend.app.utils.resumen_semanal._get", return_value="08:30"):
+            mock_dt.now.return_value = fake_now
             job_resumen_semanal()
         mock_run.assert_called_once()
 

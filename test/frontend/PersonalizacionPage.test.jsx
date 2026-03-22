@@ -582,7 +582,7 @@ describe('PersonalizacionPage — Identidad edge cases', () => {
     openSection('Identidad');
     const fileInput = document.querySelector('input[type="file"]');
     const bigFile = new File(['a'], 'big.png', { type: 'image/png' });
-    Object.defineProperty(bigFile, 'size', { value: 201 * 1024, configurable: true });
+    Object.defineProperty(bigFile, 'size', { value: 4 * 1024 * 1024 + 1, configurable: true });
     fireEvent.change(fileInput, { target: { files: [bigFile] } });
     expect(sileo.warning).toHaveBeenCalledWith(expect.objectContaining({ description: expect.stringMatching(/demasiado grande/i) }));
   });
