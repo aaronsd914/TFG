@@ -2,7 +2,7 @@
  * ProductosPage.test.jsx
  * Verifica el layout inicial, las llamadas a la API y el panel de productos.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, act, fireEvent } from '@testing-library/react';
 import ProductosPage from '../../frontend/src/components/ProductosPage.jsx';
 
@@ -12,6 +12,12 @@ vi.mock('sileo', () => ({
   }),
   Toaster: () => null,
 }));
+
+// Garantiza aislamiento total entre tests: clearAllMocks no basta porque
+// no resetea implementaciones pendientes (mockRejectedValue, etc.)
+afterEach(() => {
+  vi.resetAllMocks();
+});
 
 function renderPage() {
   return render(<ProductosPage />);
@@ -72,7 +78,7 @@ describe('ProductosPage — modal crear producto', () => {
   ];
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     fetch
       .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) })      // productos
       .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockProveedores) }); // proveedores
