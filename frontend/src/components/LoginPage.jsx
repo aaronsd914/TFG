@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { login, saveToken } from '../api/auth.js';
 import { useTheme } from '../context/ThemeContext.jsx';
 
@@ -10,6 +11,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const { t } = useTranslation();
   // Tema: refleja la paleta elegida en Apariencia y el modo oscuro
   const { isDark, palette } = useTheme();
 
@@ -75,7 +77,7 @@ export default function LoginPage() {
             >
               FurniGest
             </h1>
-            <p className="text-sm text-gray-400 mt-1">Panel de gestión</p>
+            <p className="text-sm text-gray-400 mt-1">{t('login.subtitle')}</p>
           </div>
 
           {/* Error */}
@@ -87,23 +89,24 @@ export default function LoginPage() {
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <form onSubmit={handleSubmit} aria-label={t('login.subtitle')} className="flex flex-col gap-5">
             {/* Username */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-widest">
-                Usuario
+              <label htmlFor="login-username" className="text-xs font-semibold text-gray-500 uppercase tracking-widest">
+                {t('login.username')}
               </label>
               <div className="relative">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
+                <span aria-hidden="true" className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
                   <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                 </span>
                 <input
+                  id="login-username"
                   type="text"
                   value={username}
                   onChange={e => setUsername(e.target.value)}
-                  placeholder="Nombre de usuario"
+                  placeholder={t('login.usernamePlaceholder')}
                   required
                   autoFocus
                   className="login-input w-full pl-10 pr-4 py-3 rounded-xl text-sm transition-all"
@@ -118,20 +121,21 @@ export default function LoginPage() {
 
             {/* Password */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-widest">
-                Contraseña
+              <label htmlFor="login-password" className="text-xs font-semibold text-gray-500 uppercase tracking-widest">
+                {t('login.password')}
               </label>
               <div className="relative">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
+                <span aria-hidden="true" className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
                   <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
                 </span>
                 <input
+                  id="login-password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder={t('login.passwordPlaceholder')}
                   required
                   className="login-input w-full pl-10 pr-12 py-3 rounded-xl text-sm transition-all"
                   style={{
@@ -145,7 +149,7 @@ export default function LoginPage() {
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                   onClick={() => setShowPassword(v => !v)}
                   tabIndex={-1}
-                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  aria-label={showPassword ? t('login.hidePassword') : t('login.showPassword')}
                 >
                   {showPassword ? (
                     <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -178,10 +182,10 @@ export default function LoginPage() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="white" strokeWidth="4" />
                     <path className="opacity-75" fill="white" d="M4 12a8 8 0 018-8v8z" />
                   </svg>
-                  Iniciando sesión…
+                  {t('login.submitting')}
                 </span>
               ) : (
-                'Iniciar sesión'
+                t('login.submit')
               )}
             </button>
           </form>

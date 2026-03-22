@@ -1,0 +1,50 @@
+{
+  "sidebar": {
+    "nav": "Main navigation",
+    "close": "Close menu",
+    "logout": "Log out",
+    "dashboard": "Dashboard",
+    "newSale": "New sale",
+    "clients": "Clients",
+    "deliveryNotes": "Delivery notes",
+    "transport": "Transport",
+    "movements": "Movements",
+    "products": "Products",
+    "bank": "Bank",
+    "trends": "Trends",
+    "settings": "Settings"
+  },
+  "login": {
+    "subtitle": "Management panel",
+    "username": "Username",
+    "usernamePlaceholder": "Username",
+    "password": "Password",
+    "passwordPlaceholder": "••••••••",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "submit": "Sign in",
+    "submitting": "Signing in…"
+  },
+  "appearance": {
+    "title": "Appearance",
+    "darkMode": "Dark mode",
+    "darkModeDesc": "Switch between light and dark theme",
+    "toggleDarkMode": "Toggle dark mode",
+    "colorPalette": "Colour palette",
+    "selectPalette": "Select palette {{name}}",
+    "language": "Language",
+    "languageDesc": "Choose the interface language",
+    "langEs": "Español",
+    "langEn": "English",
+    "selectLanguage": "Select language {{lang}}"
+  },
+  "common": {
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "loading": "Loading…",
+    "error": "Error",
+    "success": "Saved successfully"
+  }
+}

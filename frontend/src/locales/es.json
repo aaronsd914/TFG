@@ -1,0 +1,50 @@
+{
+  "sidebar": {
+    "nav": "Navegación principal",
+    "close": "Cerrar menú",
+    "logout": "Cerrar sesión",
+    "dashboard": "Dashboard",
+    "newSale": "Nueva venta",
+    "clients": "Clientes",
+    "deliveryNotes": "Albaranes",
+    "transport": "Transporte",
+    "movements": "Movimientos",
+    "products": "Productos",
+    "bank": "Banco",
+    "trends": "Tendencias",
+    "settings": "Configuración"
+  },
+  "login": {
+    "subtitle": "Panel de gestión",
+    "username": "Usuario",
+    "usernamePlaceholder": "Nombre de usuario",
+    "password": "Contraseña",
+    "passwordPlaceholder": "••••••••",
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña",
+    "submit": "Iniciar sesión",
+    "submitting": "Iniciando sesión…"
+  },
+  "appearance": {
+    "title": "Apariencia",
+    "darkMode": "Modo oscuro",
+    "darkModeDesc": "Cambia entre tema claro y oscuro",
+    "toggleDarkMode": "Activar/desactivar modo oscuro",
+    "colorPalette": "Paleta de color",
+    "selectPalette": "Seleccionar paleta {{name}}",
+    "language": "Idioma",
+    "languageDesc": "Elige el idioma de la interfaz",
+    "langEs": "Español",
+    "langEn": "English",
+    "selectLanguage": "Seleccionar idioma {{lang}}"
+  },
+  "common": {
+    "save": "Guardar",
+    "saving": "Guardando…",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "loading": "Cargando…",
+    "error": "Error",
+    "success": "Guardado correctamente"
+  }
+}

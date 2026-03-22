@@ -1107,13 +1107,18 @@ El sistema de temas está implementado mediante dos contextos React:
 La ruta \texttt{/personalizacion} renderiza \texttt{PersonalizacionPage.jsx}, que organiza los ajustes en cuatro secciones:
 
 \begin{enumerate}
-  \item \textbf{Apariencia:} selector de modo claro/oscuro y elección de paleta de colores.
+  \item \textbf{Apariencia:} selector de modo claro/oscuro, elección de paleta de colores e idioma de la interfaz (español/inglés).
   \item \textbf{Datos de la tienda:} nombre, URL del logo y firma de correo.
   \item \textbf{Resumen semanal:} dirección de correo destinataria e intervalo de envío en días.
   \item \textbf{Perfil de usuario:} enlace a la página \texttt{/perfil} para cambiar la contraseña.
 \end{enumerate}
 
 Todas las modificaciones se persisten inmediatamente mediante \texttt{PUT /api/config/\{clave\}} y el contexto \texttt{ConfigContext} se actualiza de forma optimista para reflejar el cambio en la UI sin necesidad de recargar la página.
+
+\paragraph{Internacionalización (i18n) y accesibilidad WCAG 2.1 AA}
+La interfaz implementa internacionalización completa con \textbf{i18next} y \textbf{react-i18next}: el fichero de configuración \texttt{src/i18n.js} registra \texttt{LanguageDetector} para detectar la preferencia del navegador (clave \texttt{fg-lang} en \texttt{localStorage}) con idioma de respaldo español. Las cadenas de texto de todos los componentes principales (\texttt{Sidebar.jsx}, \texttt{LoginPage.jsx}, \texttt{PersonalizacionPage.jsx}) se obtienen mediante el hook \texttt{useTranslation()}; los ficheros de traducción (\texttt{src/locales/es.json} y \texttt{src/locales/en.json}) cubren los espacios de nombres \texttt{sidebar}, \texttt{login}, \texttt{appearance} y \texttt{common}. El usuario puede cambiar el idioma en tiempo real desde la sección Apariencia de la página de personalización.
+
+En materia de accesibilidad, la implementación aplica las pautas WCAG 2.1 nivel AA al marcado HTML: los enlaces activos del menú lateral incluyen \texttt{aria-current="page"}; los iconos decorativos llevan \texttt{aria-hidden="true"} para no contaminar el árbol de accesibilidad; los campos del formulario de inicio de sesión vinculan etiqueta e input mediante el par \texttt{htmlFor}/\texttt{id}; el interruptor de modo oscuro emplea \texttt{role="switch"} junto con \texttt{aria-checked}; y los selectores de paleta e idioma utilizan \texttt{role="radiogroup"} / \texttt{role="radio"} con \texttt{aria-checked} para que los lectores de pantalla puedan reproducir el estado actual de la selección.
 
 
 \subsection{Motor de analíticas y algoritmos avanzados}
@@ -1897,7 +1902,7 @@ Las siguientes líneas de trabajo ampliarían significativamente las capacidades
 
   \item \textbf{Notificaciones \textit{push}:} integrar Web Push API o un canal de Slack/Telegram para notificaciones en tiempo real (nuevo pedido, entrega confirmada, pago recibido) reduciría la dependencia del correo electrónico.
 
-  \item \textbf{Internacionalización (i18n):} la aplicación podría adaptarse fácilmente a otros sectores e idiomas parametrizando el vocabulario de dominio (albarán, fianza, camión) mediante un sistema de traducciones como \textit{i18next}.
+  \item \textbf{Internacionalización extendida:} la arquitectura i18n ya implementada (ES/EN) puede ampliarse a nuevos idiomas añadiendo un fichero de traducción JSON, sin modificar ningún componente. Se podría priorizar el francés, portugués o alemán para cubrir mercados europeos colindantes.
 \end{enumerate}
 
 

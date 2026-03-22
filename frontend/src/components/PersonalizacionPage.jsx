@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
+import i18n from '../i18n.js';
 import { apiFetch } from '../api/http.js';
 import { getToken, removeToken } from '../api/auth.js';
 import { useNavigate } from 'react-router-dom';
@@ -123,6 +125,8 @@ export default function PersonalizacionPage() {
   const navigate = useNavigate();
   const { isDark, setIsDark, palette, setPalette } = useTheme();
   const { config, updateConfig } = useAppConfig();
+  const { t } = useTranslation();
+  const currentLang = i18n.language?.slice(0, 2) === 'en' ? 'en' : 'es';
 
   // Decode current username from JWT
   const currentUsername = (() => {
@@ -287,20 +291,22 @@ export default function PersonalizacionPage() {
       </Accordion>
 
       {/* ── Apariencia ──────────────────────────────────────────────────── */}
-      <Accordion title="Apariencia" icon="🎨">
+      <Accordion title={t('appearance.title')} icon="🎨">
         {/* Dark mode toggle */}
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-sm font-medium text-gray-700">Modo oscuro</div>
-            <div className="text-xs text-gray-500 mt-0.5">Cambia entre tema claro y oscuro</div>
+            <div className="text-sm font-medium text-gray-700">{t('appearance.darkMode')}</div>
+            <div className="text-xs text-gray-500 mt-0.5">{t('appearance.darkModeDesc')}</div>
           </div>
           <button
             type="button"
             onClick={() => setIsDark(d => !d)}
+            role="switch"
+            aria-checked={isDark}
+            aria-label={t('appearance.toggleDarkMode')}
             className={`relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none ${
               isDark ? 'bg-gray-700' : 'bg-gray-200'
             }`}
-            aria-label="Toggle dark mode"
           >
             <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 flex items-center justify-center text-xs ${
               isDark ? 'translate-x-6' : 'translate-x-0'
@@ -312,12 +318,15 @@ export default function PersonalizacionPage() {
 
         {/* Palette selector */}
         <div>
-          <div className="text-sm font-medium text-gray-700 mb-2">Paleta de color</div>
-          <div className="flex gap-3 flex-wrap">
+          <div className="text-sm font-medium text-gray-700 mb-2">{t('appearance.colorPalette')}</div>
+          <div role="radiogroup" aria-label={t('appearance.colorPalette')} className="flex gap-3 flex-wrap">
             {PALETTES.map(p => (
               <button
                 key={p.id}
                 type="button"
+                role="radio"
+                aria-checked={palette === p.id}
+                aria-label={t('appearance.selectPalette', { name: p.label })}
                 onClick={() => setPalette(p.id)}
                 className={`flex flex-col items-center gap-1.5 px-3 py-2 rounded-xl border-2 transition-all ${
                   palette === p.id
@@ -325,11 +334,37 @@ export default function PersonalizacionPage() {
                     : 'border-transparent hover:border-gray-300'
                 }`}
               >
-                <div className="flex gap-1">
+                <div className="flex gap-1" aria-hidden="true">
                   <span className="w-5 h-5 rounded-full shadow-sm" style={{ background: p.bg }} />
                   <span className="w-5 h-5 rounded-full shadow-sm" style={{ background: p.active }} />
                 </div>
                 <span className="text-xs text-gray-600">{p.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Language selector */}
+        <div>
+          <div className="text-sm font-medium text-gray-700 mb-0.5">{t('appearance.language')}</div>
+          <div className="text-xs text-gray-500 mb-2">{t('appearance.languageDesc')}</div>
+          <div role="radiogroup" aria-label={t('appearance.language')} className="flex gap-2">
+            {['es', 'en'].map(lang => (
+              <button
+                key={lang}
+                type="button"
+                role="radio"
+                aria-checked={currentLang === lang}
+                aria-label={t('appearance.selectLanguage', { lang: lang.toUpperCase() })}
+                onClick={() => i18n.changeLanguage(lang)}
+                data-testid={`lang-${lang}`}
+                className={`px-4 py-1.5 rounded-lg text-sm font-medium border-2 transition-all ${
+                  currentLang === lang
+                    ? 'border-gray-800 bg-gray-900 text-white'
+                    : 'border-gray-200 text-gray-600 hover:border-gray-400'
+                }`}
+              >
+                {lang === 'es' ? t('appearance.langEs') : t('appearance.langEn')}
               </button>
             ))}
           </div>

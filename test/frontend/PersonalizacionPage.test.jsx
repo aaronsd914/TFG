@@ -28,6 +28,11 @@ vi.mock('../../frontend/src/api/auth.js', () => ({
 vi.mock('../../frontend/src/api/http.js', () => ({
   apiFetch: vi.fn(() => Promise.resolve({})),
 }));
+
+// Mock i18n instance used by PersonalizacionPage
+vi.mock('../../frontend/src/i18n.js', () => ({
+  default: { language: 'es', changeLanguage: vi.fn() },
+}));
 import { apiFetch } from '../../frontend/src/api/http.js';
 
 // Mock sileo
@@ -117,7 +122,7 @@ describe('PersonalizacionPage â€” Apariencia', () => {
   it('muestra el toggle de modo oscuro', () => {
     renderPage();
     openSection('Apariencia');
-    expect(screen.getByLabelText(/toggle dark mode/i)).toBeInTheDocument();
+    expect(screen.getByRole('switch')).toBeInTheDocument();
   });
 
   it('muestra las 3 paletas de color', () => {
@@ -131,11 +136,11 @@ describe('PersonalizacionPage â€” Apariencia', () => {
   it('el toggle de modo oscuro responde al click', () => {
     renderPage();
     openSection('Apariencia');
-    const toggle = screen.getByLabelText(/toggle dark mode/i);
+    const toggle = screen.getByRole('switch');
     const htmlEl = document.documentElement;
     const initialDark = htmlEl.classList.contains('dark');
     fireEvent.click(toggle);
-    // State changes â€” just verify no throw
+    // State changes — just verify no throw
     expect(toggle).toBeInTheDocument();
     // Cleanup: restore original state
     if (htmlEl.classList.contains('dark') !== initialDark) {
@@ -316,24 +321,24 @@ describe('PersonalizacionPage — Accordion', () => {
   it('las secciones empiezan cerradas (contenido no visible)', () => {
     renderPage();
     // Toggle is in the button label, not in the content area
-    expect(screen.queryByLabelText(/toggle dark mode/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('switch')).not.toBeInTheDocument();
     expect(screen.queryByPlaceholderText(/ej: furnigest/i)).not.toBeInTheDocument();
   });
 
   it('abre y cierra una sección al hacer clic dos veces', () => {
     renderPage();
     openSection('Apariencia');
-    expect(screen.getByLabelText(/toggle dark mode/i)).toBeInTheDocument();
+    expect(screen.getByRole('switch')).toBeInTheDocument();
     // Close it
     openSection('Apariencia');
-    expect(screen.queryByLabelText(/toggle dark mode/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('switch')).not.toBeInTheDocument();
   });
 
   it('abre varias secciones independientemente', () => {
     renderPage();
     openSection('Apariencia');
     openSection('Identidad');
-    expect(screen.getByLabelText(/toggle dark mode/i)).toBeInTheDocument();
+    expect(screen.getByRole('switch')).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/ej: furnigest/i)).toBeInTheDocument();
   });
 });
