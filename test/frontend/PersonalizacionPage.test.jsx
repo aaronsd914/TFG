@@ -77,9 +77,9 @@ describe('PersonalizacionPage â€” renderizado', () => {
     expect(() => renderPage()).not.toThrow();
   });
 
-  it('muestra el tÃ­tulo de la pÃ¡gina', () => {
+  it('muestra el título de la página', () => {
     renderPage();
-    expect(screen.getByText('ConfiguraciÃ³n')).toBeInTheDocument();
+    expect(screen.getByText('Configuración')).toBeInTheDocument();
   });
 
   it('muestra la secciÃ³n Mi cuenta', () => {
@@ -117,7 +117,7 @@ describe('PersonalizacionPage â€” Apariencia', () => {
   it('muestra las 3 paletas de color', () => {
     renderPage();
     openSection('Apariencia');
-    expect(screen.getByText('CÃ¡lido')).toBeInTheDocument();
+    expect(screen.getByText('Cálido')).toBeInTheDocument();
     expect(screen.getByText('Pizarra')).toBeInTheDocument();
     expect(screen.getByText('Bosque')).toBeInTheDocument();
   });
@@ -233,7 +233,7 @@ describe('PersonalizacionPage â€” Formularios cuenta', () => {
     fireEvent.submit(pwForm);
 
     await waitFor(() => {
-      expect(screen.getByText(/contraseÃ±as nuevas no coinciden/i)).toBeInTheDocument();
+      expect(screen.getByText(/contraseñas nuevas no coinciden/i)).toBeInTheDocument();
     });
     // apiFetch no debe haberse llamado con auth/me (solo se llama config en el mount)
     expect(apiFetch).not.toHaveBeenCalledWith('auth/me', expect.anything());
