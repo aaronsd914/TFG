@@ -2,24 +2,45 @@
 
 /* ── CSS custom properties (palette + dark mode) ─────────────────────────── */
 :root {
-  --fg-bg:      #fefcf7;
-  --fg-sidebar: #f5f1e8;
-  --fg-active:  #e0dcd3;
+  --fg-bg:      #fdf7ed;
+  --fg-sidebar: #ece6d5;
+  --fg-active:  #d4cec3;
   --fg-accent:  #a5744b;
 }
 
 :root[data-palette="slate"] {
-  --fg-bg:      #f8fafc;
-  --fg-sidebar: #f1f5f9;
-  --fg-active:  #e2e8f0;
+  --fg-bg:      #eef3f9;
+  --fg-sidebar: #e2eaf4;
+  --fg-active:  #cdd8e8;
   --fg-accent:  #475569;
 }
 
 :root[data-palette="forest"] {
-  --fg-bg:      #f7fbf7;
-  --fg-sidebar: #ecf5ec;
-  --fg-active:  #d4e8d4;
+  --fg-bg:      #ecf7ec;
+  --fg-sidebar: #d9eed9;
+  --fg-active:  #c1ddc1;
   --fg-accent:  #5b8c5a;
+}
+
+:root[data-palette="rose"] {
+  --fg-bg:      #fff4f4;
+  --fg-sidebar: #fce8e8;
+  --fg-active:  #f5d0d0;
+  --fg-accent:  #c0454a;
+}
+
+:root[data-palette="ocean"] {
+  --fg-bg:      #f0f7ff;
+  --fg-sidebar: #dceeff;
+  --fg-active:  #bdd8f9;
+  --fg-accent:  #2d72d0;
+}
+
+:root[data-palette="lavender"] {
+  --fg-bg:      #f6f4ff;
+  --fg-sidebar: #ece6ff;
+  --fg-active:  #d5caf5;
+  --fg-accent:  #7c3aed;
 }
 
 html.dark {
@@ -49,6 +70,24 @@ html.dark[data-palette="forest"] {
   --fg-sidebar: #1e293b;
   --fg-active:  #334155;
   --fg-accent:  #4ade80;
+}
+html.dark[data-palette="rose"] {
+  --fg-bg:      #0f172a;
+  --fg-sidebar: #1e293b;
+  --fg-active:  #334155;
+  --fg-accent:  #f87171;
+}
+html.dark[data-palette="ocean"] {
+  --fg-bg:      #0f172a;
+  --fg-sidebar: #1e293b;
+  --fg-active:  #334155;
+  --fg-accent:  #60a5fa;
+}
+html.dark[data-palette="lavender"] {
+  --fg-bg:      #0f172a;
+  --fg-sidebar: #1e293b;
+  --fg-active:  #334155;
+  --fg-accent:  #a78bfa;
 }
 
 /* ── Dark mode: override common Tailwind patterns ────────────────────────── */

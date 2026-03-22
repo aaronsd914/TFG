@@ -110,9 +110,12 @@ SaveBtn.propTypes = {
 
 // ─── Palettes ─────────────────────────────────────────────────────────────────
 const PALETTES = [
-  { id: 'warm',   label: 'Cálido',  bg: '#f5f1e8', active: '#e0dcd3' },
-  { id: 'slate',  label: 'Pizarra', bg: '#f1f5f9', active: '#e2e8f0' },
-  { id: 'forest', label: 'Bosque',  bg: '#ecf5ec', active: '#d4e8d4' },
+  { id: 'warm',     label: 'Cálido',  bg: '#ece6d5', active: '#d4cec3' },
+  { id: 'slate',    label: 'Pizarra', bg: '#e2eaf4', active: '#cdd8e8' },
+  { id: 'forest',   label: 'Bosque',  bg: '#d9eed9', active: '#c1ddc1' },
+  { id: 'rose',     label: 'Rosa',    bg: '#fce8e8', active: '#f5d0d0' },
+  { id: 'ocean',    label: 'Océano',  bg: '#dceeff', active: '#bdd8f9' },
+  { id: 'lavender', label: 'Lavanda', bg: '#ece6ff', active: '#d5caf5' },
 ];
 
 // ─── Main component ───────────────────────────────────────────────────────────
