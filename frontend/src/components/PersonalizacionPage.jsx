@@ -419,7 +419,7 @@ export default function PersonalizacionPage() {
         <div className="flex flex-col gap-2">
           <div className="text-sm font-medium text-gray-700">Logo</div>
           <p className="text-xs text-gray-500">
-            Aparece en el Sidebar y en el encabezado del PDF de albaranes. PNG/JPG, máx. 200 KB.
+            Aparece en el Sidebar y en el encabezado del PDF de albaranes. PNG/JPG, máx. 4 MB.
           </p>
           <div className="flex items-center gap-3 flex-wrap">
             {config.logo_empresa ? (
