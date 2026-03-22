@@ -132,7 +132,7 @@
 | 12 | **Stripe payment collection** | Generate a Stripe Checkout Session for any amount, redirect the customer, and confirm the payment server-side. Confirmed payments are automatically recorded as income movements. |
 | 13 | **PDF generation** | ReportLab-powered PDF exports: delivery note, route invoice and analytics trends report. |
 | 14 | **Personalisation & dark mode** | Full theming system: 3 colour palettes selectable at runtime, dark / light mode toggle (persisted in `localStorage`), store name and logo configurable from the UI. |
-| 15 | **Weekly AI business summary** | APScheduler `BackgroundScheduler` fires every day at 22:30 (Europe/Madrid). When the configured interval has elapsed, it calls Groq/Llama-3 with a live snapshot of the business metrics and emails the summary to a configurable address. |
+| 15 | **Weekly AI business summary** | APScheduler `BackgroundScheduler` fires every day at 23:00 (Europe/Madrid). When the configured interval has elapsed, it calls Groq/Llama-3 with a live snapshot of the business metrics and emails the summary to a configurable address. |
 | 16 | **User profile & store settings** | `GET/PUT /api/auth/me` — update own password. `GET/PUT /api/config` — read and write the key-value `configuracion` table (store name, logo URL, email signature, weekly summary recipient and interval). |
 
 ---
@@ -1447,19 +1447,19 @@ The workflow uses `docker/login-action`, `docker/build-push-action` and `docker/
 
 **File:** `.github/workflows/deploy.yml`
 
-Runs on every push to `main` / `master`. Unlike the other workflows, it runs backend and frontend tests **inline** first and only proceeds to deploy when both pass (`needs: [backend-tests, frontend-tests]`). This prevents a broken commit from reaching production even if the standalone `tests.yml` run is still pending.
+Runs on **every push to any branch** (and on pull requests to `main`/`master`). Unlike the other workflows, it runs backend and frontend tests **inline** first, then a SonarCloud quality gate, and only proceeds to deploy when all three pass. This prevents a broken commit from reaching production even if the standalone `tests.yml` run is still pending.
 
 ```
-push to main
+push to any branch
     ├── backend-tests  ─► Pass?
     └── frontend-tests ─► Pass?
                               │
-                    ┌────────┴────────┐
-                    │ Both green? │
-                    └──────┬───────┘
+                    ┌─────────┴─────────┐
+                    │  sonarcloud gate  │
+                    └─────────┬─────────┘
                                │
-                   ┌───────┴───────┐
-                   ├ deploy-backend  (Railway CLI → railway up)
+                   ┌───────────┴───────────┐
+                   ├ deploy-backend  (Railway CLI → railway up --detach)
                    └ deploy-frontend (Vercel CLI  → vercel --prod)
 ```
 
@@ -1467,8 +1467,7 @@ push to main
 
 | Secret | Value / How to obtain |
 |--------|----------------------|
-| `RAILWAY_TOKEN` | Railway Dashboard → Account Settings → Tokens → Create token |
-| `RAILWAY_PROJECT_ID` | Railway → Project → Settings → General → Project ID (UUID in the URL) |
+| `RAILWAY_TOKEN` | Railway Dashboard → Project → Settings → Tokens → **Create project token** (project context is embedded — no separate project ID needed) |
 | `VERCEL_TOKEN` | Vercel Dashboard → avatar → Settings → Tokens → Create |
 | `VERCEL_ORG_ID` | `KlEHSpF4ICDw6eolz3GF3KEm` (Vercel → avatar → Settings → User ID) |
 | `VERCEL_PROJECT_ID` | `prj_qPKtCiAl2F22men8MfoIeEo3xpMw` (Vercel → Project → Settings → General) |
@@ -1486,7 +1485,7 @@ Until these secrets are added, the deploy jobs are skipped but tests still run n
 | `lint.yml` | PR / manual | Ruff + ESLint code quality | None |
 | `docker.yml` | PR / manual | Build & push images to ghcr.io | None (GITHUB_TOKEN) |
 | `sonarcloud.yml` | PR / manual | Generate coverage + SonarCloud quality gate | `SONAR_TOKEN` |
-| `deploy.yml` | PR / manual | Tests + SonarCloud gate + deploy to Railway + Vercel | 6 secrets |
+| `deploy.yml` | **any push** / PR / manual | Tests + SonarCloud gate + deploy to Railway + Vercel | 5 secrets |
 
 #### SonarCloud quality gate
 
@@ -1515,7 +1514,7 @@ sonar.javascript.lcov.reportPaths=frontend/coverage/lcov.info
 
 #### Git branching model & commit conventions
 
-FurniGest follows **Trunk-Based Development (TBD)**: `main` is the only long-lived branch. Every feature is developed on a short-lived `feature/*` or `fix/*` branch and merged to `main` via a Pull Request. This suits continuous deployment — every merged PR triggers `deploy.yml` automatically.
+FurniGest follows **Trunk-Based Development (TBD)**: `main` is the only long-lived branch. Every feature is developed on a short-lived `feature/*` or `fix/*` branch and merged to `main` via a Pull Request. This suits continuous deployment — every push to any branch triggers `deploy.yml` automatically (tests + deploy gate).
 
 **Why not Gitflow?** Gitflow adds `develop`, `release/*` and `hotfix/*` branches, which make sense for projects with periodic release cycles. FurniGest deploys on every merge, so the extra branches would only add merge overhead without benefit.
 

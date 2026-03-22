@@ -1171,106 +1171,6 @@ export default function ProductosPage() {
             </div>
           </section>
 
-          {/* ✅ Modal: Crear nuevo producto */}
-          <Modal
-            open={createModalOpen}
-            onClose={() => {
-              setCreateModalOpen(false);
-              setCreateTouched(false);
-              setCreateErrors({});
-            }}
-            title="Nuevo producto"
-            maxWidth="max-w-2xl"
-          >
-            <form
-              onSubmit={crearProducto}
-              className="grid md:grid-cols-2 gap-3"
-              onChange={() => {
-                if (createTouched) {
-                  const v = validateCreate();
-                  setCreateErrors(v.errors);
-                }
-              }}
-            >
-              <div>
-                <label className={labelReq(createTouched && !!createErrors.nombre)}>
-                  Nombre<RequiredAsterisk />
-                </label>
-                <input
-                  value={fNombre}
-                  onChange={(e) => setFNombre(e.target.value)}
-                  className={inputReq(createTouched && !!createErrors.nombre)}
-                  placeholder="Ej: Mesa de comedor"
-                />
-              </div>
-
-              <div>
-                <label className={labelReq(createTouched && !!createErrors.precio)}>
-                  Precio<RequiredAsterisk />
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={fPrecio}
-                  onChange={(e) => setFPrecio(clampNumberInput(e.target.value))}
-                  className={inputReq(createTouched && !!createErrors.precio)}
-                  placeholder="Ej: 199.99"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm mb-1">Descripción</label>
-                <textarea
-                  value={fDesc}
-                  onChange={(e) => setFDesc(e.target.value)}
-                  className="border rounded-lg px-3 py-2 w-full"
-                  rows={3}
-                  placeholder="Detalles, medidas, materiales…"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className={labelReq(createTouched && !!createErrors.proveedor)}>
-                  Proveedor<RequiredAsterisk />
-                </label>
-                <select
-                  value={fProveedor}
-                  onChange={(e) => setFProveedor(e.target.value)}
-                  className={selectReq(createTouched && !!createErrors.proveedor)}
-                >
-                  <option value="">Selecciona proveedor</option>
-                  {proveedores.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.nombre}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="md:col-span-2 flex flex-wrap items-center gap-3">
-                <Button type="submit" disabled={saving}>
-                  {saving ? 'Guardando…' : 'Crear producto'}
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => {
-                    setFNombre('');
-                    setFDesc('');
-                    setFPrecio('');
-                    setFProveedor('');
-                    setCreateTouched(false);
-                    setCreateErrors({});
-                  }}
-                  disabled={saving}
-                >
-                  Limpiar
-                </Button>
-              </div>
-            </form>
-          </Modal>
-
           {/* ✅ Modal confirmación borrar */}
           <Modal
             open={deleteModalOpen}
@@ -1311,6 +1211,106 @@ export default function ProductosPage() {
           </Modal>
         </>
       )}
+
+      {/* ✅ Modal: Crear nuevo producto — siempre montado, disponible desde cualquier tab */}
+      <Modal
+        open={createModalOpen}
+        onClose={() => {
+          setCreateModalOpen(false);
+          setCreateTouched(false);
+          setCreateErrors({});
+        }}
+        title="Nuevo producto"
+        maxWidth="max-w-2xl"
+      >
+        <form
+          onSubmit={crearProducto}
+          className="grid md:grid-cols-2 gap-3"
+          onChange={() => {
+            if (createTouched) {
+              const v = validateCreate();
+              setCreateErrors(v.errors);
+            }
+          }}
+        >
+          <div>
+            <label className={labelReq(createTouched && !!createErrors.nombre)}>
+              Nombre<RequiredAsterisk />
+            </label>
+            <input
+              value={fNombre}
+              onChange={(e) => setFNombre(e.target.value)}
+              className={inputReq(createTouched && !!createErrors.nombre)}
+              placeholder="Ej: Mesa de comedor"
+            />
+          </div>
+
+          <div>
+            <label className={labelReq(createTouched && !!createErrors.precio)}>
+              Precio<RequiredAsterisk />
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={fPrecio}
+              onChange={(e) => setFPrecio(clampNumberInput(e.target.value))}
+              className={inputReq(createTouched && !!createErrors.precio)}
+              placeholder="Ej: 199.99"
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-sm mb-1">Descripción</label>
+            <textarea
+              value={fDesc}
+              onChange={(e) => setFDesc(e.target.value)}
+              className="border rounded-lg px-3 py-2 w-full"
+              rows={3}
+              placeholder="Detalles, medidas, materiales…"
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className={labelReq(createTouched && !!createErrors.proveedor)}>
+              Proveedor<RequiredAsterisk />
+            </label>
+            <select
+              value={fProveedor}
+              onChange={(e) => setFProveedor(e.target.value)}
+              className={selectReq(createTouched && !!createErrors.proveedor)}
+            >
+              <option value="">Selecciona proveedor</option>
+              {proveedores.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="md:col-span-2 flex flex-wrap items-center gap-3">
+            <Button type="submit" disabled={saving}>
+              {saving ? 'Guardando…' : 'Crear producto'}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setFNombre('');
+                setFDesc('');
+                setFPrecio('');
+                setFProveedor('');
+                setCreateTouched(false);
+                setCreateErrors({});
+              }}
+              disabled={saving}
+            >
+              Limpiar
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

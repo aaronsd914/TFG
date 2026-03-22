@@ -1,4 +1,4 @@
-name: E2E Tests — Selenium
+name: Tests E2E — Selenium
 
 on:
   pull_request:

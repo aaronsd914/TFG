@@ -2,16 +2,18 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import PropTypes from 'prop-types';
 import { apiFetch } from '../api/http.js';
 
-const DEFAULTS = {
+export const DEFAULTS = {
   tienda_nombre: 'FurniGest',
   logo_empresa: '',
   firma_email: '',
   resumen_email_destino: '',
   resumen_intervalo_dias: '7',
+  resumen_fecha_inicio: '',
+  resumen_hora_envio: '09:00',
   resumen_ultima_vez: '',
 };
 
-const ConfigContext = createContext({
+export const ConfigContext = createContext({
   config: DEFAULTS,
   updateConfig: async () => {},
 });

@@ -6,18 +6,63 @@ import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext.jsx';
 import { useAppConfig } from '../context/ConfigContext.jsx';
 
-function Section({ title, children }) {
+// ─── Collapsible accordion section ────────────────────────────────────────────
+function Accordion({ title, icon, children, defaultOpen = false }) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
-    <section className="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col gap-4">
-      <h3 className="font-semibold text-sm uppercase tracking-wider text-gray-500">{title}</h3>
-      {children}
+    <section className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors"
+        aria-expanded={open}
+      >
+        <div className="flex items-center gap-2.5">
+          {icon && <span className="text-base">{icon}</span>}
+          <span className="font-semibold text-sm text-gray-700">{title}</span>
+        </div>
+        <svg
+          className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open && (
+        <div className="px-5 pb-5 pt-4 flex flex-col gap-4 border-t border-gray-100">
+          {children}
+        </div>
+      )}
     </section>
   );
 }
-Section.propTypes = {
+Accordion.propTypes = {
   title: PropTypes.string.isRequired,
+  icon: PropTypes.string,
   children: PropTypes.node.isRequired,
+  defaultOpen: PropTypes.bool,
 };
+
+// ─── Schedule preview utility ──────────────────────────────────────────────────
+function computeNextDates(startDateStr, intervalDays, count = 6) {
+  if (!startDateStr || !intervalDays) return [];
+  const interval = Number.parseInt(intervalDays, 10);
+  if (!interval || interval < 1) return [];
+  const start = new Date(startDateStr);
+  if (Number.isNaN(start.getTime())) return [];
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const diff = Math.floor((today - start) / 86400000);
+  const cycles = diff > 0 ? Math.ceil(diff / interval) : 0;
+  const firstUpcoming = new Date(start);
+  firstUpcoming.setDate(firstUpcoming.getDate() + cycles * interval);
+  const dates = [];
+  for (let i = 0; i < count; i++) {
+    const d = new Date(firstUpcoming);
+    d.setDate(d.getDate() + i * interval);
+    dates.push(d);
+  }
+  return dates;
+}
 
 function Field({ label, type = 'text', value, onChange, required, minLength, placeholder }) {
   return (
@@ -145,12 +190,16 @@ export default function PersonalizacionPage() {
   // ── Resumen semanal ──────────────────────────────────────────────────────
   const [emailDest, setEmailDest] = useState('');
   const [intervalo, setIntervalo] = useState('7');
+  const [fechaInicio, setFechaInicio] = useState('');
+  const [horaEnvio, setHoraEnvio] = useState('09:00');
   const [emailStatus, setEmailStatus] = useState(null);
   const [emailLoading, setEmailLoading] = useState(false);
 
   useEffect(() => {
     setEmailDest(config.resumen_email_destino || '');
     setIntervalo(config.resumen_intervalo_dias || '7');
+    setFechaInicio(config.resumen_fecha_inicio || '');
+    setHoraEnvio(config.resumen_hora_envio || '09:00');
   }, [config]);
 
   async function handleEmailSave(e) {
@@ -159,11 +208,15 @@ export default function PersonalizacionPage() {
     try {
       await updateConfig('resumen_email_destino', emailDest);
       await updateConfig('resumen_intervalo_dias', intervalo);
+      await updateConfig('resumen_fecha_inicio', fechaInicio);
+      await updateConfig('resumen_hora_envio', horaEnvio);
       setEmailStatus({ ok: true, msg: 'Configuración guardada' });
     } catch (err) {
       setEmailStatus({ ok: false, msg: err.message || 'Error al guardar' });
     } finally { setEmailLoading(false); }
   }
+
+  const nextDates = computeNextDates(fechaInicio, intervalo);
 
   // ── Identidad: logo ──────────────────────────────────────────────────────
   const [logoStatus, setLogoStatus] = useState(null);
@@ -215,11 +268,11 @@ export default function PersonalizacionPage() {
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col gap-6 max-w-xl">
-      <h2 className="text-lg font-semibold">Personalización</h2>
+    <div className="flex flex-col gap-4 max-w-xl">
+      <h2 className="text-lg font-semibold">Configuración</h2>
 
       {/* ── Mi cuenta ───────────────────────────────────────────────────── */}
-      <Section title="Mi cuenta">
+      <Accordion title="Mi cuenta" icon="👤">
         <div className="flex items-center gap-3 bg-[var(--fg-sidebar)] rounded-xl px-4 py-3">
           <span className="text-xl">👤</span>
           <div>
@@ -250,10 +303,10 @@ export default function PersonalizacionPage() {
           <Alert {...(pStatus || {})} />
           <SaveBtn loading={pLoading} label="Cambiar contraseña" />
         </form>
-      </Section>
+      </Accordion>
 
       {/* ── Apariencia ──────────────────────────────────────────────────── */}
-      <Section title="Apariencia">
+      <Accordion title="Apariencia" icon="🎨">
         {/* Dark mode toggle */}
         <div className="flex items-center justify-between">
           <div>
@@ -300,10 +353,10 @@ export default function PersonalizacionPage() {
             ))}
           </div>
         </div>
-      </Section>
+      </Accordion>
 
-      {/* ── Resumen semanal ──────────────────────────────────────────────── */}
-      <Section title="Resumen por email (IA)">
+      {/* ── Resumen por email ────────────────────────────────────────────── */}
+      <Accordion title="Resumen por email (IA)" icon="📧">
         <p className="text-sm text-gray-500">
           FurniGest genera automáticamente un resumen de actividad con análisis IA y lo envía
           al email configurado según el intervalo de días elegido.
@@ -312,32 +365,79 @@ export default function PersonalizacionPage() {
           <Field label="Email destinatario" type="email"
             value={emailDest} onChange={setEmailDest}
             placeholder="tu@email.com" required />
-          <div className="flex flex-col gap-1">
-            <label htmlFor="email-intervalo" className="text-sm text-gray-600">
-              Intervalo de envío (días)
-            </label>
-            <input
-              id="email-intervalo"
-              type="number"
-              min={1}
-              max={365}
-              value={intervalo}
-              onChange={e => setIntervalo(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 w-28"
-            />
-            <span className="text-xs text-gray-400">
-              {config.resumen_ultima_vez
-                ? `Último envío: ${config.resumen_ultima_vez}`
-                : 'Aún no se ha enviado ningún resumen'}
-            </span>
+
+          {/* Fecha inicio + intervalo */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1">
+              <label htmlFor="email-fecha-inicio" className="text-sm text-gray-600">Fecha de inicio</label>
+              <input
+                id="email-fecha-inicio"
+                type="date"
+                value={fechaInicio}
+                onChange={e => setFechaInicio(e.target.value)}
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label htmlFor="email-intervalo-dias" className="text-sm text-gray-600">Intervalo (días)</label>
+              <input
+                id="email-intervalo-dias"
+                type="number"
+                min={1}
+                max={365}
+                value={intervalo}
+                onChange={e => setIntervalo(e.target.value)}
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
+              />
+            </div>
           </div>
+
+          {/* Hora de envío */}
+          <div className="flex flex-col gap-1">
+            <label htmlFor="email-hora-envio" className="text-sm text-gray-600">Hora de envío</label>
+            <input
+              id="email-hora-envio"
+              type="time"
+              value={horaEnvio}
+              onChange={e => setHoraEnvio(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 w-36"
+            />
+          </div>
+
+          {/* Schedule preview */}
+          {nextDates.length > 0 && (
+            <div data-testid="schedule-preview" className="rounded-xl border border-gray-200 bg-gray-50 p-3 flex flex-col gap-2">
+              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                Próximos envíos programados
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {nextDates.map((d) => (
+                  <div
+                    key={d.toISOString()}
+                    className="bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-center"
+                  >
+                    <div className="text-xs font-semibold text-gray-700">
+                      {d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
+                    </div>
+                    <div className="text-xs text-gray-400">{horaEnvio || '09:00'}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <span className="text-xs text-gray-400">
+            {config.resumen_ultima_vez
+              ? `Último envío: ${config.resumen_ultima_vez}`
+              : 'Aún no se ha enviado ningún resumen'}
+          </span>
           <Alert {...(emailStatus || {})} />
           <SaveBtn loading={emailLoading} />
         </form>
-      </Section>
+      </Accordion>
 
       {/* ── Identidad ───────────────────────────────────────────────────── */}
-      <Section title="Identidad de la tienda">
+      <Accordion title="Identidad de la tienda" icon="🏪">
         {/* Logo */}
         <div className="flex flex-col gap-2">
           <div className="text-sm font-medium text-gray-700">Logo</div>
@@ -389,7 +489,7 @@ export default function PersonalizacionPage() {
           <Alert {...(firmaStatus || {})} />
           <SaveBtn loading={firmaLoading} label="Guardar firma" />
         </form>
-      </Section>
+      </Accordion>
     </div>
   );
 }
