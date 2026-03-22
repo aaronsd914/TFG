@@ -26,7 +26,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#fefcf7] relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-[#fefcf7] relative overflow-hidden login-wrap">
 
       {/* Decorative blobs */}
       <div
@@ -45,7 +45,7 @@ export default function LoginPage() {
       {/* Card */}
       <div className="relative z-10 w-full max-w-md mx-4">
         <div
-          className="bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl p-10 border border-[#e8e0d0]"
+          className="bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl p-10 border border-[#e8e0d0] login-card"
           style={{ boxShadow: '0 25px 60px rgba(0,0,0,0.12), 0 8px 20px rgba(0,0,0,0.06)' }}
         >
           {/* Logo / Brand */}
@@ -57,8 +57,8 @@ export default function LoginPage() {
               🪑
             </div>
             <h1
-              className="text-3xl font-bold tracking-tight"
-              style={{ fontFamily: 'Manrope, sans-serif', color: '#2c1f0e' }}
+              className="text-3xl font-bold tracking-tight text-gray-900"
+              style={{ fontFamily: 'Manrope, sans-serif' }}
             >
               FurniGest
             </h1>
