@@ -66,10 +66,16 @@ describe('ProductosPage', () => {
 });
 
 describe('ProductosPage — modal crear producto', () => {
+  const mockProveedores = [
+    { id: 1, nombre: 'Proveedor Test A' },
+    { id: 2, nombre: 'Proveedor Test B' },
+  ];
+
   beforeEach(() => {
+    vi.clearAllMocks();
     fetch
-      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) })
-      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) });
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) })      // productos
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockProveedores) }); // proveedores
   });
 
   async function openModal() {
@@ -85,6 +91,12 @@ describe('ProductosPage — modal crear producto', () => {
     await openModal();
     expect(screen.getByPlaceholderText(/ej: mesa de comedor/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Limpiar' })).toBeInTheDocument();
+  });
+
+  it('muestra los proveedores disponibles en el select', async () => {
+    await openModal();
+    expect(screen.getByText('Proveedor Test A')).toBeInTheDocument();
+    expect(screen.getByText('Proveedor Test B')).toBeInTheDocument();
   });
 
   it('cierra el modal al pulsar el botón cerrar (×)', async () => {
@@ -108,27 +120,49 @@ describe('ProductosPage — modal crear producto', () => {
     expect(screen.getByPlaceholderText(/ej: mesa de comedor/i).value).toBe('');
   });
 
-  it('el onChange revalida cuando createTouched es verdadero', async () => {
+  it('el onChange del form revalida cuando createTouched es verdadero', async () => {
     await openModal();
     const form = screen.getByPlaceholderText(/ej: mesa de comedor/i).closest('form');
-    // Submit empty form → setCreateTouched(true) + validation errors
+    // Submit vacío → setCreateTouched(true) → createErrors se activa
     await act(async () => { fireEvent.submit(form); });
-    // onChange now runs validateCreate (createTouched=true)
+    // onChange ahora ejecuta validateCreate (createTouched=true)
     await act(async () => {
       fireEvent.change(screen.getByPlaceholderText(/ej: mesa de comedor/i), { target: { value: 'Nombre test' } });
     });
     expect(document.body).toBeTruthy();
   });
 
-  it('rellena los campos de precio y descripción sin errores', async () => {
+  it('rellena precio, descripción y proveedor correctamente', async () => {
     await openModal();
     const precioInput = screen.getByPlaceholderText(/ej: 199.99/i);
     const descInput = screen.getByPlaceholderText(/detalles, medidas/i);
+    const selectProveedor = screen.getByRole('combobox');
     await act(async () => {
       fireEvent.change(precioInput, { target: { value: '25.50' } });
       fireEvent.change(descInput, { target: { value: 'Descripción de prueba' } });
+      fireEvent.change(selectProveedor, { target: { value: '1' } });
     });
     expect(precioInput.value).toBe('25.5');
     expect(descInput.value).toBe('Descripción de prueba');
+    expect(selectProveedor.value).toBe('1');
+  });
+
+  it('envía el formulario completo y cierra el modal al tener éxito', async () => {
+    // Mock para el POST de creación
+    const nuevoProducto = { id: 99, nombre: 'Mesa nueva', precio: 199.99, proveedor_id: 1 };
+    fetch.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(nuevoProducto) });
+
+    await openModal();
+    await act(async () => {
+      fireEvent.change(screen.getByPlaceholderText(/ej: mesa de comedor/i), { target: { value: 'Mesa nueva' } });
+      fireEvent.change(screen.getByPlaceholderText(/ej: 199.99/i), { target: { value: '199.99' } });
+      fireEvent.change(screen.getByRole('combobox'), { target: { value: '1' } });
+    });
+    await act(async () => {
+      fireEvent.submit(screen.getByPlaceholderText(/ej: mesa de comedor/i).closest('form'));
+    });
+    await waitFor(() => {
+      expect(screen.queryByPlaceholderText(/ej: mesa de comedor/i)).not.toBeInTheDocument();
+    });
   });
 });
