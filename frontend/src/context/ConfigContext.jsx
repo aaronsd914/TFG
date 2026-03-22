@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import PropTypes from 'prop-types';
 import { apiFetch } from '../api/http.js';
 
-const DEFAULTS = {
+export const DEFAULTS = {
   tienda_nombre: 'FurniGest',
   logo_empresa: '',
   firma_email: '',
@@ -13,7 +13,7 @@ const DEFAULTS = {
   resumen_ultima_vez: '',
 };
 
-const ConfigContext = createContext({
+export const ConfigContext = createContext({
   config: DEFAULTS,
   updateConfig: async () => {},
 });

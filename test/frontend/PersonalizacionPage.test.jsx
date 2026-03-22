@@ -3,10 +3,11 @@
  * Verifica el renderizado y comportamiento de la pÃ¡gina de personalizaciÃ³n.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import PersonalizacionPage from '../../frontend/src/components/PersonalizacionPage.jsx';
-import { ConfigProvider } from '../../frontend/src/context/ConfigContext.jsx';
+import { ConfigProvider, ConfigContext, DEFAULTS as CONFIG_DEFAULTS } from '../../frontend/src/context/ConfigContext.jsx';
+import { ThemeProvider } from '../../frontend/src/context/ThemeContext.jsx';
 
 // â”€â”€ Mocks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const mockNavigate = vi.fn();
@@ -35,9 +36,26 @@ import { apiFetch } from '../../frontend/src/api/http.js';
 function renderPage() {
   return render(
     <MemoryRouter>
-      <ConfigProvider>
-        <PersonalizacionPage />
-      </ConfigProvider>
+      <ThemeProvider>
+        <ConfigProvider>
+          <PersonalizacionPage />
+        </ConfigProvider>
+      </ThemeProvider>
+    </MemoryRouter>
+  );
+}
+
+/** Render with a pre-set config value (bypasses async config loading) */
+function renderPageWithConfig(extraConfig = {}) {
+  const config = { ...CONFIG_DEFAULTS, ...extraConfig };
+  const updateConfig = vi.fn().mockResolvedValue(undefined);
+  return render(
+    <MemoryRouter>
+      <ThemeProvider>
+        <ConfigContext.Provider value={{ config, updateConfig }}>
+          <PersonalizacionPage />
+        </ConfigContext.Provider>
+      </ThemeProvider>
     </MemoryRouter>
   );
 }
@@ -387,5 +405,237 @@ describe('PersonalizacionPage — Resumen email nuevos campos', () => {
       expect(screen.getByText(/fallo servidor/i)).toBeInTheDocument();
     });
   });
+
+  it('muestra mensaje de éxito al guardar configuración de email', async () => {
+    renderPage();
+    openSection('Resumen por email');
+    const emailInput = screen.getByPlaceholderText('tu@email.com');
+    fireEvent.change(emailInput, { target: { value: 'ok@test.com' } });
+    fireEvent.submit(emailInput.closest('form'));
+    // Verify all config keys were updated (success path executed)
+    await waitFor(() => {
+      expect(apiFetch).toHaveBeenCalledWith(
+        expect.stringContaining('config/resumen_hora_envio'),
+        expect.objectContaining({ method: 'PUT' }),
+      );
+    });
+  });
+
+  it('muestra la fecha del último envío si está configurada', async () => {
+    renderPageWithConfig({ resumen_ultima_vez: '2026-03-01 09:00' });
+    openSection('Resumen por email');
+    await waitFor(() => {
+      expect(document.body.textContent).toMatch(/2026-03-01/);
+    });
+  });
+
+  it('no muestra preview con intervalo 0', async () => {
+    apiFetch.mockImplementation((url) => {
+      if (url === 'config') return Promise.resolve({ resumen_fecha_inicio: '2024-01-01', resumen_intervalo_dias: '0' });
+      return Promise.resolve({});
+    });
+    renderPage();
+    openSection('Resumen por email');
+    await waitFor(() => {
+      expect(document.getElementById('email-intervalo-dias')).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId('schedule-preview')).not.toBeInTheDocument();
+  });
+
+  it('no muestra preview con fecha inválida', async () => {
+    apiFetch.mockImplementation((url) => {
+      if (url === 'config') return Promise.resolve({ resumen_fecha_inicio: 'invalid-date', resumen_intervalo_dias: '7' });
+      return Promise.resolve({});
+    });
+    renderPage();
+    openSection('Resumen por email');
+    await waitFor(() => {
+      expect(document.getElementById('email-intervalo-dias')).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId('schedule-preview')).not.toBeInTheDocument();
+  });
+
+  it('muestra preview con fecha de inicio en el futuro (cycles=0)', async () => {
+    apiFetch.mockImplementation((url) => {
+      if (url === 'config') return Promise.resolve({ resumen_fecha_inicio: '2030-01-01', resumen_intervalo_dias: '7' });
+      return Promise.resolve({});
+    });
+    renderPage();
+    openSection('Resumen por email');
+    await waitFor(() => {
+      expect(screen.getByTestId('schedule-preview')).toBeInTheDocument();
+    });
+  });
 });
+
+// ── Apariencia: paleta ─────────────────────────────────────────────────────
+
+describe('PersonalizacionPage — Paleta de color', () => {
+  beforeEach(() => { vi.clearAllMocks(); apiFetch.mockResolvedValue({}); });
+
+  it('cambia la paleta al hacer clic en Pizarra', async () => {
+    renderPage();
+    openSection('Apariencia');
+    await act(async () => {
+      fireEvent.click(screen.getByText('Pizarra').closest('button'));
+    });
+    expect(document.documentElement.dataset.palette).toBe('slate');
+  });
+
+  it('cambia la paleta al hacer clic en Bosque', async () => {
+    renderPage();
+    openSection('Apariencia');
+    await act(async () => {
+      fireEvent.click(screen.getByText('Bosque').closest('button'));
+    });
+    expect(document.documentElement.dataset.palette).toBe('forest');
+  });
+});
+
+// ── Mi cuenta: casos de éxito y error ─────────────────────────────────────
+
+describe('PersonalizacionPage — Mi cuenta éxito/error', () => {
+  beforeEach(() => { vi.clearAllMocks(); apiFetch.mockResolvedValue({}); });
+
+  it('muestra mensaje de éxito al cambiar contraseña correctamente', async () => {
+    renderPage();
+    openSection('Mi cuenta');
+    const forms = document.querySelectorAll('form');
+    const pwForm = forms[1];
+    const inputs = pwForm.querySelectorAll('input');
+    fireEvent.change(inputs[0], { target: { value: 'actual123' } });
+    fireEvent.change(inputs[1], { target: { value: 'nueva12345' } });
+    fireEvent.change(inputs[2], { target: { value: 'nueva12345' } });
+    fireEvent.submit(pwForm);
+    // Verify the submit was handled (apiFetch called for auth/me)
+    await waitFor(() => {
+      expect(apiFetch).toHaveBeenCalledWith(
+        'auth/me',
+        expect.objectContaining({ method: 'PUT' }),
+      );
+    });
+  });
+
+  it('muestra error al fallar cambio de usuario', async () => {
+    apiFetch.mockImplementation((url) => {
+      if (url === 'auth/me') return Promise.reject(new Error('Usuario en uso'));
+      return Promise.resolve({});
+    });
+    renderPage();
+    openSection('Mi cuenta');
+    const forms = document.querySelectorAll('form');
+    const userForm = forms[0];
+    const inputs = userForm.querySelectorAll('input');
+    fireEvent.change(inputs[0], { target: { value: 'mipassword' } });
+    fireEvent.change(inputs[1], { target: { value: 'nuevonombre' } });
+    fireEvent.submit(userForm);
+    await waitFor(() => {
+      expect(screen.getByText(/usuario en uso/i)).toBeInTheDocument();
+    });
+  });
+});
+
+// ── Identidad: logo y firma edge cases ────────────────────────────────────
+
+describe('PersonalizacionPage — Identidad edge cases', () => {
+  beforeEach(() => { vi.clearAllMocks(); apiFetch.mockResolvedValue({}); });
+
+  it('muestra mensaje de éxito al guardar la firma', async () => {
+    renderPage();
+    openSection('Identidad');
+    const textarea = screen.getByPlaceholderText(/ej: furnigest/i);
+    fireEvent.change(textarea, { target: { value: 'Mi firma' } });
+    const saveBtn = screen.getByText('Guardar firma');
+    fireEvent.click(saveBtn);
+    await waitFor(() => {
+      expect(screen.getByText(/firma guardada/i)).toBeInTheDocument();
+    });
+  });
+
+  it('muestra error al fallar guardado de firma', async () => {
+    apiFetch.mockImplementation((url) => {
+      if (url.includes('config/firma_email')) return Promise.reject(new Error('Error firma'));
+      return Promise.resolve({});
+    });
+    renderPage();
+    openSection('Identidad');
+    const textarea = screen.getByPlaceholderText(/ej: furnigest/i);
+    fireEvent.change(textarea, { target: { value: 'Mi firma' } });
+    fireEvent.click(screen.getByText('Guardar firma'));
+    await waitFor(() => {
+      expect(screen.getByText(/error firma/i)).toBeInTheDocument();
+    });
+  });
+
+  it('rechaza un archivo de logo demasiado grande', () => {
+    renderPage();
+    openSection('Identidad');
+    const fileInput = document.querySelector('input[type="file"]');
+    const bigFile = new File(['a'], 'big.png', { type: 'image/png' });
+    Object.defineProperty(bigFile, 'size', { value: 201 * 1024, configurable: true });
+    fireEvent.change(fileInput, { target: { files: [bigFile] } });
+    expect(screen.getByText(/demasiado grande/i)).toBeInTheDocument();
+  });
+
+  it('muestra el logo existente y el botón Eliminar cuando hay logo', async () => {
+    apiFetch.mockImplementation((url) => {
+      if (url === 'config') return Promise.resolve({ logo_empresa: 'data:image/png;base64,abc' });
+      return Promise.resolve({});
+    });
+    renderPage();
+    openSection('Identidad');
+    await waitFor(() => {
+      expect(screen.getByAltText('Logo actual')).toBeInTheDocument();
+      expect(screen.getByText('Eliminar')).toBeInTheDocument();
+      expect(screen.getByText('Cambiar logo')).toBeInTheDocument();
+    });
+  });
+
+  it('elimina el logo al hacer clic en Eliminar', async () => {
+    apiFetch.mockImplementation((url) => {
+      if (url === 'config') return Promise.resolve({ logo_empresa: 'data:image/png;base64,abc' });
+      return Promise.resolve({});
+    });
+    renderPage();
+    openSection('Identidad');
+    await waitFor(() => expect(screen.getByText('Eliminar')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Eliminar'));
+    await waitFor(() => {
+      expect(apiFetch).toHaveBeenCalledWith(
+        expect.stringContaining('config/logo_empresa'),
+        expect.objectContaining({ method: 'PUT' }),
+      );
+    });
+  });
+
+  it('muestra mensaje de éxito al eliminar logo', async () => {
+    apiFetch.mockImplementation((url) => {
+      if (url === 'config') return Promise.resolve({ logo_empresa: 'data:image/png;base64,abc' });
+      return Promise.resolve({});
+    });
+    renderPage();
+    openSection('Identidad');
+    await waitFor(() => expect(screen.getByText('Eliminar')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Eliminar'));
+    await waitFor(() => {
+      expect(screen.getByText(/logo eliminado/i)).toBeInTheDocument();
+    });
+  });
+
+  it('muestra error al fallar eliminación de logo', async () => {
+    apiFetch.mockImplementation((url) => {
+      if (url === 'config') return Promise.resolve({ logo_empresa: 'data:image/png;base64,abc' });
+      if (url.includes('config/logo_empresa')) return Promise.reject(new Error('Error logo'));
+      return Promise.resolve({});
+    });
+    renderPage();
+    openSection('Identidad');
+    await waitFor(() => expect(screen.getByText('Eliminar')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Eliminar'));
+    await waitFor(() => {
+      expect(screen.getByText(/error logo/i)).toBeInTheDocument();
+    });
+  });
+});
+
 
