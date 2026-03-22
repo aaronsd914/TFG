@@ -23,6 +23,7 @@ from backend.app.utils.resumen_semanal import (
     job_resumen_semanal,
     _eur,
     _build_html,
+    _md_to_html,
 )
 from test.backend.conftest import TestingSessionLocal
 
@@ -82,6 +83,63 @@ class TestEur:
         result = _eur(-500.0)
         assert "500" in result
         assert "€" in result
+
+
+# ── _md_to_html ──────────────────────────────────────────────────────────────
+class TestMdToHtml:
+    def test_bold_convierte_a_strong(self):
+        assert _md_to_html("**texto**") == "<strong>texto</strong>"
+
+    def test_italic_convierte_a_em(self):
+        assert _md_to_html("*texto*") == "<em>texto</em>"
+
+    def test_bold_no_afecta_italica_anidada(self):
+        html = _md_to_html("**negrita** y *cursiva*")
+        assert "<strong>negrita</strong>" in html
+        assert "<em>cursiva</em>" in html
+
+    def test_saltos_de_linea_a_br(self):
+        # Single newline → space; double newline → <br><br>
+        html = _md_to_html("linea1\nlinea2")
+        assert "<br>" not in html
+        assert "linea1" in html
+        assert "linea2" in html
+
+    def test_doble_salto_a_parrafo(self):
+        html = _md_to_html("a\n\nb")
+        assert "<br><br>" in html
+
+    def test_lista_numerada_convierte_numero(self):
+        html = _md_to_html("1) Primer punto")
+        assert "<strong>1)</strong>" in html
+        assert "Primer punto" in html
+
+    def test_escapa_html_especial(self):
+        html = _md_to_html("<script>alert('xss')</script>")
+        assert "<script>" not in html
+        assert "&lt;script&gt;" in html
+
+    def test_ampersand_escapado(self):
+        html = _md_to_html("A & B")
+        assert "&amp;" in html
+        assert " & " not in html
+
+    def test_texto_sin_markdown_pasa_sin_cambios(self):
+        assert _md_to_html("texto simple") == "texto simple"
+
+    def test_texto_vacio(self):
+        assert _md_to_html("") == ""
+
+    def test_build_html_usa_md_to_html(self):
+        """_build_html debe convertir markdown en negrita a <strong> en el HTML."""
+        desde = date.today() - timedelta(days=7)
+        html = _build_html(
+            "Tienda", desde, date.today(),
+            1000.0, 200.0, 800.0, 5, 1500.0,
+            "**Tendencia positiva:** ventas al alza",
+            7,
+        )
+        assert "<strong>Tendencia positiva:</strong>" in html
 
 
 # ── _build_html ───────────────────────────────────────────────────────────────
