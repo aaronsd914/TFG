@@ -636,6 +636,64 @@ describe('PersonalizacionPage — Identidad edge cases', () => {
       expect(screen.getByText(/error logo/i)).toBeInTheDocument();
     });
   });
+
+  it('sube un logo válido (< 200 KB) y muestra mensaje de éxito', async () => {
+    const OriginalFileReader = globalThis.FileReader;
+    globalThis.FileReader = class MockFileReader {
+      constructor() { this.result = null; this.onload = null; }
+      readAsDataURL() {
+        this.result = 'data:image/png;base64,abc123';
+        queueMicrotask(() => { if (this.onload) this.onload({ target: { result: this.result } }); });
+      }
+    };
+
+    renderPage();
+    openSection('Identidad');
+    const fileInput = document.querySelector('input[type="file"]');
+    const smallFile = new File(['abc'], 'small.png', { type: 'image/png' });
+    Object.defineProperty(smallFile, 'size', { value: 100, configurable: true });
+    Object.defineProperty(fileInput, 'files', { value: [smallFile], configurable: true });
+    fireEvent.change(fileInput);
+
+    await waitFor(() => {
+      expect(apiFetch).toHaveBeenCalledWith(
+        expect.stringContaining('config/logo_empresa'),
+        expect.objectContaining({ method: 'PUT' }),
+      );
+    });
+
+    globalThis.FileReader = OriginalFileReader;
+  });
+
+  it('muestra error si falla la subida del logo válido', async () => {
+    apiFetch.mockImplementation((url) => {
+      if (url.includes('config/logo_empresa')) return Promise.reject(new Error('Error subida'));
+      return Promise.resolve({});
+    });
+
+    const OriginalFileReader = globalThis.FileReader;
+    globalThis.FileReader = class MockFileReader {
+      constructor() { this.result = null; this.onload = null; }
+      readAsDataURL() {
+        this.result = 'data:image/png;base64,abc123';
+        queueMicrotask(() => { if (this.onload) this.onload({ target: { result: this.result } }); });
+      }
+    };
+
+    renderPage();
+    openSection('Identidad');
+    const fileInput = document.querySelector('input[type="file"]');
+    const smallFile = new File(['abc'], 'small.png', { type: 'image/png' });
+    Object.defineProperty(smallFile, 'size', { value: 100, configurable: true });
+    Object.defineProperty(fileInput, 'files', { value: [smallFile], configurable: true });
+    fireEvent.change(fileInput);
+
+    await waitFor(() => {
+      expect(screen.getByText(/error subida/i)).toBeInTheDocument();
+    });
+
+    globalThis.FileReader = OriginalFileReader;
+  });
 });
 
 // ── Resumen email: onChange en intervalo ───────────────────────────────────
@@ -649,5 +707,19 @@ describe('PersonalizacionPage — intervalo días onChange', () => {
     const intervaloInput = document.getElementById('email-intervalo-dias');
     fireEvent.change(intervaloInput, { target: { value: '14' } });
     expect(intervaloInput.value).toBe('14');
+  });
+
+  it('no muestra preview con intervalo negativo (interval < 1)', async () => {
+    // Covers the `interval < 1` branch of computeNextDates when !interval is false
+    apiFetch.mockImplementation((url) => {
+      if (url === 'config') return Promise.resolve({ resumen_fecha_inicio: '2024-01-01', resumen_intervalo_dias: '-3' });
+      return Promise.resolve({});
+    });
+    renderPage();
+    openSection('Resumen por email');
+    await waitFor(() => {
+      expect(document.getElementById('email-intervalo-dias')).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId('schedule-preview')).not.toBeInTheDocument();
   });
 });
