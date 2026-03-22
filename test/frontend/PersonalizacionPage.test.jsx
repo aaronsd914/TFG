@@ -638,4 +638,16 @@ describe('PersonalizacionPage — Identidad edge cases', () => {
   });
 });
 
+// ── Resumen email: onChange en intervalo ───────────────────────────────────
 
+describe('PersonalizacionPage — intervalo días onChange', () => {
+  beforeEach(() => { vi.clearAllMocks(); apiFetch.mockResolvedValue({}); });
+
+  it('actualiza el estado al cambiar el campo intervalo de días', () => {
+    renderPage();
+    openSection('Resumen por email');
+    const intervaloInput = document.getElementById('email-intervalo-dias');
+    fireEvent.change(intervaloInput, { target: { value: '14' } });
+    expect(intervaloInput.value).toBe('14');
+  });
+});
