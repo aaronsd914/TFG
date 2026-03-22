@@ -131,8 +131,8 @@
 | 11 | **Transport / logistics module** | Assign delivery notes to numbered trucks, view per-truck manifests, liquidate routes (registers a 7 % transport cost as an expense), and download a PDF route invoice. |
 | 12 | **Stripe payment collection** | Generate a Stripe Checkout Session for any amount, redirect the customer, and confirm the payment server-side. Confirmed payments are automatically recorded as income movements. |
 | 13 | **PDF generation** | ReportLab-powered PDF exports: delivery note, route invoice and analytics trends report. |
-| 14 | **Personalisation & dark mode** | Full theming system: 3 colour palettes selectable at runtime, dark / light mode toggle (persisted in `localStorage`), store name and logo configurable from the UI. |
-| 15 | **Weekly AI business summary** | APScheduler `BackgroundScheduler` fires every day at 23:00 (Europe/Madrid). When the configured interval has elapsed, it calls Groq/Llama-3 with a live snapshot of the business metrics and emails the summary to a configurable address. |
+| 14 | **Personalisation & dark mode** | Full theming system: 6 colour palettes selectable at runtime (Warm, Slate, Forest, Rose, Ocean, Lavender), dark / light mode toggle (persisted in `localStorage`), store name and logo (up to 4 MB, displayed prominently in the sidebar) configurable from the UI. |
+| 15 | **Weekly AI business summary** | APScheduler `BackgroundScheduler` fires every minute; each tick compares the current time (Europe/Madrid) against the configurable `resumen_hora_envio` setting. When the time matches and the configured interval has elapsed, it calls Groq/Llama-3 with a live snapshot of the business metrics and emails the summary to a configurable address. |
 | 16 | **User profile & store settings** | `GET/PUT /api/auth/me` — update own password. `GET/PUT /api/config` — read and write the key-value `configuracion` table (store name, logo URL, email signature, weekly summary recipient and interval). |
 
 ---
