@@ -232,3 +232,33 @@ def test_put_me_contrasena_muy_corta_devuelve_422(raw_client, usuario_admin):
         headers={"Authorization": f"Bearer {token}"},
     )
     assert r.status_code == 422
+
+
+# ── Tests dependencies: token sin 'sub' y require_role ───────────────────────
+def test_token_sin_sub_devuelve_401(raw_client, usuario_admin):
+    """Token válido pero sin campo 'sub' devuelve 401 (username is None)."""
+    token = create_access_token({"role": "admin"})   # sin 'sub'
+    r = raw_client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
+    assert r.status_code == 401
+
+
+def test_require_role_permite_rol_correcto(raw_client, usuario_admin):
+    """require_role permite acceso cuando el usuario tiene el rol requerido."""
+    from backend.app.dependencies import require_role
+    from backend.app.entidades.usuario import UsuarioDB as U
+    user = U(username="x", hashed_password="h", role="admin", is_active=True)
+    checker = require_role("admin")
+    result = checker(current_user=user)
+    assert result is user
+
+
+def test_require_role_deniega_rol_incorrecto():
+    """require_role lanza 403 cuando el rol del usuario no es el requerido."""
+    from fastapi import HTTPException
+    from backend.app.dependencies import require_role
+    from backend.app.entidades.usuario import UsuarioDB as U
+    user = U(username="x", hashed_password="h", role="vendedor", is_active=True)
+    checker = require_role("admin")
+    with pytest.raises(HTTPException) as exc:
+        checker(current_user=user)
+    assert exc.value.status_code == 403
