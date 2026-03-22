@@ -123,16 +123,20 @@ html.dark select.border-red-500 { border-color: #ef4444 !important; }
 
 /* ── Login page dark mode ─────────────────────────────────────────────────── */
 html.dark .login-wrap {
-  background-color: #0f172a;
+  background-color: var(--fg-bg);
 }
 html.dark .login-card {
   background-color: rgba(30, 41, 59, 0.95) !important;
-  border-color: #334155 !important;
 }
-html.dark .login-wrap input {
-  background-color: #1e293b;
-  color: #f1f5f9;
-  border-color: #475569;
+
+/* ── Login inputs: focus ring uses the active palette accent ─────────────── */
+.login-input:focus-visible {
+  outline: 2px solid var(--fg-accent);
+  outline-offset: 0px;
+}
+.login-input:focus {
+  outline: 2px solid var(--fg-accent);
+  outline-offset: 0px;
 }
 
 /* ── Fonts ──────────────────────────────────────────────────────────────── */

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login, saveToken } from '../api/auth.js';
+import { useTheme } from '../context/ThemeContext.jsx';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -9,6 +10,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  // Tema: refleja la paleta elegida en Apariencia y el modo oscuro
+  const { isDark, palette } = useTheme();
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -26,33 +29,43 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#fefcf7] relative overflow-hidden login-wrap">
+    <div
+      className="min-h-screen flex items-center justify-center relative overflow-hidden login-wrap"
+      style={{ backgroundColor: 'var(--fg-bg)' }}
+      data-theme={isDark ? 'dark' : 'light'}
+      data-palette={palette}
+    >
 
-      {/* Decorative blobs */}
+      {/* Decorative blobs — color sigue la paleta activa */}
       <div
         className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full opacity-20"
-        style={{ background: 'radial-gradient(circle, #c9b99a 0%, transparent 70%)' }}
+        style={{ background: 'radial-gradient(circle, var(--fg-accent) 0%, transparent 70%)' }}
       />
       <div
         className="absolute -bottom-40 -right-40 w-[600px] h-[600px] rounded-full opacity-15"
-        style={{ background: 'radial-gradient(circle, #a89070 0%, transparent 70%)' }}
+        style={{ background: 'radial-gradient(circle, var(--fg-accent) 0%, transparent 70%)' }}
       />
       <div
         className="absolute top-1/3 right-1/4 w-[200px] h-[200px] rounded-full opacity-10"
-        style={{ background: 'radial-gradient(circle, #8b7355 0%, transparent 70%)' }}
+        style={{ background: 'radial-gradient(circle, var(--fg-accent) 0%, transparent 70%)' }}
       />
 
       {/* Card */}
       <div className="relative z-10 w-full max-w-md mx-4">
         <div
-          className="bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl p-10 border border-[#e8e0d0] login-card"
-          style={{ boxShadow: '0 25px 60px rgba(0,0,0,0.12), 0 8px 20px rgba(0,0,0,0.06)' }}
+          className="bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl p-10 login-card"
+          style={{
+            border: '1px solid var(--fg-active)',
+            boxShadow: isDark
+              ? '0 25px 60px rgba(0,0,0,0.5), 0 8px 20px rgba(0,0,0,0.3)'
+              : '0 25px 60px rgba(0,0,0,0.12), 0 8px 20px rgba(0,0,0,0.06)',
+          }}
         >
           {/* Logo / Brand */}
           <div className="flex flex-col items-center mb-8">
             <div
               className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 text-3xl shadow-lg"
-              style={{ background: 'linear-gradient(135deg, #8b7355 0%, #5c4a32 100%)' }}
+              style={{ background: 'var(--fg-accent)' }}
             >
               🪑
             </div>
@@ -93,7 +106,12 @@ export default function LoginPage() {
                   placeholder="Nombre de usuario"
                   required
                   autoFocus
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-[#ddd5c8] bg-[#faf8f4] text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#8b7355]/40 focus:border-[#8b7355] transition-all"
+                  className="login-input w-full pl-10 pr-4 py-3 rounded-xl text-sm transition-all"
+                  style={{
+                    border: '1px solid var(--fg-active)',
+                    backgroundColor: 'var(--fg-sidebar)',
+                    color: isDark ? '#f1f5f9' : '#1f2937',
+                  }}
                 />
               </div>
             </div>
@@ -115,7 +133,12 @@ export default function LoginPage() {
                   onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full pl-10 pr-12 py-3 rounded-xl border border-[#ddd5c8] bg-[#faf8f4] text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#8b7355]/40 focus:border-[#8b7355] transition-all"
+                  className="login-input w-full pl-10 pr-12 py-3 rounded-xl text-sm transition-all"
+                  style={{
+                    border: '1px solid var(--fg-active)',
+                    backgroundColor: 'var(--fg-sidebar)',
+                    color: isDark ? '#f1f5f9' : '#1f2937',
+                  }}
                 />
                 <button
                   type="button"
@@ -144,10 +167,9 @@ export default function LoginPage() {
               disabled={loading}
               className="mt-2 w-full py-3.5 rounded-xl text-white font-semibold text-sm tracking-wide transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
               style={{
-                background: loading
-                  ? '#9a8a76'
-                  : 'linear-gradient(135deg, #8b7355 0%, #5c4a32 100%)',
-                boxShadow: loading ? 'none' : '0 4px 14px rgba(92,74,50,0.35)',
+                background: 'var(--fg-accent)',
+                boxShadow: loading ? 'none' : '0 4px 14px rgba(0,0,0,0.2)',
+                opacity: loading ? 0.7 : 1,
               }}
             >
               {loading ? (

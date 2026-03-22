@@ -20,7 +20,13 @@ vi.mock('../../frontend/src/api/auth.js', () => ({
   saveToken: vi.fn(),
 }));
 
+// Mock ThemeContext para controlar isDark y palette en tests
+vi.mock('../../frontend/src/context/ThemeContext.jsx', () => ({
+  useTheme: vi.fn(() => ({ isDark: false, palette: 'warm' })),
+}));
+
 import { login, saveToken } from '../../frontend/src/api/auth.js';
+import { useTheme } from '../../frontend/src/context/ThemeContext.jsx';
 
 function renderLogin() {
   return render(
@@ -60,6 +66,7 @@ describe('LoginPage — renderizado', () => {
 describe('LoginPage — interacción', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    useTheme.mockReturnValue({ isDark: false, palette: 'warm' });
   });
 
   it('permite escribir en el campo usuario', () => {
@@ -137,5 +144,50 @@ describe('LoginPage — interacción', () => {
 
     await waitFor(() => expect(login).toHaveBeenCalled());
     expect(mockNavigate).not.toHaveBeenCalled();
+  });
+});
+
+describe('LoginPage — tema y paleta', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('aplica data-theme="light" y data-palette="warm" por defecto', () => {
+    useTheme.mockReturnValue({ isDark: false, palette: 'warm' });
+    const { container } = renderLogin();
+    expect(container.firstChild).toHaveAttribute('data-theme', 'light');
+    expect(container.firstChild).toHaveAttribute('data-palette', 'warm');
+  });
+
+  it('aplica data-theme="dark" cuando isDark es true', () => {
+    useTheme.mockReturnValue({ isDark: true, palette: 'warm' });
+    const { container } = renderLogin();
+    expect(container.firstChild).toHaveAttribute('data-theme', 'dark');
+  });
+
+  it('aplica data-palette="slate" con la paleta slate', () => {
+    useTheme.mockReturnValue({ isDark: false, palette: 'slate' });
+    const { container } = renderLogin();
+    expect(container.firstChild).toHaveAttribute('data-palette', 'slate');
+  });
+
+  it('aplica data-palette="forest" con la paleta forest', () => {
+    useTheme.mockReturnValue({ isDark: false, palette: 'forest' });
+    const { container } = renderLogin();
+    expect(container.firstChild).toHaveAttribute('data-palette', 'forest');
+  });
+
+  it('en modo oscuro los inputs muestran color claro (#f1f5f9)', () => {
+    useTheme.mockReturnValue({ isDark: true, palette: 'warm' });
+    renderLogin();
+    const usernameInput = screen.getByPlaceholderText('Nombre de usuario');
+    expect(usernameInput.style.color).toBe('#f1f5f9');
+  });
+
+  it('en modo claro los inputs muestran color oscuro (#1f2937)', () => {
+    useTheme.mockReturnValue({ isDark: false, palette: 'warm' });
+    renderLogin();
+    const usernameInput = screen.getByPlaceholderText('Nombre de usuario');
+    expect(usernameInput.style.color).toBe('#1f2937');
   });
 });
