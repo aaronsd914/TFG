@@ -7,6 +7,7 @@ no toca, retorna sin hacer nada.
 """
 
 import logging
+import re
 from datetime import date, timedelta
 
 from sqlalchemy.orm import Session
@@ -19,6 +20,24 @@ from backend.app.utils.groq_llm import groq_chat
 from backend.app.utils.emailer import send_email_simple
 
 log = logging.getLogger("resumen_semanal")
+
+
+def _md_to_html(text: str) -> str:
+    """Convert minimal markdown (bold, italic, line breaks) to inline HTML for emails."""
+    # Escape HTML entities first
+    text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    # **bold** → <strong>bold</strong>
+    text = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", text)
+    # *italic* → <em>italic</em>
+    text = re.sub(r"\*(.+?)\*", r"<em>\1</em>", text)
+    # Numbered list items (1) ... → paragraph with bold number
+    text = re.sub(r"(?m)^(\d+)\)\s+", r"<br><strong>\1)</strong> ", text)
+    # Double newlines → paragraph break
+    text = re.sub(r"\n{2,}", "<br><br>", text)
+    # Single newline → space
+    text = text.replace("\n", " ")
+    return text.strip()
+
 
 _DEFAULTS = {
     "resumen_intervalo_dias": "7",
@@ -165,12 +184,13 @@ def _build_html(
 
     insight_html = ""
     if insight:
+        insight_as_html = _md_to_html(insight)
         insight_html = f"""
       <tr>
         <td style="background:#ffffff;padding:0 24px 16px;border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;">
           <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:14px 16px;">
             <div style="font-size:12px;font-weight:700;color:#0369a1;margin-bottom:8px;">💡 Análisis IA</div>
-            <div style="font-size:14px;color:#1e3a5f;line-height:1.6;">{insight}</div>
+            <div style="font-size:14px;color:#1e3a5f;line-height:1.6;">{insight_as_html}</div>
           </div>
         </td>
       </tr>"""

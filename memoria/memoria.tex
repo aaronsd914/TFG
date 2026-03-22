@@ -1315,7 +1315,7 @@ El módulo \texttt{utils/resumen\_semanal.py} implementa un informe periódico d
   \item Se consulta \texttt{resumen\_ultima\_vez} en la tabla \texttt{configuracion}; si ha pasado menos tiempo del intervalo configurado (\texttt{resumen\_intervalo\_dias}), el trabajo termina sin hacer nada.
   \item Se obtiene de la base de datos el resumen de métricas del periodo: total de ingresos y gastos, número de albaranes por estado y los diez productos más vendidos.
   \item Las métricas se envían a \textbf{Groq/Llama-3} con la instrucción de redactar un breve análisis del estado del negocio en lenguaje natural, destacando tendencias positivas y áreas de mejora.
-  \item El texto generado se envía por correo electrónico al destinatario configurado y se actualiza \texttt{resumen\_ultima\_vez} en la base de datos.
+  \item El texto generado se convierte de Markdown a HTML mediante \texttt{\_md\_to\_html()} (transformando \texttt{**negrita**} en \texttt{<strong>}), se envía por correo electrónico al destinatario configurado y se actualiza \texttt{resumen\_ultima\_vez} en la base de datos.
 \end{enumerate}
 
 Este componente integra, en un único flujo, la capa de persistencia (\S\ref{sec:alembic}), el asistente de IA (\S\ref{sec:ia}) y el sistema de correo, demostrando la composición de servicios independientes característica de la arquitectura de microservicios distribuidos~\cite{tanenbaum}.
@@ -1327,7 +1327,7 @@ Este componente integra, en un único flujo, la capa de persistencia (\S\ref{sec
 La infraestructura de despliegue aplica los tres niveles del modelo de \textbf{entrega de software continua} \cite{fowlerCI}:
 
 \begin{itemize}
-  \item \textbf{Integración continua (CI):} cada \textit{Pull Request} hacia la rama \texttt{main} desencadena la ejecución automática de la batería de pruebas. Martin Fowler (2006) \cite{fowlerCI} define la integración continua como la práctica en la que ``cada miembro del equipo integra su trabajo al repositorio principal al menos una vez al día, siendo verificado por un proceso de \textit{build} automatizado que detecta errores lo antes posible''. En FurniGest, este proceso está orquestado por \textbf{GitHub Actions} \cite{githubactions}. Los \textit{workflows} están configurados para dispararse únicamente en Pull Requests (y manualmente mediante \texttt{workflow\_dispatch}), evitando ejecuciones innecesarias en ramas de trabajo.
+  \item \textbf{Integración continua (CI):} cada \textit{push} a cualquier rama y cada \textit{Pull Request} hacia \texttt{main} desencadena la ejecución automática de la batería de pruebas. Martin Fowler (2006) \cite{fowlerCI} define la integración continua como la práctica en la que ``cada miembro del equipo integra su trabajo al repositorio principal al menos una vez al día, siendo verificado por un proceso de \textit{build} automatizado que detecta errores lo antes posible''. En FurniGest, este proceso está orquestado por \textbf{GitHub Actions} \cite{githubactions}.
   \item \textbf{Entrega continua (\textit{Continuous Delivery}):} si todos los tests pasan, los artefactos compilados (imagen Docker del \textit{backend}, \_bundle\_ estático del \textit{frontend}) están listos para ser desplegados en cualquier momento con un único paso manual.
   \item \textbf{Despliegue continuo (\textit{Continuous Deployment}):} en FurniGest el despliegue es completamente automático, sin intervención humana. \textbf{Vercel} \cite{vercel} recibe el \textit{bundle} del \textit{frontend} (SPA estática generada por \texttt{vite build}) y lo sirve desde su CDN global. \textbf{Railway} \cite{railway} construye y arranca el contenedor Docker del \textit{backend} directamente desde GitHub, inyectando la variable \texttt{DATABASE\_URL} y gestionando la instancia PostgreSQL~16.
 \end{itemize}
@@ -1335,9 +1335,8 @@ La infraestructura de despliegue aplica los tres niveles del modelo de \textbf{e
 % ----- FIGURA NECESARIA -----
 % Descripción: Diagrama del pipeline CI/CD de GitHub Actions.
 %   Mostrar los workflows: tests.yml (backend-tests + frontend-tests)
-%   y deploy.yml (backend-tests → frontend-tests → deploy-frontend a Vercel).
-%   Railway se conecta directamente al repositorio GitHub (GitHub App)
-%   y despliega en paralelo al detectar un push a main.
+%   y deploy.yml (cualquier push → backend-tests + frontend-tests → sonarcloud
+%   → deploy-frontend a Vercel + deploy-backend a Railway con Railway CLI).
 % Nombre sugerido: fig_cicd.pdf (o .png)
 \begin{figure}[H]
   \centering
@@ -1428,7 +1427,7 @@ El modelo de ramas de FurniGest sigue el enfoque \textbf{Trunk-Based Development
   \end{footnotesize}
 \end{table}
 
-Se eligió TBD porque FurniGest aplica \textbf{despliegue continuo}: cada PR mergeado a \texttt{main} activa automáticamente el workflow \texttt{deploy.yml}, publicando la nueva versión sin intervención humana. Gitflow añadiría la rama \texttt{develop} y ramas de release sin beneficio en un proyecto unipersonal.
+Se eligió TBD porque FurniGest aplica \textbf{despliegue continuo}: cada \textit{push} a cualquier rama activa automáticamente el workflow \texttt{deploy.yml}, publicando la nueva versión sin intervención humana si todas las verificaciones pasan. Gitflow añadiría la rama \texttt{develop} y ramas de release sin beneficio en un proyecto unipersonal.
 
 Todos los mensajes de commit siguen la especificación \textbf{Conventional Commits}~\cite{conventionalcommits}, que estandariza el formato del asunto:
 
@@ -1574,7 +1573,7 @@ El flujo de trabajo en \texttt{deploy.yml} es:
   \item El job \texttt{backend-tests} genera \texttt{coverage-backend.xml} mediante \texttt{pytest --cov}.
   \item El job \texttt{frontend-tests} genera \texttt{frontend/coverage/lcov.info} mediante \texttt{vitest run --coverage} (proveedor V8).
   \item El job \texttt{sonarcloud} (dependiente de los dos anteriores) ejecuta la acción oficial \texttt{SonarSource/sonarcloud-github-action@v3} con la configuración definida en \texttt{sonar-project.properties}.
-  \item El job \texttt{deploy-frontend} sólo se ejecuta si el \textit{quality gate} de SonarCloud pasa (\texttt{needs: [sonarcloud]}).
+  \item Los jobs \texttt{deploy-frontend} (Vercel CLI \texttt{vercel --prod}) y \texttt{deploy-backend} (Railway CLI \texttt{railway up --detach}) sólo se ejecutan si el \textit{quality gate} de SonarCloud pasa (\texttt{needs: [sonarcloud]}).
 \end{enumerate}
 
 Además de \texttt{deploy.yml}, existe el workflow dedicado \texttt{sonarcloud.yml} que se activa en cada \textit{Pull Request} o mediante \texttt{workflow\_dispatch}, permitiendo obtener \textit{feedback} de cobertura antes de mergear a \texttt{main}. Para que el análisis basado en CI funcione correctamente, es necesario desactivar la opción \textit{Automatic Analysis} en la configuración del proyecto de SonarCloud, ya que el modo automático no soporta la importación de cobertura externa.

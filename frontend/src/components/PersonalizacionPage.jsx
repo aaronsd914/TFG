@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { apiFetch } from '../api/http.js';
 import { getToken, removeToken } from '../api/auth.js';
@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext.jsx';
 import { useAppConfig } from '../context/ConfigContext.jsx';
 
-// â”€â”€â”€ Collapsible accordion section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Collapsible accordion section ────────────────────────────────────────────
 function Accordion({ title, icon, children, defaultOpen = false }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
@@ -43,7 +43,7 @@ Accordion.propTypes = {
   defaultOpen: PropTypes.bool,
 };
 
-// â”€â”€â”€ Schedule preview utility â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Schedule preview utility ──────────────────────────────────────────────────
 function computeNextDates(startDateStr, intervalDays, count = 6) {
   if (!startDateStr || !intervalDays) return [];
   const interval = Number.parseInt(intervalDays, 10);
@@ -112,7 +112,7 @@ function SaveBtn({ loading, label = 'Guardar' }) {
       disabled={loading}
       className="self-start px-4 py-2 bg-gray-900 text-white rounded-lg text-sm hover:bg-gray-700 disabled:opacity-50 transition-colors"
     >
-      {loading ? 'Guardandoâ€¦' : label}
+      {loading ? 'Guardando…' : label}
     </button>
   );
 }
@@ -121,14 +121,14 @@ SaveBtn.propTypes = {
   label: PropTypes.string,
 };
 
-// â”€â”€â”€ Palettes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Palettes ─────────────────────────────────────────────────────────────────
 const PALETTES = [
-  { id: 'warm',   label: 'CÃ¡lido',  bg: '#f5f1e8', active: '#e0dcd3' },
+  { id: 'warm',   label: 'Cálido',  bg: '#f5f1e8', active: '#e0dcd3' },
   { id: 'slate',  label: 'Pizarra', bg: '#f1f5f9', active: '#e2e8f0' },
   { id: 'forest', label: 'Bosque',  bg: '#ecf5ec', active: '#d4e8d4' },
 ];
 
-// â”€â”€â”€ Main component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Main component ───────────────────────────────────────────────────────────
 export default function PersonalizacionPage() {
   const navigate = useNavigate();
   const { isDark, setIsDark, palette, setPalette } = useTheme();
@@ -142,7 +142,7 @@ export default function PersonalizacionPage() {
     } catch { return ''; }
   })();
 
-  // â”€â”€ Mi cuenta: username â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Mi cuenta: username ──────────────────────────────────────────────────
   const [uForm, setUForm] = useState({ current_password: '', new_username: '' });
   const [uStatus, setUStatus] = useState(null);
   const [uLoading, setULoading] = useState(false);
@@ -163,7 +163,7 @@ export default function PersonalizacionPage() {
     } finally { setULoading(false); }
   }
 
-  // â”€â”€ Mi cuenta: password â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Mi cuenta: password ──────────────────────────────────────────────────
   const [pForm, setPForm] = useState({ current_password: '', new_password: '', confirm: '' });
   const [pStatus, setPStatus] = useState(null);
   const [pLoading, setPLoading] = useState(false);
@@ -171,7 +171,7 @@ export default function PersonalizacionPage() {
   async function handlePasswordSubmit(e) {
     e.preventDefault();
     if (pForm.new_password !== pForm.confirm) {
-      setPStatus({ ok: false, msg: 'Las contraseÃ±as nuevas no coinciden' }); return;
+      setPStatus({ ok: false, msg: 'Las contraseñas nuevas no coinciden' }); return;
     }
     setPLoading(true); setPStatus(null);
     try {
@@ -180,14 +180,14 @@ export default function PersonalizacionPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ current_password: pForm.current_password, new_password: pForm.new_password }),
       });
-      setPStatus({ ok: true, msg: 'ContraseÃ±a actualizada' });
+      setPStatus({ ok: true, msg: 'Contraseña actualizada' });
       setPForm({ current_password: '', new_password: '', confirm: '' });
     } catch (err) {
       setPStatus({ ok: false, msg: err.message || 'Error al actualizar' });
     } finally { setPLoading(false); }
   }
 
-  // â”€â”€ Resumen semanal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Resumen semanal ──────────────────────────────────────────────────────
   const [emailDest, setEmailDest] = useState('');
   const [intervalo, setIntervalo] = useState('7');
   const [fechaInicio, setFechaInicio] = useState('');
@@ -210,7 +210,7 @@ export default function PersonalizacionPage() {
       await updateConfig('resumen_intervalo_dias', intervalo);
       await updateConfig('resumen_fecha_inicio', fechaInicio);
       await updateConfig('resumen_hora_envio', horaEnvio);
-      setEmailStatus({ ok: true, msg: 'ConfiguraciÃ³n guardada' });
+      setEmailStatus({ ok: true, msg: 'Configuración guardada' });
     } catch (err) {
       setEmailStatus({ ok: false, msg: err.message || 'Error al guardar' });
     } finally { setEmailLoading(false); }
@@ -218,14 +218,14 @@ export default function PersonalizacionPage() {
 
   const nextDates = computeNextDates(fechaInicio, intervalo);
 
-  // â”€â”€ Identidad: logo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Identidad: logo ──────────────────────────────────────────────────────
   const [logoStatus, setLogoStatus] = useState(null);
 
   function handleLogoUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
     if (file.size > 200 * 1024) {
-      setLogoStatus({ ok: false, msg: 'El archivo es demasiado grande (mÃ¡x. 200 KB)' }); return;
+      setLogoStatus({ ok: false, msg: 'El archivo es demasiado grande (máx. 200 KB)' }); return;
     }
     const reader = new FileReader();
     reader.onload = async (ev) => {
@@ -248,7 +248,7 @@ export default function PersonalizacionPage() {
     }
   }
 
-  // â”€â”€ Identidad: firma â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Identidad: firma ─────────────────────────────────────────────────────
   const [firma, setFirma] = useState('');
   const [firmaStatus, setFirmaStatus] = useState(null);
   const [firmaLoading, setFirmaLoading] = useState(false);
@@ -266,15 +266,15 @@ export default function PersonalizacionPage() {
     } finally { setFirmaLoading(false); }
   }
 
-  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─────────────────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col gap-4 max-w-xl">
-      <h2 className="text-lg font-semibold">ConfiguraciÃ³n</h2>
+      <h2 className="text-lg font-semibold">Configuración</h2>
 
-      {/* â”€â”€ Mi cuenta â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-      <Accordion title="Mi cuenta" icon="ðŸ‘¤">
+      {/* ── Mi cuenta ───────────────────────────────────────────────────── */}
+      <Accordion title="Mi cuenta" icon="👤">
         <div className="flex items-center gap-3 bg-[var(--fg-sidebar)] rounded-xl px-4 py-3">
-          <span className="text-xl">ðŸ‘¤</span>
+          <span className="text-xl">👤</span>
           <div>
             <div className="text-xs text-gray-500">Usuario activo</div>
             <div className="font-semibold text-gray-900">{currentUsername}</div>
@@ -282,8 +282,8 @@ export default function PersonalizacionPage() {
         </div>
 
         <form onSubmit={handleUsernameSubmit} className="flex flex-col gap-3">
-          <p className="text-sm text-gray-500">Al cambiar el nombre se cerrarÃ¡ la sesiÃ³n.</p>
-          <Field label="ContraseÃ±a actual" type="password" value={uForm.current_password}
+          <p className="text-sm text-gray-500">Al cambiar el nombre se cerrará la sesión.</p>
+          <Field label="Contraseña actual" type="password" value={uForm.current_password}
             onChange={v => setUForm(f => ({ ...f, current_password: v }))} required />
           <Field label="Nuevo nombre de usuario" type="text" value={uForm.new_username}
             onChange={v => setUForm(f => ({ ...f, new_username: v }))} required minLength={3} />
@@ -294,19 +294,19 @@ export default function PersonalizacionPage() {
         <hr className="border-gray-200" />
 
         <form onSubmit={handlePasswordSubmit} className="flex flex-col gap-3">
-          <Field label="ContraseÃ±a actual" type="password" value={pForm.current_password}
+          <Field label="Contraseña actual" type="password" value={pForm.current_password}
             onChange={v => setPForm(f => ({ ...f, current_password: v }))} required />
-          <Field label="Nueva contraseÃ±a (mÃ­n. 8 caracteres)" type="password" value={pForm.new_password}
+          <Field label="Nueva contraseña (mín. 8 caracteres)" type="password" value={pForm.new_password}
             onChange={v => setPForm(f => ({ ...f, new_password: v }))} required minLength={8} />
-          <Field label="Confirmar nueva contraseÃ±a" type="password" value={pForm.confirm}
+          <Field label="Confirmar nueva contraseña" type="password" value={pForm.confirm}
             onChange={v => setPForm(f => ({ ...f, confirm: v }))} required minLength={8} />
           <Alert {...(pStatus || {})} />
-          <SaveBtn loading={pLoading} label="Cambiar contraseÃ±a" />
+          <SaveBtn loading={pLoading} label="Cambiar contraseña" />
         </form>
       </Accordion>
 
-      {/* â”€â”€ Apariencia â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-      <Accordion title="Apariencia" icon="ðŸŽ¨">
+      {/* ── Apariencia ──────────────────────────────────────────────────── */}
+      <Accordion title="Apariencia" icon="🎨">
         {/* Dark mode toggle */}
         <div className="flex items-center justify-between">
           <div>
@@ -324,7 +324,7 @@ export default function PersonalizacionPage() {
             <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 flex items-center justify-center text-xs ${
               isDark ? 'translate-x-6' : 'translate-x-0'
             }`}>
-              {isDark ? 'ðŸŒ™' : 'â˜€ï¸'}
+              {isDark ? '🌙' : '☀️'}
             </span>
           </button>
         </div>
@@ -355,11 +355,11 @@ export default function PersonalizacionPage() {
         </div>
       </Accordion>
 
-      {/* â”€â”€ Resumen por email â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-      <Accordion title="Resumen por email (IA)" icon="ðŸ“§">
+      {/* ── Resumen por email ────────────────────────────────────────────── */}
+      <Accordion title="Resumen por email (IA)" icon="📧">
         <p className="text-sm text-gray-500">
-          FurniGest genera automÃ¡ticamente un resumen de actividad con anÃ¡lisis IA y lo envÃ­a
-          al email configurado segÃºn el intervalo de dÃ­as elegido.
+          FurniGest genera automáticamente un resumen de actividad con análisis IA y lo envía
+          al email configurado según el intervalo de días elegido.
         </p>
         <form onSubmit={handleEmailSave} className="flex flex-col gap-3">
           <Field label="Email destinatario" type="email"
@@ -392,7 +392,7 @@ export default function PersonalizacionPage() {
             </div>
           </div>
 
-          {/* Hora de envÃ­o */}
+          {/* Hora de envío */}
           <div className="flex flex-col gap-1">
             <label htmlFor="email-hora-envio" className="text-sm text-gray-600">Hora de envío</label>
             <input
@@ -408,7 +408,7 @@ export default function PersonalizacionPage() {
           {nextDates.length > 0 && (
             <div data-testid="schedule-preview" className="rounded-xl border border-gray-200 bg-gray-50 p-3 flex flex-col gap-2">
               <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                PrÃ³ximos envÃ­os programados
+                Próximos envíos programados
               </div>
               <div className="flex flex-wrap gap-2">
                 {nextDates.map((d) => (
@@ -428,21 +428,21 @@ export default function PersonalizacionPage() {
 
           <span className="text-xs text-gray-400">
             {config.resumen_ultima_vez
-              ? `Ãšltimo envÃ­o: ${config.resumen_ultima_vez}`
-              : 'AÃºn no se ha enviado ningÃºn resumen'}
+              ? `Último envío: ${config.resumen_ultima_vez}`
+              : 'Aún no se ha enviado ningún resumen'}
           </span>
           <Alert {...(emailStatus || {})} />
           <SaveBtn loading={emailLoading} />
         </form>
       </Accordion>
 
-      {/* â”€â”€ Identidad â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-      <Accordion title="Identidad de la tienda" icon="ðŸª">
+      {/* ── Identidad ───────────────────────────────────────────────────── */}
+      <Accordion title="Identidad de la tienda" icon="🏪">
         {/* Logo */}
         <div className="flex flex-col gap-2">
           <div className="text-sm font-medium text-gray-700">Logo</div>
           <p className="text-xs text-gray-500">
-            Aparece en el Sidebar y en el encabezado del PDF de albaranes. PNG/JPG, mÃ¡x. 200 KB.
+            Aparece en el Sidebar y en el encabezado del PDF de albaranes. PNG/JPG, máx. 200 KB.
           </p>
           <div className="flex items-center gap-3 flex-wrap">
             {config.logo_empresa ? (
@@ -475,15 +475,15 @@ export default function PersonalizacionPage() {
 
         {/* Firma de email */}
         <form onSubmit={handleFirmaSave} className="flex flex-col gap-3">
-          <div className="text-sm font-medium text-gray-700">Firma en emails de albarÃ¡n</div>
+          <div className="text-sm font-medium text-gray-700">Firma en emails de albarán</div>
           <p className="text-xs text-gray-500">
-            Texto que aparece al final de los emails enviados al entregar un albarÃ¡n.
+            Texto que aparece al final de los emails enviados al entregar un albarán.
           </p>
           <textarea
             value={firma}
             onChange={e => setFirma(e.target.value)}
             rows={3}
-            placeholder="Ej: FurniGest Â· Calle Mayor 10 Â· Tel: 666 123 456"
+            placeholder="Ej: FurniGest · Calle Mayor 10 · Tel: 666 123 456"
             className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 resize-none"
           />
           <Alert {...(firmaStatus || {})} />
