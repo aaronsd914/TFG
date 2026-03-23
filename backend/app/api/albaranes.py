@@ -376,9 +376,7 @@ def update_delivery_note(
 ):
     """Updates editable fields (date, description, status) of a delivery note."""
     delivery_note = (
-        db.query(DeliveryNoteDB)
-        .filter(DeliveryNoteDB.id == delivery_note_id)
-        .first()
+        db.query(DeliveryNoteDB).filter(DeliveryNoteDB.id == delivery_note_id).first()
     )
     if not delivery_note:
         raise HTTPException(404, "Albaran no encontrado")

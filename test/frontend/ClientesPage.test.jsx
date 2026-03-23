@@ -85,13 +85,16 @@ describe('ClientesPage', () => {
 describe('ClientesPage – modal de edición', () => {
   beforeEach(() => {
     fetch.mockImplementation((url) => {
-      if (url.includes('clientes/get') && !url.includes('/')) {
+      if (/clientes\/get$/.test(url)) {
         return Promise.resolve({ ok: true, json: () => Promise.resolve([CLIENTE]) });
       }
       if (url.includes(`clientes/get/${CLIENTE.id}`)) {
         return Promise.resolve({ ok: true, json: () => Promise.resolve({ ...CLIENTE }) });
       }
       if (url.includes('albaranes/by-cliente')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+      }
+      if (/albaranes\/get$/.test(url)) {
         return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
       }
       return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
@@ -102,11 +105,11 @@ describe('ClientesPage – modal de edición', () => {
     renderPage();
 
     await waitFor(() => {
-      expect(screen.getByText(/Ana/i)).toBeInTheDocument();
+      expect(screen.getByText('ana@test.com')).toBeInTheDocument();
     });
 
     await act(async () => {
-      fireEvent.click(screen.getByText(/Ana/i));
+      fireEvent.click(screen.getByText('ana@test.com'));
     });
 
     await waitFor(() => {
@@ -117,9 +120,9 @@ describe('ClientesPage – modal de edición', () => {
   it('abre el modal de edición al pulsar Editar', async () => {
     renderPage();
 
-    await waitFor(() => expect(screen.getByText(/Ana/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('ana@test.com')).toBeInTheDocument());
 
-    await act(async () => { fireEvent.click(screen.getByText(/Ana/i)); });
+    await act(async () => { fireEvent.click(screen.getByText('ana@test.com')); });
     await waitFor(() => expect(screen.getByTestId('cliente-edit-btn')).toBeInTheDocument());
     await act(async () => { fireEvent.click(screen.getByTestId('cliente-edit-btn')); });
 
@@ -131,7 +134,7 @@ describe('ClientesPage – modal de edición', () => {
       if (opts?.method === 'PUT') {
         return Promise.resolve({ ok: true, json: () => Promise.resolve({ ...CLIENTE, name: 'Ana Editada' }) });
       }
-      if (url.includes('clientes/get') && !url.includes('/')) {
+      if (/clientes\/get$/.test(url)) {
         return Promise.resolve({ ok: true, json: () => Promise.resolve([CLIENTE]) });
       }
       if (url.includes(`clientes/get/${CLIENTE.id}`)) {
@@ -140,14 +143,17 @@ describe('ClientesPage – modal de edición', () => {
       if (url.includes('albaranes/by-cliente')) {
         return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
       }
+      if (/albaranes\/get$/.test(url)) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+      }
       return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
     });
 
     renderPage();
 
-    await waitFor(() => expect(screen.getByText(/Ana/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('ana@test.com')).toBeInTheDocument());
 
-    await act(async () => { fireEvent.click(screen.getByText(/Ana/i)); });
+    await act(async () => { fireEvent.click(screen.getByText('ana@test.com')); });
     await waitFor(() => expect(screen.getByTestId('cliente-edit-btn')).toBeInTheDocument());
     await act(async () => { fireEvent.click(screen.getByTestId('cliente-edit-btn')); });
     await act(async () => { fireEvent.click(screen.getByTestId('cliente-edit-save-btn')); });

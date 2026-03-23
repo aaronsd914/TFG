@@ -85,10 +85,10 @@ describe('AlbaranesPage', () => {
 describe('AlbaranesPage – modal de edición', () => {
   beforeEach(() => {
     fetch.mockImplementation((url) => {
-      if (url.includes('albaranes/get') && !url.includes('/')) {
+      if (/albaranes\/get$/.test(url)) {
         return Promise.resolve({ ok: true, json: () => Promise.resolve([ALBARAN]) });
       }
-      if (url.includes('clientes/get') && !url.includes('/')) {
+      if (/clientes\/get$/.test(url)) {
         return Promise.resolve({ ok: true, json: () => Promise.resolve([CLIENTE]) });
       }
       if (url.includes(`albaranes/get/${ALBARAN.id}`)) {
@@ -105,11 +105,11 @@ describe('AlbaranesPage – modal de edición', () => {
     renderPage();
 
     await waitFor(() => {
-      expect(screen.getByText(/Ana/i)).toBeInTheDocument();
+      expect(screen.getByText('#1')).toBeInTheDocument();
     });
 
     await act(async () => {
-      fireEvent.click(screen.getByText(/Ana/i));
+      fireEvent.click(screen.getByText('#1'));
     });
 
     await waitFor(() => {
@@ -121,11 +121,11 @@ describe('AlbaranesPage – modal de edición', () => {
     renderPage();
 
     await waitFor(() => {
-      expect(screen.getByText(/Ana/i)).toBeInTheDocument();
+      expect(screen.getByText('#1')).toBeInTheDocument();
     });
 
     await act(async () => {
-      fireEvent.click(screen.getByText(/Ana/i));
+      fireEvent.click(screen.getByText('#1'));
     });
 
     await waitFor(() => {
@@ -144,10 +144,10 @@ describe('AlbaranesPage – modal de edición', () => {
       if (opts?.method === 'PUT') {
         return Promise.resolve({ ok: true, json: () => Promise.resolve({ ...ALBARAN, description: 'Nueva desc' }) });
       }
-      if (url.includes('albaranes/get') && !url.includes('/')) {
+      if (/albaranes\/get$/.test(url)) {
         return Promise.resolve({ ok: true, json: () => Promise.resolve([ALBARAN]) });
       }
-      if (url.includes('clientes/get') && !url.includes('/')) {
+      if (/clientes\/get$/.test(url)) {
         return Promise.resolve({ ok: true, json: () => Promise.resolve([CLIENTE]) });
       }
       if (url.includes(`albaranes/get/${ALBARAN.id}`)) {
@@ -161,9 +161,9 @@ describe('AlbaranesPage – modal de edición', () => {
 
     renderPage();
 
-    await waitFor(() => expect(screen.getByText(/Ana/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('#1')).toBeInTheDocument());
 
-    await act(async () => { fireEvent.click(screen.getByText(/Ana/i)); });
+    await act(async () => { fireEvent.click(screen.getByText('#1')); });
     await waitFor(() => expect(screen.getByTestId('albaran-edit-btn')).toBeInTheDocument());
     await act(async () => { fireEvent.click(screen.getByTestId('albaran-edit-btn')); });
     await act(async () => { fireEvent.click(screen.getByTestId('albaran-edit-save-btn')); });
