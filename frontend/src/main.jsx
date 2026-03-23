@@ -19,6 +19,7 @@ import PerfilPage from './components/PerfilPage.jsx';
 import PersonalizacionPage from './components/PersonalizacionPage.jsx';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import './api/fetchInterceptor.js';
+import './i18n.js';
 import './index.css';
 
 const router = createBrowserRouter([

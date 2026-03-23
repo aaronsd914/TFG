@@ -28,7 +28,18 @@ vi.mock('../../frontend/src/api/auth.js', () => ({
 vi.mock('../../frontend/src/api/http.js', () => ({
   apiFetch: vi.fn(() => Promise.resolve({})),
 }));
+
+// Mock i18n instance used by PersonalizacionPage
+vi.mock('../../frontend/src/i18n.js', () => ({
+  default: { language: 'es', changeLanguage: vi.fn() },
+}));
 import { apiFetch } from '../../frontend/src/api/http.js';
+
+// Mock sileo
+vi.mock('sileo', () => ({
+  sileo: { success: vi.fn(), error: vi.fn(), warning: vi.fn(), promise: vi.fn() },
+}));
+import { sileo } from 'sileo';
 
 // ThemeContext default (safe) values are used automatically
 // ConfigContext default (safe) values are used automatically
@@ -111,7 +122,7 @@ describe('PersonalizacionPage â€” Apariencia', () => {
   it('muestra el toggle de modo oscuro', () => {
     renderPage();
     openSection('Apariencia');
-    expect(screen.getByLabelText(/toggle dark mode/i)).toBeInTheDocument();
+    expect(screen.getByRole('switch')).toBeInTheDocument();
   });
 
   it('muestra las 3 paletas de color', () => {
@@ -125,11 +136,11 @@ describe('PersonalizacionPage â€” Apariencia', () => {
   it('el toggle de modo oscuro responde al click', () => {
     renderPage();
     openSection('Apariencia');
-    const toggle = screen.getByLabelText(/toggle dark mode/i);
+    const toggle = screen.getByRole('switch');
     const htmlEl = document.documentElement;
     const initialDark = htmlEl.classList.contains('dark');
     fireEvent.click(toggle);
-    // State changes â€” just verify no throw
+    // State changes — just verify no throw
     expect(toggle).toBeInTheDocument();
     // Cleanup: restore original state
     if (htmlEl.classList.contains('dark') !== initialDark) {
@@ -227,13 +238,15 @@ describe('PersonalizacionPage â€” Formularios cuenta', () => {
     const pwForm = forms[1];
     const inputs = pwForm.querySelectorAll('input');
 
-    fireEvent.change(inputs[0], { target: { value: 'actual' } });
-    fireEvent.change(inputs[1], { target: { value: 'nueva12345' } });
-    fireEvent.change(inputs[2], { target: { value: 'diferente' } });
-    fireEvent.submit(pwForm);
+    await act(async () => {
+      fireEvent.change(inputs[0], { target: { value: 'actual' } });
+      fireEvent.change(inputs[1], { target: { value: 'nueva12345' } });
+      fireEvent.change(inputs[2], { target: { value: 'diferente' } });
+      fireEvent.submit(pwForm);
+    });
 
     await waitFor(() => {
-      expect(screen.getByText(/contraseñas nuevas no coinciden/i)).toBeInTheDocument();
+      expect(sileo.warning).toHaveBeenCalledWith(expect.objectContaining({ description: expect.stringMatching(/no coinciden/i) }));
     });
     // apiFetch no debe haberse llamado con auth/me (solo se llama config en el mount)
     expect(apiFetch).not.toHaveBeenCalledWith('auth/me', expect.anything());
@@ -287,13 +300,15 @@ describe('PersonalizacionPage â€” Formularios cuenta', () => {
     const pwForm = forms[1];
     const inputs = pwForm.querySelectorAll('input');
 
-    fireEvent.change(inputs[0], { target: { value: 'actual' } });
-    fireEvent.change(inputs[1], { target: { value: 'nueva12345' } });
-    fireEvent.change(inputs[2], { target: { value: 'nueva12345' } });
-    fireEvent.submit(pwForm);
+    await act(async () => {
+      fireEvent.change(inputs[0], { target: { value: 'actual' } });
+      fireEvent.change(inputs[1], { target: { value: 'nueva12345' } });
+      fireEvent.change(inputs[2], { target: { value: 'nueva12345' } });
+      fireEvent.submit(pwForm);
+    });
 
     await waitFor(() => {
-      expect(screen.getByText(/error api/i)).toBeInTheDocument();
+      expect(sileo.error).toHaveBeenCalledWith(expect.objectContaining({ description: expect.stringMatching(/error api/i) }));
     });
   });
 });
@@ -306,24 +321,24 @@ describe('PersonalizacionPage — Accordion', () => {
   it('las secciones empiezan cerradas (contenido no visible)', () => {
     renderPage();
     // Toggle is in the button label, not in the content area
-    expect(screen.queryByLabelText(/toggle dark mode/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('switch')).not.toBeInTheDocument();
     expect(screen.queryByPlaceholderText(/ej: furnigest/i)).not.toBeInTheDocument();
   });
 
   it('abre y cierra una sección al hacer clic dos veces', () => {
     renderPage();
     openSection('Apariencia');
-    expect(screen.getByLabelText(/toggle dark mode/i)).toBeInTheDocument();
+    expect(screen.getByRole('switch')).toBeInTheDocument();
     // Close it
     openSection('Apariencia');
-    expect(screen.queryByLabelText(/toggle dark mode/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('switch')).not.toBeInTheDocument();
   });
 
   it('abre varias secciones independientemente', () => {
     renderPage();
     openSection('Apariencia');
     openSection('Identidad');
-    expect(screen.getByLabelText(/toggle dark mode/i)).toBeInTheDocument();
+    expect(screen.getByRole('switch')).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/ej: furnigest/i)).toBeInTheDocument();
   });
 });
@@ -402,7 +417,7 @@ describe('PersonalizacionPage — Resumen email nuevos campos', () => {
 
     fireEvent.submit(emailInput.closest('form'));
     await waitFor(() => {
-      expect(screen.getByText(/fallo servidor/i)).toBeInTheDocument();
+      expect(sileo.error).toHaveBeenCalledWith(expect.objectContaining({ description: expect.stringMatching(/fallo servidor/i) }));
     });
   });
 
@@ -530,7 +545,7 @@ describe('PersonalizacionPage — Mi cuenta éxito/error', () => {
     fireEvent.change(inputs[1], { target: { value: 'nuevonombre' } });
     fireEvent.submit(userForm);
     await waitFor(() => {
-      expect(screen.getByText(/usuario en uso/i)).toBeInTheDocument();
+      expect(sileo.error).toHaveBeenCalledWith(expect.objectContaining({ description: expect.stringMatching(/usuario en uso/i) }));
     });
   });
 });
@@ -548,7 +563,7 @@ describe('PersonalizacionPage — Identidad edge cases', () => {
     const saveBtn = screen.getByText('Guardar firma');
     fireEvent.click(saveBtn);
     await waitFor(() => {
-      expect(screen.getByText(/firma guardada/i)).toBeInTheDocument();
+      expect(sileo.success).toHaveBeenCalledWith(expect.objectContaining({ description: expect.stringMatching(/firma guardada/i) }));
     });
   });
 
@@ -563,7 +578,7 @@ describe('PersonalizacionPage — Identidad edge cases', () => {
     fireEvent.change(textarea, { target: { value: 'Mi firma' } });
     fireEvent.click(screen.getByText('Guardar firma'));
     await waitFor(() => {
-      expect(screen.getByText(/error firma/i)).toBeInTheDocument();
+      expect(sileo.error).toHaveBeenCalledWith(expect.objectContaining({ description: expect.stringMatching(/error firma/i) }));
     });
   });
 
@@ -572,9 +587,9 @@ describe('PersonalizacionPage — Identidad edge cases', () => {
     openSection('Identidad');
     const fileInput = document.querySelector('input[type="file"]');
     const bigFile = new File(['a'], 'big.png', { type: 'image/png' });
-    Object.defineProperty(bigFile, 'size', { value: 201 * 1024, configurable: true });
+    Object.defineProperty(bigFile, 'size', { value: 4 * 1024 * 1024 + 1, configurable: true });
     fireEvent.change(fileInput, { target: { files: [bigFile] } });
-    expect(screen.getByText(/demasiado grande/i)).toBeInTheDocument();
+    expect(sileo.warning).toHaveBeenCalledWith(expect.objectContaining({ description: expect.stringMatching(/demasiado grande/i) }));
   });
 
   it('muestra el logo existente y el botón Eliminar cuando hay logo', async () => {
@@ -618,7 +633,7 @@ describe('PersonalizacionPage — Identidad edge cases', () => {
     await waitFor(() => expect(screen.getByText('Eliminar')).toBeInTheDocument());
     fireEvent.click(screen.getByText('Eliminar'));
     await waitFor(() => {
-      expect(screen.getByText(/logo eliminado/i)).toBeInTheDocument();
+      expect(sileo.success).toHaveBeenCalledWith(expect.objectContaining({ description: expect.stringMatching(/logo eliminado/i) }));
     });
   });
 
@@ -633,7 +648,7 @@ describe('PersonalizacionPage — Identidad edge cases', () => {
     await waitFor(() => expect(screen.getByText('Eliminar')).toBeInTheDocument());
     fireEvent.click(screen.getByText('Eliminar'));
     await waitFor(() => {
-      expect(screen.getByText(/error logo/i)).toBeInTheDocument();
+      expect(sileo.error).toHaveBeenCalledWith(expect.objectContaining({ description: expect.stringMatching(/error logo/i) }));
     });
   });
 
@@ -689,7 +704,7 @@ describe('PersonalizacionPage — Identidad edge cases', () => {
     fireEvent.change(fileInput);
 
     await waitFor(() => {
-      expect(screen.getByText(/error subida/i)).toBeInTheDocument();
+      expect(sileo.error).toHaveBeenCalledWith(expect.objectContaining({ description: expect.stringMatching(/error subida/i) }));
     });
 
     globalThis.FileReader = OriginalFileReader;

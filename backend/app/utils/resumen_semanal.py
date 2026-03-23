@@ -1,21 +1,22 @@
 """
 resumen_semanal.py — Genera y envía el resumen periódico de actividad.
 
-El APScheduler lo invoca cada día a las 08:30. La función comprueba si
-han transcurrido `resumen_intervalo_dias` días desde el último envío; si
-no toca, retorna sin hacer nada.
+El APScheduler lo invoca cada minuto. La función comprueba si la hora
+actual coincide con `resumen_hora_envio` (Europe/Madrid) y si han
+transcurrido `resumen_intervalo_dias` días desde el último envío.
 """
 
 import logging
 import re
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from sqlalchemy.orm import Session
 
 from backend.app.database import SessionLocal
-from backend.app.entidades.movimiento import MovimientoDB
-from backend.app.entidades.albaran import AlbaranDB
-from backend.app.entidades.configuracion import ConfiguracionDB
+from backend.app.entidades.movimiento import MovementDB
+from backend.app.entidades.albaran import DeliveryNoteDB
+from backend.app.entidades.configuracion import ConfigDB
 from backend.app.utils.groq_llm import groq_chat
 from backend.app.utils.emailer import send_email_simple
 
@@ -43,28 +44,33 @@ _DEFAULTS = {
     "resumen_intervalo_dias": "7",
     "resumen_email_destino": "",
     "resumen_ultima_vez": "",
+    "resumen_hora_envio": "08:30",
     "tienda_nombre": "FurniGest",
 }
 
 
 def _get(db: Session, key: str) -> str:
-    row = db.query(ConfiguracionDB).filter(ConfiguracionDB.key == key).first()
+    row = db.query(ConfigDB).filter(ConfigDB.key == key).first()
     return row.value if row and row.value else _DEFAULTS.get(key, "")
 
 
 def _set(db: Session, key: str, value: str) -> None:
-    row = db.query(ConfiguracionDB).filter(ConfiguracionDB.key == key).first()
+    row = db.query(ConfigDB).filter(ConfigDB.key == key).first()
     if row:
         row.value = value
     else:
-        db.add(ConfiguracionDB(key=key, value=value))
+        db.add(ConfigDB(key=key, value=value))
     db.commit()
 
 
 def job_resumen_semanal() -> None:
-    """Entry point invocado por APScheduler (hilo de background)."""
+    """Entry point invocado por APScheduler (cada minuto)."""
     db = SessionLocal()
     try:
+        hora_envio = _get(db, "resumen_hora_envio") or "08:30"
+        now_hhmm = datetime.now(tz=ZoneInfo("Europe/Madrid")).strftime("%H:%M")
+        if now_hhmm != hora_envio:
+            return
         _run(db)
     except Exception as exc:
         log.exception("[resumen] Error en job_resumen_semanal: %s", exc)
@@ -79,41 +85,43 @@ def _run(db: Session) -> None:
         return
 
     intervalo = max(1, int(_get(db, "resumen_intervalo_dias") or "7"))
-    ultima_vez_str = _get(db, "resumen_ultima_vez")
-    hoy = date.today()
+    last_time_str = _get(db, "resumen_ultima_vez")
+    today = date.today()
 
-    if ultima_vez_str:
+    if last_time_str:
         try:
-            last = date.fromisoformat(ultima_vez_str)
-            dias_desde = (hoy - last).days
-            if dias_desde < intervalo:
+            last = date.fromisoformat(last_time_str)
+            days_since = (today - last).days
+            if days_since < intervalo:
                 log.info(
-                    "[resumen] Aún no toca (%d/%d días). Omitido.",
-                    dias_desde,
+                    "[resumen] Aun no toca (%d/%d dias). Omitido.",
+                    days_since,
                     intervalo,
                 )
                 return
         except ValueError:
             pass
 
-    desde = hoy - timedelta(days=intervalo)
-    movs = db.query(MovimientoDB).filter(MovimientoDB.fecha >= desde).all()
-    albs = db.query(AlbaranDB).filter(AlbaranDB.fecha >= desde).all()
+    from_date = today - timedelta(days=intervalo)
+    movements = db.query(MovementDB).filter(MovementDB.date >= from_date).all()
+    delivery_notes = (
+        db.query(DeliveryNoteDB).filter(DeliveryNoteDB.date >= from_date).all()
+    )
 
-    ingresos = sum(float(m.cantidad or 0) for m in movs if m.tipo == "INGRESO")
-    egresos = sum(float(m.cantidad or 0) for m in movs if m.tipo == "EGRESO")
-    balance = ingresos - egresos
-    n_albs = len(albs)
-    total_ventas = sum(float(a.total or 0) for a in albs)
-    tienda = _get(db, "tienda_nombre") or "FurniGest"
+    income = sum(float(m.amount or 0) for m in movements if m.type == "INGRESO")
+    expenses = sum(float(m.amount or 0) for m in movements if m.type == "EGRESO")
+    balance = income - expenses
+    delivery_note_count = len(delivery_notes)
+    total_revenue = sum(float(a.total or 0) for a in delivery_notes)
+    store_name = _get(db, "tienda_nombre") or "FurniGest"
 
     data_text = (
-        f"Período: {desde.strftime('%d/%m/%Y')} – {hoy.strftime('%d/%m/%Y')}\n"
-        f"Ingresos: {ingresos:.2f} €\n"
-        f"Gastos: {egresos:.2f} €\n"
-        f"Balance neto: {balance:.2f} €\n"
-        f"Albaranes emitidos: {n_albs}\n"
-        f"Valor total ventas: {total_ventas:.2f} €\n"
+        f"Periodo: {from_date.strftime('%d/%m/%Y')} - {today.strftime('%d/%m/%Y')}\n"
+        f"Ingresos: {income:.2f} EUR\n"
+        f"Gastos: {expenses:.2f} EUR\n"
+        f"Balance neto: {balance:.2f} EUR\n"
+        f"Albaranes emitidos: {delivery_note_count}\n"
+        f"Valor total ventas: {total_revenue:.2f} EUR\n"
     )
 
     insight = ""
@@ -130,7 +138,7 @@ def _run(db: Session) -> None:
                 {
                     "role": "user",
                     "content": (
-                        f"Analiza la actividad de los últimos {intervalo} días de la tienda {tienda}:\n\n"
+                        f"Analiza la actividad de los ultimos {intervalo} dias de la tienda {store_name}:\n\n"
                         f"{data_text}\n"
                         "Proporciona: 1) Valoración del rendimiento financiero, "
                         "2) Un punto clave positivo, 3) Un área de mejora. "
@@ -143,23 +151,21 @@ def _run(db: Session) -> None:
         log.warning("[resumen] No se pudo generar insight IA: %s", exc)
 
     html = _build_html(
-        tienda,
-        desde,
-        hoy,
-        ingresos,
-        egresos,
+        store_name,
+        from_date,
+        today,
+        income,
+        expenses,
         balance,
-        n_albs,
-        total_ventas,
+        delivery_note_count,
+        total_revenue,
         insight,
         intervalo,
     )
-    subject = (
-        f"📊 Resumen {tienda} · {desde.strftime('%d/%m')}–{hoy.strftime('%d/%m/%Y')}"
-    )
+    subject = f"Resumen {store_name} - {from_date.strftime('%d/%m')}-{today.strftime('%d/%m/%Y')}"
     send_email_simple(email_destino, subject, html)
 
-    _set(db, "resumen_ultima_vez", hoy.isoformat())
+    _set(db, "resumen_ultima_vez", today.isoformat())
     log.info("[resumen] Resumen enviado a %s", email_destino)
 
 
@@ -168,14 +174,14 @@ def _eur(n: float) -> str:
 
 
 def _build_html(
-    tienda,
-    desde,
-    hasta,
-    ingresos,
-    egresos,
+    store_name,
+    from_date,
+    until_date,
+    income,
+    expenses,
     balance,
-    n_albs,
-    total_ventas,
+    delivery_note_count,
+    total_revenue,
     insight,
     intervalo,
 ) -> str:
@@ -205,12 +211,12 @@ def _build_html(
       style="max-width:600px;width:100%;">
       <tr>
         <td style="padding:18px 24px;background:#111827;border-radius:14px 14px 0 0;">
-          <div style="color:#fff;font-size:17px;font-weight:700;">{tienda}</div>
+          <div style="color:#fff;font-size:17px;font-weight:700;">{store_name}</div>
           <div style="color:#94a3b8;font-size:12px;margin-top:4px;">
             Resumen de actividad · últimos {intervalo} días
           </div>
           <div style="color:#64748b;font-size:11px;margin-top:2px;">
-            {desde.strftime("%d/%m/%Y")} – {hasta.strftime("%d/%m/%Y")}
+            {from_date.strftime("%d/%m/%Y")} – {until_date.strftime("%d/%m/%Y")}
           </div>
         </td>
       </tr>
@@ -221,13 +227,13 @@ def _build_html(
             <tr>
               <td style="color:#6b7280;border-bottom:1px solid #f3f4f6;">💰 Ingresos</td>
               <td align="right" style="font-weight:700;color:#16a34a;border-bottom:1px solid #f3f4f6;">
-                {_eur(ingresos)}
+                {_eur(income)}
               </td>
             </tr>
             <tr>
               <td style="color:#6b7280;border-bottom:1px solid #f3f4f6;">📉 Gastos</td>
               <td align="right" style="font-weight:700;color:#dc2626;border-bottom:1px solid #f3f4f6;">
-                {_eur(egresos)}
+                {_eur(expenses)}
               </td>
             </tr>
             <tr style="background:#f9fafb;">
@@ -240,12 +246,12 @@ def _build_html(
             <tr>
               <td style="color:#6b7280;border-bottom:1px solid #f3f4f6;">🧾 Albaranes emitidos</td>
               <td align="right" style="font-weight:700;color:#111827;border-bottom:1px solid #f3f4f6;">
-                {n_albs}
+                {delivery_note_count}
               </td>
             </tr>
             <tr style="background:#f9fafb;">
               <td style="color:#6b7280;">💼 Valor total ventas</td>
-              <td align="right" style="font-weight:700;color:#111827;">{_eur(total_ventas)}</td>
+              <td align="right" style="font-weight:700;color:#111827;">{_eur(total_revenue)}</td>
             </tr>
           </table>
         </td>
@@ -255,7 +261,7 @@ def _build_html(
         <td style="background:#ffffff;padding:12px 24px 20px;border:1px solid #e5e7eb;
           border-top:0;border-radius:0 0 14px 14px;text-align:center;">
           <div style="font-size:11px;color:#9ca3af;">
-            Generado automáticamente por {tienda} · FurniGest
+            Generado automáticamente por {store_name} · FurniGest
           </div>
         </td>
       </tr>

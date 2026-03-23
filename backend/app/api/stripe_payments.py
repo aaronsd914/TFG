@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime
-from typing import Optional
+from typing import Annotated, Optional
 
 import stripe
 from fastapi import APIRouter, Depends, HTTPException
@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from backend.app.database import get_db
 from backend.app.dependencies import get_current_user
-from backend.app.entidades.movimiento import MovimientoDB
+from backend.app.entidades.movimiento import MovementDB
 from backend.app.entidades.stripe_checkout import StripeCheckoutDB
 from backend.app.stripe_settings import (
     STRIPE_CANCEL_URL,
@@ -32,7 +32,7 @@ router = APIRouter(
 class CheckoutIn(BaseModel):
     amount: float
     description: str = "Cobro"
-    # opcional: por si luego quieres enlazarlo a un albarán
+    # opcional: por si luego quieres enlazarlo a un albarÃ¡n
     albaran_id: Optional[int] = None
 
 
@@ -42,7 +42,7 @@ class ConfirmIn(BaseModel):
 
 @router.get("/status")
 def stripe_status():
-    """Devuelve la configuración activa de Stripe: moneda, clave pública y URLs de retorno."""
+    """Devuelve la configuraciÃ³n activa de Stripe: moneda, clave pÃºblica y URLs de retorno."""
     return {
         "configured": bool(STRIPE_SECRET_KEY),
         "currency": STRIPE_CURRENCY,
@@ -53,14 +53,21 @@ def stripe_status():
     }
 
 
-@router.post("/checkout")
+@router.post(
+    "/checkout",
+    responses={
+        400: {"description": "Bad request"},
+        500: {"description": "Stripe not configured"},
+        502: {"description": "Stripe error"},
+    },
+)
 def create_checkout(payload: CheckoutIn):
     """
     Crea una Stripe Checkout Session con el importe indicado y devuelve
     su id y URL. El frontend redirige al usuario a esa URL para completar el pago.
     """
     if not STRIPE_SECRET_KEY:
-        raise HTTPException(500, "Stripe no está configurado (STRIPE_SECRET_KEY)")
+        raise HTTPException(500, "Stripe no estÃ¡ configurado (STRIPE_SECRET_KEY)")
 
     amount = float(payload.amount or 0)
     if amount <= 0:
@@ -68,7 +75,7 @@ def create_checkout(payload: CheckoutIn):
 
     stripe.api_key = STRIPE_SECRET_KEY
 
-    # Stripe trabaja en céntimos
+    # Stripe trabaja en cÃ©ntimos
     unit_amount = int(round(amount * 100))
     meta = {
         "description": (payload.description or "Cobro")[:200],
@@ -98,23 +105,30 @@ def create_checkout(payload: CheckoutIn):
         log.exception("Error creando Checkout Session: %s", e)
         raise HTTPException(502, f"Stripe error creando checkout: {e}")
 
-    # Devuelve el id y la URL de redirección para que el frontend lleve al usuario a pagar
+    # Devuelve el id y la URL de redirecciÃ³n para que el frontend lleve al usuario a pagar
     return {"id": session.id, "url": session.url}
 
 
-@router.post("/confirm")
-def confirm_checkout(payload: ConfirmIn, db: Session = Depends(get_db)):
+@router.post(
+    "/confirm",
+    responses={
+        400: {"description": "Bad request"},
+        500: {"description": "Stripe not configured"},
+        502: {"description": "Stripe error"},
+    },
+)
+def confirm_checkout(payload: ConfirmIn, db: Annotated[Session, Depends(get_db)]):
     """CONFIRM simple (sin webhook):
 
     - El frontend llama a este endpoint al volver de Stripe (success_url).
-    - El backend verifica en Stripe que el pago está 'paid'.
+    - El backend verifica en Stripe que el pago estÃ¡ 'paid'.
     - Si es la primera vez que vemos ese session_id, crea un Movimiento (INGRESO).
 
     Para un TFG es perfecto y evita configurar Stripe CLI + webhook.
     """
 
     if not STRIPE_SECRET_KEY:
-        raise HTTPException(500, "Stripe no está configurado (STRIPE_SECRET_KEY)")
+        raise HTTPException(500, "Stripe no estÃ¡ configurado (STRIPE_SECRET_KEY)")
     sid = (payload.session_id or "").strip()
     if not sid:
         raise HTTPException(400, "session_id requerido")
@@ -137,7 +151,7 @@ def confirm_checkout(payload: ConfirmIn, db: Session = Depends(get_db)):
     try:
         session = stripe.checkout.Session.retrieve(sid)
     except Exception as e:
-        raise HTTPException(502, f"No se pudo recuperar la sesión en Stripe: {e}")
+        raise HTTPException(502, f"No se pudo recuperar la sesiÃ³n en Stripe: {e}")
 
     payment_status = getattr(session, "payment_status", None) or (
         session.get("payment_status") if isinstance(session, dict) else None
@@ -148,7 +162,7 @@ def confirm_checkout(payload: ConfirmIn, db: Session = Depends(get_db)):
     if payment_status != "paid":
         raise HTTPException(
             400,
-            f"La sesión no está pagada (payment_status={payment_status}, status={status})",
+            f"La sesiÃ³n no estÃ¡ pagada (payment_status={payment_status}, status={status})",
         )
 
     amount_total = getattr(session, "amount_total", None) or (
@@ -169,18 +183,18 @@ def confirm_checkout(payload: ConfirmIn, db: Session = Depends(get_db)):
         session.get("payment_intent") if isinstance(session, dict) else None
     )
 
-    # Fecha del cobro = fecha creación sesión (o hoy si no viene)
+    # Fecha del cobro = fecha creaciÃ³n sesiÃ³n (o hoy si no viene)
     created_ts = getattr(session, "created", None) or (
         session.get("created") if isinstance(session, dict) else None
     )
-    fecha = (
+    payment_date = (
         datetime.utcfromtimestamp(created_ts).date()
         if created_ts
         else datetime.utcnow().date()
     )
 
     amount_eur = round(float(amount_total or 0) / 100.0, 2)
-    concepto = f"Cobro Stripe · {desc} · {sid}"
+    description_text = f"Cobro Stripe · {desc} · {sid}"
 
     # 1) registrar session (idempotencia)
     rec = StripeCheckoutDB(
@@ -194,11 +208,11 @@ def confirm_checkout(payload: ConfirmIn, db: Session = Depends(get_db)):
     db.add(rec)
 
     # 2) crear movimiento
-    mov = MovimientoDB(
-        fecha=fecha,
-        concepto=concepto,
-        cantidad=float(amount_eur),
-        tipo="INGRESO",
+    mov = MovementDB(
+        date=payment_date,
+        description=description_text,
+        amount=float(amount_eur),
+        type="INGRESO",
     )
     db.add(mov)
 
@@ -215,8 +229,8 @@ def confirm_checkout(payload: ConfirmIn, db: Session = Depends(get_db)):
 
 
 @router.get("/checkouts")
-def list_checkouts(limit: int = 25, db: Session = Depends(get_db)):
-    """Devuelve los últimos pagos confirmados vía Stripe, ordenados del más reciente al más antiguo."""
+def list_checkouts(db: Annotated[Session, Depends(get_db)], limit: int = 25):
+    """Devuelve los Ãºltimos pagos confirmados vÃ­a Stripe, ordenados del mÃ¡s reciente al mÃ¡s antiguo."""
     limit = max(1, min(int(limit or 25), 200))
     rows = (
         db.query(StripeCheckoutDB)

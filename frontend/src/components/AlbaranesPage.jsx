@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sileo } from 'sileo';
+import { useTranslation } from 'react-i18next';
 
 import { API_URL } from '../config.js';
 
@@ -38,7 +39,7 @@ function Chip({ label, onRemove }) {
         type="button"
         aria-label={`Quitar ${label}`}
       >
-        ×
+        Ã—
       </button>
     </span>
   );
@@ -54,23 +55,31 @@ function formatDateISO(d) {
   return dt.toISOString().slice(0, 10);
 }
 function formatEUR(n) {
-  return `${safeNumber(n).toFixed(2)} €`;
+  return `${safeNumber(n).toFixed(2)} â‚¬`;
 }
 function formatDate(d) {
   const dt = new Date(d);
-  return Number.isNaN(dt.getTime()) ? '—' : dt.toLocaleDateString();
+  return Number.isNaN(dt.getTime()) ? 'â€”' : dt.toLocaleDateString();
 }
 
 const ESTADO_META = {
   FIANZA:      { label: 'Fianza',     className: 'bg-amber-50 text-amber-800 border-amber-200' },
-  ALMACEN:     { label: 'Almacén',    className: 'bg-sky-50 text-sky-800 border-sky-200' },
+  ALMACEN:     { label: 'AlmacÃ©n',    className: 'bg-sky-50 text-sky-800 border-sky-200' },
   TRANSPORTE:  { label: 'Ruta',       className: 'bg-violet-50 text-violet-800 border-violet-200' },
   ENTREGADO:   { label: 'Entregado',  className: 'bg-green-50 text-green-800 border-green-200' },
 };
 
-// ===== Página =====
+// ===== PÃ¡gina =====
 export default function AlbaranesPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  const stateLabel = (key) => ({
+    FIANZA: t('albaranes.stateFianza'),
+    ALMACEN: t('albaranes.stateAlmacen'),
+    TRANSPORTE: t('albaranes.stateRuta'),
+    ENTREGADO: t('albaranes.stateEntregado'),
+  })[key] || key;
 
   const [albaranes, setAlbaranes] = useState([]);
   const [clientes, setClientes] = useState([]);
@@ -101,10 +110,10 @@ export default function AlbaranesPage() {
   const [detailError, setDetailError] = useState(null);
   const [detailTab, setDetailTab] = useState('albaran'); // 'albaran' | 'cliente'
 
-  // ✅ ID pendiente para abrir desde Clientes
+  // âœ… ID pendiente para abrir desde Clientes
   const [pendingOpenId, setPendingOpenId] = useState(null);
 
-  // ✅ Ir a detalle del cliente en ClientesPage
+  // âœ… Ir a detalle del cliente en ClientesPage
   function goToCliente(clienteId) {
     if (!clienteId) return;
     try {
@@ -152,7 +161,7 @@ export default function AlbaranesPage() {
         const msg = e?.message || 'Error desconocido';
         setError(msg);
 
-        // ✅ Toast Sileo (error de carga principal)
+        // âœ… Toast Sileo (error de carga principal)
         sileo.error({
           title: 'Error cargando albaranes',
           description: msg,
@@ -197,10 +206,10 @@ export default function AlbaranesPage() {
     const t = q.trim().toLowerCase();
     if (t) {
       list = list.filter((a) => {
-        const cliente = clientesById.get(a.cliente_id);
+        const cliente = clientesById.get(a.customer_id);
         const enCliente =
           cliente &&
-          (`${cliente.nombre || ''} ${cliente.apellidos || ''}`.toLowerCase().includes(t) ||
+          (`${cliente.name || ''} ${cliente.surnames || ''}`.toLowerCase().includes(t) ||
             (cliente.email || '').toLowerCase().includes(t) ||
             (cliente.dni || '').toLowerCase().includes(t));
 
@@ -214,7 +223,7 @@ export default function AlbaranesPage() {
     });
 
     list = list.filter((a) => {
-      const f = formatDateISO(a.fecha);
+      const f = formatDateISO(a.date);
       if (dateFrom && f < dateFrom) return false;
       if (dateTo && f > dateTo) return false;
       return true;
@@ -222,22 +231,22 @@ export default function AlbaranesPage() {
 
     if (selectedDomains.length) {
       list = list.filter((a) => {
-        const cli = clientesById.get(a.cliente_id);
+        const cli = clientesById.get(a.customer_id);
         const dom = (cli?.email || '').split('@')[1]?.toLowerCase() || '';
         return selectedDomains.includes(dom);
       });
     }
 
     if (selectedEstados.length) {
-      list = list.filter((a) => selectedEstados.includes(a.estado));
+      list = list.filter((a) => selectedEstados.includes(a.status));
     }
 
     switch (sort) {
       case 'fecha_desc':
-        list.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+        list.sort((a, b) => new Date(b.date) - new Date(a.date));
         break;
       case 'fecha_asc':
-        list.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+        list.sort((a, b) => new Date(a.date) - new Date(b.date));
         break;
       case 'total_desc':
         list.sort((a, b) => safeNumber(b.total) - safeNumber(a.total));
@@ -256,12 +265,12 @@ export default function AlbaranesPage() {
   const defaultMaxTotal = totalDefaults[1] ?? 0;
 
   const activeChips = [
-    ...(q ? [{ key: 'q', label: `Buscar: "${q}"`, onRemove: () => setQuery('') }] : []),
+    ...(q ? [{ key: 'q', label: `${t('common.search')}: "${q}"`, onRemove: () => setQuery('') }] : []),
     ...((dateFrom || dateTo)
       ? [
           {
             key: 'fechas',
-            label: `Fecha ${dateFrom || '—'} → ${dateTo || '—'}`,
+            label: `${t('albaranes.colDate')} ${dateFrom || 'â€”'} â†’ ${dateTo || 'â€”'}`,
             onRemove: () => {
               setDateFrom('');
               setDateTo('');
@@ -273,26 +282,26 @@ export default function AlbaranesPage() {
       ? [
           {
             key: 'total',
-            label: `Total ${totalRange[0]}–${totalRange[1]} €`,
+            label: `${t('albaranes.colTotal')} ${totalRange[0]}â€“${totalRange[1]} â‚¬`,
             onRemove: () => setTotalRange([defaultMinTotal, defaultMaxTotal]),
           },
         ]
       : []),
     ...selectedDomains.map((dom) => ({
       key: `dom-${dom}`,
-      label: `Dominio: ${dom}`,
+      label: `${t('albaranes.clientDomains')}: ${dom}`,
       onRemove: () => setSelectedDomains((prev) => prev.filter((d) => d !== dom)),
     })),
     ...selectedEstados.map((es) => ({
       key: `est-${es}`,
-      label: `Estado: ${ESTADO_META[es]?.label || es}`,
+      label: `${t('albaranes.statusFilter')}: ${stateLabel(es)}`,
       onRemove: () => setSelectedEstados((prev) => prev.filter((x) => x !== es)),
     })),
     ...(sort !== 'fecha_desc'
       ? [
           {
             key: 'sort',
-            label: `Orden: ${({ fecha_desc: 'Fecha ↓', fecha_asc: 'Fecha ↑', total_desc: 'Total ↓', total_asc: 'Total ↑' })[sort]}`,
+            label: `${t('albaranes.orderLabel')}: ${({ fecha_desc: 'Fecha â†“', fecha_asc: 'Fecha â†‘', total_desc: 'Total â†“', total_asc: 'Total â†‘' })[sort]}`,
             onRemove: () => setSort('fecha_desc'),
           },
         ]
@@ -312,12 +321,12 @@ export default function AlbaranesPage() {
   async function openDetail(a) {
     setDetailError(null);
     setSelected(a);
-    setSelectedClient(clientesById.get(a.cliente_id) || null);
+    setSelectedClient(clientesById.get(a.customer_id) || null);
 
     try {
       const [resA, resC] = await Promise.all([
         fetch(`${API_URL}albaranes/get/${a.id}`),
-        fetch(`${API_URL}clientes/get/${a.cliente_id}`),
+        fetch(`${API_URL}clientes/get/${a.customer_id}`),
       ]);
 
       if (resA.ok) setSelected(await resA.json());
@@ -327,7 +336,7 @@ export default function AlbaranesPage() {
         const msg = 'No se pudo cargar el detalle.';
         setDetailError(msg);
 
-        // ✅ Toast Sileo (warning: no se pudo cargar detalle)
+        // âœ… Toast Sileo (warning: no se pudo cargar detalle)
         sileo.warning({
           title: 'Detalle no disponible',
           description: msg,
@@ -337,7 +346,7 @@ export default function AlbaranesPage() {
       const msg = e?.message || 'Error desconocido';
       setDetailError(msg);
 
-      // ✅ Toast Sileo (error: excepción al cargar detalle)
+      // âœ… Toast Sileo (error: excepciÃ³n al cargar detalle)
       sileo.error({
         title: 'Error cargando el detalle',
         description: msg,
@@ -356,7 +365,7 @@ export default function AlbaranesPage() {
     setDetailTab('albaran');
   }
 
-  // ✅ Abrir detalle desde ClientesPage si llega ID
+  // âœ… Abrir detalle desde ClientesPage si llega ID
   useEffect(() => {
     try {
       const stored = localStorage.getItem('albaran_open_id');
@@ -394,19 +403,19 @@ export default function AlbaranesPage() {
     <>
       <div className="p-3 md:p-6">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-semibold">Albaranes</h1>
+          <h1 className="text-2xl font-semibold">{t('albaranes.title')}</h1>
         </div>
 
-        {/* ✅ Buscador + Filtros en la misma línea */}
+        {/* âœ… Buscador + Filtros en la misma lÃ­nea */}
         <div className="flex items-center gap-2 mb-3">
           <div className="relative flex-1">
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar por id, cliente, DNI o email…"
+              placeholder={t('albaranes.searchPlaceholder')}
               className="w-full rounded-xl border border-gray-300 px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-gray-300"
             />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">⌕</span>
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">âŒ•</span>
           </div>
 
           <button
@@ -414,20 +423,20 @@ export default function AlbaranesPage() {
             className="rounded-xl border border-gray-300 px-4 py-2 bg-white hover:bg-gray-50"
             type="button"
           >
-            Filtros
+            {t('albaranes.filtersTitle')}
           </button>
         </div>
 
-        {/* Rango de fechas rápido */}
+        {/* Rango de fechas rÃ¡pido */}
         <div className="flex flex-wrap items-center gap-2 mb-3">
-          <span className="text-sm text-gray-500">Fecha:</span>
+          <span className="text-sm text-gray-500">{t('albaranes.dateLabel')}</span>
           <input
             type="date"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
             className="border border-gray-300 rounded-lg px-2 py-1 text-sm"
           />
-          <span className="text-gray-400">—</span>
+          <span className="text-gray-400">â€”</span>
           <input
             type="date"
             value={dateTo}
@@ -441,7 +450,7 @@ export default function AlbaranesPage() {
               className="text-sm text-gray-500 hover:text-gray-700 px-2"
               title="Limpiar fechas"
             >
-              ×
+              Ã—
             </button>
           )}
         </div>
@@ -453,7 +462,7 @@ export default function AlbaranesPage() {
               <Chip key={ch.key} label={ch.label} onRemove={ch.onRemove} />
             ))}
             <button className="text-sm text-gray-600 underline ml-2 hover:text-gray-900 transition-colors" onClick={clearAll} type="button">
-              Limpiar todo
+              {t('common.clear')}
             </button>
           </div>
         )}
@@ -462,17 +471,17 @@ export default function AlbaranesPage() {
         <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white">
           <div className="min-w-[700px]">
             <div className="grid grid-cols-12 px-4 py-2 text-sm font-medium text-gray-600 border-b">
-              <div className="col-span-2">ID</div>
-              <div className="col-span-2">Fecha</div>
-              <div className="col-span-4">Cliente</div>
-              <div className="col-span-2">Total</div>
-              <div className="col-span-2">Estado</div>
+              <div className="col-span-2">{t('albaranes.colID')}</div>
+              <div className="col-span-2">{t('albaranes.colDate')}</div>
+              <div className="col-span-4">{t('albaranes.colClient')}</div>
+              <div className="col-span-2">{t('albaranes.colTotal')}</div>
+              <div className="col-span-2">{t('albaranes.colStatus')}</div>
             </div>
 
             <ul>
-              {loading && <li className="p-6 text-gray-500">Cargando albaranes…</li>}
+              {loading && <li className="p-6 text-gray-500">{t('albaranes.loading')}</li>}
 
-              {/* ✅ En vez de “notificación” inline con todo el texto, dejamos un aviso suave aquí
+              {/* âœ… En vez de â€œnotificaciÃ³nâ€ inline con todo el texto, dejamos un aviso suave aquÃ­
                   y el detalle ya va por toast (Sileo). */}
               {error && (
                 <li className="p-6 text-gray-700">
@@ -481,11 +490,11 @@ export default function AlbaranesPage() {
                 </li>
               )}
 
-              {!loading && !error && filtered.length === 0 && <li className="p-6 text-gray-500">Sin resultados</li>}
+              {!loading && !error && filtered.length === 0 && <li className="p-6 text-gray-500">{t('albaranes.noResults')}</li>}
 
               {filtered.map((a) => {
-                const cli = clientesById.get(a.cliente_id);
-                const meta = ESTADO_META[a.estado] || { label: a.estado, className: 'bg-gray-100 text-gray-700 border-gray-300' };
+                const cli = clientesById.get(a.customer_id);
+                const meta = ESTADO_META[a.status] || { label: a.status, className: 'bg-gray-100 text-gray-700 border-gray-300' };
                 return (
                   <li
                     key={a.id}
@@ -493,14 +502,14 @@ export default function AlbaranesPage() {
                     onClick={() => openDetail(a)}
                   >
                     <div className="col-span-2">#{a.id}</div>
-                    <div className="col-span-2">{formatDate(a.fecha)}</div>
+                    <div className="col-span-2">{formatDate(a.date)}</div>
 
                     <div className="col-span-4">
                       <div className="font-medium">
-                        {cli?.nombre} {cli?.apellidos}
+                        {cli?.name} {cli?.surnames}
                       </div>
                       <div className="text-xs text-gray-500 truncate">
-                        {cli?.dni ? `${cli.dni} · ` : ''}
+                        {cli?.dni ? `${cli.dni} Â· ` : ''}
                         {cli?.email}
                       </div>
                     </div>
@@ -508,7 +517,7 @@ export default function AlbaranesPage() {
                     <div className="col-span-2">{formatEUR(a.total)}</div>
 
                     <div className="col-span-2">
-                      <span className={`inline-block border px-2 py-1 rounded-lg text-xs ${meta.className}`}>{meta.label}</span>
+                      <span className={`inline-block border px-2 py-1 rounded-lg text-xs ${meta.className}`}>{stateLabel(a.status)}</span>
                     </div>
                   </li>
                 );
@@ -520,29 +529,29 @@ export default function AlbaranesPage() {
         {/* Modal filtros */}
         <ModalCenter isOpen={filtersOpen} onClose={() => setFiltersOpen(false)} maxWidth="max-w-lg">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">Filtros</h2>
+            <h2 className="text-xl font-semibold">{t('albaranes.filtersTitle')}</h2>
             <button onClick={() => setFiltersOpen(false)} className="text-gray-500 hover:text-gray-700" type="button">
-              Cerrar
+              {t('common.close')}
             </button>
           </div>
 
           <section className="space-y-6">
             <div>
-              <label className="block text-sm font-medium mb-2">Orden</label>
+              <label className="block text-sm font-medium mb-2">{t('albaranes.orderLabel')}</label>
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
               >
-                <option value="fecha_desc">Fecha ↓</option>
-                <option value="fecha_asc">Fecha ↑</option>
-                <option value="total_desc">Total ↓</option>
-                <option value="total_asc">Total ↑</option>
+                <option value="fecha_desc">Fecha â†“</option>
+                <option value="fecha_asc">Fecha â†‘</option>
+                <option value="total_desc">Total â†“</option>
+                <option value="total_asc">Total â†‘</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Rango de fechas</label>
+              <label className="block text-sm font-medium mb-2">{t('albaranes.dateRange')}</label>
               <div className="flex items-center gap-3">
                 <input
                   type="date"
@@ -550,7 +559,7 @@ export default function AlbaranesPage() {
                   onChange={(e) => setDateFrom(e.target.value)}
                   className="border border-gray-300 rounded-lg px-3 py-2"
                 />
-                <span>—</span>
+                <span>â€”</span>
                 <input
                   type="date"
                   value={dateTo}
@@ -561,7 +570,7 @@ export default function AlbaranesPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Rango de total (€)</label>
+              <label className="block text-sm font-medium mb-2">{t('albaranes.totalRange')}</label>
               <div className="flex items-center gap-3">
                 <input
                   type="number"
@@ -570,7 +579,7 @@ export default function AlbaranesPage() {
                   onChange={(e) => setTotalRangeSafe(e.target.value, totalRange[1])}
                   className="w-32 border border-gray-300 rounded-lg px-3 py-2"
                 />
-                <span>—</span>
+                <span>â€”</span>
                 <input
                   type="number"
                   min={0}
@@ -580,14 +589,14 @@ export default function AlbaranesPage() {
                 />
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                Rango disponible: {defaultMinTotal}–{defaultMaxTotal} €
+                {t('albaranes.rangeAvailable', { min: defaultMinTotal, max: defaultMaxTotal })}
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Dominios de cliente</label>
+              <label className="block text-sm font-medium mb-2">{t('albaranes.clientDomains')}</label>
               <div className="flex flex-wrap gap-2">
-                {domains.length === 0 && <span className="text-sm text-gray-500">No hay dominios detectados.</span>}
+                {domains.length === 0 && <span className="text-sm text-gray-500">{t('albaranes.noDomains')}</span>}
                 {domains.map((dom) => {
                   const active = selectedDomains.includes(dom);
                   return (
@@ -609,7 +618,7 @@ export default function AlbaranesPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Estados</label>
+              <label className="block text-sm font-medium mb-2">{t('albaranes.statusFilter')}</label>
               <div className="flex flex-wrap gap-2">
                 {Object.keys(ESTADO_META).map((es) => {
                   const active = selectedEstados.includes(es);
@@ -624,7 +633,7 @@ export default function AlbaranesPage() {
                       }`}
                       type="button"
                     >
-                      {ESTADO_META[es].label}
+                      {stateLabel(es)}
                     </button>
                   );
                 })}
@@ -638,29 +647,29 @@ export default function AlbaranesPage() {
               className="px-4 py-2 rounded-xl bg-gray-200 text-gray-900 hover:bg-gray-300"
               type="button"
             >
-              Limpiar filtros
+              {t('albaranes.clearFilters')}
             </button>
             <button
               onClick={() => setFiltersOpen(false)}
               className="px-4 py-2 rounded-xl bg-black text-white hover:opacity-90"
               type="button"
             >
-              Aplicar
+              {t('albaranes.apply')}
             </button>
           </div>
         </ModalCenter>
 
-        {/* ✅ Modal detalle albarán */}
+        {/* âœ… Modal detalle albarÃ¡n */}
         <ModalCenter isOpen={detailOpen} onClose={closeDetail} maxWidth="max-w-3xl">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">Detalle de albarán</h2>
+            <h2 className="text-xl font-semibold">{t('albaranes.detailTitle')}</h2>
             <button onClick={closeDetail} className="text-gray-500 hover:text-gray-700" type="button">
-              Cerrar
+              {t('common.close')}
             </button>
           </div>
 
           {!selected ? (
-            <p className="text-gray-500">Cargando…</p>
+            <p className="text-gray-500">{t('common.loading')}</p>
           ) : (
             <div className="space-y-4">
               {/* Tabs */}
@@ -672,7 +681,7 @@ export default function AlbaranesPage() {
                     detailTab === 'albaran' ? 'bg-black text-white border-black' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                   }`}
                 >
-                  Albarán
+                  {t('albaranes.tabAlbaran')}
                 </button>
                 <button
                   type="button"
@@ -681,7 +690,7 @@ export default function AlbaranesPage() {
                     detailTab === 'cliente' ? 'bg-black text-white border-black' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                   }`}
                 >
-                  Cliente
+                  {t('albaranes.tabClient')}
                 </button>
               </div>
 
@@ -690,51 +699,51 @@ export default function AlbaranesPage() {
               {/* cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-                  <div className="text-xs text-gray-500">ID</div>
+                  <div className="text-xs text-gray-500">{t('albaranes.colID')}</div>
                   <div className="font-medium">#{selected.id}</div>
                 </div>
 
                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-                  <div className="text-xs text-gray-500">Fecha</div>
-                  <div className="font-medium">{formatDate(selected.fecha)}</div>
+                  <div className="text-xs text-gray-500">{t('albaranes.colDate')}</div>
+                  <div className="font-medium">{formatDate(selected.date)}</div>
                 </div>
 
                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-                  <div className="text-xs text-gray-500">Total</div>
+                  <div className="text-xs text-gray-500">{t('albaranes.colTotal')}</div>
                   <div className="font-medium">{formatEUR(selected.total)}</div>
                 </div>
 
                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-                  <div className="text-xs text-gray-500">Estado</div>
+                  <div className="text-xs text-gray-500">{t('albaranes.colStatus')}</div>
                   <div className="font-medium">
                     <span
                       className={`inline-block border px-2 py-1 rounded-lg text-xs ${
-                        ESTADO_META[selected.estado]?.className || 'bg-gray-100 text-gray-700 border-gray-300'
+                        ESTADO_META[selected.status]?.className || 'bg-gray-100 text-gray-700 border-gray-300'
                       }`}
                     >
-                      {ESTADO_META[selected.estado]?.label || selected.estado}
+                      {stateLabel(selected.status)}
                     </span>
                   </div>
                 </div>
               </div>
 
               <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-                <div className="text-xs text-gray-500">Descripción</div>
-                <div className="font-medium break-words">{selected.descripcion || '—'}</div>
+                <div className="text-xs text-gray-500">{t('albaranes.colDesc')}</div>
+                <div className="font-medium break-words">{selected.description || 'â€”'}</div>
               </div>
 
               <div className="bg-white border border-gray-200 rounded-xl p-4">
-                <h3 className="font-semibold mb-3">Líneas</h3>
+                <h3 className="font-semibold mb-3">{t('albaranes.linesTitle')}</h3>
                 {detailError && <p className="text-red-600 mb-2">Error: {detailError}</p>}
                 <div className="border rounded-xl overflow-hidden">
                   <table className="w-full border-collapse">
                     <thead>
                       <tr className="text-left border-b">
-                        <th className="p-2 w-24">ID línea</th>
-                        <th className="p-2 w-28">Producto</th>
-                        <th className="p-2 w-24">Cantidad</th>
-                        <th className="p-2 w-28">P. Unitario</th>
-                        <th className="p-2 w-28">Subtotal</th>
+                        <th className="p-2 w-24">{t('albaranes.colLineId')}</th>
+                        <th className="p-2 w-28">{t('albaranes.colProduct')}</th>
+                        <th className="p-2 w-24">{t('albaranes.colQty')}</th>
+                        <th className="p-2 w-28">{t('albaranes.colUnitPrice')}</th>
+                        <th className="p-2 w-28">{t('albaranes.colSubtotal')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -742,15 +751,15 @@ export default function AlbaranesPage() {
                         <tr key={ln.id} className="border-b">
                           <td className="p-2">#{ln.id}</td>
                           <td className="p-2">{ln.producto_id}</td>
-                          <td className="p-2">{ln.cantidad}</td>
-                          <td className="p-2">{formatEUR(ln.precio_unitario)}</td>
-                          <td className="p-2">{formatEUR(ln.cantidad * ln.precio_unitario)}</td>
+                          <td className="p-2">{ln.quantity}</td>
+                          <td className="p-2">{formatEUR(ln.unit_price)}</td>
+                          <td className="p-2">{formatEUR(ln.quantity * ln.unit_price)}</td>
                         </tr>
                       ))}
                       {(!selected.lineas || selected.lineas.length === 0) && (
                         <tr>
                           <td className="p-3 text-sm text-gray-500" colSpan={5}>
-                            Este albarán no tiene líneas.
+                            {t('albaranes.noLines')}
                           </td>
                         </tr>
                       )}
@@ -764,7 +773,7 @@ export default function AlbaranesPage() {
               {detailTab === 'cliente' && (
                 <div className="bg-white border border-gray-200 rounded-xl p-4">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-semibold">Información del cliente</h3>
+                    <h3 className="font-semibold">{t('albaranes.clientInfo')}</h3>
                     {selectedClient?.id && (
                       <button
                         type="button"
@@ -775,38 +784,38 @@ export default function AlbaranesPage() {
                           goToCliente(selectedClient.id);
                         }}
                       >
-                        Ver cliente →
+                        {t('albaranes.viewClient')}
                       </button>
                     )}
                   </div>
                   {selectedClient ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-                        <div className="text-xs text-gray-500">Nombre</div>
-                        <div className="font-medium">{selectedClient.nombre} {selectedClient.apellidos}</div>
+                        <div className="text-xs text-gray-500">{t('albaranes.colName')}</div>
+                        <div className="font-medium">{selectedClient.name} {selectedClient.surnames}</div>
                       </div>
                       <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-                        <div className="text-xs text-gray-500">DNI</div>
-                        <div className="font-medium">{selectedClient.dni || '—'}</div>
+                        <div className="text-xs text-gray-500">{t('albaranes.colDNI')}</div>
+                        <div className="font-medium">{selectedClient.dni || 'â€”'}</div>
                       </div>
                       <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-                        <div className="text-xs text-gray-500">Email</div>
-                        <div className="font-medium break-all">{selectedClient.email || '—'}</div>
+                        <div className="text-xs text-gray-500">{t('albaranes.colEmail')}</div>
+                        <div className="font-medium break-all">{selectedClient.email || 'â€”'}</div>
                       </div>
                       <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-                        <div className="text-xs text-gray-500">Teléfono</div>
+                        <div className="text-xs text-gray-500">{t('albaranes.colPhone')}</div>
                         <div className="font-medium">
-                          {selectedClient.telefono1 || '—'}
-                          {selectedClient.telefono2 ? ` · ${selectedClient.telefono2}` : ''}
+                          {selectedClient.phone1 || 'â€”'}
+                          {selectedClient.phone2 ? ` Â· ${selectedClient.phone2}` : ''}
                         </div>
                       </div>
                       <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 md:col-span-2">
-                        <div className="text-xs text-gray-500">Ciudad</div>
-                        <div className="font-medium">{selectedClient.ciudad || '—'}</div>
+                        <div className="text-xs text-gray-500">{t('albaranes.colCity')}</div>
+                        <div className="font-medium">{selectedClient.city || 'â€”'}</div>
                       </div>
                     </div>
                   ) : (
-                    <p className="text-gray-500">Cargando cliente…</p>
+                    <p className="text-gray-500">{t('albaranes.loadingClient')}</p>
                   )}
                 </div>
               )}

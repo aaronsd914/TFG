@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from typing import Annotated
 from passlib.context import CryptContext
 from backend.app.database import get_db
-from backend.app.entidades.usuario import UsuarioDB, Usuario, UpdateMe
+from backend.app.entidades.usuario import UserDB, User, UpdateMe
 from backend.app.utils.jwt_utils import create_access_token
 from backend.app.dependencies import get_current_user
 
@@ -21,12 +21,12 @@ def hash_password(plain: str) -> str:
     return pwd_context.hash(plain)
 
 
-@router.post("/login")
+@router.post("/login", responses={401: {"description": "Unauthorized"}})
 def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Annotated[Session, Depends(get_db)],
 ):
-    user = db.query(UsuarioDB).filter(UsuarioDB.username == form_data.username).first()
+    user = db.query(UserDB).filter(UserDB.username == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -37,15 +37,23 @@ def login(
     return {"access_token": token, "token_type": "bearer"}
 
 
-@router.get("/me", response_model=Usuario)
-def me(current_user: Annotated[UsuarioDB, Depends(get_current_user)]):
+@router.get("/me", response_model=User)
+def me(current_user: Annotated[UserDB, Depends(get_current_user)]):
     return current_user
 
 
-@router.put("/me", response_model=Usuario)
+@router.put(
+    "/me",
+    response_model=User,
+    responses={
+        400: {"description": "Wrong current password or password too short"},
+        409: {"description": "Username already taken"},
+        422: {"description": "Validation error"},
+    },
+)
 def update_me(
     data: UpdateMe,
-    current_user: Annotated[UsuarioDB, Depends(get_current_user)],
+    current_user: Annotated[UserDB, Depends(get_current_user)],
     db: Annotated[Session, Depends(get_db)],
 ):
     if not verify_password(data.current_password, current_user.hashed_password):
@@ -55,9 +63,7 @@ def update_me(
         )
 
     if data.new_username and data.new_username != current_user.username:
-        clash = (
-            db.query(UsuarioDB).filter(UsuarioDB.username == data.new_username).first()
-        )
+        clash = db.query(UserDB).filter(UserDB.username == data.new_username).first()
         if clash:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,

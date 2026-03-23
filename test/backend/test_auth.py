@@ -1,15 +1,15 @@
 """
-test_auth.py — Tests del sistema de autenticación JWT.
+test_auth.py â€” Tests del sistema de autenticaciÃ³n JWT.
 
 Cubre:
-  1. Login con credenciales correctas → devuelve access_token
-  2. Login con contraseña incorrecta → 401
-  3. Login con usuario inexistente → 401
-  4. /me con token válido → devuelve datos del usuario
-  5. Endpoint protegido sin token → 401
-  6. Endpoint protegido con token válido → 200
-  7. Token manipulado (firma incorrecta) → 401
-  8. get_current_user con usuario inactivo → 401
+  1. Login con credenciales correctas â†’ devuelve access_token
+  2. Login con contraseÃ±a incorrecta â†’ 401
+  3. Login con usuario inexistente â†’ 401
+  4. /me con token vÃ¡lido â†’ devuelve datos del usuario
+  5. Endpoint protegido sin token â†’ 401
+  6. Endpoint protegido con token vÃ¡lido â†’ 200
+  7. Token manipulado (firma incorrecta) â†’ 401
+  8. get_current_user con usuario inactivo â†’ 401
 """
 import pytest
 from unittest.mock import patch
@@ -19,7 +19,7 @@ from passlib.context import CryptContext
 
 from backend.app.main import app
 from backend.app.database import Base, get_db
-from backend.app.entidades.usuario import UsuarioDB
+from backend.app.entidades.usuario import UserDB
 from backend.app.dependencies import get_current_user
 from backend.app.utils.jwt_utils import create_access_token
 
@@ -28,7 +28,7 @@ from test.backend.conftest import TestingSessionLocal, engine
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-# ── Fixtures locales ──────────────────────────────────────────────────────────
+# â”€â”€ Fixtures locales â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @pytest.fixture(autouse=True)
 def reset_db():
     Base.metadata.create_all(bind=engine)
@@ -47,8 +47,8 @@ def db_session():
 
 @pytest.fixture()
 def usuario_admin(db_session: Session):
-    """Usuario admin con contraseña hasheada real."""
-    user = UsuarioDB(
+    """Usuario admin con contraseÃ±a hasheada real."""
+    user = UserDB(
         username="admin_test",
         hashed_password=pwd_context.hash("secreto123"),
         role="admin",
@@ -62,7 +62,7 @@ def usuario_admin(db_session: Session):
 
 @pytest.fixture()
 def usuario_inactivo(db_session: Session):
-    user = UsuarioDB(
+    user = UserDB(
         username="inactivo",
         hashed_password=pwd_context.hash("pass"),
         role="vendedor",
@@ -84,7 +84,7 @@ def override_db():
 
 @pytest.fixture()
 def raw_client():
-    """TestClient SIN override de get_current_user — prueba autenticación real."""
+    """TestClient SIN override de get_current_user â€” prueba autenticaciÃ³n real."""
     app.dependency_overrides[get_db] = override_db
     app.dependency_overrides.pop(get_current_user, None)
     with patch("backend.app.main.seed", return_value=None):
@@ -93,7 +93,7 @@ def raw_client():
     app.dependency_overrides.clear()
 
 
-# ── Tests ─────────────────────────────────────────────────────────────────────
+# â”€â”€ Tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 def test_login_correcto(raw_client, usuario_admin):
     """Login con credenciales correctas devuelve un token."""
     r = raw_client.post(
@@ -107,7 +107,7 @@ def test_login_correcto(raw_client, usuario_admin):
 
 
 def test_login_contrasena_incorrecta(raw_client, usuario_admin):
-    """Contraseña errónea devuelve 401."""
+    """ContraseÃ±a errÃ³nea devuelve 401."""
     r = raw_client.post(
         "/api/auth/login",
         data={"username": "admin_test", "password": "mala_pass"},
@@ -125,7 +125,7 @@ def test_login_usuario_inexistente(raw_client):
 
 
 def test_me_con_token_valido(raw_client, usuario_admin):
-    """GET /api/auth/me con token válido devuelve los datos del usuario."""
+    """GET /api/auth/me con token vÃ¡lido devuelve los datos del usuario."""
     token = create_access_token({"sub": "admin_test", "role": "admin"})
     r = raw_client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
     assert r.status_code == 200
@@ -141,7 +141,7 @@ def test_endpoint_protegido_sin_token(raw_client, usuario_admin):
 
 
 def test_endpoint_protegido_con_token_valido(raw_client, usuario_admin):
-    """Acceder a un endpoint protegido con token válido devuelve 200."""
+    """Acceder a un endpoint protegido con token vÃ¡lido devuelve 200."""
     token = create_access_token({"sub": "admin_test", "role": "admin"})
     r = raw_client.get(
         "/api/clientes/get",
@@ -162,15 +162,15 @@ def test_token_manipulado_devuelve_401(raw_client, usuario_admin):
 
 
 def test_usuario_inactivo_devuelve_401(raw_client, usuario_inactivo):
-    """Un usuario inactivo no puede autenticarse aunque el token sea válido."""
+    """Un usuario inactivo no puede autenticarse aunque el token sea vÃ¡lido."""
     token = create_access_token({"sub": "inactivo", "role": "vendedor"})
     r = raw_client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
     assert r.status_code == 401
 
 
-# ── Tests PUT /api/auth/me ────────────────────────────────────────────────────
+# â”€â”€ Tests PUT /api/auth/me â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 def test_put_me_cambia_contrasena(raw_client, usuario_admin):
-    """PUT /me con contraseña actual correcta y nueva contraseña actualiza el hash."""
+    """PUT /me con contraseÃ±a actual correcta y nueva contraseÃ±a actualiza el hash."""
     token = create_access_token({"sub": "admin_test", "role": "admin"})
     r = raw_client.put(
         "/api/auth/me",
@@ -182,7 +182,7 @@ def test_put_me_cambia_contrasena(raw_client, usuario_admin):
 
 
 def test_put_me_contrasena_actual_incorrecta(raw_client, usuario_admin):
-    """PUT /me con contraseña incorrecta devuelve 400."""
+    """PUT /me con contraseÃ±a incorrecta devuelve 400."""
     token = create_access_token({"sub": "admin_test", "role": "admin"})
     r = raw_client.put(
         "/api/auth/me",
@@ -206,7 +206,7 @@ def test_put_me_cambia_username(raw_client, usuario_admin):
 
 def test_put_me_username_en_uso_devuelve_409(raw_client, usuario_admin, db_session):
     """PUT /me con username ya existente devuelve 409 Conflict."""
-    otro = UsuarioDB(
+    otro = UserDB(
         username="otro_usuario",
         hashed_password=pwd_context.hash("pass"),
         role="admin",
@@ -224,7 +224,7 @@ def test_put_me_username_en_uso_devuelve_409(raw_client, usuario_admin, db_sessi
 
 
 def test_put_me_contrasena_muy_corta_devuelve_422(raw_client, usuario_admin):
-    """PUT /me con nueva contraseña < 8 caracteres devuelve 422."""
+    """PUT /me con nueva contraseÃ±a < 8 caracteres devuelve 422."""
     token = create_access_token({"sub": "admin_test", "role": "admin"})
     r = raw_client.put(
         "/api/auth/me",
@@ -234,9 +234,9 @@ def test_put_me_contrasena_muy_corta_devuelve_422(raw_client, usuario_admin):
     assert r.status_code == 422
 
 
-# ── Tests dependencies: token sin 'sub' y require_role ───────────────────────
+# â”€â”€ Tests dependencies: token sin 'sub' y require_role â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 def test_token_sin_sub_devuelve_401(raw_client, usuario_admin):
-    """Token válido pero sin campo 'sub' devuelve 401 (username is None)."""
+    """Token vÃ¡lido pero sin campo 'sub' devuelve 401 (username is None)."""
     token = create_access_token({"role": "admin"})   # sin 'sub'
     r = raw_client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
     assert r.status_code == 401
@@ -245,7 +245,7 @@ def test_token_sin_sub_devuelve_401(raw_client, usuario_admin):
 def test_require_role_permite_rol_correcto(raw_client, usuario_admin):
     """require_role permite acceso cuando el usuario tiene el rol requerido."""
     from backend.app.dependencies import require_role
-    from backend.app.entidades.usuario import UsuarioDB as U
+    from backend.app.entidades.usuario import UserDB as U
     user = U(username="x", hashed_password="h", role="admin", is_active=True)
     checker = require_role("admin")
     result = checker(current_user=user)
@@ -256,7 +256,7 @@ def test_require_role_deniega_rol_incorrecto():
     """require_role lanza 403 cuando el rol del usuario no es el requerido."""
     from fastapi import HTTPException
     from backend.app.dependencies import require_role
-    from backend.app.entidades.usuario import UsuarioDB as U
+    from backend.app.entidades.usuario import UserDB as U
     user = U(username="x", hashed_password="h", role="vendedor", is_active=True)
     checker = require_role("admin")
     with pytest.raises(HTTPException) as exc:

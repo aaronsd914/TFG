@@ -1,5 +1,6 @@
-// frontend/src/components/ProductosPage.jsx
+﻿// frontend/src/components/ProductosPage.jsx
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { sileo } from 'sileo';
 import { Pagination } from './ui/Pagination.jsx';
 import { API_URL } from '../config.js';
@@ -107,6 +108,7 @@ function RequiredAsterisk() {
 
 // ===== Página =====
 export default function ProductosPage() {
+  const { t } = useTranslation();
   // preferencias persistidas
   const [tab, setTab] = useLocalStorageState('productos.tab', 'listado'); // listado | gestion
   const [groupMode, setGroupMode] = useLocalStorageState('productos.groupMode', 'all'); // all | proveedor
@@ -114,7 +116,7 @@ export default function ProductosPage() {
 
   // datos
   const [productos, setProductos] = useState([]);
-  const [proveedores, setProveedores] = useState([]);
+  const [suppliers, setProveedores] = useState([]);
 
   // estados base
   const [loading, setLoading] = useState(true);
@@ -153,10 +155,10 @@ export default function ProductosPage() {
 
   // editar (gestion)
   const [selectedId, setSelectedId] = useState(null);
-  const [editNombre, setEditNombre] = useState('');
-  const [editDesc, setEditDesc] = useState('');
-  const [editPrecio, setEditPrecio] = useState('');
-  const [editProveedor, setEditProveedor] = useState('');
+  const [editName, setEditName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editPrice, setEditPrice] = useState('');
+  const [editSupplier, setEditSupplier] = useState('');
   const [updating, setUpdating] = useState(false);
 
   // validación edición
@@ -173,7 +175,7 @@ export default function ProductosPage() {
   // modal creación (accesible desde cualquier tab)
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
-  const provName = (id) => proveedores.find((x) => x.id === id)?.nombre || `#${id}`;
+  const supplierName = (id) => suppliers.find((x) => x.id === id)?.name || `#${id}`;
 
   async function fetchData() {
     try {
@@ -182,7 +184,7 @@ export default function ProductosPage() {
 
       const [rp, rpr] = await Promise.all([fetch(`${API_URL}productos/get`), fetch(`${API_URL}proveedores/get`)]);
       if (!rp.ok) throw new Error(`Productos HTTP ${rp.status}`);
-      if (!rpr.ok) throw new Error(`Proveedores HTTP ${rpr.status}`);
+      if (!rpr.ok) throw new Error(`suppliers HTTP ${rpr.status}`);
 
       const [ps, prs] = await Promise.all([rp.json(), rpr.json()]);
       setProductos(ps);
@@ -220,40 +222,40 @@ export default function ProductosPage() {
     if (t) {
       list = list.filter(
         (p) =>
-          (p.nombre || '').toLowerCase().includes(t) ||
-          (p.descripcion || '').toLowerCase().includes(t) ||
-          provName(p.proveedor_id).toLowerCase().includes(t)
+          (p.name || '').toLowerCase().includes(t) ||
+          (p.description || '').toLowerCase().includes(t) ||
+          supplierName(p.supplier_id).toLowerCase().includes(t)
       );
     }
 
-    if (provFilter) list = list.filter((p) => String(p.proveedor_id) === String(provFilter));
+    if (provFilter) list = list.filter((p) => String(p.supplier_id) === String(provFilter));
 
     const min = minPrecio === '' ? null : Number(minPrecio);
     const max = maxPrecio === '' ? null : Number(maxPrecio);
 
     if (!precioRangeInvalid) {
-      if (min !== null && Number.isFinite(min)) list = list.filter((p) => Number(p.precio || 0) >= min);
-      if (max !== null && Number.isFinite(max)) list = list.filter((p) => Number(p.precio || 0) <= max);
+      if (min !== null && Number.isFinite(min)) list = list.filter((p) => Number(p.price || 0) >= min);
+      if (max !== null && Number.isFinite(max)) list = list.filter((p) => Number(p.price || 0) <= max);
     }
 
     switch (sort) {
       case 'nombre_az':
-        list.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
+        list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
         break;
       case 'nombre_za':
-        list.sort((a, b) => (b.nombre || '').localeCompare(a.nombre || ''));
+        list.sort((a, b) => (b.name || '').localeCompare(a.name || ''));
         break;
       case 'precio_up':
-        list.sort((a, b) => (a.precio || 0) - (b.precio || 0));
+        list.sort((a, b) => (a.price || 0) - (b.price || 0));
         break;
       case 'precio_down':
-        list.sort((a, b) => (b.precio || 0) - (a.precio || 0));
+        list.sort((a, b) => (b.price || 0) - (a.price || 0));
         break;
       case 'prov_az':
-        list.sort((a, b) => provName(a.proveedor_id).localeCompare(provName(b.proveedor_id)));
+        list.sort((a, b) => supplierName(a.supplier_id).localeCompare(supplierName(b.supplier_id)));
         break;
       case 'prov_za':
-        list.sort((a, b) => provName(b.proveedor_id).localeCompare(provName(a.proveedor_id)));
+        list.sort((a, b) => supplierName(b.supplier_id).localeCompare(supplierName(a.supplier_id)));
         break;
       default:
         break;
@@ -269,7 +271,7 @@ export default function ProductosPage() {
     maxPrecio,
     sort,
     precioRangeInvalid,
-    proveedores,
+    suppliers,
   ]);
 
   // ===== MODO ALL (tarjetas + paginación) =====
@@ -286,17 +288,17 @@ export default function ProductosPage() {
   const providerCards = useMemo(() => {
     const map = new Map();
     for (const p of filteredBase) {
-      const pid = Number(p.proveedor_id);
+      const pid = Number(p.supplier_id);
       if (!map.has(pid)) {
-        const prov = proveedores.find((x) => x.id === pid) || { id: pid, nombre: `Proveedor #${pid}` };
+        const prov = suppliers.find((x) => x.id === pid) || { id: pid, nombre: `Proveedor #${pid}` };
         map.set(pid, { proveedor: prov, items: [] });
       }
       map.get(pid).items.push(p);
     }
     const arr = Array.from(map.values());
-    arr.sort((a, b) => (a.proveedor?.nombre || '').localeCompare(b.proveedor?.nombre || ''));
+    arr.sort((a, b) => (a.supplier?.name || '').localeCompare(b.supplier?.name || ''));
     return arr;
-  }, [filteredBase, proveedores]);
+  }, [filteredBase, suppliers]);
 
   // ===== GESTIÓN LISTA =====
   const gestionList = useMemo(() => {
@@ -304,27 +306,27 @@ export default function ProductosPage() {
     const t = gestionQuery.trim().toLowerCase();
     if (t) {
       list = list.filter((p) => {
-        const prov = provName(p.proveedor_id);
+        const prov = supplierName(p.supplier_id);
         return (
-          (p.nombre || '').toLowerCase().includes(t) ||
-          (p.descripcion || '').toLowerCase().includes(t) ||
+          (p.name || '').toLowerCase().includes(t) ||
+          (p.description || '').toLowerCase().includes(t) ||
           prov.toLowerCase().includes(t)
         );
       });
     }
-    list.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
+    list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     return list;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productos, gestionQuery, proveedores]);
+  }, [productos, gestionQuery, suppliers]);
 
   const selectedProduct = useMemo(() => productos.find((p) => p.id === selectedId) || null, [productos, selectedId]);
 
   useEffect(() => {
     if (!selectedProduct) return;
-    setEditNombre(selectedProduct.nombre ?? '');
-    setEditDesc(selectedProduct.descripcion ?? '');
-    setEditPrecio(String(selectedProduct.precio ?? ''));
-    setEditProveedor(String(selectedProduct.proveedor_id ?? ''));
+    setEditName(selectedProduct.name ?? '');
+    setEditDescription(selectedProduct.description ?? '');
+    setEditPrice(String(selectedProduct.price ?? ''));
+    setEditSupplier(String(selectedProduct.supplier_id ?? ''));
     setEditTouched(false);
     setEditErrors({});
   }, [selectedProduct]);
@@ -335,13 +337,13 @@ export default function ProductosPage() {
     const errors = {};
 
     if (!fNombre.trim()) {
-      errors.nombre = true;
+      errors.name = true;
       missing.push('Nombre');
     }
 
-    const precioNum = Number(fPrecio);
-    if (fPrecio === '' || !Number.isFinite(precioNum)) {
-      errors.precio = true;
+    const priceNum = Number(fPrecio);
+    if (fPrecio === '' || !Number.isFinite(priceNum)) {
+      errors.price = true;
       missing.push('Precio');
     }
 
@@ -350,40 +352,40 @@ export default function ProductosPage() {
       missing.push('Proveedor');
     }
 
-    if (!errors.precio && Number(precioNum) < 0) {
-      errors.precio = true;
+    if (!errors.price && Number(priceNum) < 0) {
+      errors.price = true;
       missing.push('Precio (no puede ser negativo)');
     }
 
-    return { ok: missing.length === 0, missing, errors, precioNum };
+    return { ok: missing.length === 0, missing, errors, priceNum };
   }
 
   function validateEdit() {
     const missing = [];
     const errors = {};
 
-    if (!editNombre.trim()) {
-      errors.nombre = true;
+    if (!editName.trim()) {
+      errors.name = true;
       missing.push('Nombre');
     }
 
-    const precioNum = Number(editPrecio);
-    if (editPrecio === '' || !Number.isFinite(precioNum)) {
-      errors.precio = true;
+    const priceNum = Number(editPrice);
+    if (editPrice === '' || !Number.isFinite(priceNum)) {
+      errors.price = true;
       missing.push('Precio');
     }
 
-    if (!editProveedor) {
+    if (!editSupplier) {
       errors.proveedor = true;
       missing.push('Proveedor');
     }
 
-    if (!errors.precio && Number(precioNum) < 0) {
-      errors.precio = true;
+    if (!errors.price && Number(priceNum) < 0) {
+      errors.price = true;
       missing.push('Precio (no puede ser negativo)');
     }
 
-    return { ok: missing.length === 0, missing, errors, precioNum };
+    return { ok: missing.length === 0, missing, errors, priceNum };
   }
 
   // ===== Acciones =====
@@ -405,10 +407,10 @@ export default function ProductosPage() {
     setSaving(true);
     try {
       const body = {
-        nombre: fNombre.trim(),
-        descripcion: fDesc.trim(),
-        precio: v.precioNum,
-        proveedor_id: Number(fProveedor),
+        name: fNombre.trim(),
+        description: fDesc.trim(),
+        price: v.priceNum,
+        supplier_id: Number(fProveedor),
       };
 
       const res = await fetch(`${API_URL}productos/post`, {
@@ -425,7 +427,7 @@ export default function ProductosPage() {
       try {
         sileo.success({
           title: '📦 Producto creado',
-          description: `“${nuevo.nombre}” · ${eur(nuevo.precio)} · Proveedor: ${provName(nuevo.proveedor_id)}`,
+          description: `“${nuevo.name}” · ${eur(nuevo.price)} · Proveedor: ${supplierName(nuevo.supplier_id)}`,
         });
       } catch {}
 
@@ -470,10 +472,10 @@ export default function ProductosPage() {
     try {
       const id = selectedProduct.id;
       const body = {
-        nombre: editNombre.trim(),
-        descripcion: editDesc.trim(),
-        precio: v.precioNum,
-        proveedor_id: Number(editProveedor),
+        name: editName.trim(),
+        description: editDescription.trim(),
+        price: v.priceNum,
+        supplier_id: Number(editSupplier),
       };
 
       const res = await fetch(`${API_URL}productos/put/${id}`, {
@@ -488,7 +490,7 @@ export default function ProductosPage() {
       setProductos((prev) => prev.map((p) => (p.id === id ? updated : p)));
 
       try {
-        sileo.success({ title: '✏️ Producto actualizado', description: `Cambios guardados en “${updated.nombre}”.` });
+        sileo.success({ title: '✏️ Producto actualizado', description: `Cambios guardados en “${updated.name}”.` });
       } catch {}
 
       setEditTouched(false);
@@ -503,7 +505,7 @@ export default function ProductosPage() {
   }
 
   function abrirModalBorrar(producto) {
-    setDeleteTarget(producto ? { id: producto.id, nombre: producto.nombre } : null);
+    setDeleteTarget(producto ? { id: producto.id, nombre: producto.name } : null);
     setDeleteModalOpen(true);
   }
 
@@ -532,7 +534,7 @@ export default function ProductosPage() {
       if (selectedId === id) setSelectedId(null);
 
       try {
-        sileo.success({ title: '🗑️ Producto eliminado', description: `Se ha eliminado “${deleteTarget.nombre}”.` });
+        sileo.success({ title: '🗑️ Producto eliminado', description: `Se ha eliminado “${deleteTarget.name}”.` });
       } catch {}
 
       setDeleteModalOpen(false);
@@ -571,29 +573,29 @@ export default function ProductosPage() {
 
   function sortLabel(v) {
     const labels = {
-      nombre_az: 'Nombre A→Z',
-      nombre_za: 'Nombre Z→A',
-      precio_up: 'Precio ↑',
-      precio_down: 'Precio ↓',
-      prov_az: 'Proveedor A→Z',
-      prov_za: 'Proveedor Z→A',
+      nombre_az: t('products.orderNameAZ'),
+      nombre_za: t('products.orderNameZA'),
+      precio_up: t('products.orderPriceUp'),
+      precio_down: t('products.orderPriceDown'),
+      prov_az: t('products.orderSupplierAZ'),
+      prov_za: t('products.orderSupplierZA'),
     };
     return labels[v] || v;
   }
 
   const chips = useMemo(() => {
     const list = [];
-    if (q) list.push({ key: 'q', label: `Buscar: "${q}"`, onRemove: () => setQuery('') });
+    if (q) list.push({ key: 'q', label: t('products.chipSearch', { q }), onRemove: () => setQuery('') });
     if (provFilter)
       list.push({
         key: 'prov',
-        label: `Proveedor: ${provName(Number(provFilter))}`,
+        label: t('products.chipSupplier', { name: supplierName(Number(provFilter)) }),
         onRemove: () => setProvFilter(''),
       });
     if (minPrecio !== '' || maxPrecio !== '')
       list.push({
         key: 'precio',
-        label: `Precio: ${minPrecio !== '' ? `${minPrecio}€` : '—'} – ${maxPrecio !== '' ? `${maxPrecio}€` : '—'}`,
+        label: `${t('products.priceLabel')}: ${minPrecio !== '' ? `${minPrecio}€` : '—'} – ${maxPrecio !== '' ? `${maxPrecio}€` : '—'}`,
         onRemove: () => {
           setMinPrecio('');
           setMaxPrecio('');
@@ -602,15 +604,15 @@ export default function ProductosPage() {
     if (sort !== 'nombre_az')
       list.push({
         key: 'sort',
-        label: `Orden: ${sortLabel(sort)}`,
+        label: t('products.chipOrder', { label: sortLabel(sort) }),
         onRemove: () => setSort('nombre_az'),
       });
     return list;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, provFilter, minPrecio, maxPrecio, sort, proveedores]);
+  }, [q, provFilter, minPrecio, maxPrecio, sort, suppliers]);
 
   // ===== UI =====
-  if (loading) return <div className="p-6">Cargando productos…</div>;
+  if (loading) return <div className="p-6">{t('products.loading')}</div>;
   if (err) {
     return (
       <div className="p-6 space-y-3">
@@ -637,7 +639,7 @@ export default function ProductosPage() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold">Productos</h1>
+          <h1 className="text-2xl font-semibold">{t('products.title')}</h1>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -647,7 +649,7 @@ export default function ProductosPage() {
               onClick={() => setTab('listado')}
               type="button"
             >
-              Listado
+              {t('products.tabList')}
             </button>
             <button
               className={`px-4 py-2 text-sm border-l border-gray-300 ${
@@ -656,11 +658,11 @@ export default function ProductosPage() {
               onClick={() => setTab('gestion')}
               type="button"
             >
-              Gestión
+              {t('products.tabManage')}
             </button>
           </div>
           <Button variant="primary" onClick={() => setCreateModalOpen(true)} type="button">
-            Nuevo producto
+            {t('products.newProduct')}
           </Button>
         </div>
       </div>
@@ -674,7 +676,7 @@ export default function ProductosPage() {
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Buscar por nombre, descripción o proveedor…"
+                  placeholder={t('products.searchPlaceholder')}
                   className="border rounded-lg px-3 py-2 pr-20 w-full"
                 />
                 <span className="absolute right-10 top-1/2 -translate-y-1/2 text-gray-400">⌕</span>
@@ -692,7 +694,7 @@ export default function ProductosPage() {
 
               <div className="flex items-center gap-2">
                 <Button variant={anyFilterActive() ? 'primary' : 'secondary'} onClick={() => setFiltersOpen(true)} type="button">
-                  Filtros {anyFilterActive() ? `(${chips.length})` : ''}
+                  {t('products.filterBtn')} {anyFilterActive() ? `(${chips.length})` : ''}
                 </Button>
 
                 <div className="inline-flex rounded-xl border border-gray-300 overflow-hidden">
@@ -700,9 +702,9 @@ export default function ProductosPage() {
                     type="button"
                     onClick={() => setGroupMode('all')}
                     className={`px-3 py-2 text-sm ${groupMode === 'all' ? 'bg-black text-white' : 'bg-white text-gray-700'}`}
-                    title="Ver todos los productos"
+                    title={t('products.viewAll')}
                   >
-                    Todos
+                    {t('products.viewAllBtn')}
                   </button>
                   <button
                     type="button"
@@ -710,9 +712,9 @@ export default function ProductosPage() {
                     className={`px-3 py-2 text-sm border-l border-gray-300 ${
                       groupMode === 'proveedor' ? 'bg-black text-white' : 'bg-white text-gray-700'
                     }`}
-                    title="Agrupar por proveedor"
+                    title={t('products.groupBySupplier')}
                   >
-                    Por proveedor
+                    {t('products.bySupplier')}
                   </button>
                 </div>
                 {groupMode === 'proveedor' && (
@@ -726,14 +728,14 @@ export default function ProductosPage() {
                       }}
                       className="px-3 py-2 text-sm bg-white text-gray-700 hover:bg-gray-50"
                     >
-                      Expandir todo
+                      {t('products.expandAll')}
                     </button>
                     <button
                       type="button"
                       onClick={() => setOpenProviders({})}
                       className="px-3 py-2 text-sm border-l border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
                     >
-                      Colapsar todo
+                      {t('products.collapseAll')}
                     </button>
                   </div>
                 )}
@@ -746,48 +748,48 @@ export default function ProductosPage() {
                   <Chip key={ch.key} label={ch.label} onRemove={ch.onRemove} />
                 ))}
                 <Button variant="secondary" onClick={clearFilters} className="h-8 px-3 py-1 rounded-lg">
-                  Limpiar filtros
+                  {t('products.clearFilters')}
                 </Button>
               </div>
             )}
           </div>
 
           {/* Modal filtros */}
-          <Modal open={filtersOpen} onClose={() => setFiltersOpen(false)} title="Filtros de productos" maxWidth="max-w-4xl">
+          <Modal open={filtersOpen} onClose={() => setFiltersOpen(false)} title={t('products.filtersTitle')} maxWidth="max-w-4xl">
             <div className="space-y-4">
               <div className="grid lg:grid-cols-12 gap-3">
                 <div className="lg:col-span-4">
-                  <label className="block text-sm mb-1">Proveedor</label>
+                  <label className="block text-sm mb-1">{t('products.supplierLabel')}</label>
                   <select value={provFilter} onChange={(e) => setProvFilter(e.target.value)} className="border rounded-lg px-3 py-2 w-full">
-                    <option value="">Todos los proveedores</option>
-                    {proveedores.map((p) => (
+                    <option value="">{t('products.allSuppliers')}</option>
+                    {suppliers.map((p) => (
                       <option key={p.id} value={p.id}>
-                        {p.nombre}
+                        {p.name}
                       </option>
                     ))}
                   </select>
                 </div>
 
                 <div className="lg:col-span-4">
-                  <label className="block text-sm mb-1">Orden</label>
+                  <label className="block text-sm mb-1">{t('products.orderLabel')}</label>
                   <select value={sort} onChange={(e) => setSort(e.target.value)} className="border rounded-lg px-3 py-2 w-full">
-                    <option value="nombre_az">Nombre A→Z</option>
-                    <option value="nombre_za">Nombre Z→A</option>
-                    <option value="precio_up">Precio ↑</option>
-                    <option value="precio_down">Precio ↓</option>
-                    <option value="prov_az">Proveedor A→Z</option>
-                    <option value="prov_za">Proveedor Z→A</option>
+                    <option value="nombre_az">{t('products.orderNameAZ')}</option>
+                    <option value="nombre_za">{t('products.orderNameZA')}</option>
+                    <option value="precio_up">{t('products.orderPriceUp')}</option>
+                    <option value="precio_down">{t('products.orderPriceDown')}</option>
+                    <option value="prov_az">{t('products.orderSupplierAZ')}</option>
+                    <option value="prov_za">{t('products.orderSupplierZA')}</option>
                   </select>
                 </div>
 
                 <div className="lg:col-span-4">
-                  <label className="block text-sm mb-1">Tamaño de página (modo “Todos”)</label>
+                  <label className="block text-sm mb-1">{t('products.pageSizeLabel')}</label>
                   <select
                     value={pageSize}
                     onChange={(e) => setPageSize(Number(e.target.value))}
                     className="border rounded-lg px-3 py-2 w-full"
                     disabled={groupMode !== 'all'}
-                    title={groupMode !== 'all' ? 'La paginación se aplica en el modo “Todos”' : ''}
+                    title={groupMode !== 'all' ? t('products.pageSizeDisabled') : ''}
                   >
                     <option value={8}>8 / pág</option>
                     <option value={12}>12 / pág</option>
@@ -797,7 +799,7 @@ export default function ProductosPage() {
                 </div>
 
                 <div className="lg:col-span-6">
-                  <label className="block text-sm mb-1">Precio mínimo (€)</label>
+                  <label className="block text-sm mb-1">{t('products.minPriceLabel')}</label>
                     <input
                       type="number"
                       step="0.01"
@@ -805,11 +807,11 @@ export default function ProductosPage() {
                       value={minPrecio}
                       onChange={(e) => setMinPrecio(clampNumberInput(e.target.value))}
                       className={`border rounded-lg px-3 py-2 w-full ${precioRangeInvalid ? 'border-red-400' : ''}`}
-                    placeholder="Min €"
+                    placeholder={t('products.minPricePlaceholder') || 'Min €'}
                   />
                 </div>
                 <div className="lg:col-span-6">
-                  <label className="block text-sm mb-1">Precio máximo (€)</label>
+                  <label className="block text-sm mb-1">{t('products.maxPriceLabel')}</label>
                     <input
                       type="number"
                       step="0.01"
@@ -817,23 +819,23 @@ export default function ProductosPage() {
                       value={maxPrecio}
                       onChange={(e) => setMaxPrecio(clampNumberInput(e.target.value))}
                       className={`border rounded-lg px-3 py-2 w-full ${precioRangeInvalid ? 'border-red-400' : ''}`}
-                    placeholder="Max €"
+                    placeholder={t('products.maxPricePlaceholder') || 'Max €'}
                   />
                 </div>
               </div>
 
               {precioRangeInvalid && (
                 <div className="text-sm text-red-600">
-                  El precio mínimo no puede ser mayor que el máximo. Corrige el rango para aplicar el filtro.
+                  {t('products.priceRangeError')}
                 </div>
               )}
 
               <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t">
                 <Button variant="secondary" onClick={clearFilters} type="button">
-                  Limpiar filtros
+                  {t('products.clearFilters')}
                 </Button>
                 <Button variant="secondary" onClick={() => setFiltersOpen(false)} type="button">
-                  Cerrar
+                  {t('common.close')}
                 </Button>
               </div>
             </div>
@@ -842,14 +844,14 @@ export default function ProductosPage() {
           {/* Contenido */}
           {listadoEmpty ? (
             <div className="bg-white border border-gray-200 rounded-2xl p-10 text-center">
-              <div className="text-lg font-semibold">Sin resultados</div>
-              <div className="text-gray-600 mt-1">Prueba a quitar filtros o buscar con otro texto.</div>
+              <div className="text-lg font-semibold">{t('products.noResults')}</div>
+              <div className="text-gray-600 mt-1">{t('products.noResultsHint')}</div>
               <div className="mt-4 flex justify-center gap-2">
                 <Button variant="secondary" onClick={clearFilters}>
-                  Limpiar filtros
+                  {t('products.clearFilters')}
                 </Button>
                 <Button variant="primary" onClick={() => setTab('gestion')}>
-                  Crear producto
+                  {t('products.createProduct')}
                 </Button>
               </div>
             </div>
@@ -862,18 +864,18 @@ export default function ProductosPage() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="text-xs text-gray-500">#{p.id}</div>
-                          <div className="font-semibold truncate">{p.nombre}</div>
+                          <div className="font-semibold truncate">{p.name}</div>
                         </div>
-                        <div className="font-semibold">{eur(p.precio)}</div>
+                        <div className="font-semibold">{eur(p.price)}</div>
                       </div>
 
                       <div className="text-sm text-gray-700 mt-2">
-                        <div className="text-xs text-gray-500 mb-1">Descripción</div>
-                        <div className="max-h-16 overflow-hidden">{p.descripcion || '—'}</div>
+                        <div className="text-xs text-gray-500 mb-1">{t('products.descriptionLabel')}</div>
+                        <div className="max-h-16 overflow-hidden">{p.description || '—'}</div>
                       </div>
 
                       <div className="mt-3 text-sm">
-                        <span className="text-gray-500">Proveedor:</span> {provName(p.proveedor_id)}
+                        <span className="text-gray-500">{t('products.supplierPrefix')}</span> {supplierName(p.supplier_id)}
                       </div>
 
                       <div className="mt-4 flex gap-2">
@@ -887,7 +889,7 @@ export default function ProductosPage() {
                           }}
                           type="button"
                         >
-                          Gestionar
+                          {t('products.manageBtn')}
                         </Button>
                       </div>
                     </div>
@@ -897,8 +899,11 @@ export default function ProductosPage() {
 
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="text-sm text-gray-600">
-                  Mostrando {(safePage - 1) * Number(pageSize || 12) + 1}–{Math.min(safePage * Number(pageSize || 12), filteredBase.length)} de{' '}
-                  {filteredBase.length}
+                  {t('products.showingRange', {
+                    from: (safePage - 1) * Number(pageSize || 12) + 1,
+                    to: Math.min(safePage * Number(pageSize || 12), filteredBase.length),
+                    total: filteredBase.length,
+                  })}
                 </div>
                 <Pagination
                   page={safePage}
@@ -922,13 +927,13 @@ export default function ProductosPage() {
                         className="w-full text-left px-4 py-4 hover:bg-gray-50 transition flex items-center justify-between gap-3"
                       >
                         <div>
-                          <div className="text-xs text-gray-500">Proveedor #{pid}</div>
-                          <div className="text-lg font-semibold">{proveedor.nombre}</div>
+                          <div className="text-xs text-gray-500">{t('products.supplierNumber', { id: pid })}</div>
+                          <div className="text-lg font-semibold">{proveedor.name}</div>
                           <div className="text-sm text-gray-600 mt-1">
-                            {items.length} producto{items.length !== 1 ? 's' : ''}
+                            {items.length} {items.length !== 1 ? t('products.productPlural') : t('products.productSingular')}
                           </div>
                         </div>
-                        <div className="text-gray-500 text-sm">{open ? 'Ocultar' : 'Ver'}</div>
+                        <div className="text-gray-500 text-sm">{open ? t('products.hide') : t('products.show')}</div>
                       </button>
 
                       {open && (
@@ -940,14 +945,14 @@ export default function ProductosPage() {
                                   <div className="flex items-start justify-between gap-3">
                                     <div className="min-w-0">
                                       <div className="text-xs text-gray-500">#{p.id}</div>
-                                      <div className="font-semibold truncate">{p.nombre}</div>
+                                      <div className="font-semibold truncate">{p.name}</div>
                                     </div>
-                                    <div className="font-semibold">{eur(p.precio)}</div>
+                                    <div className="font-semibold">{eur(p.price)}</div>
                                   </div>
 
                                   <div className="text-sm text-gray-700 mt-2">
-                                    <div className="text-xs text-gray-500 mb-1">Descripción</div>
-                                    <div className="max-h-16 overflow-hidden">{p.descripcion || '—'}</div>
+                                    <div className="text-xs text-gray-500 mb-1">{t('products.descriptionLabel')}</div>
+                                    <div className="max-h-16 overflow-hidden">{p.description || '—'}</div>
                                   </div>
 
                                   <div className="mt-4 flex gap-2">
@@ -961,7 +966,7 @@ export default function ProductosPage() {
                                       }}
                                       type="button"
                                     >
-                                      Gestionar
+                                      {t('products.manageBtn')}
                                     </Button>
                                   </div>
                                 </div>
@@ -984,13 +989,13 @@ export default function ProductosPage() {
           {/* Gestión */}
           <section className="bg-white border border-gray-200 rounded-2xl p-4 space-y-4">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-              <h3 className="font-semibold">Gestionar productos</h3>
+              <h3 className="font-semibold">{t('products.manage')}</h3>
 
               <div className="relative w-full lg:w-[420px]">
                 <input
                   value={gestionQuery}
                   onChange={(e) => setGestionQuery(e.target.value)}
-                  placeholder="Buscar por nombre, descripción o proveedor…"
+                  placeholder={t('products.searchPlaceholder')}
                   className="border rounded-lg px-3 py-2 pr-16 w-full"
                 />
                 <span className="absolute right-10 top-1/2 -translate-y-1/2 text-gray-400">⌕</span>
@@ -1010,10 +1015,10 @@ export default function ProductosPage() {
             <div className="grid lg:grid-cols-12 gap-3">
               {/* Lista */}
               <div className="lg:col-span-5 border rounded-xl overflow-hidden">
-                <div className="bg-gray-50 px-3 py-2 text-sm font-medium text-gray-600 border-b">Resultados</div>
+                <div className="bg-gray-50 px-3 py-2 text-sm font-medium text-gray-600 border-b">{t('products.results')}</div>
                 <div className="max-h-[420px] overflow-auto">
                   {gestionList.length === 0 ? (
-                    <div className="p-3 text-gray-500">No hay productos que coincidan.</div>
+                    <div className="p-3 text-gray-500">{t('products.noManageResults')}</div>
                   ) : (
                     <ul className="divide-y">
                       {gestionList.map((p) => {
@@ -1034,13 +1039,13 @@ export default function ProductosPage() {
                               <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
                                   <div className={active ? 'font-semibold truncate text-white' : 'font-semibold truncate text-gray-900'}>
-                                    {p.nombre}
+                                    {p.name}
                                   </div>
                                   <div className={active ? 'text-xs mt-1 text-white/80' : 'text-xs mt-1 text-gray-500'}>
-                                    {provName(p.proveedor_id)}
+                                    {supplierName(p.supplier_id)}
                                   </div>
                                 </div>
-                                <div className={active ? 'font-semibold text-white' : 'font-semibold text-gray-900'}>{eur(p.precio)}</div>
+                                <div className={active ? 'font-semibold text-white' : 'font-semibold text-gray-900'}>{eur(p.price)}</div>
                               </div>
                             </button>
                           </li>
@@ -1055,15 +1060,15 @@ export default function ProductosPage() {
               <div className="lg:col-span-7 border rounded-xl p-4">
                 {!selectedProduct ? (
                   <div className="text-gray-600">
-                    Selecciona un producto de la lista para <b>actualizarlo</b> o <b>eliminarlo</b>.
+                    {t('products.selectProduct')}
                   </div>
                 ) : (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between gap-2">
                       <div>
-                        <div className="text-xs text-gray-500">Editando</div>
+                        <div className="text-xs text-gray-500">{t('products.editing')}</div>
                         <div className="text-lg font-semibold">
-                          #{selectedProduct.id} · {selectedProduct.nombre}
+                          #{selectedProduct.id} · {selectedProduct.name}
                         </div>
                       </div>
 
@@ -1073,7 +1078,7 @@ export default function ProductosPage() {
                         onClick={() => abrirModalBorrar(selectedProduct)}
                         disabled={delBusyId === selectedProduct.id}
                       >
-                        Eliminar
+                        {t('common.delete')}
                       </Button>
                     </div>
 
@@ -1087,35 +1092,35 @@ export default function ProductosPage() {
                       }}
                     >
                       <div>
-                        <label className={labelReq(editTouched && !!editErrors.nombre)}>
-                          Nombre<RequiredAsterisk />
+                        <label className={labelReq(editTouched && !!editErrors.name)}>
+                          {t('products.nameLabel')}<RequiredAsterisk />
                         </label>
                         <input
-                          value={editNombre}
-                          onChange={(e) => setEditNombre(e.target.value)}
-                          className={inputReq(editTouched && !!editErrors.nombre)}
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          className={inputReq(editTouched && !!editErrors.name)}
                         />
                       </div>
 
                       <div>
-                        <label className={labelReq(editTouched && !!editErrors.precio)}>
-                          Precio<RequiredAsterisk />
+                        <label className={labelReq(editTouched && !!editErrors.price)}>
+                          {t('products.priceLabel')}<RequiredAsterisk />
                         </label>
                         <input
                           type="number"
                           step="0.01"
                           min="0"
-                          value={editPrecio}
-                          onChange={(e) => setEditPrecio(clampNumberInput(e.target.value))}
-                          className={inputReq(editTouched && !!editErrors.precio)}
+                          value={editPrice}
+                          onChange={(e) => setEditPrice(clampNumberInput(e.target.value))}
+                          className={inputReq(editTouched && !!editErrors.price)}
                         />
                       </div>
 
                       <div className="md:col-span-2">
-                        <label className="block text-sm mb-1">Descripción</label>
+                        <label className="block text-sm mb-1">{t('products.descriptionLabel')}</label>
                         <textarea
-                          value={editDesc}
-                          onChange={(e) => setEditDesc(e.target.value)}
+                          value={editDescription}
+                          onChange={(e) => setEditDescription(e.target.value)}
                           className="border rounded-lg px-3 py-2 w-full"
                           rows={3}
                         />
@@ -1123,17 +1128,17 @@ export default function ProductosPage() {
 
                       <div className="md:col-span-2">
                         <label className={labelReq(editTouched && !!editErrors.proveedor)}>
-                          Proveedor<RequiredAsterisk />
+                          {t('products.supplierLabel')}<RequiredAsterisk />
                         </label>
                         <select
-                          value={editProveedor}
-                          onChange={(e) => setEditProveedor(e.target.value)}
+                          value={editSupplier}
+                          onChange={(e) => setEditSupplier(e.target.value)}
                           className={selectReq(editTouched && !!editErrors.proveedor)}
                         >
-                          <option value="">Selecciona proveedor</option>
-                          {proveedores.map((p) => (
+                          <option value="">{t('products.selectSupplier')}</option>
+                          {suppliers.map((p) => (
                             <option key={p.id} value={p.id}>
-                              {p.nombre}
+                              {p.name}
                             </option>
                           ))}
                         </select>
@@ -1142,23 +1147,23 @@ export default function ProductosPage() {
 
                     <div className="flex flex-wrap items-center gap-2">
                       <Button type="button" onClick={actualizarProducto} disabled={updating}>
-                        {updating ? 'Actualizando…' : 'Actualizar'}
+                        {updating ? t('products.updating') : t('products.update')}
                       </Button>
 
                       <Button
                         type="button"
                         variant="secondary"
                         onClick={() => {
-                          setEditNombre(selectedProduct.nombre ?? '');
-                          setEditDesc(selectedProduct.descripcion ?? '');
-                          setEditPrecio(String(selectedProduct.precio ?? ''));
-                          setEditProveedor(String(selectedProduct.proveedor_id ?? ''));
+                          setEditName(selectedProduct.name ?? '');
+                          setEditDescription(selectedProduct.description ?? '');
+                          setEditPrice(String(selectedProduct.price ?? ''));
+                          setEditSupplier(String(selectedProduct.supplier_id ?? ''));
                           setEditTouched(false);
                           setEditErrors({});
                         }}
                         disabled={updating}
                       >
-                        Revertir cambios
+                        {t('products.revert')}
                       </Button>
                     </div>
 
@@ -1179,16 +1184,16 @@ export default function ProductosPage() {
               setDeleteModalOpen(false);
               setDeleteTarget(null);
             }}
-            title="Confirmar eliminación"
+            title={t('products.confirmDelete')}
             maxWidth="max-w-xl"
           >
             <div className="space-y-3">
               <div className="text-gray-800">
-                ¿Seguro que quieres eliminar{' '}
-                <b>{deleteTarget ? `#${deleteTarget.id} · ${deleteTarget.nombre}` : 'este producto'}</b>?
+                {t('products.deleteConfirmText')}{' '}
+                <b>{deleteTarget ? `#${deleteTarget.id} · ${deleteTarget.name}` : t('products.thisProduct')}</b>?
               </div>
 
-              <div className="text-sm text-gray-600">Si el producto está usado en albaranes, no se podrá borrar.</div>
+              <div className="text-sm text-gray-600">{t('products.usedInAlbaranes')}</div>
 
               <div className="flex justify-end gap-2 pt-2">
                 <Button
@@ -1201,10 +1206,10 @@ export default function ProductosPage() {
                   }}
                   disabled={!!delBusyId}
                 >
-                  Cancelar
+                  {t('common.cancel')}
                 </Button>
                 <Button variant="danger" type="button" onClick={confirmarBorrado} disabled={!deleteTarget?.id || !!delBusyId}>
-                  {delBusyId ? 'Eliminando…' : 'Eliminar'}
+                  {delBusyId ? t('products.deleting') : t('common.delete')}
                 </Button>
               </div>
             </div>
@@ -1220,7 +1225,7 @@ export default function ProductosPage() {
           setCreateTouched(false);
           setCreateErrors({});
         }}
-        title="Nuevo producto"
+        title={t('products.newProduct')}
         maxWidth="max-w-2xl"
       >
         <form
@@ -1234,20 +1239,20 @@ export default function ProductosPage() {
           }}
         >
           <div>
-            <label className={labelReq(createTouched && !!createErrors.nombre)}>
-              Nombre<RequiredAsterisk />
+            <label className={labelReq(createTouched && !!createErrors.name)}>
+              {t('products.nameLabel')}<RequiredAsterisk />
             </label>
             <input
               value={fNombre}
               onChange={(e) => setFNombre(e.target.value)}
-              className={inputReq(createTouched && !!createErrors.nombre)}
-              placeholder="Ej: Mesa de comedor"
+              className={inputReq(createTouched && !!createErrors.name)}
+              placeholder={t('products.namePlaceholder')}
             />
           </div>
 
           <div>
-            <label className={labelReq(createTouched && !!createErrors.precio)}>
-              Precio<RequiredAsterisk />
+            <label className={labelReq(createTouched && !!createErrors.price)}>
+              {t('products.priceLabel')}<RequiredAsterisk />
             </label>
             <input
               type="number"
@@ -1255,35 +1260,35 @@ export default function ProductosPage() {
               min="0"
               value={fPrecio}
               onChange={(e) => setFPrecio(clampNumberInput(e.target.value))}
-              className={inputReq(createTouched && !!createErrors.precio)}
-              placeholder="Ej: 199.99"
+              className={inputReq(createTouched && !!createErrors.price)}
+              placeholder={t('products.pricePlaceholder')}
             />
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-sm mb-1">Descripción</label>
+            <label className="block text-sm mb-1">{t('products.descriptionLabel')}</label>
             <textarea
               value={fDesc}
               onChange={(e) => setFDesc(e.target.value)}
               className="border rounded-lg px-3 py-2 w-full"
               rows={3}
-              placeholder="Detalles, medidas, materiales…"
+              placeholder={t('products.descPlaceholder')}
             />
           </div>
 
           <div className="md:col-span-2">
             <label className={labelReq(createTouched && !!createErrors.proveedor)}>
-              Proveedor<RequiredAsterisk />
+              {t('products.supplierLabel')}<RequiredAsterisk />
             </label>
             <select
               value={fProveedor}
               onChange={(e) => setFProveedor(e.target.value)}
               className={selectReq(createTouched && !!createErrors.proveedor)}
             >
-              <option value="">Selecciona proveedor</option>
-              {proveedores.map((p) => (
+              <option value="">{t('products.selectSupplier')}</option>
+              {suppliers.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.nombre}
+                  {p.name}
                 </option>
               ))}
             </select>
@@ -1291,7 +1296,7 @@ export default function ProductosPage() {
 
           <div className="md:col-span-2 flex flex-wrap items-center gap-3">
             <Button type="submit" disabled={saving}>
-              {saving ? 'Guardando…' : 'Crear producto'}
+              {saving ? t('products.saving') : t('products.createProduct')}
             </Button>
             <Button
               type="button"
@@ -1306,7 +1311,7 @@ export default function ProductosPage() {
               }}
               disabled={saving}
             >
-              Limpiar
+              {t('products.clean')}
             </Button>
           </div>
         </form>

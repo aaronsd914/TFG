@@ -1,21 +1,21 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session, selectinload
-from typing import List, Optional
+from typing import Annotated, List, Optional
 from backend.app.database import get_db, SessionLocal
 from backend.app.entidades.albaran import (
-    Albaran,
-    AlbaranDB,
-    AlbaranLineaCreate,
-    OneWordEstado,
+    DeliveryNote,
+    DeliveryNoteDB,
+    DeliveryNoteItemCreate,
+    DeliveryNoteStatus,
 )
-from backend.app.entidades.linea_albaran import LineaAlbaranDB
-from backend.app.entidades.cliente import ClienteDB, ClienteCreate
-from backend.app.entidades.producto import ProductoDB
-from backend.app.entidades.movimiento import MovimientoDB
+from backend.app.entidades.linea_albaran import DeliveryNoteLineDB
+from backend.app.entidades.cliente import CustomerDB, CustomerCreate
+from backend.app.entidades.producto import ProductDB
+from backend.app.entidades.movimiento import MovementDB
 from sqlalchemy import func
 
 from backend.app.utils.emailer import send_email_with_pdf
-from backend.app.utils.albaran_pdf import generar_pdf_albaran
+from backend.app.utils.albaran_pdf import generate_delivery_note_pdf
 from backend.app.utils.templates import render
 from backend.app.dependencies import get_current_user
 from backend.app.api.configuracion import get_value as get_cfg
@@ -28,344 +28,392 @@ router = APIRouter(dependencies=[Depends(get_current_user)])
 log = logging.getLogger("albaranes")
 
 
-class AlbaranCreateFull(BaseModel):
+class DeliveryNoteCreateFull(BaseModel):
     """
-    Payload completo para crear un albarán. Admite cliente nuevo (objeto)
-    o cliente existente (cliente_id). El campo fianza_cantidad es opcional:
-    si no se indica, se calcula automáticamente como el 30% del total.
+    Full payload for creating a delivery note. Accepts a new customer (object)
+    or an existing customer (customer_id). The deposit_amount field is optional:
+    if not provided, it defaults to 30% of the total.
     """
 
-    fecha: date
-    descripcion: Optional[str] = None
-    cliente_id: Optional[int] = None
-    cliente: Optional[ClienteCreate] = None
-    items: List[AlbaranLineaCreate]
-    estado: OneWordEstado = "FIANZA"
-    registrar_fianza: bool = True
-    fianza_cantidad: Optional[float] = None
+    date: date
+    description: Optional[str] = None
+    customer_id: Optional[int] = None
+    customer: Optional[CustomerCreate] = None
+    items: List[DeliveryNoteItemCreate]
+    status: DeliveryNoteStatus = "FIANZA"
+    register_deposit: bool = True
+    deposit_amount: Optional[float] = None
 
 
-class EstadoUpdate(BaseModel):
-    estado: OneWordEstado
+class StatusUpdate(BaseModel):
+    status: DeliveryNoteStatus
 
 
-def _send_albaran_email_task(albaran_id: int):
+def _send_delivery_note_email_task(delivery_note_id: int):
     """
-    Tarea de fondo: genera el PDF del albarán y lo envía por email al cliente.
-    Abre su propia sesión de BD porque se ejecuta fuera del contexto de la petición HTTP.
+    Background task: generates the delivery note PDF and sends it by email to the customer.
+    Opens its own DB session because it runs outside the HTTP request context.
     """
     db = SessionLocal()
     try:
-        log.info("[email] Preparando envío para albarán #%s", albaran_id)
-        albaran = db.query(AlbaranDB).filter(AlbaranDB.id == albaran_id).first()
-        if not albaran:
-            log.warning("[email] Albarán %s no existe", albaran_id)
+        log.info("[email] Preparing send for delivery note #%s", delivery_note_id)
+        delivery_note = (
+            db.query(DeliveryNoteDB)
+            .filter(DeliveryNoteDB.id == delivery_note_id)
+            .first()
+        )
+        if not delivery_note:
+            log.warning("[email] Delivery note %s does not exist", delivery_note_id)
             return
 
-        cliente = db.query(ClienteDB).filter(ClienteDB.id == albaran.cliente_id).first()
-        if not cliente or not cliente.email:
+        customer = (
+            db.query(CustomerDB)
+            .filter(CustomerDB.id == delivery_note.customer_id)
+            .first()
+        )
+        if not customer or not customer.email:
             log.warning(
-                "[email] Cliente inexistente o sin email para albarán %s", albaran_id
+                "[email] Customer missing or no email for delivery note %s",
+                delivery_note_id,
             )
             return
 
-        lineas = (
-            db.query(LineaAlbaranDB)
-            .filter(LineaAlbaranDB.albaran_id == albaran.id)
+        lines = (
+            db.query(DeliveryNoteLineDB)
+            .filter(DeliveryNoteLineDB.delivery_note_id == delivery_note.id)
             .all()
         )
         prods = {}
-        if lineas:
-            prod_ids = {ln.producto_id for ln in lineas}
-            for p in db.query(ProductoDB).filter(ProductoDB.id.in_(prod_ids)).all():
+        if lines:
+            prod_ids = {ln.product_id for ln in lines}
+            for p in db.query(ProductDB).filter(ProductDB.id.in_(prod_ids)).all():
                 prods[p.id] = p
 
-        lineas_ext = []
+        enriched_lines = []
         total = 0.0
-        for ln in lineas:
-            subtotal = (ln.cantidad or 0) * (ln.precio_unitario or 0.0)
+        for ln in lines:
+            subtotal = (ln.quantity or 0) * (ln.unit_price or 0.0)
             total += subtotal
-            nombre = (
-                prods.get(ln.producto_id).nombre
-                if prods.get(ln.producto_id)
-                else f"Producto {ln.producto_id}"
+            name = (
+                prods.get(ln.product_id).name
+                if prods.get(ln.product_id)
+                else f"Producto {ln.product_id}"
             )
-            lineas_ext.append(
+            enriched_lines.append(
                 {
-                    "producto_nombre": nombre,
-                    "cantidad": ln.cantidad,
-                    "precio_unitario": ln.precio_unitario,
-                    "p_unit_eur": f"{ln.precio_unitario:.2f} €",
+                    "producto_nombre": name,
+                    "cantidad": ln.quantity,
+                    "precio_unitario": ln.unit_price,
+                    "p_unit_eur": f"{ln.unit_price:.2f} €",
                     "subtotal": subtotal,
                     "subtotal_eur": f"{subtotal:.2f} €",
                 }
             )
 
-        # Fetch store config for email + PDF
-        tienda_nombre = get_cfg(db, "tienda_nombre")
+        store_name = get_cfg(db, "tienda_nombre")
         logo_base64 = get_cfg(db, "logo_empresa") or None
-        firma_email = get_cfg(db, "firma_email")
+        email_signature = get_cfg(db, "firma_email")
 
         html = render(
             "albaran_email.html",
-            albaran=albaran,
-            cliente=cliente,
-            lineas=lineas_ext,
-            fecha_humana=albaran.fecha.strftime("%d/%m/%Y"),
-            total_eur=f"{(albaran.total or total):.2f} €",
-            tienda_nombre=tienda_nombre,
-            firma_email=firma_email,
+            albaran=delivery_note,
+            cliente=customer,
+            lineas=enriched_lines,
+            fecha_humana=delivery_note.date.strftime("%d/%m/%Y"),
+            total_eur=f"{(delivery_note.total or total):.2f} €",
+            tienda_nombre=store_name,
+            firma_email=email_signature,
         )
 
-        pdf_bytes = generar_pdf_albaran(
-            albaran,
-            cliente,
-            lineas_ext,
-            tienda_nombre=tienda_nombre,
+        pdf_bytes = generate_delivery_note_pdf(
+            delivery_note,
+            customer,
+            enriched_lines,
+            tienda_nombre=store_name,
             logo_base64=logo_base64,
         )
-        subject = f"Albarán #{albaran.id} - {albaran.fecha.strftime('%d/%m/%Y')}"
-        filename = f"albaran_{albaran.id}.pdf"
+        subject = (
+            f"Albaran #{delivery_note.id} - {delivery_note.date.strftime('%d/%m/%Y')}"
+        )
+        filename = f"albaran_{delivery_note.id}.pdf"
 
         send_email_with_pdf(
-            to_email=cliente.email,
+            to_email=customer.email,
             subject=subject,
             html_body=html,
             pdf_bytes=pdf_bytes,
             pdf_filename=filename,
         )
         log.info(
-            "[email] Envío OK al cliente %s para albarán #%s", cliente.email, albaran.id
+            "[email] Send OK to customer %s for delivery note #%s",
+            customer.email,
+            delivery_note.id,
         )
     except Exception as e:
-        log.exception("[email] Error enviando albarán #%s: %s", albaran_id, e)
+        log.exception(
+            "[email] Error sending delivery note #%s: %s", delivery_note_id, e
+        )
     finally:
         db.close()
 
 
-@router.post("/albaranes/post", response_model=Albaran)
-def crear_albaran(
-    payload: AlbaranCreateFull,
+def _resolve_customer_id(db: Session, payload: DeliveryNoteCreateFull) -> int:
+    """Resolves or creates the customer from the payload, returning the customer ID."""
+    if payload.customer_id:
+        customer = (
+            db.query(CustomerDB).filter(CustomerDB.id == payload.customer_id).first()
+        )
+        if not customer:
+            raise HTTPException(404, "Cliente no encontrado")
+        return customer.id
+    if not payload.customer:
+        raise HTTPException(400, "Debes indicar cliente_id o datos de cliente")
+    c = None
+    if payload.customer.dni:
+        c = db.query(CustomerDB).filter(CustomerDB.dni == payload.customer.dni).first()
+    if not c and payload.customer.email:
+        c = (
+            db.query(CustomerDB)
+            .filter(CustomerDB.email == payload.customer.email)
+            .first()
+        )
+    if c:
+        for k, v in payload.customer.model_dump().items():
+            if v is not None:
+                setattr(c, k, v)
+        return c.id
+    new_customer = CustomerDB(**payload.customer.model_dump())
+    db.add(new_customer)
+    db.flush()
+    return new_customer.id
+
+
+def _build_delivery_note_lines(
+    db: Session, delivery_note: DeliveryNoteDB, items: List[DeliveryNoteItemCreate]
+) -> float:
+    """Adds delivery note lines to the DB and returns the total price."""
+    total = 0.0
+    for it in items:
+        prod = db.query(ProductDB).filter(ProductDB.id == it.product_id).first()
+        if not prod:
+            raise HTTPException(404, f"Producto {it.product_id} no existe")
+        unit_price = it.unit_price if it.unit_price is not None else prod.price
+        db.add(
+            DeliveryNoteLineDB(
+                delivery_note_id=delivery_note.id,
+                product_id=it.product_id,
+                quantity=it.quantity,
+                unit_price=unit_price,
+            )
+        )
+        total += unit_price * it.quantity
+    return total
+
+
+@router.post(
+    "/albaranes/post",
+    response_model=DeliveryNote,
+    responses={400: {"description": "Bad request"}, 404: {"description": "Not found"}},
+)
+def create_delivery_note(
+    payload: DeliveryNoteCreateFull,
     background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db),
+    db: Annotated[Session, Depends(get_db)],
 ):
     """
-    Crea un albarán completo: cliente (nuevo o existente), líneas de pedido y
-    movimiento de fianza (30 % del total por defecto). Envía el PDF por email
-    al cliente en segundo plano.
+    Creates a full delivery note: customer (new or existing), order lines and
+    deposit movement (30% of total by default). Sends the PDF by email to the
+    customer in the background.
     """
-    # 1) Resolver o crear el cliente
-    if payload.cliente_id:
-        cliente = db.query(ClienteDB).filter(ClienteDB.id == payload.cliente_id).first()
-        if not cliente:
-            raise HTTPException(404, "Cliente no encontrado")
-        cliente_id = cliente.id
-    elif payload.cliente:
-        c = None
-        if payload.cliente.dni:
-            c = db.query(ClienteDB).filter(ClienteDB.dni == payload.cliente.dni).first()
-        if not c and payload.cliente.email:
-            c = (
-                db.query(ClienteDB)
-                .filter(ClienteDB.email == payload.cliente.email)
-                .first()
-            )
-        if c:
-            for k, v in payload.cliente.model_dump().items():
-                if v is not None:
-                    setattr(c, k, v)
-            cliente_id = c.id
-        else:
-            c = ClienteDB(**payload.cliente.model_dump())
-            db.add(c)
-            db.flush()
-            cliente_id = c.id
-    else:
-        raise HTTPException(400, "Debes indicar cliente_id o datos de cliente")
+    customer_id = _resolve_customer_id(db, payload)
 
-    # 2) Albarán
-    albaran = AlbaranDB(
-        fecha=payload.fecha,
-        descripcion=payload.descripcion or "",
-        cliente_id=cliente_id,
+    delivery_note = DeliveryNoteDB(
+        date=payload.date,
+        description=payload.description or "",
+        customer_id=customer_id,
         total=0.0,
-        estado=payload.estado or "FIANZA",
+        status=payload.status or "FIANZA",
     )
-    db.add(albaran)
+    db.add(delivery_note)
     db.flush()
 
-    # 3) Líneas + total
-    total = 0.0
-    for it in payload.items:
-        prod = db.query(ProductoDB).filter(ProductoDB.id == it.producto_id).first()
-        if not prod:
-            raise HTTPException(404, f"Producto {it.producto_id} no existe")
-        precio_unitario = (
-            it.precio_unitario if it.precio_unitario is not None else prod.precio
-        )
-        linea = LineaAlbaranDB(
-            albaran_id=albaran.id,
-            producto_id=it.producto_id,
-            cantidad=it.cantidad,
-            precio_unitario=precio_unitario,
-        )
-        total += precio_unitario * it.cantidad
-        db.add(linea)
-
-    albaran.total = total
+    delivery_note.total = _build_delivery_note_lines(db, delivery_note, payload.items)
     db.commit()
-    db.refresh(albaran)
+    db.refresh(delivery_note)
 
-    # 3.1) Movimiento de fianza (INGRESO) — SIEMPRE
-    # Evitamos duplicados por reintentos del cliente.
-    concepto_fianza = f"Fianza albarán #{albaran.id}"
-    ya = (
-        db.query(MovimientoDB)
+    deposit_description = f"Fianza albaran #{delivery_note.id}"
+    existing = (
+        db.query(MovementDB)
         .filter(
-            MovimientoDB.tipo == "INGRESO",
-            MovimientoDB.fecha == albaran.fecha,
-            MovimientoDB.concepto == concepto_fianza,
+            MovementDB.type == "INGRESO",
+            MovementDB.date == delivery_note.date,
+            MovementDB.description == deposit_description,
         )
         .first()
     )
-    if not ya:
-        fianza = payload.fianza_cantidad
-        if fianza is None:
-            fianza = round((albaran.total or 0) * 0.30, 2)
-        mov = MovimientoDB(
-            fecha=albaran.fecha,
-            concepto=concepto_fianza,
-            cantidad=float(fianza),
-            tipo="INGRESO",
+    if not existing:
+        deposit_amount = payload.deposit_amount
+        if deposit_amount is None:
+            deposit_amount = round((delivery_note.total or 0) * 0.30, 2)
+        mov = MovementDB(
+            date=delivery_note.date,
+            description=deposit_description,
+            amount=float(deposit_amount),
+            type="INGRESO",
         )
         db.add(mov)
         db.commit()
 
-    # 4) Enviar email en background
-    background_tasks.add_task(_send_albaran_email_task, albaran.id)
+    background_tasks.add_task(_send_delivery_note_email_task, delivery_note.id)
 
-    return albaran
-
-
-@router.get("/albaranes/get", response_model=List[Albaran])
-def listar_albaranes(db: Session = Depends(get_db)):
-    return db.query(AlbaranDB).all()
+    return delivery_note
 
 
-@router.get("/albaranes/get/{albaran_id}", response_model=Albaran)
-def obtener_albaran(albaran_id: int, db: Session = Depends(get_db)):
-    albaran = db.query(AlbaranDB).filter(AlbaranDB.id == albaran_id).first()
-    if not albaran:
-        raise HTTPException(404, "Albarán no encontrado")
-    return albaran
+@router.get("/albaranes/get", response_model=List[DeliveryNote])
+def list_delivery_notes(db: Annotated[Session, Depends(get_db)]):
+    return db.query(DeliveryNoteDB).all()
 
 
-@router.get("/albaranes/by-cliente/{cliente_id}", response_model=List[Albaran])
-def albaranes_por_cliente(cliente_id: int, db: Session = Depends(get_db)):
+@router.get(
+    "/albaranes/get/{delivery_note_id}",
+    response_model=DeliveryNote,
+    responses={404: {"description": "Not found"}},
+)
+def get_delivery_note(delivery_note_id: int, db: Annotated[Session, Depends(get_db)]):
+    delivery_note = (
+        db.query(DeliveryNoteDB).filter(DeliveryNoteDB.id == delivery_note_id).first()
+    )
+    if not delivery_note:
+        raise HTTPException(404, "Albaran no encontrado")
+    return delivery_note
+
+
+@router.get("/albaranes/by-cliente/{customer_id}", response_model=List[DeliveryNote])
+def delivery_notes_by_customer(
+    customer_id: int, db: Annotated[Session, Depends(get_db)]
+):
     q = (
-        db.query(AlbaranDB)
-        .options(selectinload(AlbaranDB.lineas))
-        .filter(AlbaranDB.cliente_id == cliente_id)
-        .order_by(AlbaranDB.fecha.desc(), AlbaranDB.id.desc())
+        db.query(DeliveryNoteDB)
+        .options(selectinload(DeliveryNoteDB.items))
+        .filter(DeliveryNoteDB.customer_id == customer_id)
+        .order_by(DeliveryNoteDB.date.desc(), DeliveryNoteDB.id.desc())
     )
     return q.all()
 
 
-@router.patch("/albaranes/{albaran_id}/estado", response_model=Albaran)
-def actualizar_estado(
-    albaran_id: int, payload: EstadoUpdate, db: Session = Depends(get_db)
+@router.patch(
+    "/albaranes/{delivery_note_id}/estado",
+    response_model=DeliveryNote,
+    responses={400: {"description": "Bad request"}, 404: {"description": "Not found"}},
+)
+def update_status(
+    delivery_note_id: int,
+    payload: StatusUpdate,
+    db: Annotated[Session, Depends(get_db)],
 ):
     """
-    Marca un albarán como ENTREGADO (único cambio de estado permitido).
-    Si queda importe pendiente tras descontar la fianza, registra automáticamente
-    un movimiento de INGRESO con la diferencia.
+    Marks a delivery note as ENTREGADO (only allowed status change).
+    If there is a remaining amount after subtracting the deposit, an INGRESO
+    movement is automatically registered for the difference.
     """
-    if (payload.estado or "").upper() != "ENTREGADO":
+    if (payload.status or "").upper() != "ENTREGADO":
         raise HTTPException(
-            status_code=400, detail="Sólo se permite cambiar a ENTREGADO."
+            status_code=400, detail="Solo se permite cambiar a ENTREGADO."
         )
 
-    alb = db.query(AlbaranDB).filter(AlbaranDB.id == albaran_id).first()
-    if not alb:
-        raise HTTPException(404, "Albarán no encontrado")
+    delivery_note = (
+        db.query(DeliveryNoteDB).filter(DeliveryNoteDB.id == delivery_note_id).first()
+    )
+    if not delivery_note:
+        raise HTTPException(404, "Albaran no encontrado")
 
-    alb.estado = "ENTREGADO"
+    delivery_note.status = "ENTREGADO"
     db.commit()
-    db.refresh(alb)
+    db.refresh(delivery_note)
 
-    # Calcular fianza (suma de movimientos INGRESO con concepto 'Fianza albarán #id')
-    fianza = (
-        db.query(func.coalesce(func.sum(MovimientoDB.cantidad), 0.0))
+    deposit = (
+        db.query(func.coalesce(func.sum(MovementDB.amount), 0.0))
         .filter(
-            MovimientoDB.tipo == "INGRESO",
-            MovimientoDB.concepto == f"Fianza albarán #{alb.id}",
+            MovementDB.type == "INGRESO",
+            MovementDB.description == f"Fianza albaran #{delivery_note.id}",
         )
         .scalar()
         or 0.0
     )
-    pendiente = max(0.0, float(alb.total or 0) - float(fianza or 0))
+    remaining = max(0.0, float(delivery_note.total or 0) - float(deposit or 0))
 
-    if pendiente > 0:
-        mov = MovimientoDB(
-            fecha=date.today(),
-            concepto=f"Cobro albarán #{alb.id} (pendiente)",
-            cantidad=float(pendiente),
-            tipo="INGRESO",
+    if remaining > 0:
+        mov = MovementDB(
+            date=date.today(),
+            description=f"Cobro albaran #{delivery_note.id} (pendiente)",
+            amount=float(remaining),
+            type="INGRESO",
         )
         db.add(mov)
         db.commit()
 
-    return alb
+    return delivery_note
 
 
-@router.get("/albaranes/{albaran_id}/pdf")
-def descargar_pdf_albaran(albaran_id: int, db: Session = Depends(get_db)):
-    """Genera y descarga el PDF de un albarán específico."""
+@router.get(
+    "/albaranes/{delivery_note_id}/pdf",
+    responses={404: {"description": "Not found"}},
+)
+def download_delivery_note_pdf(
+    delivery_note_id: int, db: Annotated[Session, Depends(get_db)]
+):
+    """Generates and downloads the PDF for a specific delivery note."""
     from fastapi.responses import StreamingResponse
     from io import BytesIO
 
-    albaran = db.query(AlbaranDB).filter(AlbaranDB.id == albaran_id).first()
-    if not albaran:
-        raise HTTPException(404, "Albarán no encontrado")
+    delivery_note = (
+        db.query(DeliveryNoteDB).filter(DeliveryNoteDB.id == delivery_note_id).first()
+    )
+    if not delivery_note:
+        raise HTTPException(404, "Albaran no encontrado")
 
-    cliente = db.query(ClienteDB).filter(ClienteDB.id == albaran.cliente_id).first()
+    customer = (
+        db.query(CustomerDB).filter(CustomerDB.id == delivery_note.customer_id).first()
+    )
 
-    lineas = (
-        db.query(LineaAlbaranDB).filter(LineaAlbaranDB.albaran_id == albaran.id).all()
+    lines = (
+        db.query(DeliveryNoteLineDB)
+        .filter(DeliveryNoteLineDB.delivery_note_id == delivery_note.id)
+        .all()
     )
     prods = {}
-    if lineas:
-        prod_ids = {ln.producto_id for ln in lineas}
-        for p in db.query(ProductoDB).filter(ProductoDB.id.in_(prod_ids)).all():
+    if lines:
+        prod_ids = {ln.product_id for ln in lines}
+        for p in db.query(ProductDB).filter(ProductDB.id.in_(prod_ids)).all():
             prods[p.id] = p
 
-    lineas_ext = []
+    enriched_lines = []
     total = 0.0
-    for ln in lineas:
-        subtotal = (ln.cantidad or 0) * (ln.precio_unitario or 0.0)
+    for ln in lines:
+        subtotal = (ln.quantity or 0) * (ln.unit_price or 0.0)
         total += subtotal
-        nombre = (
-            prods.get(ln.producto_id).nombre
-            if prods.get(ln.producto_id)
-            else f"Producto {ln.producto_id}"
+        name = (
+            prods.get(ln.product_id).name
+            if prods.get(ln.product_id)
+            else f"Producto {ln.product_id}"
         )
-        lineas_ext.append(
+        enriched_lines.append(
             {
-                "producto_nombre": nombre,
-                "cantidad": ln.cantidad,
-                "precio_unitario": ln.precio_unitario,
-                "p_unit_eur": f"{ln.precio_unitario:.2f} €",
+                "producto_nombre": name,
+                "cantidad": ln.quantity,
+                "precio_unitario": ln.unit_price,
+                "p_unit_eur": f"{ln.unit_price:.2f} €",
                 "subtotal": subtotal,
                 "subtotal_eur": f"{subtotal:.2f} €",
             }
         )
 
-    pdf_bytes = generar_pdf_albaran(albaran, cliente, lineas_ext)
+    pdf_bytes = generate_delivery_note_pdf(delivery_note, customer, enriched_lines)
 
-    nombre_cliente = ""
-    if cliente:
-        nombre_cliente = f"_{cliente.nombre}_{cliente.apellidos}".replace(" ", "_")
-    filename = f"albaran_{albaran.id}{nombre_cliente}.pdf"
+    customer_name = ""
+    if customer:
+        customer_name = f"_{customer.name}_{customer.surnames}".replace(" ", "_")
+    filename = f"albaran_{delivery_note.id}{customer_name}.pdf"
 
     return StreamingResponse(
         BytesIO(pdf_bytes),
@@ -374,23 +422,23 @@ def descargar_pdf_albaran(albaran_id: int, db: Session = Depends(get_db)):
     )
 
 
-@router.get("/transporte/almacen", response_model=List[Albaran])
-def pedidos_en_almacen(db: Session = Depends(get_db)):
-    """Devuelve los albaranes en estado ALMACEN, ordenados por fecha de entrada."""
+@router.get("/transporte/almacen", response_model=List[DeliveryNote])
+def orders_in_warehouse(db: Annotated[Session, Depends(get_db)]):
+    """Returns delivery notes in ALMACEN status, ordered by entry date."""
     return (
-        db.query(AlbaranDB)
-        .filter(AlbaranDB.estado == "ALMACEN")
-        .order_by(AlbaranDB.fecha.asc(), AlbaranDB.id.asc())
+        db.query(DeliveryNoteDB)
+        .filter(DeliveryNoteDB.status == "ALMACEN")
+        .order_by(DeliveryNoteDB.date.asc(), DeliveryNoteDB.id.asc())
         .all()
     )
 
 
-@router.get("/transporte/ruta", response_model=List[Albaran])
-def pedidos_en_ruta(db: Session = Depends(get_db)):
-    """Devuelve los albaranes en estado RUTA (ya asignados a un camión)."""
+@router.get("/transporte/ruta", response_model=List[DeliveryNote])
+def orders_in_route(db: Annotated[Session, Depends(get_db)]):
+    """Returns delivery notes in RUTA status (already assigned to a truck)."""
     return (
-        db.query(AlbaranDB)
-        .filter(AlbaranDB.estado == "RUTA")
-        .order_by(AlbaranDB.fecha.asc(), AlbaranDB.id.asc())
+        db.query(DeliveryNoteDB)
+        .filter(DeliveryNoteDB.status == "RUTA")
+        .order_by(DeliveryNoteDB.date.asc(), DeliveryNoteDB.id.asc())
         .all()
     )

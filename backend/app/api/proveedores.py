@@ -1,54 +1,65 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from backend.app.entidades.proveedor import Proveedor, ProveedorCreate, ProveedorDB
+from backend.app.entidades.proveedor import Supplier, SupplierCreate, SupplierDB
 from backend.app.database import get_db
 from backend.app.dependencies import get_current_user
-from typing import List
+from typing import Annotated, List
 
 router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
-@router.post("/proveedores/post", response_model=Proveedor)
-def crear_proveedor(proveedor: ProveedorCreate, db: Session = Depends(get_db)):
-    db_proveedor = ProveedorDB(**proveedor.model_dump())
-    db.add(db_proveedor)
+@router.post("/proveedores/post", response_model=Supplier)
+def create_supplier(payload: SupplierCreate, db: Annotated[Session, Depends(get_db)]):
+    db_supplier = SupplierDB(**payload.model_dump())
+    db.add(db_supplier)
     db.commit()
-    db.refresh(db_proveedor)
-    return db_proveedor
+    db.refresh(db_supplier)
+    return db_supplier
 
 
-@router.get("/proveedores/get", response_model=List[Proveedor])
-def obtener_proveedores(db: Session = Depends(get_db)):
-    return db.query(ProveedorDB).all()
+@router.get("/proveedores/get", response_model=List[Supplier])
+def list_suppliers(db: Annotated[Session, Depends(get_db)]):
+    return db.query(SupplierDB).all()
 
 
-@router.get("/proveedores/get/{proveedor_id}", response_model=Proveedor)
-def obtener_proveedor(proveedor_id: int, db: Session = Depends(get_db)):
-    proveedor = db.query(ProveedorDB).filter(ProveedorDB.id == proveedor_id).first()
-    if not proveedor:
+@router.get(
+    "/proveedores/get/{supplier_id}",
+    response_model=Supplier,
+    responses={404: {"description": "Not found"}},
+)
+def get_supplier(supplier_id: int, db: Annotated[Session, Depends(get_db)]):
+    supplier = db.query(SupplierDB).filter(SupplierDB.id == supplier_id).first()
+    if not supplier:
         raise HTTPException(status_code=404, detail="Proveedor no encontrado")
-    return proveedor
+    return supplier
 
 
-@router.put("/proveedores/put/{proveedor_id}", response_model=Proveedor)
-def actualizar_proveedor(
-    proveedor_id: int, actualizado: ProveedorCreate, db: Session = Depends(get_db)
+@router.put(
+    "/proveedores/put/{supplier_id}",
+    response_model=Supplier,
+    responses={404: {"description": "Not found"}},
+)
+def update_supplier(
+    supplier_id: int, payload: SupplierCreate, db: Annotated[Session, Depends(get_db)]
 ):
-    proveedor = db.query(ProveedorDB).filter(ProveedorDB.id == proveedor_id).first()
-    if not proveedor:
+    supplier = db.query(SupplierDB).filter(SupplierDB.id == supplier_id).first()
+    if not supplier:
         raise HTTPException(status_code=404, detail="Proveedor no encontrado")
-    for key, value in actualizado.model_dump().items():
-        setattr(proveedor, key, value)
+    for key, value in payload.model_dump().items():
+        setattr(supplier, key, value)
     db.commit()
-    db.refresh(proveedor)
-    return proveedor
+    db.refresh(supplier)
+    return supplier
 
 
-@router.delete("/proveedores/delete/{proveedor_id}")
-def eliminar_proveedor(proveedor_id: int, db: Session = Depends(get_db)):
-    proveedor = db.query(ProveedorDB).filter(ProveedorDB.id == proveedor_id).first()
-    if not proveedor:
+@router.delete(
+    "/proveedores/delete/{supplier_id}",
+    responses={404: {"description": "Not found"}},
+)
+def delete_supplier(supplier_id: int, db: Annotated[Session, Depends(get_db)]):
+    supplier = db.query(SupplierDB).filter(SupplierDB.id == supplier_id).first()
+    if not supplier:
         raise HTTPException(status_code=404, detail="Proveedor no encontrado")
-    db.delete(proveedor)
+    db.delete(supplier)
     db.commit()
-    return {"message": f"Proveedor {proveedor_id} eliminado"}
+    return {"message": f"Proveedor {supplier_id} eliminado"}

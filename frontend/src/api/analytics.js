@@ -14,7 +14,7 @@ export const getAnalyticsCompare = (dateFrom, dateTo) => {
   return apiFetch(`analytics/compare?${params.toString()}`);
 };
 
-export const exportTendenciasPdf = (dateFrom, dateTo, includeCompare) => {
+export const exportTrendsPdf = (dateFrom, dateTo, includeCompare) => {
   const params = new URLSearchParams();
   if (dateFrom) params.set('date_from', dateFrom);
   if (dateTo) params.set('date_to', dateTo);

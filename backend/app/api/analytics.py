@@ -4,15 +4,15 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
 from datetime import date, datetime, timedelta
-from typing import Optional, Dict, Any, Tuple
+from typing import Annotated, Optional, Dict, Any, Tuple
 import json
 import logging
 
 from backend.app.database import get_db
-from backend.app.entidades.albaran import AlbaranDB
-from backend.app.entidades.linea_albaran import LineaAlbaranDB
-from backend.app.entidades.producto import ProductoDB
-from backend.app.entidades.cliente import ClienteDB
+from backend.app.entidades.albaran import DeliveryNoteDB
+from backend.app.entidades.linea_albaran import DeliveryNoteLineDB
+from backend.app.entidades.producto import ProductDB
+from backend.app.entidades.cliente import CustomerDB
 
 from backend.app.utils.groq_llm import groq_chat
 from backend.app.utils.tendencias_pdf import generar_pdf_tendencias
@@ -99,17 +99,17 @@ def _metrics_for_llm(metrics: Dict[str, Any]) -> Dict[str, Any]:
 def sales_by_day(db: Session, dfrom: date, dto: date):
     rows = (
         db.query(
-            AlbaranDB.fecha.label("fecha"),
-            func.count(AlbaranDB.id).label("orders"),
-            func.coalesce(func.sum(AlbaranDB.total), 0.0).label("revenue"),
+            DeliveryNoteDB.date.label("day"),
+            func.count(DeliveryNoteDB.id).label("orders"),
+            func.coalesce(func.sum(DeliveryNoteDB.total), 0.0).label("revenue"),
         )
-        .filter(AlbaranDB.fecha >= dfrom, AlbaranDB.fecha <= dto)
-        .group_by(AlbaranDB.fecha)
-        .order_by(AlbaranDB.fecha)
+        .filter(DeliveryNoteDB.date >= dfrom, DeliveryNoteDB.date <= dto)
+        .group_by(DeliveryNoteDB.date)
+        .order_by(DeliveryNoteDB.date)
         .all()
     )
     return [
-        {"date": to_iso(r.fecha), "orders": int(r.orders), "revenue": float(r.revenue)}
+        {"date": to_iso(r.day), "orders": int(r.orders), "revenue": float(r.revenue)}
         for r in rows
     ]
 
@@ -117,29 +117,29 @@ def sales_by_day(db: Session, dfrom: date, dto: date):
 def top_products(db: Session, dfrom: date, dto: date, limit: int = 10):
     rows = (
         db.query(
-            LineaAlbaranDB.producto_id,
-            func.sum(LineaAlbaranDB.cantidad).label("qty"),
-            func.sum(LineaAlbaranDB.cantidad * LineaAlbaranDB.precio_unitario).label(
+            DeliveryNoteLineDB.product_id,
+            func.sum(DeliveryNoteLineDB.quantity).label("qty"),
+            func.sum(DeliveryNoteLineDB.quantity * DeliveryNoteLineDB.unit_price).label(
                 "revenue"
             ),
         )
-        .join(AlbaranDB, AlbaranDB.id == LineaAlbaranDB.albaran_id)
-        .filter(AlbaranDB.fecha >= dfrom, AlbaranDB.fecha <= dto)
-        .group_by(LineaAlbaranDB.producto_id)
+        .join(DeliveryNoteDB, DeliveryNoteDB.id == DeliveryNoteLineDB.delivery_note_id)
+        .filter(DeliveryNoteDB.date >= dfrom, DeliveryNoteDB.date <= dto)
+        .group_by(DeliveryNoteLineDB.product_id)
         .order_by(desc("revenue"))
         .limit(limit)
         .all()
     )
     prod_map = {
-        p.id: p.nombre
-        for p in db.query(ProductoDB)
-        .filter(ProductoDB.id.in_([r.producto_id for r in rows]))
+        p.id: p.name
+        for p in db.query(ProductDB)
+        .filter(ProductDB.id.in_([r.product_id for r in rows]))
         .all()
     }
     return [
         {
-            "product_id": r.producto_id,
-            "name": prod_map.get(r.producto_id, f"Producto {r.producto_id}"),
+            "product_id": r.product_id,
+            "name": prod_map.get(r.product_id, f"Producto {r.product_id}"),
             "qty": float(r.qty or 0),
             "revenue": float(r.revenue or 0.0),
         }
@@ -148,11 +148,13 @@ def top_products(db: Session, dfrom: date, dto: date, limit: int = 10):
 
 
 def averages(db: Session, dfrom: date, dto: date):
-    q = db.query(AlbaranDB).filter(AlbaranDB.fecha >= dfrom, AlbaranDB.fecha <= dto)
+    q = db.query(DeliveryNoteDB).filter(
+        DeliveryNoteDB.date >= dfrom, DeliveryNoteDB.date <= dto
+    )
     orders = q.count()
     total = float(
-        db.query(func.coalesce(func.sum(AlbaranDB.total), 0.0))
-        .filter(AlbaranDB.fecha >= dfrom, AlbaranDB.fecha <= dto)
+        db.query(func.coalesce(func.sum(DeliveryNoteDB.total), 0.0))
+        .filter(DeliveryNoteDB.date >= dfrom, DeliveryNoteDB.date <= dto)
         .scalar()
         or 0.0
     )
@@ -160,11 +162,11 @@ def averages(db: Session, dfrom: date, dto: date):
 
     rows = (
         db.query(
-            AlbaranDB.cliente_id,
-            func.coalesce(func.sum(AlbaranDB.total), 0.0).label("spent"),
+            DeliveryNoteDB.customer_id,
+            func.coalesce(func.sum(DeliveryNoteDB.total), 0.0).label("spent"),
         )
-        .filter(AlbaranDB.fecha >= dfrom, AlbaranDB.fecha <= dto)
-        .group_by(AlbaranDB.cliente_id)
+        .filter(DeliveryNoteDB.date >= dfrom, DeliveryNoteDB.date <= dto)
+        .group_by(DeliveryNoteDB.customer_id)
         .all()
     )
     avg_per_customer = (sum(float(r.spent) for r in rows) / len(rows)) if rows else 0.0
@@ -180,9 +182,9 @@ def basket_pairs(
     db: Session, dfrom: date, dto: date, min_support: int = 2, limit: int = 10
 ):
     rows = (
-        db.query(LineaAlbaranDB.albaran_id, LineaAlbaranDB.producto_id)
-        .join(AlbaranDB, AlbaranDB.id == LineaAlbaranDB.albaran_id)
-        .filter(AlbaranDB.fecha >= dfrom, AlbaranDB.fecha <= dto)
+        db.query(DeliveryNoteLineDB.delivery_note_id, DeliveryNoteLineDB.product_id)
+        .join(DeliveryNoteDB, DeliveryNoteDB.id == DeliveryNoteLineDB.delivery_note_id)
+        .filter(DeliveryNoteDB.date >= dfrom, DeliveryNoteDB.date <= dto)
         .all()
     )
     from collections import defaultdict
@@ -190,7 +192,7 @@ def basket_pairs(
 
     by_alb = defaultdict(list)
     for r in rows:
-        by_alb[r.albaran_id].append(r.producto_id)
+        by_alb[r.delivery_note_id].append(r.product_id)
 
     pair_count, prod_count = defaultdict(int), defaultdict(int)
     for _, prods in by_alb.items():
@@ -202,8 +204,8 @@ def basket_pairs(
 
     prod_ids = list(set([p for pair in pair_count.keys() for p in pair]))
     name_map = {
-        p.id: p.nombre
-        for p in db.query(ProductoDB).filter(ProductoDB.id.in_(prod_ids)).all()
+        p.id: p.name
+        for p in db.query(ProductDB).filter(ProductDB.id.in_(prod_ids)).all()
     }
 
     pairs = []
@@ -230,14 +232,14 @@ def basket_pairs(
 def rfm_segments(db: Session, ref_date: date):
     rows = (
         db.query(
-            ClienteDB.id.label("cid"),
-            func.max(AlbaranDB.fecha).label("last_date"),
-            func.count(AlbaranDB.id).label("freq"),
-            func.coalesce(func.sum(AlbaranDB.total), 0.0).label("monetary"),
+            CustomerDB.id.label("cid"),
+            func.max(DeliveryNoteDB.date).label("last_date"),
+            func.count(DeliveryNoteDB.id).label("freq"),
+            func.coalesce(func.sum(DeliveryNoteDB.total), 0.0).label("monetary"),
         )
-        .join(AlbaranDB, AlbaranDB.cliente_id == ClienteDB.id)
-        .filter(AlbaranDB.fecha <= ref_date)
-        .group_by(ClienteDB.id)
+        .join(DeliveryNoteDB, DeliveryNoteDB.customer_id == CustomerDB.id)
+        .filter(DeliveryNoteDB.date <= ref_date)
+        .group_by(CustomerDB.id)
         .all()
     )
     if not rows:
@@ -461,11 +463,11 @@ def generate_ai_compare_report(compare_obj_full: Dict[str, Any]) -> str:
 
 
 # ---------- Endpoints ----------
-@router.get("/summary")
+@router.get("/summary", responses={400: {"description": "Bad request"}})
 def analytics_summary(
+    db: Annotated[Session, Depends(get_db)],
     date_from: Optional[date] = Query(None),
     date_to: Optional[date] = Query(None),
-    db: Session = Depends(get_db),
 ):
     dfrom, dto = daterange_defaults(date_from, date_to)
 
@@ -481,11 +483,11 @@ def analytics_summary(
     return {"metrics": metrics, "ai_report": report}
 
 
-@router.get("/compare")
+@router.get("/compare", responses={400: {"description": "Bad request"}})
 def analytics_compare(
+    db: Annotated[Session, Depends(get_db)],
     date_from: Optional[date] = Query(None),
     date_to: Optional[date] = Query(None),
-    db: Session = Depends(get_db),
 ):
     dfrom, dto = daterange_defaults(date_from, date_to)
     compare_obj = compare_periods(db, dfrom, dto)
@@ -493,12 +495,12 @@ def analytics_compare(
     return compare_obj
 
 
-@router.get("/export/pdf")
+@router.get("/export/pdf", responses={400: {"description": "Bad request"}})
 def analytics_export_pdf(
+    db: Annotated[Session, Depends(get_db)],
     date_from: Optional[date] = Query(None),
     date_to: Optional[date] = Query(None),
     include_compare: bool = Query(True),
-    db: Session = Depends(get_db),
 ):
     dfrom, dto = daterange_defaults(date_from, date_to)
 

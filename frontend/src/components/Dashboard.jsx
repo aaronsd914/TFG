@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+﻿import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Line, Pie } from 'react-chartjs-2';
 import 'chart.js/auto';
 import { API_URL } from '../config.js';
@@ -11,21 +12,22 @@ function ymKey(d) {
   const dt = new Date(d);
   return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`;
 }
-function monthLabelShort(index0) {
-  const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  return meses[index0];
+function monthLabelShort(index0, months) {
+  return (months || [])[index0] || '';
 }
 function fmtDate(d) {
   const dt = new Date(d);
-  if (Number.isNaN(dt.getTime())) return '—';
+  if (Number.isNaN(dt.getTime())) return 'â€”';
   return dt.toLocaleDateString('es-ES');
 }
 
 export default function Dashboard() {
+  const { t, i18n } = useTranslation();
+  const months = t('dashboard.months', { returnObjects: true });
   const [movs, setMovs] = useState([]);
   const [albaranes, setAlbaranes] = useState([]);
   const [almacen, setAlmacen] = useState([]);
-  const [_ruta, setRuta] = useState([]); // se mantiene para métricas/estados, aunque no se muestre sección
+  const [_ruta, setRuta] = useState([]); // se mantiene para mÃ©tricas/estados, aunque no se muestre secciÃ³n
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
@@ -35,7 +37,7 @@ export default function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
 
-  // Gráfica principal: ALL | ING | EGR
+  // GrÃ¡fica principal: ALL | ING | EGR
   const [chartMode, setChartMode] = useState('ALL');
 
   const firstLoadRef = useRef(true);
@@ -88,7 +90,7 @@ export default function Dashboard() {
     return m;
   }, [clientes]);
 
-  // Métricas del mes actual
+  // MÃ©tricas del mes actual
   const now = new Date();
   const currY = now.getFullYear();
   const currM = now.getMonth();
@@ -100,10 +102,10 @@ export default function Dashboard() {
   const { ingresosMes, egresosMes } = useMemo(() => {
     let ingresos = 0, egresos = 0;
     for (const m of movs) {
-      const d = new Date(m.fecha);
+      const d = new Date(m.date);
       if (d.getFullYear() === currY && d.getMonth() === currM) {
-        if (m.tipo === 'INGRESO') ingresos += Number(m.cantidad || 0);
-        else if (m.tipo === 'EGRESO') egresos += Number(m.cantidad || 0);
+        if (m.type === 'INGRESO') ingresos += Number(m.amount || 0);
+        else if (m.type === 'EGRESO') egresos += Number(m.amount || 0);
       }
     }
     return { ingresosMes: ingresos, egresosMes: egresos };
@@ -112,10 +114,10 @@ export default function Dashboard() {
   const { ingresosPrev, egresosPrev } = useMemo(() => {
     let ingresos = 0, egresos = 0;
     for (const m of movs) {
-      const d = new Date(m.fecha);
+      const d = new Date(m.date);
       if (d.getFullYear() === prevYM.y && d.getMonth() === prevYM.m) {
-        if (m.tipo === 'INGRESO') ingresos += Number(m.cantidad || 0);
-        else if (m.tipo === 'EGRESO') egresos += Number(m.cantidad || 0);
+        if (m.type === 'INGRESO') ingresos += Number(m.amount || 0);
+        else if (m.type === 'EGRESO') egresos += Number(m.amount || 0);
       }
     }
     return { ingresosPrev: ingresos, egresosPrev: egresos };
@@ -124,7 +126,7 @@ export default function Dashboard() {
   const ventasMes = useMemo(() => {
     let n = 0;
     for (const a of albaranes) {
-      const d = new Date(a.fecha);
+      const d = new Date(a.date);
       if (d.getFullYear() === currY && d.getMonth() === currM) n += 1;
     }
     return n;
@@ -133,7 +135,7 @@ export default function Dashboard() {
   const ventasPrev = useMemo(() => {
     let n = 0;
     for (const a of albaranes) {
-      const d = new Date(a.fecha);
+      const d = new Date(a.date);
       if (d.getFullYear() === prevYM.y && d.getMonth() === prevYM.m) n += 1;
     }
     return n;
@@ -158,30 +160,30 @@ export default function Dashboard() {
     }
 
     for (const mv of movs) {
-      const key = ymKey(mv.fecha);
+      const key = ymKey(mv.date);
       if (!mapIn.has(key)) continue;
-      const amt = Number(mv.cantidad || 0);
-      if (mv.tipo === 'INGRESO') mapIn.set(key, mapIn.get(key) + amt);
-      else if (mv.tipo === 'EGRESO') mapOut.set(key, mapOut.get(key) + amt);
+      const amt = Number(mv.amount || 0);
+      if (mv.type === 'INGRESO') mapIn.set(key, mapIn.get(key) + amt);
+      else if (mv.type === 'EGRESO') mapOut.set(key, mapOut.get(key) + amt);
     }
 
-    const labels = keys.map(k => `${monthLabelShort(k.m)} ${String(k.y).slice(-2)}`);
-    const ingresos = keys.map(k => mapIn.get(`${k.y}-${String(k.m + 1).padStart(2, '0')}`));
+    const labels = keys.map(k => `${monthLabelShort(k.m, months)} ${String(k.y).slice(-2)}`);
+    const ingresos = keys.map(k => mapIn.get(`${k.y}-${String(k.m + 1).padStart(2, '0')}`))
     const egresos = keys.map(k => mapOut.get(`${k.y}-${String(k.m + 1).padStart(2, '0')}`));
 
     const datasets = [];
 
     if (chartMode === 'ALL' || chartMode === 'ING') {
-      datasets.push({ label: 'Ingresos', data: ingresos, borderColor: '#5b8c5a', tension: 0.4 });
+      datasets.push({ label: t('dashboard.datasetIncome'), data: ingresos, borderColor: '#5b8c5a', tension: 0.4 });
     }
     if (chartMode === 'ALL' || chartMode === 'EGR') {
-      datasets.push({ label: 'Gastos', data: egresos, borderColor: '#a5744b', tension: 0.4 });
+      datasets.push({ label: t('dashboard.datasetExpenses'), data: egresos, borderColor: '#a5744b', tension: 0.4 });
     }
 
     return { labels, datasets };
-  }, [movs, currY, currM, monthsWindowMovs, chartMode]);
+  }, [movs, currY, currM, monthsWindowMovs, chartMode, i18n.language]);
 
-  // Nueva gráfica: ventas por mes (número de albaranes)
+  // Nueva grÃ¡fica: ventas por mes (nÃºmero de albaranes)
   const ventasSeries = useMemo(() => {
     const keys = [];
     for (let i = monthsWindowVentas - 1; i >= 0; i--) {
@@ -192,43 +194,43 @@ export default function Dashboard() {
     for (const k of keys) map.set(`${k.y}-${String(k.m + 1).padStart(2, '0')}`, 0);
 
     for (const a of albaranes) {
-      const key = ymKey(a.fecha);
+      const key = ymKey(a.date);
       if (!map.has(key)) continue;
       map.set(key, map.get(key) + 1);
     }
 
-    const labels = keys.map(k => `${monthLabelShort(k.m)} ${String(k.y).slice(-2)}`);
+    const labels = keys.map(k => `${monthLabelShort(k.m, months)} ${String(k.y).slice(-2)}`);
     const data = keys.map(k => map.get(`${k.y}-${String(k.m + 1).padStart(2, '0')}`));
 
     return {
       labels,
-      datasets: [{ label: 'Albaranes', data, borderColor: '#4f46e5', tension: 0.35 }],
+      datasets: [{ label: t('dashboard.datasetDeliveries'), data, borderColor: '#4f46e5', tension: 0.35 }],
     };
-  }, [albaranes, currY, currM, monthsWindowVentas]);
+  }, [albaranes, currY, currM, monthsWindowVentas, i18n.language]);
 
   // Pie de estados de albaranes
   const pieData = useMemo(() => {
     const counts = { FIANZA: 0, ALMACEN: 0, RUTA: 0, ENTREGADO: 0 };
     for (const a of albaranes) {
-      const e = (a.estado || 'FIANZA').toUpperCase();
+      const e = (a.status || 'FIANZA').toUpperCase();
       if (counts[e] === undefined) counts[e] = 0;
       counts[e] += 1;
     }
-    const labels = ['Fianza', 'Almacén', 'Ruta', 'Entregado'];
+    const labels = [t('dashboard.stateFianza'), t('dashboard.stateAlmacen'), t('dashboard.stateRuta'), t('dashboard.stateEntregado')];
     const data = [counts.FIANZA || 0, counts.ALMACEN || 0, counts.RUTA || 0, counts.ENTREGADO || 0];
     const backgroundColor = ['#d7e8cf', '#f3e3c8', '#cbd5e1', '#e2e8f0'];
     return { labels, datasets: [{ data, backgroundColor }] };
-  }, [albaranes]);
+  }, [albaranes, i18n.language]);
 
-  // Últimos 8 movimientos
+  // Ãšltimos 8 movimientos
   const ultimosMovs = useMemo(() => {
-    const sorted = [...movs].sort((a, b) => new Date(b.fecha) - new Date(a.fecha) || b.id - a.id);
+    const sorted = [...movs].sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
     return sorted.slice(0, 8);
   }, [movs]);
 
   const almacenTop = useMemo(() => {
     const list = [...almacen];
-    list.sort((a, b) => new Date(a.fecha) - new Date(b.fecha) || a.id - b.id);
+    list.sort((a, b) => new Date(a.date) - new Date(b.date) || a.id - b.id);
     return list.slice(0, 8);
   }, [almacen]);
 
@@ -257,7 +259,7 @@ export default function Dashboard() {
       legend: { position: 'top' },
       tooltip: {
         callbacks: {
-          label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y} albarán${ctx.parsed.y !== 1 ? 'es' : ''}`,
+          label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y} ${ctx.parsed.y !== 1 ? t('dashboard.albaranesLabel') : t('dashboard.albaranLabel')}`,
         },
       },
     },
@@ -273,11 +275,11 @@ export default function Dashboard() {
       {/* Cabecera */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold">Dashboard · Tienda</h2>
+          <h2 className="text-lg font-semibold">{t('dashboard.title')}</h2>
           {refreshing && (
             <span className="inline-flex items-center gap-2 text-sm text-gray-500">
               <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-              Refrescando…
+              {t('dashboard.refreshing')}
             </span>
           )}
         </div>
@@ -294,29 +296,29 @@ export default function Dashboard() {
           </>
         ) : (
           <>
-            <StatCard title="Ingresos (mes)" value={eur(ingresosMes)} delta={pctDelta(ingresosMes, ingresosPrev)} deltaLabel="vs mes anterior" />
-            <StatCard title="Gastos (mes)" value={eur(egresosMes)} delta={pctDelta(egresosMes, egresosPrev)} deltaLabel="vs mes anterior" invertColors />
-            <StatCard title="Ventas del mes" value={String(ventasMes)} delta={pctDelta(ventasMes, ventasPrev)} deltaLabel="vs mes anterior" />
-            <StatCard title="Pedidos en almacén" value={String(pedidosAlmacen)} hint="Pendientes de salida" />
+            <StatCard title={t('dashboard.incomePeriod')} value={eur(ingresosMes)} delta={pctDelta(ingresosMes, ingresosPrev)} deltaLabel={t('dashboard.vsPrev')} />
+            <StatCard title={t('dashboard.expensesPeriod')} value={eur(egresosMes)} delta={pctDelta(egresosMes, egresosPrev)} deltaLabel={t('dashboard.vsPrev')} invertColors />
+            <StatCard title={t('dashboard.salesPeriod')} value={String(ventasMes)} delta={pctDelta(ventasMes, ventasPrev)} deltaLabel={t('dashboard.vsPrev')} />
+            <StatCard title={t('dashboard.warehouseOrders')} value={String(pedidosAlmacen)} hint={t('dashboard.warehousePending')} />
           </>
         )}
       </div>
 
       {err && (
         <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl">
-          <div className="font-semibold">Error al cargar el dashboard</div>
+          <div className="font-semibold">{t('dashboard.loadError')}</div>
           <div className="text-sm mt-1">{err}</div>
         </div>
       )}
 
 
 
-      {/* Gráficas */}
+      {/* GrÃ¡ficas */}
       {!err && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           <div className="bg-white p-4 rounded-xl shadow-sm self-start">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-3">
-              <h3 className="text-base font-semibold">Ingresos / Gastos ({monthsWindowMovs} meses)</h3>
+              <h3 className="text-base font-semibold">{t('dashboard.incomeExpenseChart', { months: monthsWindowMovs })}</h3>
 
               <div className="flex flex-wrap items-center gap-2">
                 <button
@@ -341,9 +343,9 @@ export default function Dashboard() {
                   }`}
                   onClick={() => toggleMode('ING')}
                   disabled={loading}
-                  title="Mostrar solo ingresos (vuelve a ambos si lo desactivas)"
+                  title={t('dashboard.onlyIncomeTitle')}
                 >
-                  Solo ingresos
+                  {t('dashboard.onlyIncome')}
                 </button>
                 <button
                   className={`px-3 py-1 rounded-lg border text-sm ${
@@ -351,9 +353,9 @@ export default function Dashboard() {
                   }`}
                   onClick={() => toggleMode('EGR')}
                   disabled={loading}
-                  title="Mostrar solo gastos (vuelve a ambos si lo desactivas)"
+                  title={t('dashboard.onlyExpensesTitle')}
                 >
-                  Solo gastos
+                  {t('dashboard.onlyExpenses')}
                 </button>
               </div>
             </div>
@@ -364,11 +366,11 @@ export default function Dashboard() {
               <>
                 <div className="flex items-center justify-between mb-2 text-sm text-gray-600">
                   <div>
-                    Mes actual: <span className="font-semibold text-gray-900">{eur(ingresosMes)}</span> ingresos ·{' '}
-                    <span className="font-semibold text-gray-900">{eur(egresosMes)}</span> gastos
+                    {t('dashboard.currentMonth')} <span className="font-semibold text-gray-900">{eur(ingresosMes)}</span> {t('dashboard.incomeUnit')} Â·{' '}
+                    <span className="font-semibold text-gray-900">{eur(egresosMes)}</span> {t('dashboard.expensesUnit')}
                   </div>
                   <div className="text-xs">
-                    {lastUpdated ? `Datos hasta ${lastUpdated.toLocaleDateString('es-ES')}` : ''}
+                    {lastUpdated ? t('dashboard.dataUpTo', { date: lastUpdated.toLocaleDateString('es-ES') }) : ''}
                   </div>
                 </div>
                 <div className="h-56 md:h-64">
@@ -379,7 +381,7 @@ export default function Dashboard() {
           </div>
 
           <div className="bg-white p-4 rounded-xl shadow-sm self-start">
-            <h3 className="mb-3 text-base font-semibold">Estado de los albaranes</h3>
+            <h3 className="mb-3 text-base font-semibold">{t('dashboard.orderStatus')}</h3>
             {loading ? (
               <div className="h-56 md:h-64 rounded-lg bg-gray-100 animate-pulse" />
             ) : (
@@ -391,11 +393,11 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Nueva gráfica: Ventas por mes */}
+      {/* Nueva grÃ¡fica: Ventas por mes */}
       {!err && (
         <div className="bg-white p-4 rounded-xl shadow-sm">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-3">
-            <h3 className="text-base font-semibold">Ventas por mes (albaranes) ({monthsWindowVentas} meses)</h3>
+            <h3 className="text-base font-semibold">{t('dashboard.salesChart', { months: monthsWindowVentas })}</h3>
             <div className="flex flex-wrap items-center gap-2">
               <button
                 className={`px-2.5 py-1 rounded-lg border text-sm ${monthsWindowVentas === 6 ? 'bg-gray-100' : 'bg-white hover:bg-gray-50'}`}
@@ -411,7 +413,7 @@ export default function Dashboard() {
               >
                 12M
               </button>
-              <div className="text-sm text-gray-600">{loading ? '…' : `Total: ${albaranes.length} albaranes`}</div>
+              <div className="text-sm text-gray-600">{loading ? 'â€¦' : t('dashboard.totalDeliveries', { count: albaranes.length })}</div>
             </div>
           </div>
           {loading ? (
@@ -424,42 +426,42 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Últimos movimientos */}
+      {/* Ãšltimos movimientos */}
       <div className="bg-white p-4 rounded-xl shadow-sm">
         <div className="flex items-center justify-between gap-3 mb-3">
-          <h3 className="text-base font-semibold">Últimos movimientos</h3>
+          <h3 className="text-base font-semibold">{t('dashboard.recentMovements')}</h3>
           <a
             href="/movimientos"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black text-white text-sm font-medium hover:bg-gray-800 transition-colors"
           >
-            Ver todos los movimientos →
+            {t('dashboard.viewAllMovements')}
           </a>
         </div>
         <div className="overflow-x-auto rounded-xl">
           <table className="min-w-[600px] w-full border-collapse">
             <thead>
               <tr className="text-left border-b border-gray-200">
-                <th className="p-2">Fecha</th>
-                <th className="p-2">Tipo</th>
-                <th className="p-2">Descripción</th>
-                <th className="p-2">Cantidad</th>
+                <th className="p-2">{t('dashboard.colDate')}</th>
+                <th className="p-2">{t('dashboard.colType')}</th>
+                <th className="p-2">{t('dashboard.colDesc')}</th>
+                <th className="p-2">{t('dashboard.colAmount')}</th>
               </tr>
             </thead>
             <tbody>
               {loading && (
-                <tr><td colSpan={4} className="p-3 text-sm text-gray-500">Cargando…</td></tr>
+                <tr><td colSpan={4} className="p-3 text-sm text-gray-500">{t('common.loading')}</td></tr>
               )}
               {!loading && ultimosMovs.length === 0 && (
-                <tr><td colSpan={4} className="p-3 text-sm text-gray-500">No hay movimientos.</td></tr>
+                <tr><td colSpan={4} className="p-3 text-sm text-gray-500">{t('dashboard.noMovements')}</td></tr>
               )}
               {!loading && ultimosMovs.map(m => (
                 <Row
                   key={m.id}
-                  fecha={fmtDate(m.fecha)}
-                  tipo={m.tipo === 'INGRESO' ? 'Ingreso' : 'Gasto'}
-                  ingreso={m.tipo === 'INGRESO'}
-                  desc={m.concepto}
-                  monto={eur(m.cantidad)}
+                  fecha={fmtDate(m.date)}
+                  tipo={m.type === 'INGRESO' ? t('dashboard.incomeType') : t('dashboard.expenseType')}
+                  ingreso={m.type === 'INGRESO'}
+                  desc={m.description}
+                  monto={eur(m.amount)}
                 />
               ))}
             </tbody>
@@ -467,11 +469,11 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Almacén (ALMACEN) */}
+      {/* AlmacÃ©n (ALMACEN) */}
       <div className="bg-white p-4 rounded-xl shadow-sm">
         <div className="flex items-center justify-between gap-3 mb-3">
-          <h3 className="text-base font-semibold">Almacén · Pendientes de salida</h3>
-          <div className="text-sm text-gray-600">{loading ? '…' : `${almacen.length} total`}</div>
+          <h3 className="text-base font-semibold">{t('dashboard.warehouseSection')}</h3>
+          <div className="text-sm text-gray-600">{loading ? 'â€¦' : `${almacen.length} total`}</div>
         </div>
 
         <TablaPedidos
@@ -484,46 +486,47 @@ export default function Dashboard() {
             href="/transporte"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-black hover:bg-gray-800 shadow-sm transition-colors"
           >
-            Organizar transporte
+            {t('dashboard.organizeTransport')}
           </a>
         </div>
       </div>
 
-      {/* NOTA: Se ha eliminado la sección visual de “En ruta” */}
+      {/* NOTA: Se ha eliminado la secciÃ³n visual de â€œEn rutaâ€ */}
     </div>
   );
 }
 
 function TablaPedidos({ rows, clientesMap }) {
+  const { t } = useTranslation();
   return (
     <div className="overflow-x-auto">
       <table className="min-w-[500px] w-full border-collapse">
         <thead>
           <tr className="text-left border-b border-gray-200">
-            <th className="p-2 w-20">ID</th>
-            <th className="p-2 w-32">Fecha</th>
-            <th className="p-2">Cliente</th>
-            <th className="p-2 w-28">DNI</th>
-            <th className="p-2 w-28">Total</th>
+            <th className="p-2 w-20">{t('dashboard.colID')}</th>
+            <th className="p-2 w-32">{t('dashboard.colDate')}</th>
+            <th className="p-2">{t('dashboard.colClient')}</th>
+            <th className="p-2 w-28">{t('dashboard.colDNI')}</th>
+            <th className="p-2 w-28">{t('dashboard.colTotal')}</th>
           </tr>
         </thead>
         <tbody>
           {rows.length === 0 && (
-            <tr><td colSpan={5} className="p-3 text-sm text-gray-500">No hay pedidos.</td></tr>
+            <tr><td colSpan={5} className="p-3 text-sm text-gray-500">{t('dashboard.noOrders')}</td></tr>
           )}
           {rows.map(a => {
-            const c = clientesMap.get(a.cliente_id);
+            const c = clientesMap.get(a.customer_id);
             return (
               <tr
                 key={a.id}
                 className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
                 onClick={() => { try { localStorage.setItem('albaran_open_id', String(a.id)); } catch {} window.location.href = '/albaranes'; }}
-                title={`Ir al albarán #${a.id}`}
+                title={`Ir al albarÃ¡n #${a.id}`}
               >
                 <td className="p-2">#{a.id}</td>
-                <td className="p-2">{fmtDate(a.fecha)}</td>
-                <td className="p-2">{c ? `${c.nombre} ${c.apellidos}` : `Cliente #${a.cliente_id}`}</td>
-                <td className="p-2">{c?.dni || '—'}</td>
+                <td className="p-2">{fmtDate(a.date)}</td>
+                <td className="p-2">{c ? `${c.name} ${c.surnames}` : `Cliente #${a.customer_id}`}</td>
+                <td className="p-2">{c?.dni || 'â€”'}</td>
                 <td className="p-2">{eur(a.total)}</td>
               </tr>
             );
@@ -545,7 +548,7 @@ function SkeletonCard() {
 }
 
 function StatCard({ title, value, delta, deltaLabel, hint, invertColors = false }) {
-  const [displayed, setDisplayed] = useState('…');
+  const [displayed, setDisplayed] = useState('â€¦');
 
   useEffect(() => {
     // Try to extract a number from the value string to animate

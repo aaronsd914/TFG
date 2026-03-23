@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+﻿import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { sileo } from "sileo";
 import {
   Chart as ChartJS,
@@ -37,6 +38,7 @@ function defaultRange() {
 }
 
 export default function TendenciasPage() {
+  const { t } = useTranslation();
   // --- Rangos y resumen ---
   const [range, setRange] = useState(defaultRange);
   const [loading, setLoading] = useState(true);
@@ -57,10 +59,9 @@ export default function TendenciasPage() {
       id: crypto.randomUUID(),
       role: "assistant",
       content:
-        "Hola 👋. Puedes preguntarme por ventas, productos, clientes, comparativas por fechas, o lo que necesites.",
+        t('trends.aiGreeting'),
     },
-  ]);
-  const [input, setInput] = useState("");
+  ]);  const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const chatEndRef = useRef(null);
@@ -308,7 +309,7 @@ export default function TendenciasPage() {
       {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: "Chat reiniciado. Pregúntame cualquier cosa 🙂",
+        content: t('trends.clearChatMsg'),
       },
     ]);
   }
@@ -389,13 +390,13 @@ export default function TendenciasPage() {
       {/* HEADER */}
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Tendencias</h1>
-          <p className="text-sm text-gray-600">Rango, comparativa, exportación PDF y asistente IA.</p>
+          <h1 className="text-2xl font-semibold">{t('trends.title')}</h1>
+          <p className="text-sm text-gray-600">{t('trends.subtitle')}</p>
         </div>
 
         <div className="flex flex-wrap items-end gap-2">
           <div>
-            <label className="block text-xs text-gray-600">Desde</label>
+            <label className="block text-xs text-gray-600">{t('trends.from')}</label>
             <input
               type="date"
               className="border rounded-2xl px-3 py-2 bg-white"
@@ -404,7 +405,7 @@ export default function TendenciasPage() {
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-600">Hasta</label>
+            <label className="block text-xs text-gray-600">{t('trends.to')}</label>
             <input
               type="date"
               className="border rounded-2xl px-3 py-2 bg-white"
@@ -414,13 +415,13 @@ export default function TendenciasPage() {
           </div>
 
           <button className="text-sm px-3 py-2 rounded-2xl border bg-white hover:bg-gray-50" onClick={() => lastDays(7)}>
-            7 días
+            {t('trends.days7')}
           </button>
           <button className="text-sm px-3 py-2 rounded-2xl border bg-white hover:bg-gray-50" onClick={() => lastDays(30)}>
-            30 días
+            {t('trends.days30')}
           </button>
           <button className="text-sm px-3 py-2 rounded-2xl border bg-white hover:bg-gray-50" onClick={() => lastDays(90)}>
-            90 días
+            {t('trends.days90')}
           </button>
 
           <div className="flex items-center gap-2 ml-2">
@@ -431,30 +432,30 @@ export default function TendenciasPage() {
               onChange={(e) => setCompareEnabled(e.target.checked)}
             />
             <label htmlFor="compare" className="text-sm text-gray-700">
-              Comparar periodo anterior
+              {t('trends.comparePrev')}
             </label>
           </div>
 
           <div className="flex gap-2 ml-2">
             <button
               onClick={() => exportPdf(true)}
-              title="Exporta el informe del período seleccionado en PDF"
+              title={t('trends.exportTitle')}
               className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-2xl border bg-white hover:bg-gray-50"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
               </svg>
-              Exportar análisis
+              {t('trends.exportAnalysis')}
             </button>
             <button
               onClick={() => exportPdf(false)}
-              title="Exporta el análisis más la comparativa con el período anterior"
+              title={t('trends.exportCompTitle')}
               className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-2xl bg-black text-white hover:opacity-90"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
               </svg>
-              Exportar + comparativa
+              {t('trends.exportWithComparison')}
             </button>
           </div>
         </div>
@@ -463,30 +464,30 @@ export default function TendenciasPage() {
       {/* BODY */}
       <div className="space-y-4">
           {loading ? (
-            <div className="rounded-2xl border bg-white p-4">Cargando…</div>
+            <div className="rounded-2xl border bg-white p-4">{t('trends.loading')}</div>
           ) : err ? (
             <div className="rounded-2xl border bg-white p-4">
-              <div className="text-red-700 font-semibold">Error</div>
+              <div className="text-red-700 font-semibold">{t('trends.error')}</div>
               <div className="text-red-700 whitespace-pre-wrap">{err}</div>
             </div>
           ) : (
             <>
               <div className="rounded-2xl border bg-white p-4">
-                <div className="text-sm text-gray-600">Rango</div>
+                <div className="text-sm text-gray-600">{t('trends.range')}</div>
                 <div className="text-lg font-semibold">{titleRange}</div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-                <KPI label="Ingresos" value={eur(avg.revenue)} />
-                <KPI label="Pedidos" value={String(avg.orders)} />
-                <KPI label="AOV" value={eur(avg.aov)} />
-                <KPI label="Gasto medio/cliente" value={eur(avg.avg_per_customer)} />
+                <KPI label={t('trends.kpiIncome')} value={eur(avg.revenue)} />
+                <KPI label={t('trends.kpiOrders')} value={String(avg.orders)} />
+                <KPI label={t('trends.kpiAOV')} value={eur(avg.aov)} />
+                <KPI label={t('trends.kpiAvgSpend')} value={eur(avg.avg_per_customer)} />
               </div>
 
               {compareEnabled && (
                 <div className="rounded-2xl border bg-white p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold">Comparativa</h3>
+                    <h3 className="font-semibold">{t('trends.comparison')}</h3>
                   </div>
 
                   {compareErr ? (
@@ -496,42 +497,42 @@ export default function TendenciasPage() {
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="border-b">
-                            <th className="text-left p-2">Métrica</th>
-                            <th className="text-right p-2">Actual</th>
-                            <th className="text-right p-2">Anterior</th>
+                            <th className="text-left p-2">{t('trends.colMetric')}</th>
+                            <th className="text-right p-2">{t('trends.colCurrent')}</th>
+                            <th className="text-right p-2">{t('trends.colPrev')}</th>
                             <th className="text-right p-2">Δ</th>
                             <th className="text-right p-2">%</th>
                           </tr>
                         </thead>
                         <tbody>
-                          <RowDelta label="Ingresos" d={delta.revenue} money />
-                          <RowDelta label="Pedidos" d={delta.orders} />
-                          <RowDelta label="AOV" d={delta.aov} money />
+                          <RowDelta label={t('trends.kpiIncome')} d={delta.revenue} money />
+                          <RowDelta label={t('trends.kpiOrders')} d={delta.orders} />
+                          <RowDelta label={t('trends.kpiAOV')} d={delta.aov} money />
                         </tbody>
                       </table>
 
                       {aiCompare && (
                         <div className="mt-3">
-                          <div className="font-semibold mb-1">Lectura IA</div>
+                          <div className="font-semibold mb-1">{t('trends.aiReading')}</div>
                           <RenderedMessage content={aiCompare} />
                         </div>
                       )}
                     </>
                   ) : (
-                    <div className="text-sm text-gray-600">No hay datos de comparativa.</div>
+                    <div className="text-sm text-gray-600">{t('trends.noCompareData')}</div>
                   )}
                 </div>
               )}
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div className="rounded-2xl border bg-white p-4">
-                  <h3 className="font-semibold mb-2">Top productos</h3>
+                  <h3 className="font-semibold mb-2">{t('trends.topProducts')}</h3>
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b">
-                        <th className="text-left p-2">Producto</th>
-                        <th className="text-right p-2">Unidades</th>
-                        <th className="text-right p-2">Facturación</th>
+                        <th className="text-left p-2">{t('trends.colProduct')}</th>
+                        <th className="text-right p-2">{t('trends.colUnits')}</th>
+                        <th className="text-right p-2">{t('trends.colRevenue')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -545,7 +546,7 @@ export default function TendenciasPage() {
                       {top.length === 0 && (
                         <tr>
                           <td className="p-2 text-gray-600" colSpan={3}>
-                            Sin datos.
+                            {t('trends.noData')}
                           </td>
                         </tr>
                       )}
@@ -554,25 +555,25 @@ export default function TendenciasPage() {
                 </div>
 
                 <div className="rounded-2xl border bg-white p-4">
-                  <h3 className="font-semibold mb-2">Ventas por día (últimos 14)</h3>
+                  <h3 className="font-semibold mb-2">{t('trends.salesByDay')}</h3>
                   <div className="space-y-2">
                     {sbd.slice(-14).map((r) => (
                       <div key={r.date} className="flex items-center justify-between text-sm border rounded-2xl px-3 py-2">
                         <span className="text-gray-700">{r.date}</span>
-                        <span className="text-gray-700">{r.orders} pedidos</span>
+                        <span className="text-gray-700">{r.orders} {t('trends.ordersLabel')}</span>
                         <span className="font-semibold">{eur(r.revenue)}</span>
                       </div>
                     ))}
-                    {sbd.length === 0 && <div className="text-sm text-gray-600">Sin datos.</div>}
+                    {sbd.length === 0 && <div className="text-sm text-gray-600">{t('trends.noData')}</div>}
                   </div>
                 </div>
               </div>
 
               <div className="rounded-2xl border bg-white p-4">
-                <h3 className="font-semibold mb-2">Informe IA</h3>
-                <RenderedMessage content={aiReport || "(sin informe)"} />
+                <h3 className="font-semibold mb-2">{t('trends.aiReport')}</h3>
+                <RenderedMessage content={aiReport || t('trends.noAiReport')} />
                 <div className="text-xs text-gray-500 mt-3">
-                  El PDF incluye el informe completo generado por la IA.
+                  {t('trends.aiReportFooter')}
                 </div>
               </div>
             </>
@@ -594,15 +595,15 @@ export default function TendenciasPage() {
             <div className="flex items-center justify-between px-4 py-2.5 border-b bg-gray-50 rounded-t-2xl shrink-0">
               <div className="flex items-center gap-2">
                 <span className="text-base">🤖</span>
-                <h3 className="font-semibold text-sm">Asistente IA</h3>
+                <h3 className="font-semibold text-sm">{t('trends.aiAssistant')}</h3>
                 <span className="text-xs text-gray-500">(Groq)</span>
               </div>
               <button
                 onClick={clearChat}
                 className="text-xs px-2 py-1 rounded-full border hover:bg-gray-100"
-                title="Reiniciar conversación"
+                title={t('trends.resetConversation')}
               >
-                Reiniciar
+                {t('trends.restartBtn')}
               </button>
             </div>
 
@@ -614,16 +615,16 @@ export default function TendenciasPage() {
               ))}
               {sending && (
                 <ChatBubble role="assistant">
-                  <span className="text-sm text-gray-500 italic">Escribiendo…</span>
+                  <span className="text-sm text-gray-500 italic">{t('trends.writing')}</span>
                 </ChatBubble>
               )}
               <div ref={chatEndRef} />
             </div>
 
             <div className="px-3 pt-2 pb-1 flex flex-wrap gap-1.5 shrink-0 border-t">
-              <Chip onClick={() => setInput("¿Qué producto creció más en el rango?")}>Producto que más crece</Chip>
-              <Chip onClick={() => setInput("¿Hay días con picos anómalos de ventas? Describe posibles causas.")}>Detectar picos</Chip>
-              <Chip onClick={() => setInput("Dame 3 acciones para subir el ticket medio (AOV).")}>Subir AOV</Chip>
+              <Chip onClick={() => setInput(t('trends.chipInput1'))}>{t('trends.chip1')}</Chip>
+              <Chip onClick={() => setInput(t('trends.chipInput2'))}>{t('trends.chip2')}</Chip>
+              <Chip onClick={() => setInput(t('trends.chipInput3'))}>{t('trends.chip3')}</Chip>
             </div>
 
             <div className="px-3 pb-3 pt-2 shrink-0">
@@ -631,17 +632,17 @@ export default function TendenciasPage() {
                 <input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Pregunta sobre ventas, productos…"
+                  placeholder={t('trends.chatPlaceholder')}
                   className="flex-1 border rounded-2xl px-3 py-2 bg-white text-sm"
                 />
                 <button
                   disabled={sending || !input.trim()}
                   className="px-3 py-2 rounded-2xl bg-black text-white disabled:opacity-50 text-sm"
                 >
-                  Enviar
+                  {t('trends.send')}
                 </button>
               </form>
-              <div className="text-xs text-gray-500 mt-1">La IA responde con el contexto del rango seleccionado.</div>
+              <div className="text-xs text-gray-500 mt-1">{t('trends.aiContextNote')}</div>
             </div>
           </div>
 
@@ -657,14 +658,13 @@ export default function TendenciasPage() {
               <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
-              Cerrar chat
-            </>
+              {t('trends.closeChat')}            </>
           ) : (
             <>
               <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-3 3v-3z" />
               </svg>
-              Asistente IA
+              {t('trends.aiAssistant')}
             </>
           )}
         </button>
@@ -733,6 +733,7 @@ function RenderedMessage({ content }) {
 }
 
 function ChartBlock({ chart }) {
+  const { t } = useTranslation();
   const type = (chart?.type || "").toLowerCase();
   const title = chart?.options?.title?.text || chart?.title || "Gráfico";
 
@@ -744,7 +745,7 @@ function ChartBlock({ chart }) {
     return (
       <div className="rounded-2xl border bg-white/60 p-3">
         <div className="font-semibold text-sm mb-1">{title}</div>
-        <div className="text-xs text-gray-600">Gráfico no interpretable (config incompleta).</div>
+        <div className="text-xs text-gray-600">{t('trends.chartError')}</div>
       </div>
     );
   }

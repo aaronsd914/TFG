@@ -1,25 +1,25 @@
 import { apiFetch } from './http.js';
 
-export const getProductos = () => apiFetch('productos/get');
+export const getProducts = () => apiFetch('productos/get');
 
-export const getProducto = (id) => apiFetch(`productos/get/${id}`);
+export const getProduct = (id) => apiFetch(`productos/get/${id}`);
 
-export const searchProductos = (q, limit = 20) =>
+export const searchProducts = (q, limit = 20) =>
   apiFetch(`productos/search?q=${encodeURIComponent(q)}&limit=${limit}`);
 
-export const createProducto = (payload) =>
+export const createProduct = (payload) =>
   apiFetch('productos/post', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
 
-export const updateProducto = (id, payload) =>
+export const updateProduct = (id, payload) =>
   apiFetch(`productos/put/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
 
-export const deleteProducto = (id) =>
+export const deleteProduct = (id) =>
   apiFetch(`productos/delete/${id}`, { method: 'DELETE' });

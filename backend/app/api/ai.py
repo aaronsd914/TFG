@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from typing import Optional, Dict, Any, List, Literal
+from typing import Annotated, Optional, Dict, Any, List, Literal
 from datetime import date, datetime
 import json
 import re
@@ -195,8 +195,10 @@ def call_llm_ask(
     return answer, charts
 
 
-@router.post("/ask", response_model=AskResponse)
-def ask_ai(payload: AskPayload, db: Session = Depends(get_db)):
+@router.post(
+    "/ask", response_model=AskResponse, responses={400: {"description": "Bad request"}}
+)
+def ask_ai(payload: AskPayload, db: Annotated[Session, Depends(get_db)]):
     dfrom, dto = daterange_defaults(payload.date_from, payload.date_to)
     metrics = build_metrics(db, dfrom, dto)
     try:
@@ -210,8 +212,12 @@ def ask_ai(payload: AskPayload, db: Session = Depends(get_db)):
     return {"answer": answer_text, "charts": charts, "metrics": metrics}
 
 
-@router.post("/chat", response_model=ChatResponse)
-def chat(payload: ChatPayload, db: Session = Depends(get_db)):
+@router.post(
+    "/chat",
+    response_model=ChatResponse,
+    responses={400: {"description": "Bad request"}},
+)
+def chat(payload: ChatPayload, db: Annotated[Session, Depends(get_db)]):
     if not payload.messages:
         raise HTTPException(400, "messages no puede estar vacío")
 

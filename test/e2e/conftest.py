@@ -35,8 +35,16 @@ def make_driver() -> webdriver.Chrome:
     opts.add_argument("--disable-dev-shm-usage")
     opts.add_argument("--disable-gpu")
     opts.add_argument("--window-size=1920,1080")
+    # Forzar idioma español para que i18next use las traducciones en ES
+    opts.add_argument("--lang=es-ES")
+    opts.add_experimental_option("prefs", {"intl.accept_languages": "es-ES,es"})
     # Selenium Manager descarga ChromeDriver automáticamente (Selenium >= 4.6)
     drv = webdriver.Chrome(options=opts)
+    # Inyectar el idioma español antes de que cargue cualquier página,
+    # para que i18next siempre use ES sin importar el locale del sistema CI.
+    drv.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
+        "source": "window.localStorage.setItem('fg-lang', 'es');"
+    })
     drv.implicitly_wait(5)
     return drv
 

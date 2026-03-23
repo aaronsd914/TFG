@@ -4,27 +4,27 @@ from backend.app.database import Base
 from pydantic import BaseModel
 
 
-class ProveedorDB(Base):
+class SupplierDB(Base):
     __tablename__ = "proveedores"
 
     id = Column(Integer, primary_key=True, index=True)
-    nombre = Column(String, index=True)
-    contacto = Column(String)
+    name = Column("nombre", String, index=True)
+    contact = Column("contacto", String)
 
-    productos = relationship(
-        "ProductoDB", back_populates="proveedor", cascade="all, delete"
+    products = relationship(
+        "ProductDB", back_populates="supplier", cascade="all, delete"
     )
 
 
-class Proveedor(BaseModel):
+class Supplier(BaseModel):
     id: int
-    nombre: str
-    contacto: str
+    name: str
+    contact: str
 
     class Config:
         from_attributes = True
 
 
-class ProveedorCreate(BaseModel):
-    nombre: str
-    contacto: str
+class SupplierCreate(BaseModel):
+    name: str
+    contact: str

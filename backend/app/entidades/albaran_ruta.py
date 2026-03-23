@@ -3,28 +3,27 @@ from sqlalchemy.orm import relationship
 from backend.app.database import Base
 
 
-class AlbaranRutaDB(Base):
+class DeliveryNoteRouteDB(Base):
     """
-    Tabla auxiliar para asignar albaranes (en estado RUTA) a un camión.
-    Evita tener que añadir camion_id a la tabla albaranes.
+    Auxiliary table for assigning delivery notes (status RUTA) to a truck.
+    Avoids adding truck_id to the delivery notes table.
     """
 
     __tablename__ = "albaran_rutas"
 
     id = Column(Integer, primary_key=True, index=True)
 
-    # Un albarán solo puede estar asignado a 1 camión a la vez
-    albaran_id = Column(
+    delivery_note_id = Column(
+        "albaran_id",
         Integer,
         ForeignKey("albaranes.id", ondelete="CASCADE"),
         nullable=False,
         unique=True,
     )
 
-    camion_id = Column(Integer, nullable=False)
+    truck_id = Column("camion_id", Integer, nullable=False)
 
-    # Relación opcional (útil si luego quieres navegar desde SQLAlchemy)
-    albaran = relationship("AlbaranDB")
+    delivery_note = relationship("DeliveryNoteDB")
 
     __table_args__ = (
         UniqueConstraint("albaran_id", name="uq_albaran_rutas_albaran_id"),

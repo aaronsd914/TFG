@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import Annotated, Any
 
 from backend.app.database import get_db
-from backend.app.entidades.configuracion import ConfiguracionDB, ConfiguracionItem
+from backend.app.entidades.configuracion import ConfigDB, ConfigItem
 from backend.app.dependencies import get_current_user
 
 router = APIRouter(
@@ -25,22 +25,22 @@ DEFAULTS: dict[str, str] = {
 
 
 def get_value(db: Session, key: str) -> str:
-    row = db.query(ConfiguracionDB).filter(ConfiguracionDB.key == key).first()
+    row = db.query(ConfigDB).filter(ConfigDB.key == key).first()
     return row.value if row and row.value else DEFAULTS.get(key, "")
 
 
 def set_value(db: Session, key: str, value: str) -> None:
-    row = db.query(ConfiguracionDB).filter(ConfiguracionDB.key == key).first()
+    row = db.query(ConfigDB).filter(ConfigDB.key == key).first()
     if row:
         row.value = value
     else:
-        db.add(ConfiguracionDB(key=key, value=value))
+        db.add(ConfigDB(key=key, value=value))
     db.commit()
 
 
 @router.get("")
 def read_config(db: Annotated[Session, Depends(get_db)]) -> dict[str, Any]:
-    rows = db.query(ConfiguracionDB).all()
+    rows = db.query(ConfigDB).all()
     result = dict(DEFAULTS)
     for r in rows:
         result[r.key] = r.value or ""
@@ -49,13 +49,11 @@ def read_config(db: Annotated[Session, Depends(get_db)]) -> dict[str, Any]:
 
 @router.put(
     "/{key}",
-    response_model=ConfiguracionItem,
+    response_model=ConfigItem,
     responses={400: {"description": "Clave desconocida"}},
 )
-def write_config(
-    key: str, item: ConfiguracionItem, db: Annotated[Session, Depends(get_db)]
-):
+def write_config(key: str, item: ConfigItem, db: Annotated[Session, Depends(get_db)]):
     if key not in DEFAULTS:
         raise HTTPException(status_code=400, detail=f"Clave desconocida: {key}")
     set_value(db, key, item.value or "")
-    return ConfiguracionItem(key=key, value=item.value or "")
+    return ConfigItem(key=key, value=item.value or "")

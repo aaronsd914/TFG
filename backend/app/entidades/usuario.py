@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 
 # ── SQLAlchemy ────────────────────────────────────────────────────────────────
-class UsuarioDB(Base):
+class UserDB(Base):
     __tablename__ = "usuarios"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -17,7 +17,7 @@ class UsuarioDB(Base):
 
 
 # ── Pydantic ──────────────────────────────────────────────────────────────────
-class Usuario(BaseModel):
+class User(BaseModel):
     id: int
     username: str
     role: str
@@ -26,7 +26,7 @@ class Usuario(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class UsuarioCreate(BaseModel):
+class UserCreate(BaseModel):
     username: str
     password: str
     role: str = "vendedor"

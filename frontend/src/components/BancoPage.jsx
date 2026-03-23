@@ -1,5 +1,6 @@
 // frontend/src/components/BancoPage.jsx
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { sileo } from 'sileo';
 import { API_URL } from '../config.js';
 
@@ -9,6 +10,7 @@ function eur(n) {
 }
 
 export default function BancoPage() {
+  const { t } = useTranslation();
   // ===== Stripe =====
   const [stripeStatus, setStripeStatus] = useState({ configured: false, currency: 'eur' });
   const [stripeAmount, setStripeAmount] = useState('');
@@ -63,15 +65,15 @@ export default function BancoPage() {
 
     if (stripeResult === 'cancel') {
       sileo.warning({
-        title: 'Pago cancelado',
-        description: 'El cliente canceló el pago en Stripe.',
+        title: t('bank.toastCancelled'),
+        description: t('bank.toastCancelledDesc'),
       });
       return;
     }
 
     if (stripeResult === 'success') {
       if (!sessionId) {
-        sileo.success({ title: 'Pago completado', description: 'Stripe confirmó el pago.' });
+        sileo.success({ title: t('bank.toastCompleted'), description: t('bank.toastCompletedDesc') });
         loadStripeCheckouts();
         return;
       }
@@ -90,13 +92,13 @@ export default function BancoPage() {
               return data;
             },
             {
-              loading: { title: 'Confirmando pago…' },
+              loading: { title: t('bank.toastConfirming') },
               success: (data) => ({
-                title: data.created ? 'Cobro registrado' : 'Cobro ya registrado',
+                title: data.created ? t('bank.toastRegistered') : t('bank.toastAlreadyRegistered'),
                 description: `${eur(data.amount)} · ${data.description || 'Stripe'}`,
               }),
               error: (e) => ({
-                title: 'No se pudo confirmar el pago',
+                title: t('bank.toastConfirmError'),
                 description: e?.message || 'Error desconocido',
               }),
             }
@@ -153,7 +155,7 @@ export default function BancoPage() {
   return (
     <div className="p-3 md:p-6 space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <h1 className="text-2xl font-semibold">Banco</h1>
+        <h1 className="text-2xl font-semibold">{t('bank.title')}</h1>
         <button
           onClick={async () => {
             await loadStripeStatus();
@@ -169,7 +171,7 @@ export default function BancoPage() {
       <div className="bg-white border rounded-2xl p-4">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-sm text-gray-600">Estado Stripe</div>
+            <div className="text-sm text-gray-600">{t('bank.stripeStatus')}</div>
             <div className="text-lg font-semibold">{stripeStatus.configured ? 'Configurado' : 'No configurado'}</div>
             <div className="text-sm text-gray-500">Moneda: {(stripeStatus.currency || 'eur').toUpperCase()}</div>
           </div>
@@ -190,7 +192,7 @@ STRIPE_PUBLISHABLE_KEY = "pk_test_..."
       </div>
 
       <section className="bg-white border rounded-2xl p-4 space-y-4">
-        <h3 className="font-semibold">Crear cobro (Stripe Checkout)</h3>
+        <h3 className="font-semibold">{t('bank.createCharge')}</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
             <label className="block text-sm text-gray-600 mb-1">Importe (€)</label>
@@ -200,17 +202,17 @@ STRIPE_PUBLISHABLE_KEY = "pk_test_..."
               value={stripeAmount}
               onChange={(e) => setStripeAmount(e.target.value)}
               className="w-full border rounded-xl px-3 py-2"
-              placeholder="Ej: 49.99"
+              placeholder={t('bank.amountPlaceholder')}
             />
           </div>
           <div className="md:col-span-2">
-            <label className="block text-sm text-gray-600 mb-1">Descripción</label>
+            <label className="block text-sm text-gray-600 mb-1">{t('bank.descLabel')}</label>
             <input
               type="text"
               value={stripeDesc}
               onChange={(e) => setStripeDesc(e.target.value)}
               className="w-full border rounded-xl px-3 py-2"
-              placeholder="Ej: Cobro tienda"
+              placeholder={t('bank.descPlaceholder')}
             />
           </div>
         </div>
@@ -226,19 +228,19 @@ STRIPE_PUBLISHABLE_KEY = "pk_test_..."
 
       <section className="bg-white border rounded-2xl p-4 space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold">Últimos cobros Stripe</h3>
-          <span className="text-xs text-gray-500">Se registran al volver del pago</span>
+          <h3 className="font-semibold">{t('bank.recentCharges')}</h3>
+          <span className="text-xs text-gray-500">{t('bank.recentChargesHint')}</span>
         </div>
 
         <div className="overflow-x-auto rounded-xl">
           <table className="min-w-[600px] w-full text-sm">
             <thead className="bg-gray-50">
               <tr className="border-b">
-                <th className="text-left p-2">Fecha</th>
-                <th className="text-left p-2">Descripción</th>
-                <th className="text-left p-2">Session</th>
-                <th className="text-right p-2">Importe</th>
-                <th className="text-left p-2">Estado</th>
+                <th className="text-left p-2">{t('bank.colDate')}</th>
+                <th className="text-left p-2">{t('bank.colDesc')}</th>
+                <th className="text-left p-2">{t('bank.colSession')}</th>
+                <th className="text-right p-2">{t('bank.colAmount')}</th>
+                <th className="text-left p-2">{t('bank.colStatus')}</th>
               </tr>
             </thead>
             <tbody>

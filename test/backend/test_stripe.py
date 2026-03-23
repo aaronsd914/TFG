@@ -1,11 +1,11 @@
-"""Tests para /api/stripe — status, checkout, confirm (con mocks), checkouts list."""
+"""Tests para /api/stripe â€” status, checkout, confirm (con mocks), checkouts list."""
 import pytest
 from unittest.mock import MagicMock, patch
 
 
 @pytest.fixture(autouse=True)
 def mock_stripe_secret_key():
-    """Evita que los tests fallen por STRIPE_SECRET_KEY vacía en CI."""
+    """Evita que los tests fallen por STRIPE_SECRET_KEY vacÃ­a en CI."""
     with patch("backend.app.api.stripe_payments.STRIPE_SECRET_KEY", "sk_test_fake_ci_key"):
         yield
 
@@ -53,11 +53,11 @@ class TestStripeConfirm:
         assert r.status_code == 400
 
     def test_confirm_ok_con_mock(self, client):
-        """Simula una sesión pagada y comprueba que se crea el movimiento."""
+        """Simula una sesiÃ³n pagada y comprueba que se crea el movimiento."""
         fake_session = MagicMock()
         fake_session.payment_status = "paid"
         fake_session.status = "complete"
-        fake_session.amount_total = 4999  # céntimos → 49.99 €
+        fake_session.amount_total = 4999  # cÃ©ntimos â†’ 49.99 â‚¬
         fake_session.currency = "eur"
         fake_session.metadata = {"description": "Pago test mock"}
         fake_session.payment_intent = "pi_fake"
@@ -73,12 +73,12 @@ class TestStripeConfirm:
 
         # Debe existir un movimiento de INGRESO por esa cantidad
         movs = client.get("/api/movimientos/get").json()
-        stripe_movs = [m for m in movs if "Stripe" in m["concepto"]]
+        stripe_movs = [m for m in movs if "Stripe" in m["description"]]
         assert len(stripe_movs) == 1
-        assert stripe_movs[0]["cantidad"] == 49.99
+        assert stripe_movs[0]["amount"] == 49.99
 
     def test_confirm_idempotente(self, client):
-        """Confirmar dos veces la misma sesión no duplica el movimiento."""
+        """Confirmar dos veces la misma sesiÃ³n no duplica el movimiento."""
         fake_session = MagicMock()
         fake_session.payment_status = "paid"
         fake_session.status = "complete"
@@ -98,7 +98,7 @@ class TestStripeConfirm:
         assert r2.json()["created"] is False  # segunda vez no crea duplicado
 
         movs = client.get("/api/movimientos/get").json()
-        stripe_movs = [m for m in movs if "Stripe" in m["concepto"]]
+        stripe_movs = [m for m in movs if "Stripe" in m["description"]]
         assert len(stripe_movs) == 1
 
     def test_confirm_no_pagado_devuelve_400(self, client):

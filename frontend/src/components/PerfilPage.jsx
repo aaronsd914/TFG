@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 import { apiFetch } from '../api/http.js';
 import { getToken, removeToken } from '../api/auth.js';
 import { useNavigate } from 'react-router-dom';
+import { sileo } from 'sileo';
 
 export default function PerfilPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Decode current username from JWT
   const currentUsername = (() => {
@@ -19,13 +22,11 @@ export default function PerfilPage() {
 
   // ── Change username ────────────────────────────────────────────────────────
   const [uForm, setUForm] = useState({ current_password: '', new_username: '' });
-  const [uStatus, setUStatus] = useState(null);
   const [uLoading, setULoading] = useState(false);
 
   async function handleUsernameSubmit(e) {
     e.preventDefault();
     setULoading(true);
-    setUStatus(null);
     try {
       await apiFetch('auth/me', {
         method: 'PUT',
@@ -39,7 +40,7 @@ export default function PerfilPage() {
       removeToken();
       navigate('/login', { replace: true });
     } catch (err) {
-      setUStatus({ ok: false, msg: err.message || 'Error al actualizar usuario' });
+      sileo.error({ title: 'Error', description: err.message || 'Error al actualizar usuario' });
     } finally {
       setULoading(false);
     }
@@ -47,17 +48,15 @@ export default function PerfilPage() {
 
   // ── Change password ────────────────────────────────────────────────────────
   const [pForm, setPForm] = useState({ current_password: '', new_password: '', confirm: '' });
-  const [pStatus, setPStatus] = useState(null);
   const [pLoading, setPLoading] = useState(false);
 
   async function handlePasswordSubmit(e) {
     e.preventDefault();
     if (pForm.new_password !== pForm.confirm) {
-      setPStatus({ ok: false, msg: 'Las contraseñas nuevas no coinciden' });
+      sileo.warning({ title: t('common.warning'), description: t('profile.passwordMismatch') });
       return;
     }
     setPLoading(true);
-    setPStatus(null);
     try {
       await apiFetch('auth/me', {
         method: 'PUT',
@@ -67,10 +66,10 @@ export default function PerfilPage() {
           new_password: pForm.new_password,
         }),
       });
-      setPStatus({ ok: true, msg: 'Contraseña actualizada correctamente' });
+      sileo.success({ title: t('common.ready'), description: t('profile.updateSuccess') });
       setPForm({ current_password: '', new_password: '', confirm: '' });
     } catch (err) {
-      setPStatus({ ok: false, msg: err.message || 'Error al actualizar contraseña' });
+      sileo.error({ title: 'Error', description: err.message || 'Error al actualizar contraseña' });
     } finally {
       setPLoading(false);
     }
@@ -78,65 +77,61 @@ export default function PerfilPage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-lg">
-      <h2 className="text-lg font-semibold">Mi perfil</h2>
+      <h2 className="text-lg font-semibold">{t('profile.title')}</h2>
 
       {/* Current user info */}
       <div className="bg-[#f5f1e8] rounded-2xl px-5 py-4 flex items-center gap-3">
         <span className="text-2xl">👤</span>
         <div>
-          <div className="text-sm text-gray-500">Usuario activo</div>
+          <div className="text-sm text-gray-500">{t('profile.activeUser')}</div>
           <div className="font-semibold">{currentUsername}</div>
         </div>
       </div>
 
       {/* ── Cambiar usuario ── */}
       <section className="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col gap-4">
-        <h3 className="font-semibold text-sm uppercase tracking-wider text-gray-500">Cambiar nombre de usuario</h3>
-        <p className="text-sm text-gray-500">
-          Al cambiar el nombre de usuario se cerrará la sesión y tendrás que volver a iniciarla.
-        </p>
+        <h3 className="font-semibold text-sm uppercase tracking-wider text-gray-500">{t('profile.changeUsername')}</h3>
+        <p className="text-sm text-gray-500">{t('profile.changeUsernameHint')}</p>
         <form onSubmit={handleUsernameSubmit} className="flex flex-col gap-3">
           <Field
-            label="Contraseña actual"
+            label={t('profile.currentPassword')}
             type="password"
             value={uForm.current_password}
             onChange={v => setUForm(f => ({ ...f, current_password: v }))}
             required
           />
           <Field
-            label="Nuevo nombre de usuario"
+            label={t('profile.newUsername')}
             type="text"
             value={uForm.new_username}
             onChange={v => setUForm(f => ({ ...f, new_username: v }))}
             required
             minLength={3}
           />
-          {uStatus && (
-            <Alert ok={uStatus.ok} msg={uStatus.msg} />
-          )}
+
           <button
             type="submit"
             disabled={uLoading}
             className="self-start px-4 py-2 bg-gray-900 text-white rounded-lg text-sm hover:bg-gray-700 disabled:opacity-50 transition-colors"
           >
-            {uLoading ? 'Guardando…' : 'Cambiar usuario'}
+            {uLoading ? t('common.saving') : t('profile.btnChangeUser')}
           </button>
         </form>
       </section>
 
       {/* ── Cambiar contraseña ── */}
       <section className="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col gap-4">
-        <h3 className="font-semibold text-sm uppercase tracking-wider text-gray-500">Cambiar contraseña</h3>
+        <h3 className="font-semibold text-sm uppercase tracking-wider text-gray-500">{t('profile.changePassword')}</h3>
         <form onSubmit={handlePasswordSubmit} className="flex flex-col gap-3">
           <Field
-            label="Contraseña actual"
+            label={t('profile.currentPassword')}
             type="password"
             value={pForm.current_password}
             onChange={v => setPForm(f => ({ ...f, current_password: v }))}
             required
           />
           <Field
-            label="Nueva contraseña"
+            label={t('profile.newPassword')}
             type="password"
             value={pForm.new_password}
             onChange={v => setPForm(f => ({ ...f, new_password: v }))}
@@ -144,22 +139,20 @@ export default function PerfilPage() {
             minLength={8}
           />
           <Field
-            label="Confirmar nueva contraseña"
+            label={t('profile.confirmPassword')}
             type="password"
             value={pForm.confirm}
             onChange={v => setPForm(f => ({ ...f, confirm: v }))}
             required
             minLength={8}
           />
-          {pStatus && (
-            <Alert ok={pStatus.ok} msg={pStatus.msg} />
-          )}
+
           <button
             type="submit"
             disabled={pLoading}
             className="self-start px-4 py-2 bg-gray-900 text-white rounded-lg text-sm hover:bg-gray-700 disabled:opacity-50 transition-colors"
           >
-            {pLoading ? 'Guardando…' : 'Cambiar contraseña'}
+            {pLoading ? t('common.saving') : t('profile.btnChangePassword')}
           </button>
         </form>
       </section>
@@ -189,16 +182,4 @@ Field.propTypes = {
   onChange: PropTypes.func.isRequired,
   required: PropTypes.bool,
   minLength: PropTypes.number,
-};
-
-function Alert({ ok, msg }) {
-  return (
-    <div className={`rounded-lg px-3 py-2 text-sm ${ok ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
-      {msg}
-    </div>
-  );
-}
-Alert.propTypes = {
-  ok: PropTypes.bool,
-  msg: PropTypes.string,
 };

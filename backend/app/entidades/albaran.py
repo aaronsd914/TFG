@@ -5,72 +5,66 @@ from pydantic import BaseModel
 from datetime import date
 from typing import List, Optional, Literal
 
-# Estados internos (valores en DB)
-# FIANZA -> "Fianza"
-# ALMACEN -> "Almacén"
-# TRANSPORTE -> "Ruta"
-# ENTREGADO -> "Entregado"
+# Internal status values (stored in DB)
+# FIANZA   -> deposit/bond
+# ALMACEN  -> warehouse
+# TRANSPORTE -> in route
+# ENTREGADO -> delivered
+DeliveryNoteStatus = Literal["FIANZA", "ALMACEN", "RUTA", "ENTREGADO"]
 
 
-class AlbaranDB(Base):
+class DeliveryNoteDB(Base):
     __tablename__ = "albaranes"
 
     id = Column(Integer, primary_key=True, index=True)
-    fecha = Column(Date, nullable=False)
-    descripcion = Column(String)
+    date = Column("fecha", Date, nullable=False)
+    description = Column("descripcion", String)
     total = Column(Float, default=0.0)
+    status = Column("estado", String, default="FIANZA", nullable=False)
 
-    # NUEVO: estado
-    # valores esperados: FIANZA | ALMACEN | TRANSPORTE | ENTREGADO
-    estado = Column(String, default="FIANZA", nullable=False)
+    customer_id = Column("cliente_id", Integer, ForeignKey("clientes.id"))
+    customer = relationship("CustomerDB", back_populates="delivery_notes")
 
-    cliente_id = Column(Integer, ForeignKey("clientes.id"))
-    cliente = relationship("ClienteDB", back_populates="albaranes")
-
-    # líneas del albarán
-    lineas = relationship(
-        "LineaAlbaranDB",
-        back_populates="albaran",
+    items = relationship(
+        "DeliveryNoteLineDB",
+        back_populates="delivery_note",
         cascade="all, delete-orphan",
     )
 
 
-# ---- Pydantic (respuestas) ----
-class AlbaranLinea(BaseModel):
+# ---- Pydantic (responses) ----
+class DeliveryNoteItem(BaseModel):
     id: int
-    producto_id: int
-    cantidad: int
-    precio_unitario: float
+    product_id: int
+    quantity: int
+    unit_price: float
 
     class Config:
         from_attributes = True
 
 
-OneWordEstado = Literal["FIANZA", "ALMACEN", "RUTA", "ENTREGADO"]
-
-
-class Albaran(BaseModel):
+class DeliveryNote(BaseModel):
     id: int
-    fecha: date
-    descripcion: Optional[str] = None
+    date: date
+    description: Optional[str] = None
     total: float
-    cliente_id: int
-    estado: OneWordEstado
-    lineas: List[AlbaranLinea] = []
+    customer_id: int
+    status: DeliveryNoteStatus
+    items: List[DeliveryNoteItem] = []
 
     class Config:
         from_attributes = True
 
 
-# ---- Pydantic (creación) ----
-class AlbaranLineaCreate(BaseModel):
-    producto_id: int
-    cantidad: int
-    precio_unitario: float | None = None  # si no llega, usamos el precio del producto
+# ---- Pydantic (creation) ----
+class DeliveryNoteItemCreate(BaseModel):
+    product_id: int
+    quantity: int
+    unit_price: float | None = None  # if not provided, uses product price
 
 
-class AlbaranCreate(BaseModel):
-    fecha: date
-    descripcion: Optional[str] = None
-    cliente_id: int  # si prefieres crear cliente “en línea”, abajo hay otra variante
-    estado: OneWordEstado = "FIANZA"
+class DeliveryNoteCreate(BaseModel):
+    date: date
+    description: Optional[str] = None
+    customer_id: int
+    status: DeliveryNoteStatus = "FIANZA"
