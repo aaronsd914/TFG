@@ -20,7 +20,7 @@ const _i18nTranslations = {
   'login.subtitle': 'Panel de gestión',
   'login.username': 'Usuario',
   'login.usernamePlaceholder': 'Nombre de usuario',
-  'login.password': 'Contraseña',
+  'login.password': 'Contraseña', // NOSONAR
   'login.passwordPlaceholder': '••••••••',
   'login.showPassword': 'Mostrar contraseña',
   'login.hidePassword': 'Ocultar contraseña',
