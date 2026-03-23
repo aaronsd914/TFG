@@ -234,14 +234,20 @@ class SettleTruckOut(BaseModel):
     movimiento_id: int
 
 
-@router.post("/ruta/asignar")
+_EMPTY_IDS_ERROR = "albaran_ids vacio"
+
+
+@router.post(
+    "/ruta/asignar",
+    responses={400: {"description": "Bad request"}, 404: {"description": "Not found"}},
+)
 def assign_route(body: AssignRouteBody, db: Annotated[Session, Depends(get_db)]):
     """
     Assigns one or more delivery notes to a specific truck. Notes in ALMACEN
     status move to RUTA. Also accepts reassigning notes already in RUTA.
     """
     if not body.albaran_ids:
-        raise HTTPException(status_code=400, detail="albaran_ids vacio")
+        raise HTTPException(status_code=400, detail=_EMPTY_IDS_ERROR)
     if body.camion_id <= 0:
         raise HTTPException(status_code=400, detail="camion_id debe ser > 0")
 
@@ -282,14 +288,17 @@ def assign_route(body: AssignRouteBody, db: Annotated[Session, Depends(get_db)])
     return {"ok": True, "camion_id": body.camion_id, "n": len(delivery_notes)}
 
 
-@router.post("/ruta/quitar")
+@router.post(
+    "/ruta/quitar",
+    responses={400: {"description": "Bad request"}, 404: {"description": "Not found"}},
+)
 def remove_route(body: RemoveRouteBody, db: Annotated[Session, Depends(get_db)]):
     """
     Removes delivery notes from their truck and returns them to ALMACEN status,
     also deleting their route table entry.
     """
     if not body.albaran_ids:
-        raise HTTPException(status_code=400, detail="albaran_ids vacio")
+        raise HTTPException(status_code=400, detail=_EMPTY_IDS_ERROR)
 
     delivery_notes = (
         db.query(DeliveryNoteDB).filter(DeliveryNoteDB.id.in_(body.albaran_ids)).all()
@@ -310,14 +319,17 @@ def remove_route(body: RemoveRouteBody, db: Annotated[Session, Depends(get_db)])
     return {"ok": True, "n": len(delivery_notes)}
 
 
-@router.post("/ruta/pendiente")
+@router.post(
+    "/ruta/pendiente",
+    responses={400: {"description": "Bad request"}, 404: {"description": "Not found"}},
+)
 def set_pending(body: PendingBody, db: Annotated[Session, Depends(get_db)]):
     """
     Marks delivery notes as 'in route without assigned truck' (keeps RUTA status
     but removes the truck assignment so they can be reassigned later).
     """
     if not body.albaran_ids:
-        raise HTTPException(status_code=400, detail="albaran_ids vacio")
+        raise HTTPException(status_code=400, detail=_EMPTY_IDS_ERROR)
 
     delivery_notes = (
         db.query(DeliveryNoteDB).filter(DeliveryNoteDB.id.in_(body.albaran_ids)).all()
@@ -345,7 +357,11 @@ def set_pending(body: PendingBody, db: Annotated[Session, Depends(get_db)]):
     return {"ok": True, "n": len(delivery_notes)}
 
 
-@router.post("/ruta/{truck_id}/liquidar", response_model=SettleTruckOut)
+@router.post(
+    "/ruta/{truck_id}/liquidar",
+    response_model=SettleTruckOut,
+    responses={400: {"description": "Bad request"}, 404: {"description": "Not found"}},
+)
 def settle_truck(truck_id: int, db: Annotated[Session, Depends(get_db)]):
     """
     Settles a truck: calculates 7% of the total value of its delivery notes and

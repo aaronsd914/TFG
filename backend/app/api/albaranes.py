@@ -157,7 +157,64 @@ def _send_delivery_note_email_task(delivery_note_id: int):
         db.close()
 
 
-@router.post("/albaranes/post", response_model=DeliveryNote)
+def _resolve_customer_id(db: Session, payload: DeliveryNoteCreateFull) -> int:
+    """Resolves or creates the customer from the payload, returning the customer ID."""
+    if payload.customer_id:
+        customer = (
+            db.query(CustomerDB).filter(CustomerDB.id == payload.customer_id).first()
+        )
+        if not customer:
+            raise HTTPException(404, "Cliente no encontrado")
+        return customer.id
+    if not payload.customer:
+        raise HTTPException(400, "Debes indicar cliente_id o datos de cliente")
+    c = None
+    if payload.customer.dni:
+        c = db.query(CustomerDB).filter(CustomerDB.dni == payload.customer.dni).first()
+    if not c and payload.customer.email:
+        c = (
+            db.query(CustomerDB)
+            .filter(CustomerDB.email == payload.customer.email)
+            .first()
+        )
+    if c:
+        for k, v in payload.customer.model_dump().items():
+            if v is not None:
+                setattr(c, k, v)
+        return c.id
+    new_customer = CustomerDB(**payload.customer.model_dump())
+    db.add(new_customer)
+    db.flush()
+    return new_customer.id
+
+
+def _build_delivery_note_lines(
+    db: Session, delivery_note: DeliveryNoteDB, items: List[DeliveryNoteItemCreate]
+) -> float:
+    """Adds delivery note lines to the DB and returns the total price."""
+    total = 0.0
+    for it in items:
+        prod = db.query(ProductDB).filter(ProductDB.id == it.product_id).first()
+        if not prod:
+            raise HTTPException(404, f"Producto {it.product_id} no existe")
+        unit_price = it.unit_price if it.unit_price is not None else prod.price
+        db.add(
+            DeliveryNoteLineDB(
+                delivery_note_id=delivery_note.id,
+                product_id=it.product_id,
+                quantity=it.quantity,
+                unit_price=unit_price,
+            )
+        )
+        total += unit_price * it.quantity
+    return total
+
+
+@router.post(
+    "/albaranes/post",
+    response_model=DeliveryNote,
+    responses={400: {"description": "Bad request"}, 404: {"description": "Not found"}},
+)
 def create_delivery_note(
     payload: DeliveryNoteCreateFull,
     background_tasks: BackgroundTasks,
@@ -168,39 +225,7 @@ def create_delivery_note(
     deposit movement (30% of total by default). Sends the PDF by email to the
     customer in the background.
     """
-    if payload.customer_id:
-        customer = (
-            db.query(CustomerDB).filter(CustomerDB.id == payload.customer_id).first()
-        )
-        if not customer:
-            raise HTTPException(404, "Cliente no encontrado")
-        customer_id = customer.id
-    elif payload.customer:
-        c = None
-        if payload.customer.dni:
-            c = (
-                db.query(CustomerDB)
-                .filter(CustomerDB.dni == payload.customer.dni)
-                .first()
-            )
-        if not c and payload.customer.email:
-            c = (
-                db.query(CustomerDB)
-                .filter(CustomerDB.email == payload.customer.email)
-                .first()
-            )
-        if c:
-            for k, v in payload.customer.model_dump().items():
-                if v is not None:
-                    setattr(c, k, v)
-            customer_id = c.id
-        else:
-            c = CustomerDB(**payload.customer.model_dump())
-            db.add(c)
-            db.flush()
-            customer_id = c.id
-    else:
-        raise HTTPException(400, "Debes indicar cliente_id o datos de cliente")
+    customer_id = _resolve_customer_id(db, payload)
 
     delivery_note = DeliveryNoteDB(
         date=payload.date,
@@ -212,22 +237,7 @@ def create_delivery_note(
     db.add(delivery_note)
     db.flush()
 
-    total = 0.0
-    for it in payload.items:
-        prod = db.query(ProductDB).filter(ProductDB.id == it.product_id).first()
-        if not prod:
-            raise HTTPException(404, f"Producto {it.product_id} no existe")
-        unit_price = it.unit_price if it.unit_price is not None else prod.price
-        line = DeliveryNoteLineDB(
-            delivery_note_id=delivery_note.id,
-            product_id=it.product_id,
-            quantity=it.quantity,
-            unit_price=unit_price,
-        )
-        total += unit_price * it.quantity
-        db.add(line)
-
-    delivery_note.total = total
+    delivery_note.total = _build_delivery_note_lines(db, delivery_note, payload.items)
     db.commit()
     db.refresh(delivery_note)
 
@@ -264,7 +274,11 @@ def list_delivery_notes(db: Annotated[Session, Depends(get_db)]):
     return db.query(DeliveryNoteDB).all()
 
 
-@router.get("/albaranes/get/{delivery_note_id}", response_model=DeliveryNote)
+@router.get(
+    "/albaranes/get/{delivery_note_id}",
+    response_model=DeliveryNote,
+    responses={404: {"description": "Not found"}},
+)
 def get_delivery_note(delivery_note_id: int, db: Annotated[Session, Depends(get_db)]):
     delivery_note = (
         db.query(DeliveryNoteDB).filter(DeliveryNoteDB.id == delivery_note_id).first()
@@ -287,7 +301,11 @@ def delivery_notes_by_customer(
     return q.all()
 
 
-@router.patch("/albaranes/{delivery_note_id}/estado", response_model=DeliveryNote)
+@router.patch(
+    "/albaranes/{delivery_note_id}/estado",
+    response_model=DeliveryNote,
+    responses={400: {"description": "Bad request"}, 404: {"description": "Not found"}},
+)
 def update_status(
     delivery_note_id: int,
     payload: StatusUpdate,
@@ -337,7 +355,10 @@ def update_status(
     return delivery_note
 
 
-@router.get("/albaranes/{delivery_note_id}/pdf")
+@router.get(
+    "/albaranes/{delivery_note_id}/pdf",
+    responses={404: {"description": "Not found"}},
+)
 def download_delivery_note_pdf(
     delivery_note_id: int, db: Annotated[Session, Depends(get_db)]
 ):
