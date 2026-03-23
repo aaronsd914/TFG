@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session, selectinload
-from typing import List, Optional
+from typing import Annotated, List, Optional
 from backend.app.database import get_db, SessionLocal
 from backend.app.entidades.albaran import (
     DeliveryNote,
@@ -161,7 +161,7 @@ def _send_delivery_note_email_task(delivery_note_id: int):
 def create_delivery_note(
     payload: DeliveryNoteCreateFull,
     background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db),
+    db: Annotated[Session, Depends(get_db)],
 ):
     """
     Creates a full delivery note: customer (new or existing), order lines and
@@ -260,12 +260,12 @@ def create_delivery_note(
 
 
 @router.get("/albaranes/get", response_model=List[DeliveryNote])
-def list_delivery_notes(db: Session = Depends(get_db)):
+def list_delivery_notes(db: Annotated[Session, Depends(get_db)]):
     return db.query(DeliveryNoteDB).all()
 
 
 @router.get("/albaranes/get/{delivery_note_id}", response_model=DeliveryNote)
-def get_delivery_note(delivery_note_id: int, db: Session = Depends(get_db)):
+def get_delivery_note(delivery_note_id: int, db: Annotated[Session, Depends(get_db)]):
     delivery_note = (
         db.query(DeliveryNoteDB).filter(DeliveryNoteDB.id == delivery_note_id).first()
     )
@@ -275,7 +275,9 @@ def get_delivery_note(delivery_note_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/albaranes/by-cliente/{customer_id}", response_model=List[DeliveryNote])
-def delivery_notes_by_customer(customer_id: int, db: Session = Depends(get_db)):
+def delivery_notes_by_customer(
+    customer_id: int, db: Annotated[Session, Depends(get_db)]
+):
     q = (
         db.query(DeliveryNoteDB)
         .options(selectinload(DeliveryNoteDB.items))
@@ -287,7 +289,9 @@ def delivery_notes_by_customer(customer_id: int, db: Session = Depends(get_db)):
 
 @router.patch("/albaranes/{delivery_note_id}/estado", response_model=DeliveryNote)
 def update_status(
-    delivery_note_id: int, payload: StatusUpdate, db: Session = Depends(get_db)
+    delivery_note_id: int,
+    payload: StatusUpdate,
+    db: Annotated[Session, Depends(get_db)],
 ):
     """
     Marks a delivery note as ENTREGADO (only allowed status change).
@@ -334,7 +338,9 @@ def update_status(
 
 
 @router.get("/albaranes/{delivery_note_id}/pdf")
-def download_delivery_note_pdf(delivery_note_id: int, db: Session = Depends(get_db)):
+def download_delivery_note_pdf(
+    delivery_note_id: int, db: Annotated[Session, Depends(get_db)]
+):
     """Generates and downloads the PDF for a specific delivery note."""
     from fastapi.responses import StreamingResponse
     from io import BytesIO
@@ -396,7 +402,7 @@ def download_delivery_note_pdf(delivery_note_id: int, db: Session = Depends(get_
 
 
 @router.get("/transporte/almacen", response_model=List[DeliveryNote])
-def orders_in_warehouse(db: Session = Depends(get_db)):
+def orders_in_warehouse(db: Annotated[Session, Depends(get_db)]):
     """Returns delivery notes in ALMACEN status, ordered by entry date."""
     return (
         db.query(DeliveryNoteDB)
@@ -407,7 +413,7 @@ def orders_in_warehouse(db: Session = Depends(get_db)):
 
 
 @router.get("/transporte/ruta", response_model=List[DeliveryNote])
-def orders_in_route(db: Session = Depends(get_db)):
+def orders_in_route(db: Annotated[Session, Depends(get_db)]):
     """Returns delivery notes in RUTA status (already assigned to a truck)."""
     return (
         db.query(DeliveryNoteDB)

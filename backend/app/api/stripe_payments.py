@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime
-from typing import Optional
+from typing import Annotated, Optional
 
 import stripe
 from fastapi import APIRouter, Depends, HTTPException
@@ -103,7 +103,7 @@ def create_checkout(payload: CheckoutIn):
 
 
 @router.post("/confirm")
-def confirm_checkout(payload: ConfirmIn, db: Session = Depends(get_db)):
+def confirm_checkout(payload: ConfirmIn, db: Annotated[Session, Depends(get_db)]):
     """CONFIRM simple (sin webhook):
 
     - El frontend llama a este endpoint al volver de Stripe (success_url).
@@ -215,7 +215,7 @@ def confirm_checkout(payload: ConfirmIn, db: Session = Depends(get_db)):
 
 
 @router.get("/checkouts")
-def list_checkouts(limit: int = 25, db: Session = Depends(get_db)):
+def list_checkouts(db: Annotated[Session, Depends(get_db)], limit: int = 25):
     """Devuelve los Ãºltimos pagos confirmados vÃ­a Stripe, ordenados del mÃ¡s reciente al mÃ¡s antiguo."""
     limit = max(1, min(int(limit or 25), 200))
     rows = (

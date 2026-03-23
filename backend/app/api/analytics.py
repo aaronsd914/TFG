@@ -4,7 +4,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
 from datetime import date, datetime, timedelta
-from typing import Optional, Dict, Any, Tuple
+from typing import Annotated, Optional, Dict, Any, Tuple
 import json
 import logging
 
@@ -465,9 +465,9 @@ def generate_ai_compare_report(compare_obj_full: Dict[str, Any]) -> str:
 # ---------- Endpoints ----------
 @router.get("/summary")
 def analytics_summary(
+    db: Annotated[Session, Depends(get_db)],
     date_from: Optional[date] = Query(None),
     date_to: Optional[date] = Query(None),
-    db: Session = Depends(get_db),
 ):
     dfrom, dto = daterange_defaults(date_from, date_to)
 
@@ -485,9 +485,9 @@ def analytics_summary(
 
 @router.get("/compare")
 def analytics_compare(
+    db: Annotated[Session, Depends(get_db)],
     date_from: Optional[date] = Query(None),
     date_to: Optional[date] = Query(None),
-    db: Session = Depends(get_db),
 ):
     dfrom, dto = daterange_defaults(date_from, date_to)
     compare_obj = compare_periods(db, dfrom, dto)
@@ -497,10 +497,10 @@ def analytics_compare(
 
 @router.get("/export/pdf")
 def analytics_export_pdf(
+    db: Annotated[Session, Depends(get_db)],
     date_from: Optional[date] = Query(None),
     date_to: Optional[date] = Query(None),
     include_compare: bool = Query(True),
-    db: Session = Depends(get_db),
 ):
     dfrom, dto = daterange_defaults(date_from, date_to)
 

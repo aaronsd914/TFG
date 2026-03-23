@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List, Dict, Any
+from typing import Annotated, List, Dict, Any
 from io import BytesIO
 from datetime import datetime, date
 from pydantic import BaseModel
@@ -170,7 +170,7 @@ def generate_route_invoice_pdf(
 
 
 @router.get("/rutas")
-def get_routes(db: Session = Depends(get_db)) -> Dict[str, Any]:
+def get_routes(db: Annotated[Session, Depends(get_db)]) -> Dict[str, Any]:
     """
     Returns all delivery notes in RUTA status grouped by truck.
     Those without an assigned truck appear in the 'without_truck' list.
@@ -235,7 +235,7 @@ class SettleTruckOut(BaseModel):
 
 
 @router.post("/ruta/asignar")
-def assign_route(body: AssignRouteBody, db: Session = Depends(get_db)):
+def assign_route(body: AssignRouteBody, db: Annotated[Session, Depends(get_db)]):
     """
     Assigns one or more delivery notes to a specific truck. Notes in ALMACEN
     status move to RUTA. Also accepts reassigning notes already in RUTA.
@@ -283,7 +283,7 @@ def assign_route(body: AssignRouteBody, db: Session = Depends(get_db)):
 
 
 @router.post("/ruta/quitar")
-def remove_route(body: RemoveRouteBody, db: Session = Depends(get_db)):
+def remove_route(body: RemoveRouteBody, db: Annotated[Session, Depends(get_db)]):
     """
     Removes delivery notes from their truck and returns them to ALMACEN status,
     also deleting their route table entry.
@@ -311,7 +311,7 @@ def remove_route(body: RemoveRouteBody, db: Session = Depends(get_db)):
 
 
 @router.post("/ruta/pendiente")
-def set_pending(body: PendingBody, db: Session = Depends(get_db)):
+def set_pending(body: PendingBody, db: Annotated[Session, Depends(get_db)]):
     """
     Marks delivery notes as 'in route without assigned truck' (keeps RUTA status
     but removes the truck assignment so they can be reassigned later).
@@ -346,7 +346,7 @@ def set_pending(body: PendingBody, db: Session = Depends(get_db)):
 
 
 @router.post("/ruta/{truck_id}/liquidar", response_model=SettleTruckOut)
-def settle_truck(truck_id: int, db: Session = Depends(get_db)):
+def settle_truck(truck_id: int, db: Annotated[Session, Depends(get_db)]):
     """
     Settles a truck: calculates 7% of the total value of its delivery notes and
     registers an EGRESO movement. Avoids duplicates if called multiple times the same day.
