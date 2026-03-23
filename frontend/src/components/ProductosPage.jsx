@@ -182,7 +182,7 @@ export default function ProductosPage() {
       setLoading(true);
       setErr(null);
 
-      const [rp, rpr] = await Promise.all([fetch(`${API_URL}productos/get`), fetch(`${API_URL}suppliers/get`)]);
+      const [rp, rpr] = await Promise.all([fetch(`${API_URL}productos/get`), fetch(`${API_URL}proveedores/get`)]);
       if (!rp.ok) throw new Error(`Productos HTTP ${rp.status}`);
       if (!rpr.ok) throw new Error(`suppliers HTTP ${rpr.status}`);
 
