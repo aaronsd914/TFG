@@ -10,7 +10,7 @@ from typing import List, Optional, Literal
 # ALMACEN  -> warehouse
 # TRANSPORTE -> in route
 # ENTREGADO -> delivered
-DeliveryNoteStatus = Literal["FIANZA", "ALMACEN", "RUTA", "ENTREGADO"]
+DeliveryNoteStatus = Literal["FIANZA", "ALMACEN", "RUTA", "ENTREGADO", "INCIDENCIA"]
 
 
 class DeliveryNoteDB(Base):
@@ -28,6 +28,11 @@ class DeliveryNoteDB(Base):
     items = relationship(
         "DeliveryNoteLineDB",
         back_populates="delivery_note",
+        cascade="all, delete-orphan",
+    )
+    incidencias = relationship(
+        "IncidenciaDB",
+        back_populates="albaran",
         cascade="all, delete-orphan",
     )
 

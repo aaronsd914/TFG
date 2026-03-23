@@ -29,6 +29,7 @@ export default function Dashboard() {
   const [almacen, setAlmacen] = useState([]);
   const [_ruta, setRuta] = useState([]); // se mantiene para métricas/estados, aunque no se muestre sección
   const [clientes, setClientes] = useState([]);
+  const [incidencias, setIncidencias] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
   // UI
@@ -49,12 +50,13 @@ export default function Dashboard() {
 
       setErr(null);
 
-      const [rMovs, rAlbs, rAlmacen, rRuta, rClientes] = await Promise.all([
+      const [rMovs, rAlbs, rAlmacen, rRuta, rClientes, rInc] = await Promise.all([
         fetch(`${API_URL}movimientos/get`),
         fetch(`${API_URL}albaranes/get`),
         fetch(`${API_URL}transporte/almacen`),
         fetch(`${API_URL}transporte/ruta`),
         fetch(`${API_URL}clientes/get`),
+        fetch(`${API_URL}incidencias/get`),
       ]);
 
       if (!rMovs.ok) throw new Error(`Movimientos HTTP ${rMovs.status}`);
@@ -69,6 +71,7 @@ export default function Dashboard() {
       setAlmacen(Array.isArray(almacenData) ? almacenData : []);
       setRuta(Array.isArray(rutaData) ? rutaData : []);
       setClientes(await rClientes.json());
+      setIncidencias(rInc.ok ? ((await rInc.json()) || []) : []);
       setLastUpdated(new Date());
     } catch (e) {
       setErr(e?.message || 'Error desconocido');
@@ -300,6 +303,7 @@ export default function Dashboard() {
             <StatCard title={t('dashboard.expensesPeriod')} value={eur(egresosMes)} delta={pctDelta(egresosMes, egresosPrev)} deltaLabel={t('dashboard.vsPrev')} invertColors />
             <StatCard title={t('dashboard.salesPeriod')} value={String(ventasMes)} delta={pctDelta(ventasMes, ventasPrev)} deltaLabel={t('dashboard.vsPrev')} />
             <StatCard title={t('dashboard.warehouseOrders')} value={String(pedidosAlmacen)} hint={t('dashboard.warehousePending')} />
+            <StatCard title={t('dashboard.activeIncidents')} value={String(incidencias.length)} hint={t('dashboard.viewIncidents')} link="/incidencias" />
           </>
         )}
       </div>
@@ -492,7 +496,52 @@ export default function Dashboard() {
       </div>
 
       {/* NOTA: Se ha eliminado la sección visual de “En ruta” */}
-    </div>
+      {/* Incidencias activas */}
+      <div className="bg-white p-4 rounded-xl shadow-sm" data-testid="dashboard-incidencias-section">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <h3 className="text-base font-semibold">{t('dashboard.incidenciasSection')}</h3>
+          <div className="text-sm text-gray-600">
+            {loading ? '…' : t('dashboard.incidenciasTotal', { count: incidencias.length })}
+          </div>
+        </div>
+        {loading ? (
+          <div className="h-16 bg-gray-100 rounded-xl animate-pulse" />
+        ) : incidencias.length === 0 ? (
+          <p className="text-sm text-gray-500 py-2">{t('dashboard.noIncidencias')}</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-[500px] w-full border-collapse">
+              <thead>
+                <tr className="text-left border-b border-gray-200">
+                  <th className="p-2 w-16">{t('dashboard.colID')}</th>
+                  <th className="p-2 w-32">{t('dashboard.colDate')}</th>
+                  <th className="p-2 w-20">{t('incidencias.colAlbaran')}</th>
+                  <th className="p-2">{t('incidencias.colDesc')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {incidencias.slice(0, 5).map((inc) => (
+                  <tr key={inc.id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <td className="p-2 text-sm">#{inc.id}</td>
+                    <td className="p-2 text-sm">{fmtDate(inc.fecha_creacion)}</td>
+                    <td className="p-2 text-sm">#{inc.albaran_id}</td>
+                    <td className="p-2 text-sm truncate max-w-xs" title={inc.descripcion}>{inc.descripcion}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <div className="mt-4 flex">
+          <a
+            href="/incidencias"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-black hover:bg-gray-800 shadow-sm transition-colors"
+            data-testid="dashboard-incidencias-link"
+          >
+            {t('dashboard.viewIncidentsFull')}
+          </a>
+        </div>
+      </div>    </div>
   );
 }
 
@@ -547,7 +596,7 @@ function SkeletonCard() {
   );
 }
 
-function StatCard({ title, value, delta, deltaLabel, hint, invertColors = false }) {
+function StatCard({ title, value, delta, deltaLabel, hint, invertColors = false, link = null }) {
   const [displayed, setDisplayed] = useState('…');
 
   useEffect(() => {
@@ -611,6 +660,14 @@ function StatCard({ title, value, delta, deltaLabel, hint, invertColors = false 
       </div>
       <p className="text-xl font-bold mt-2 tabular-nums">{displayed}</p>
       <div className="mt-2 text-xs text-gray-500">{deltaText && deltaLabel ? deltaLabel : hint || ' '}</div>
+      {link && (
+        <a
+          href={link}
+          className="mt-2 inline-block text-xs text-blue-600 hover:underline"
+        >
+          {hint} →
+        </a>
+      )}
     </div>
   );
 }
