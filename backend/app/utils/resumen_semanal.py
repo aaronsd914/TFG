@@ -161,12 +161,23 @@ def _run(db: Session) -> None:
         total_revenue,
         insight,
         intervalo,
+        db=db,
     )
     subject = f"Resumen {store_name} - {from_date.strftime('%d/%m')}-{today.strftime('%d/%m/%Y')}"
     send_email_simple(email_destino, subject, html)
 
     _set(db, "resumen_ultima_vez", today.isoformat())
     log.info("[resumen] Resumen enviado a %s", email_destino)
+
+
+def _next_month_label(ref: date) -> str:
+    """Return YYYY-MM for the month after ref."""
+    m = ref.month + 1
+    y = ref.year
+    if m > 12:
+        m = 1
+        y += 1
+    return f"{y:04d}-{m:02d}"
 
 
 def _eur(n: float) -> str:
@@ -184,9 +195,38 @@ def _build_html(
     total_revenue,
     insight,
     intervalo,
+    db=None,
 ) -> str:
     bal_color = "#16a34a" if balance >= 0 else "#dc2626"
     bal_sign = "+" if balance >= 0 else ""
+
+    # Prediction block (next-month forecast)
+    prediction_html = ""
+    if db is not None:
+        try:
+            from backend.app.api.analytics import monthly_sales, _holt_forecast  # noqa: PLC0415
+
+            hist_from = from_date - timedelta(days=365)
+            monthly = monthly_sales(db, hist_from, until_date)
+            revenues = [m["revenue"] for m in monthly]
+            if len(revenues) >= 2:
+                forecasts, lower_80, upper_80 = _holt_forecast(revenues, 1)
+                next_month = _next_month_label(until_date)
+                prediction_html = f"""
+      <tr>
+        <td style="background:#ffffff;padding:0 24px 16px;border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;">
+          <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:14px 16px;">
+            <div style="font-size:12px;font-weight:700;color:#15803d;margin-bottom:8px;">📈 Previsión próximo mes ({next_month})</div>
+            <div style="font-size:14px;color:#14532d;line-height:1.6;">
+              Ingresos estimados: <strong>{_eur(forecasts[0])}</strong><br>
+              Intervalo 80&#37;: {_eur(lower_80[0])} – {_eur(upper_80[0])}<br>
+              <span style="font-size:11px;color:#6b7280;">Modelo: Suavizado exponencial doble (Holt)</span>
+            </div>
+          </div>
+        </td>
+      </tr>"""
+        except Exception as exc:
+            log.warning("[resumen] No se pudo generar previsión: %s", exc)
 
     insight_html = ""
     if insight:
@@ -256,6 +296,7 @@ def _build_html(
           </table>
         </td>
       </tr>
+      {prediction_html}
       {insight_html}
       <tr>
         <td style="background:#ffffff;padding:12px 24px 20px;border:1px solid #e5e7eb;

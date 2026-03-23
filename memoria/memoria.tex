@@ -1212,6 +1212,31 @@ El análisis de \textit{market basket} \cite{agrawal1994} identifica pares de pr
 \label{alg:basket}
 \end{algorithm}
 
+\subsubsection{Analíticas predictivas: suavizado exponencial doble (Holt)}
+\label{sec:holt}
+
+Con el objetivo de proporcionar un \textit{sistema de soporte a la decisión} (DSS), FurniGest incorpora un módulo de analítica predictiva que proyecta los ingresos mensuales para los próximos meses a partir del historial de ventas. El método empleado es el \textbf{suavizado exponencial doble de Holt} \cite{holt1957,box2015}, equivalente a un modelo ARIMA(0,1,1)+deriva, y fue elegido por su bajo coste computacional y por no requerir dependencias externas como \texttt{statsmodels} o \texttt{scipy}.
+
+El modelo mantiene dos estados: el nivel $L_t$ y la tendencia $T_t$, actualizados en cada observación mensual $y_t$ según:
+
+\begin{equation}
+  L_t = \alpha\, y_t + (1-\alpha)(L_{t-1} + T_{t-1}), \qquad
+  T_t = \beta(L_t - L_{t-1}) + (1-\beta)\,T_{t-1}
+\end{equation}
+
+\noindent donde $\alpha=0{,}3$ y $\beta=0{,}1$ son los parámetros de suavizado. La predicción a $h$ pasos vista es:
+
+\begin{equation}
+  \hat{y}_{t+h} = L_t + h\,T_t
+\end{equation}
+
+Se calculan además intervalos de predicción al 80\,\% basados en el RMSE de los residuos de un paso:
+
+\begin{equation}
+  \hat{y}_{t+h} \pm 1{,}28\,\hat{\sigma}\sqrt{h}
+\end{equation}
+
+La función \texttt{\_holt\_forecast} está implementada íntegramente en Python estándar (módulo \texttt{math}), sin dependencias externas. El nuevo endpoint \texttt{GET /api/analytics/predict} expone la previsión con su intervalo de confianza. La página de Tendencias muestra estos datos en un gráfico de línea (histórico sólido + previsión discontinua) y en una tabla. El resumen periódico por correo electrónico incluye también el bloque de previsión del mes siguiente.
 
 \subsection{Asistente de inteligencia artificial}
 \label{sec:ia}

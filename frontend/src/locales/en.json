@@ -474,7 +474,18 @@
     "chipInput3": "Give me 3 actions to increase the average ticket (AOV).",
     "restartBtn": "Restart",
     "aiContextNote": "The AI responds with the context of the selected range.",
-    "chartError": "Chart uninterpretable (incomplete config)."
+    "chartError": "Chart uninterpretable (incomplete config).",
+    "predTitle": "Sales Forecast",
+    "predSubtitle": "Revenue projection for the next 3 months using Holt's double exponential smoothing.",
+    "predChartLabel": "Historical + forecast",
+    "predHistorical": "Historical revenue",
+    "predForecast": "Forecast",
+    "predTableMonth": "Month",
+    "predTableRevenue": "Estimated revenue",
+    "predTableCI": "80% Interval",
+    "predMethod": "Model: Holt's double exponential smoothing",
+    "predInsufficient": "Insufficient data to calculate a forecast.",
+    "predLoading": "Calculating forecast…"
   },
   "transport": {
     "title": "Transport",

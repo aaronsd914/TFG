@@ -108,3 +108,64 @@ class TestAnalyticsExportPdf:
         # Then
         assert r.status_code == 200
         assert r.headers["content-type"] == "application/pdf"
+
+
+class TestAnalyticsPredict:
+    """Tests para el endpoint GET /api/analytics/predict (Holt's double ES)."""
+
+    def test_predict_sin_datos(self, client):
+        # When - no hay albaranes en DB
+        r = client.get("/api/analytics/predict")
+        # Then
+        assert r.status_code == 200
+        body = r.json()
+        assert "historical" in body
+        assert "forecast" in body
+        assert "method" in body
+        assert "n_months" in body
+
+    def test_predict_con_rango(self, client):
+        # Given
+        r = client.get("/api/analytics/predict?date_from=2026-01-01&date_to=2026-03-31")
+        # Then
+        assert r.status_code == 200
+        body = r.json()
+        assert body["n_months"] == 3
+        assert len(body["forecast"]) == 3
+        for item in body["forecast"]:
+            assert "month" in item
+            assert "predicted_revenue" in item
+            assert "lower_80" in item
+            assert "upper_80" in item
+
+    def test_predict_date_from_posterior_devuelve_400(self, client):
+        # date_from > date_to → must be rejected before calling prediction logic
+        r = client.get("/api/analytics/predict?date_from=2026-12-31&date_to=2026-01-01")
+        assert r.status_code == 400
+
+    def test_predict_n_months_custom(self, client):
+        # n_months=2 → forecast must contain exactly 2 items
+        r = client.get("/api/analytics/predict?n_months=2")
+        assert r.status_code == 200
+        body = r.json()
+        assert body["n_months"] == 2
+        assert len(body["forecast"]) == 2
+
+    def test_predict_con_albaran(self, client, mocker, cliente_fixture, producto):
+        # Given - create a delivery note so there is at least some revenue data
+        mocker.patch("backend.app.api.albaranes.send_email_with_pdf", return_value=None)
+        mocker.patch("backend.app.api.albaranes.generate_delivery_note_pdf", return_value=b"")
+        mocker.patch("backend.app.api.albaranes.render", return_value="<html></html>")
+        client.post("/api/albaranes/post", json={
+            "date": "2026-01-15",
+            "customer_id": cliente_fixture["id"],
+            "items": [{"product_id": producto["id"], "quantity": 1, "unit_price": 50.0}],
+        })
+        # When
+        r = client.get("/api/analytics/predict?date_from=2026-01-01&date_to=2026-01-31")
+        # Then
+        assert r.status_code == 200
+        body = r.json()
+        for item in body["forecast"]:
+            assert item["predicted_revenue"] >= 0
+            assert item["upper_80"] >= item["predicted_revenue"]

@@ -474,7 +474,18 @@
     "chipInput3": "Dame 3 acciones para subir el ticket medio (AOV).",
     "restartBtn": "Reiniciar",
     "aiContextNote": "La IA responde con el contexto del rango seleccionado.",
-    "chartError": "Gráfico no interpretable (config incompleta)."
+    "chartError": "Gráfico no interpretable (config incompleta).",
+    "predTitle": "Previsión de ventas",
+    "predSubtitle": "Proyección de ingresos para los próximos 3 meses usando suavizado exponencial doble (Holt).",
+    "predChartLabel": "Histórico + previsión",
+    "predHistorical": "Ingresos históricos",
+    "predForecast": "Previsión",
+    "predTableMonth": "Mes",
+    "predTableRevenue": "Ingresos estimados",
+    "predTableCI": "Intervalo 80%",
+    "predMethod": "Modelo: Suavizado exponencial doble (Holt)",
+    "predInsufficient": "Datos insuficientes para calcular una previsión.",
+    "predLoading": "Calculando previsión…"
   },
   "transport": {
     "title": "Transporte",

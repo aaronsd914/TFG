@@ -1,14 +1,4 @@
 
-10. INTERNACIONALIZACIÓN (i18n) / ACCESIBILIDAD WCAG
-    Asignatura: IPO T5 (Accesibilidad), IPO T4 (Usabilidad universal)
-    Qué es: i18next para React (traducciones ES/EN). ARIA labels en
-            formularios, contraste de color WCAG 2.1 AA.
-    Por qué: IPO T5 define accesibilidad como parte de la "usabilidad
-            universal": la IU debe poder ser utilizada por cualquier persona.
-    Coste estimado: 1-2 días para accesibilidad básica ARIA + contraste.
-    En la memoria: nuevo RNF-07 (accesibilidad) + subsección en Cap. 3.
-
-────────────────────────────────────────────────────────────────────────────
 11. APLICACIÓN MÓVIL / PWA
     Asignatura: IPO T2 (paradigmas de interacción), SD T2 (cliente web)
     Qué es: Convertir la SPA en una PWA (Progressive Web App) añadiendo

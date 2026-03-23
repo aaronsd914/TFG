@@ -92,3 +92,15 @@ def test_tendencias_chat_ia_toggle(logged_in_browser):
     time.sleep(0.5)
     body_text = logged_in_browser.find_element(By.TAG_NAME, "body").text.lower()
     assert "chat" in body_text or "ia" in body_text or "asistente" in body_text or "mensaje" in body_text
+
+
+def test_tendencias_prevision_presente(logged_in_browser):
+    """La sección de previsión predictiva se renderiza en la página de tendencias."""
+    logged_in_browser.get(f"{BASE_URL}/tendencias")
+    WebDriverWait(logged_in_browser, 20).until(EC.url_contains("/tendencias"))
+    time.sleep(3)  # wait for prediction fetch to complete
+    body_text = logged_in_browser.find_element(By.TAG_NAME, "body").text.lower()
+    # The prediction section title and/or month labels should be visible
+    keywords = ["previsión", "prevision", "forecast", "holt", "estimado"]
+    found = any(kw in body_text for kw in keywords)
+    assert found, "No se encontró la sección de previsión en la página de Tendencias"

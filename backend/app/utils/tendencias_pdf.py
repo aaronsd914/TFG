@@ -92,6 +92,7 @@ def generar_pdf_tendencias(
     metrics_prev: dict | None = None,
     compare_delta: dict | None = None,
     ai_compare_report: str | None = None,
+    prediction: dict | None = None,
 ):
     """Genera un PDF de tendencias con:
     - KPIs
@@ -386,6 +387,50 @@ def generar_pdf_tendencias(
         story.append(pairs_tbl)
     else:
         story.append(Paragraph("No hay pares con suficiente soporte.", styles["Muted"]))
+
+    # Previsión (Holt's double ES)
+    if prediction and prediction.get("forecast"):
+        story.append(Spacer(1, 8))
+        story.append(Paragraph("Previsión de ventas (análisis predictivo)", styles["H2"]))
+        story.append(
+            Paragraph(
+                "Proyección de ingresos usando suavizado exponencial doble (Holt). "
+                "Intervalo de confianza al 80%.",
+                styles["Muted"],
+            )
+        )
+        pred_data = [["Mes", "Ingresos est.", "Mín. 80%", "Máx. 80%"]]
+        for row in prediction["forecast"]:
+            pred_data.append(
+                [
+                    _safe(row.get("month")),
+                    eur(row.get("predicted_revenue", 0)),
+                    eur(row.get("lower_80", 0)),
+                    eur(row.get("upper_80", 0)),
+                ]
+            )
+        pred_tbl = Table(
+            pred_data,
+            colWidths=[
+                doc.width * 0.25,
+                doc.width * 0.25,
+                doc.width * 0.25,
+                doc.width * 0.25,
+            ],
+        )
+        pred_tbl.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#F0FDF4")),
+                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#166534")),
+                    ("GRID", (0, 0), (-1, -1), 1, colors.HexColor("#BBF7D0")),
+                    ("ALIGN", (1, 1), (-1, -1), "RIGHT"),
+                    ("PADDING", (0, 0), (-1, -1), 6),
+                ]
+            )
+        )
+        story.append(pred_tbl)
 
     # Informe IA (detallado)
     story.append(PageBreak())
