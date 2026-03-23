@@ -141,8 +141,10 @@ describe('IncidenciasPage – modal de creación', () => {
 
   it('muestra el selector de albarán con los entregados', async () => {
     renderPage();
-    await waitFor(() => expect(screen.getByTestId('create-incidencia-btn')).toBeInTheDocument());
+    // Wait for initial load to finish (empty state = loading:false)
+    await waitFor(() => expect(screen.getByTestId('incidencias-empty')).toBeInTheDocument());
     await act(async () => { fireEvent.click(screen.getByTestId('create-incidencia-btn')); });
+    await waitFor(() => expect(screen.getByTestId('create-albaran-select')).toBeInTheDocument());
     expect(screen.getByTestId('create-albaran-select')).toBeInTheDocument();
   });
 
@@ -164,8 +166,11 @@ describe('IncidenciasPage – modal de creación', () => {
     });
 
     renderPage();
-    await waitFor(() => expect(screen.getByTestId('create-incidencia-btn')).toBeInTheDocument());
+    // Wait for initial load (empty state = loading:false, entregados populated)
+    await waitFor(() => expect(screen.getByTestId('incidencias-empty')).toBeInTheDocument());
     await act(async () => { fireEvent.click(screen.getByTestId('create-incidencia-btn')); });
+    // Albaran select must appear (entregados > 0)
+    await waitFor(() => expect(screen.getByTestId('create-albaran-select')).toBeInTheDocument());
     fireEvent.change(screen.getByTestId('create-descripcion-input'), {
       target: { value: 'Daño visible en el mueble' },
     });
@@ -195,5 +200,63 @@ describe('Dashboard – sección incidencias', () => {
     await waitFor(() => {
       expect(screen.getByTestId('dashboard-incidencias-section')).toBeInTheDocument();
     });
+  });
+});
+
+// ── Suite 5: borrado de incidencias ───────────────────────────────────────────────
+describe('IncidenciasPage – borrado', () => {
+  beforeEach(() => {
+    fetch.mockImplementation((url) => {
+      if (/incidencias\/get$/.test(url)) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([INCIDENCIA]) });
+      }
+      if (/albaranes\/get$/.test(url)) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([ALBARAN_ENTREGADO]) });
+      }
+      if (/clientes\/get$/.test(url)) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([CLIENTE]) });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+    });
+  });
+
+  it('muestra el botón de borrar en cada fila', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByTestId('delete-incidencia-btn')).toBeInTheDocument());
+    expect(screen.getByTestId('delete-incidencia-btn')).toBeInTheDocument();
+  });
+
+  it('al pulsar borrar aparece el modal de confirmación', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByTestId('delete-incidencia-btn')).toBeInTheDocument());
+    await act(async () => { fireEvent.click(screen.getByTestId('delete-incidencia-btn')); });
+    expect(screen.getByTestId('delete-confirm-modal')).toBeInTheDocument();
+  });
+
+  it('confirmar borrado llama a la API DELETE', async () => {
+    fetch.mockImplementation((url, opts) => {
+      if (opts?.method === 'DELETE') {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+      }
+      if (/incidencias\/get$/.test(url)) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([INCIDENCIA]) });
+      }
+      if (/albaranes\/get$/.test(url)) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([ALBARAN_ENTREGADO]) });
+      }
+      if (/clientes\/get$/.test(url)) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([CLIENTE]) });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+    });
+
+    renderPage();
+    await waitFor(() => expect(screen.getByTestId('delete-incidencia-btn')).toBeInTheDocument());
+    await act(async () => { fireEvent.click(screen.getByTestId('delete-incidencia-btn')); });
+    await act(async () => { fireEvent.click(screen.getByTestId('delete-confirm-btn')); });
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining('incidencias/1'),
+      expect.objectContaining({ method: 'DELETE' })
+    );
   });
 });

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Line, Pie } from 'react-chartjs-2';
 import 'chart.js/auto';
 import { API_URL } from '../config.js';
+import PropTypes from 'prop-types';
 
 function eur(n) {
   const v = Number(n || 0);
@@ -596,57 +597,42 @@ function SkeletonCard() {
   );
 }
 
+function getDeltaInfo(delta, invertColors) {
+  if (typeof delta !== 'number' || Number.isNaN(delta) || !Number.isFinite(delta)) {
+    return { deltaText: null, deltaCls: 'text-gray-600' };
+  }
+  const isUp = delta > 0;
+  const good = invertColors ? !isUp : isUp;
+  return {
+    deltaText: `${isUp ? '+' : ''}${delta.toFixed(1)}%`,
+    deltaCls: good ? 'text-green-700' : 'text-red-700',
+  };
+}
+
 function StatCard({ title, value, delta, deltaLabel, hint, invertColors = false, link = null }) {
   const [displayed, setDisplayed] = useState('…');
 
   useEffect(() => {
-    // Try to extract a number from the value string to animate
     const numMatch = value.replace(/\./g, '').replace(',', '.').match(/-?[\d.]+/);
     const target = numMatch ? parseFloat(numMatch[0]) : null;
-
-    if (target === null || target === 0) {
-      setDisplayed(value);
-      return;
-    }
-
+    if (target === null || target === 0) { setDisplayed(value); return; }
     const duration = 600;
     const start = performance.now();
-
     const tick = (now) => {
       const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
-      // ease-out
       const eased = 1 - Math.pow(1 - progress, 3);
       const current = target * eased;
-
-      // Re-format in the same style as the final value
-      const formatted = value.replace(
-        numMatch[0],
-        current.toLocaleString('es-ES', { maximumFractionDigits: 2 })
-      );
-      setDisplayed(formatted);
-
+      setDisplayed(value.replace(numMatch[0], current.toLocaleString('es-ES', { maximumFractionDigits: 2 })));
       if (progress < 1) requestAnimationFrame(tick);
       else setDisplayed(value);
     };
-
     requestAnimationFrame(tick);
   }, [value]);
 
-  let deltaText = null;
-  let deltaCls = 'text-gray-600';
-
-  if (typeof delta === 'number') {
-    if (Number.isNaN(delta) || !Number.isFinite(delta)) {
-      deltaText = null;
-    } else {
-      const isUp = delta > 0;
-      const good = invertColors ? !isUp : isUp;
-      deltaCls = good ? 'text-green-700' : 'text-red-700';
-      const sign = isUp ? '+' : '';
-      deltaText = `${sign}${delta.toFixed(1)}%`;
-    }
-  }
+  const { deltaText, deltaCls } = getDeltaInfo(delta, invertColors);
+  let subLine = hint || ' ';
+  if (deltaText && deltaLabel) subLine = deltaLabel;
 
   return (
     <div className="bg-white p-4 rounded-xl shadow-sm">
@@ -659,7 +645,7 @@ function StatCard({ title, value, delta, deltaLabel, hint, invertColors = false,
         )}
       </div>
       <p className="text-xl font-bold mt-2 tabular-nums">{displayed}</p>
-      <div className="mt-2 text-xs text-gray-500">{deltaText && deltaLabel ? deltaLabel : hint || ' '}</div>
+      <div className="mt-2 text-xs text-gray-500">{subLine}</div>
       {link && (
         <a
           href={link}
@@ -671,6 +657,16 @@ function StatCard({ title, value, delta, deltaLabel, hint, invertColors = false,
     </div>
   );
 }
+
+StatCard.propTypes = {
+  title: PropTypes.string.isRequired,
+  value: PropTypes.string.isRequired,
+  delta: PropTypes.number,
+  deltaLabel: PropTypes.string,
+  hint: PropTypes.string,
+  invertColors: PropTypes.bool,
+  link: PropTypes.string,
+};
 
 function Row({ fecha, tipo, ingreso, desc, monto }) {
   const rowCls = ingreso
