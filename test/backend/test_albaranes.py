@@ -190,3 +190,41 @@ class TestActualizarAlbaran:
         updated = r.json()
         assert updated["status"] == original["status"]
         assert updated["description"] == original["description"]
+
+
+class TestActualizarLineas:
+    def test_reemplazar_lineas(self, client, cliente_fixture, producto):
+        aid = crear_albaran(client, cliente_fixture["id"], producto["id"]).json()["id"]
+        r = client.put(
+            f"/api/albaranes/{aid}/items",
+            json={"items": [{"product_id": producto["id"], "quantity": 3, "unit_price": 4.0}]},
+        )
+        assert r.status_code == 200
+        body = r.json()
+        assert len(body["items"]) == 1
+        assert body["items"][0]["quantity"] == 3
+        assert body["items"][0]["unit_price"] == 4.0
+
+    def test_recalculo_total(self, client, cliente_fixture, producto):
+        aid = crear_albaran(client, cliente_fixture["id"], producto["id"]).json()["id"]
+        r = client.put(
+            f"/api/albaranes/{aid}/items",
+            json={"items": [{"product_id": producto["id"], "quantity": 5, "unit_price": 10.0}]},
+        )
+        assert r.status_code == 200
+        assert r.json()["total"] == 50.0
+
+    def test_reemplazar_lineas_vacias(self, client, cliente_fixture, producto):
+        aid = crear_albaran(client, cliente_fixture["id"], producto["id"]).json()["id"]
+        r = client.put(f"/api/albaranes/{aid}/items", json={"items": []})
+        assert r.status_code == 200
+        body = r.json()
+        assert body["items"] == []
+        assert body["total"] == 0.0
+
+    def test_reemplazar_lineas_albaran_inexistente(self, client, producto):
+        r = client.put(
+            "/api/albaranes/9999/items",
+            json={"items": [{"product_id": producto["id"], "quantity": 1, "unit_price": 5.0}]},
+        )
+        assert r.status_code == 404

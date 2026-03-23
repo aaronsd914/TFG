@@ -290,7 +290,10 @@ def list_delivery_notes(db: Annotated[Session, Depends(get_db)]):
 )
 def get_delivery_note(delivery_note_id: int, db: Annotated[Session, Depends(get_db)]):
     delivery_note = (
-        db.query(DeliveryNoteDB).filter(DeliveryNoteDB.id == delivery_note_id).first()
+        db.query(DeliveryNoteDB)
+        .options(selectinload(DeliveryNoteDB.items))
+        .filter(DeliveryNoteDB.id == delivery_note_id)
+        .first()
     )
     if not delivery_note:
         raise HTTPException(404, "Albaran no encontrado")
@@ -389,6 +392,43 @@ def update_delivery_note(
     db.commit()
     db.refresh(delivery_note)
     return delivery_note
+
+
+class ItemsReplace(BaseModel):
+    items: List[DeliveryNoteItemCreate]
+
+
+@router.put(
+    "/albaranes/{delivery_note_id}/items",
+    response_model=DeliveryNote,
+    responses={404: {"description": "Not found"}},
+)
+def replace_items(
+    delivery_note_id: int,
+    payload: ItemsReplace,
+    db: Annotated[Session, Depends(get_db)],
+):
+    """Replaces all line items of a delivery note and recalculates the total."""
+    albaran = (
+        db.query(DeliveryNoteDB)
+        .options(selectinload(DeliveryNoteDB.items))
+        .filter(DeliveryNoteDB.id == delivery_note_id)
+        .first()
+    )
+    if not albaran:
+        raise HTTPException(404, "Albaran no encontrado")
+    for item in list(albaran.items):
+        db.delete(item)
+    db.flush()
+    albaran.total = _build_delivery_note_lines(db, albaran, payload.items)
+    db.commit()
+    albaran = (
+        db.query(DeliveryNoteDB)
+        .options(selectinload(DeliveryNoteDB.items))
+        .filter(DeliveryNoteDB.id == delivery_note_id)
+        .first()
+    )
+    return albaran
 
 
 @router.get(

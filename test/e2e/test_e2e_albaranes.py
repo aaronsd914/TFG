@@ -161,3 +161,44 @@ def test_albaranes_modal_edicion_se_abre(logged_in_browser):
     )
     body_text = logged_in_browser.find_element(By.TAG_NAME, "body").text.lower()
     assert "editar" in body_text or "edit" in body_text
+
+
+def test_albaranes_boton_editar_lineas_visible(logged_in_browser):
+    """El botón 'Editar líneas' está presente en el detalle de un albarán."""
+    logged_in_browser.get(f"{BASE_URL}/albaranes")
+    WebDriverWait(logged_in_browser, 15).until(EC.url_contains("/albaranes"))
+    time.sleep(1)
+    rows = logged_in_browser.find_elements(By.CSS_SELECTOR, "li.cursor-pointer")
+    if not rows:
+        pytest.skip("No hay albaranes en la lista para testear edición de líneas")
+    rows[0].click()
+    WebDriverWait(logged_in_browser, 10).until(
+        EC.presence_of_element_located((By.XPATH, "//h2[contains(., 'Detalle')]"))
+    )
+    lines_edit_btn = WebDriverWait(logged_in_browser, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, "[data-testid='lines-edit-btn']"))
+    )
+    assert lines_edit_btn is not None
+
+
+def test_albaranes_modo_edicion_lineas_se_activa(logged_in_browser):
+    """Pulsar 'Editar líneas' activa el modo edición mostrando Guardar y Cancelar."""
+    logged_in_browser.get(f"{BASE_URL}/albaranes")
+    WebDriverWait(logged_in_browser, 15).until(EC.url_contains("/albaranes"))
+    time.sleep(1)
+    rows = logged_in_browser.find_elements(By.CSS_SELECTOR, "li.cursor-pointer")
+    if not rows:
+        pytest.skip("No hay albaranes en la lista para testear edición de líneas")
+    rows[0].click()
+    WebDriverWait(logged_in_browser, 10).until(
+        EC.presence_of_element_located((By.XPATH, "//h2[contains(., 'Detalle')]"))
+    )
+    lines_edit_btn = WebDriverWait(logged_in_browser, 10).until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, "[data-testid='lines-edit-btn']"))
+    )
+    lines_edit_btn.click()
+    WebDriverWait(logged_in_browser, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, "[data-testid='lines-save-btn']"))
+    )
+    save_btn = logged_in_browser.find_element(By.CSS_SELECTOR, "[data-testid='lines-save-btn']")
+    assert save_btn is not None
