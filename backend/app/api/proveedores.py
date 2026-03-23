@@ -22,7 +22,11 @@ def list_suppliers(db: Annotated[Session, Depends(get_db)]):
     return db.query(SupplierDB).all()
 
 
-@router.get("/proveedores/get/{supplier_id}", response_model=Supplier)
+@router.get(
+    "/proveedores/get/{supplier_id}",
+    response_model=Supplier,
+    responses={404: {"description": "Not found"}},
+)
 def get_supplier(supplier_id: int, db: Annotated[Session, Depends(get_db)]):
     supplier = db.query(SupplierDB).filter(SupplierDB.id == supplier_id).first()
     if not supplier:
@@ -30,7 +34,11 @@ def get_supplier(supplier_id: int, db: Annotated[Session, Depends(get_db)]):
     return supplier
 
 
-@router.put("/proveedores/put/{supplier_id}", response_model=Supplier)
+@router.put(
+    "/proveedores/put/{supplier_id}",
+    response_model=Supplier,
+    responses={404: {"description": "Not found"}},
+)
 def update_supplier(
     supplier_id: int, payload: SupplierCreate, db: Annotated[Session, Depends(get_db)]
 ):
@@ -44,7 +52,10 @@ def update_supplier(
     return supplier
 
 
-@router.delete("/proveedores/delete/{supplier_id}")
+@router.delete(
+    "/proveedores/delete/{supplier_id}",
+    responses={404: {"description": "Not found"}},
+)
 def delete_supplier(supplier_id: int, db: Annotated[Session, Depends(get_db)]):
     supplier = db.query(SupplierDB).filter(SupplierDB.id == supplier_id).first()
     if not supplier:

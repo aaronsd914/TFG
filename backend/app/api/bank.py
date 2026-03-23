@@ -51,7 +51,7 @@ def status():
 
 
 # ===== Flujo de enlace (consent + redirect) =====
-@router.post("/link")
+@router.post("/link", responses={502: {"description": "Upstream bank error"}})
 def link_start(request: Request):
     """
     Crea un consent y devuelve la URL de autorización de CaixaBank.
@@ -111,7 +111,13 @@ def link_start(request: Request):
 
 
 # ===== Callback OAuth2 =====
-@router.get("/callback")
+@router.get(
+    "/callback",
+    responses={
+        400: {"description": "OAuth error"},
+        502: {"description": "Token error"},
+    },
+)
 def link_callback(code: str = None, error: str = None):
     global _TOKEN
     if error:
@@ -141,7 +147,13 @@ def link_callback(code: str = None, error: str = None):
 
 
 # ===== Ejemplo: cuentas =====
-@router.get("/accounts")
+@router.get(
+    "/accounts",
+    responses={
+        401: {"description": "Not linked"},
+        502: {"description": "Accounts error"},
+    },
+)
 def get_accounts():
     if not _TOKEN:
         raise HTTPException(401, "No está enlazado todavía")

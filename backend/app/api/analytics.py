@@ -463,7 +463,7 @@ def generate_ai_compare_report(compare_obj_full: Dict[str, Any]) -> str:
 
 
 # ---------- Endpoints ----------
-@router.get("/summary")
+@router.get("/summary", responses={400: {"description": "Bad request"}})
 def analytics_summary(
     db: Annotated[Session, Depends(get_db)],
     date_from: Optional[date] = Query(None),
@@ -483,7 +483,7 @@ def analytics_summary(
     return {"metrics": metrics, "ai_report": report}
 
 
-@router.get("/compare")
+@router.get("/compare", responses={400: {"description": "Bad request"}})
 def analytics_compare(
     db: Annotated[Session, Depends(get_db)],
     date_from: Optional[date] = Query(None),
@@ -495,7 +495,7 @@ def analytics_compare(
     return compare_obj
 
 
-@router.get("/export/pdf")
+@router.get("/export/pdf", responses={400: {"description": "Bad request"}})
 def analytics_export_pdf(
     db: Annotated[Session, Depends(get_db)],
     date_from: Optional[date] = Query(None),

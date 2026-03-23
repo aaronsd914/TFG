@@ -53,7 +53,14 @@ def stripe_status():
     }
 
 
-@router.post("/checkout")
+@router.post(
+    "/checkout",
+    responses={
+        400: {"description": "Bad request"},
+        500: {"description": "Stripe not configured"},
+        502: {"description": "Stripe error"},
+    },
+)
 def create_checkout(payload: CheckoutIn):
     """
     Crea una Stripe Checkout Session con el importe indicado y devuelve
@@ -102,7 +109,14 @@ def create_checkout(payload: CheckoutIn):
     return {"id": session.id, "url": session.url}
 
 
-@router.post("/confirm")
+@router.post(
+    "/confirm",
+    responses={
+        400: {"description": "Bad request"},
+        500: {"description": "Stripe not configured"},
+        502: {"description": "Stripe error"},
+    },
+)
 def confirm_checkout(payload: ConfirmIn, db: Annotated[Session, Depends(get_db)]):
     """CONFIRM simple (sin webhook):
 

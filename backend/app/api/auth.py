@@ -21,7 +21,7 @@ def hash_password(plain: str) -> str:
     return pwd_context.hash(plain)
 
 
-@router.post("/login")
+@router.post("/login", responses={401: {"description": "Unauthorized"}})
 def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Annotated[Session, Depends(get_db)],
@@ -42,7 +42,15 @@ def me(current_user: Annotated[UserDB, Depends(get_current_user)]):
     return current_user
 
 
-@router.put("/me", response_model=User)
+@router.put(
+    "/me",
+    response_model=User,
+    responses={
+        400: {"description": "Wrong current password or password too short"},
+        409: {"description": "Username already taken"},
+        422: {"description": "Validation error"},
+    },
+)
 def update_me(
     data: UpdateMe,
     current_user: Annotated[UserDB, Depends(get_current_user)],
