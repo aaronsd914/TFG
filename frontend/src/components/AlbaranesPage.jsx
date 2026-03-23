@@ -811,16 +811,16 @@ export default function AlbaranesPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {(selected.lineas || []).map((ln) => (
+                      {(selected.items || []).map((ln) => (
                         <tr key={ln.id} className="border-b">
                           <td className="p-2">#{ln.id}</td>
-                          <td className="p-2">{ln.producto_id}</td>
+                          <td className="p-2">{ln.product_id}</td>
                           <td className="p-2">{ln.quantity}</td>
                           <td className="p-2">{formatEUR(ln.unit_price)}</td>
                           <td className="p-2">{formatEUR(ln.quantity * ln.unit_price)}</td>
                         </tr>
                       ))}
-                      {(!selected.lineas || selected.lineas.length === 0) && (
+                      {(!selected.items || selected.items.length === 0) && (
                         <tr>
                           <td className="p-3 text-sm text-gray-500" colSpan={5}>
                             {t('albaranes.noLines')}

@@ -290,7 +290,10 @@ def list_delivery_notes(db: Annotated[Session, Depends(get_db)]):
 )
 def get_delivery_note(delivery_note_id: int, db: Annotated[Session, Depends(get_db)]):
     delivery_note = (
-        db.query(DeliveryNoteDB).filter(DeliveryNoteDB.id == delivery_note_id).first()
+        db.query(DeliveryNoteDB)
+        .options(selectinload(DeliveryNoteDB.items))
+        .filter(DeliveryNoteDB.id == delivery_note_id)
+        .first()
     )
     if not delivery_note:
         raise HTTPException(404, "Albaran no encontrado")
