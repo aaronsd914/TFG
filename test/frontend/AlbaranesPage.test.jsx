@@ -91,6 +91,9 @@ describe('AlbaranesPage – modal de edición', () => {
       if (/clientes\/get$/.test(url)) {
         return Promise.resolve({ ok: true, json: () => Promise.resolve([CLIENTE]) });
       }
+      if (/productos\/get$/.test(url)) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+      }
       if (url.includes(`albaranes/get/${ALBARAN.id}`)) {
         return Promise.resolve({ ok: true, json: () => Promise.resolve({ ...ALBARAN }) });
       }
@@ -150,6 +153,9 @@ describe('AlbaranesPage – modal de edición', () => {
       if (/clientes\/get$/.test(url)) {
         return Promise.resolve({ ok: true, json: () => Promise.resolve([CLIENTE]) });
       }
+      if (/productos\/get$/.test(url)) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+      }
       if (url.includes(`albaranes/get/${ALBARAN.id}`)) {
         return Promise.resolve({ ok: true, json: () => Promise.resolve({ ...ALBARAN }) });
       }
@@ -171,5 +177,73 @@ describe('AlbaranesPage – modal de edición', () => {
     await waitFor(() => {
       expect(screen.queryByTestId('albaran-edit-save-btn')).not.toBeInTheDocument();
     });
+  });
+});
+
+const PRODUCTO = { id: 1, name: 'Producto A', price: 10.0 };
+
+const ALBARAN_CON_ITEMS = {
+  id: 2,
+  date: '2026-01-15',
+  description: 'Con items',
+  total: 20.0,
+  status: 'FIANZA',
+  customer_id: 1,
+  items: [{ id: 10, product_id: 1, quantity: 2, unit_price: 10.0 }],
+};
+
+describe('AlbaranesPage – edición de líneas', () => {
+  beforeEach(() => {
+    fetch.mockImplementation((url) => {
+      if (/albaranes\/get$/.test(url)) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([ALBARAN_CON_ITEMS]) });
+      }
+      if (/clientes\/get$/.test(url)) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([CLIENTE]) });
+      }
+      if (/productos\/get$/.test(url)) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([PRODUCTO]) });
+      }
+      if (url.includes(`albaranes/get/${ALBARAN_CON_ITEMS.id}`)) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({ ...ALBARAN_CON_ITEMS }) });
+      }
+      if (url.includes(`clientes/get/${CLIENTE.id}`)) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({ ...CLIENTE }) });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+    });
+  });
+
+  it('muestra el botón Editar líneas al abrir el detalle', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText(`#${ALBARAN_CON_ITEMS.id}`)).toBeInTheDocument());
+    await act(async () => { fireEvent.click(screen.getByText(`#${ALBARAN_CON_ITEMS.id}`)); });
+    await waitFor(() => {
+      expect(screen.getByTestId('lines-edit-btn')).toBeInTheDocument();
+    });
+  });
+
+  it('activa el modo edición al pulsar Editar líneas', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText(`#${ALBARAN_CON_ITEMS.id}`)).toBeInTheDocument());
+    await act(async () => { fireEvent.click(screen.getByText(`#${ALBARAN_CON_ITEMS.id}`)); });
+    await waitFor(() => expect(screen.getByTestId('lines-edit-btn')).toBeInTheDocument());
+    await act(async () => { fireEvent.click(screen.getByTestId('lines-edit-btn')); });
+    await waitFor(() => {
+      expect(screen.getByTestId('lines-save-btn')).toBeInTheDocument();
+      expect(screen.getByTestId('lines-cancel-btn')).toBeInTheDocument();
+    });
+  });
+
+  it('añade una fila al pulsar Añadir línea', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText(`#${ALBARAN_CON_ITEMS.id}`)).toBeInTheDocument());
+    await act(async () => { fireEvent.click(screen.getByText(`#${ALBARAN_CON_ITEMS.id}`)); });
+    await waitFor(() => expect(screen.getByTestId('lines-edit-btn')).toBeInTheDocument());
+    await act(async () => { fireEvent.click(screen.getByTestId('lines-edit-btn')); });
+    await waitFor(() => expect(screen.getByTestId('lines-add-row-btn')).toBeInTheDocument());
+    const rowsBefore = document.querySelectorAll('tbody tr').length;
+    await act(async () => { fireEvent.click(screen.getByTestId('lines-add-row-btn')); });
+    expect(document.querySelectorAll('tbody tr').length).toBeGreaterThan(rowsBefore);
   });
 });

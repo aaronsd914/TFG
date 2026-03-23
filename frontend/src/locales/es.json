@@ -311,7 +311,12 @@
     "editError": "No se pudo actualizar el albarán.",
     "editDate": "Fecha",
     "editDescription": "Descripción",
-    "editStatus": "Estado"
+    "editStatus": "Estado",
+    "linesEditBtn": "Editar líneas",
+    "linesEditSave": "Guardar líneas",
+    "linesEditAddRow": "Añadir línea",
+    "linesEditSuccess": "Líneas actualizadas correctamente.",
+    "linesEditError": "No se pudieron actualizar las líneas."
   },
   "newSale": {
     "title": "Nueva venta",

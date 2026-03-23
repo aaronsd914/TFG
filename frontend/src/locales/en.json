@@ -311,7 +311,12 @@
     "editError": "Could not update the delivery note.",
     "editDate": "Date",
     "editDescription": "Description",
-    "editStatus": "Status"
+    "editStatus": "Status",
+    "linesEditBtn": "Edit lines",
+    "linesEditSave": "Save lines",
+    "linesEditAddRow": "Add line",
+    "linesEditSuccess": "Lines updated successfully.",
+    "linesEditError": "Could not update the lines."
   },
   "newSale": {
     "title": "New sale",

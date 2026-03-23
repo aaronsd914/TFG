@@ -116,6 +116,13 @@ export default function AlbaranesPage() {
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState(null);
 
+  // edición de líneas
+  const [products, setProducts] = useState([]);
+  const [linesEditing, setLinesEditing] = useState(false);
+  const [linesForm, setLinesForm] = useState([]);
+  const [linesSaving, setLinesSaving] = useState(false);
+  const [linesError, setLinesError] = useState(null);
+
   // ✅ ID pendiente para abrir desde Clientes
   const [pendingOpenId, setPendingOpenId] = useState(null);
 
@@ -136,19 +143,22 @@ export default function AlbaranesPage() {
         setLoading(true);
         setError(null);
 
-        const [resAlb, resCli] = await Promise.all([
+        const [resAlb, resCli, resProd] = await Promise.all([
           fetch(`${API_URL}albaranes/get`),
           fetch(`${API_URL}clientes/get`),
+          fetch(`${API_URL}productos/get`),
         ]);
         if (!resAlb.ok) throw new Error(`Albaranes HTTP ${resAlb.status}`);
         if (!resCli.ok) throw new Error(`Clientes HTTP ${resCli.status}`);
 
         const alb = await resAlb.json();
         const cli = await resCli.json();
+        const prod = resProd.ok ? await resProd.json() : [];
 
         const albList = alb || [];
         setAlbaranes(albList);
         setClientes(cli || []);
+        setProducts(prod || []);
 
         const totals = albList.map((a) => safeNumber(a.total));
         if (totals.length) {
@@ -182,6 +192,12 @@ export default function AlbaranesPage() {
   const clientesById = useMemo(() => {
     const m = new Map();
     clientes.forEach((c) => m.set(c.id, c));
+    return m;
+  }, [clientes]);
+
+  const productsById = useMemo(() => {
+    const m = new Map();
+    products.forEach((p) => m.set(p.id, p));
     return m;
   }, [clientes]);
 
@@ -369,6 +385,9 @@ export default function AlbaranesPage() {
     setSelectedClient(null);
     setDetailError(null);
     setDetailTab('albaran');
+    setLinesEditing(false);
+    setLinesForm([]);
+    setLinesError(null);
   }
 
   function openEdit() {
@@ -414,6 +433,73 @@ export default function AlbaranesPage() {
       sileo.error({ title: t('albaranes.editError'), description: msg });
     } finally {
       setEditSaving(false);
+    }
+  }
+
+  function openLinesEdit() {
+    if (!selected) return;
+    setLinesForm(
+      (selected.items || []).map((item) => ({
+        product_id: item.product_id,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+      }))
+    );
+    setLinesEditing(true);
+    setLinesError(null);
+  }
+
+  function closeLinesEdit() {
+    setLinesEditing(false);
+    setLinesForm([]);
+    setLinesError(null);
+  }
+
+  function updateLineField(idx, field, value) {
+    setLinesForm((prev) =>
+      prev.map((row, i) => (i === idx ? { ...row, [field]: value } : row))
+    );
+  }
+
+  function removeLine(idx) {
+    setLinesForm((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  function addLine() {
+    setLinesForm((prev) => [
+      ...prev,
+      { product_id: products[0]?.id ?? '', quantity: 1, unit_price: 0 },
+    ]);
+  }
+
+  async function saveLinesEdit() {
+    if (!selected) return;
+    setLinesSaving(true);
+    setLinesError(null);
+    try {
+      const res = await fetch(`${API_URL}albaranes/${selected.id}/items`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: linesForm.map((r) => ({
+            product_id: Number(r.product_id),
+            quantity: Number(r.quantity),
+            unit_price: Number(r.unit_price),
+          })),
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const updated = await res.json();
+      setSelected(updated);
+      setAlbaranes((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+      closeLinesEdit();
+      sileo.success({ title: t('albaranes.linesEditSuccess') });
+    } catch (e) {
+      const msg = e?.message || t('albaranes.linesEditError');
+      setLinesError(msg);
+      sileo.error({ title: t('albaranes.linesEditError'), description: msg });
+    } finally {
+      setLinesSaving(false);
     }
   }
 
@@ -797,30 +883,130 @@ export default function AlbaranesPage() {
               </div>
 
               <div className="bg-white border border-gray-200 rounded-xl p-4">
-                <h3 className="font-semibold mb-3">{t('albaranes.linesTitle')}</h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold">{t('albaranes.linesTitle')}</h3>
+                  {!linesEditing ? (
+                    <button
+                      type="button"
+                      onClick={openLinesEdit}
+                      className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-sm"
+                      data-testid="lines-edit-btn"
+                    >
+                      {t('albaranes.linesEditBtn')}
+                    </button>
+                  ) : (
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={closeLinesEdit}
+                        disabled={linesSaving}
+                        className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-sm"
+                        data-testid="lines-cancel-btn"
+                      >
+                        {t('common.cancel')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={saveLinesEdit}
+                        disabled={linesSaving}
+                        className="px-3 py-1.5 rounded-lg bg-black text-white hover:opacity-90 text-sm disabled:opacity-50"
+                        data-testid="lines-save-btn"
+                      >
+                        {linesSaving ? t('common.saving') : t('albaranes.linesEditSave')}
+                      </button>
+                    </div>
+                  )}
+                </div>
                 {detailError && <p className="text-red-600 mb-2">Error: {detailError}</p>}
+                {linesError && <p className="text-red-600 mb-2">{linesError}</p>}
                 <div className="border rounded-xl overflow-hidden">
                   <table className="w-full border-collapse">
                     <thead>
                       <tr className="text-left border-b">
-                        <th className="p-2 w-24">{t('albaranes.colLineId')}</th>
-                        <th className="p-2 w-28">{t('albaranes.colProduct')}</th>
+                        {!linesEditing && <th className="p-2 w-24">{t('albaranes.colLineId')}</th>}
+                        <th className="p-2">{t('albaranes.colProduct')}</th>
                         <th className="p-2 w-24">{t('albaranes.colQty')}</th>
                         <th className="p-2 w-28">{t('albaranes.colUnitPrice')}</th>
                         <th className="p-2 w-28">{t('albaranes.colSubtotal')}</th>
+                        {linesEditing && <th className="p-2 w-10" />}
                       </tr>
                     </thead>
                     <tbody>
-                      {(selected.items || []).map((ln) => (
-                        <tr key={ln.id} className="border-b">
-                          <td className="p-2">#{ln.id}</td>
-                          <td className="p-2">{ln.product_id}</td>
-                          <td className="p-2">{ln.quantity}</td>
-                          <td className="p-2">{formatEUR(ln.unit_price)}</td>
-                          <td className="p-2">{formatEUR(ln.quantity * ln.unit_price)}</td>
+                      {!linesEditing &&
+                        (selected.items || []).map((ln) => (
+                          <tr key={ln.id} className="border-b">
+                            <td className="p-2">#{ln.id}</td>
+                            <td className="p-2">{productsById.get(ln.product_id)?.name ?? ln.product_id}</td>
+                            <td className="p-2">{ln.quantity}</td>
+                            <td className="p-2">{formatEUR(ln.unit_price)}</td>
+                            <td className="p-2">{formatEUR(ln.quantity * ln.unit_price)}</td>
+                          </tr>
+                        ))}
+                      {!linesEditing && (!selected.items || selected.items.length === 0) && (
+                        <tr>
+                          <td className="p-3 text-sm text-gray-500" colSpan={5}>
+                            {t('albaranes.noLines')}
+                          </td>
                         </tr>
-                      ))}
-                      {(!selected.items || selected.items.length === 0) && (
+                      )}
+                      {linesEditing &&
+                        linesForm.map((row, idx) => (
+                          <tr key={idx} className="border-b">
+                            <td className="p-1">
+                              <select
+                                value={row.product_id}
+                                onChange={(e) =>
+                                  updateLineField(idx, 'product_id', Number(e.target.value))
+                                }
+                                className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
+                              >
+                                <option value="">—</option>
+                                {products.map((p) => (
+                                  <option key={p.id} value={p.id}>
+                                    {p.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </td>
+                            <td className="p-1">
+                              <input
+                                type="number"
+                                min="1"
+                                value={row.quantity}
+                                onChange={(e) =>
+                                  updateLineField(idx, 'quantity', Number(e.target.value))
+                                }
+                                className="w-20 border border-gray-300 rounded px-2 py-1 text-sm"
+                              />
+                            </td>
+                            <td className="p-1">
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={row.unit_price}
+                                onChange={(e) =>
+                                  updateLineField(idx, 'unit_price', Number(e.target.value))
+                                }
+                                className="w-24 border border-gray-300 rounded px-2 py-1 text-sm"
+                              />
+                            </td>
+                            <td className="p-1 text-sm">
+                              {formatEUR(row.quantity * row.unit_price)}
+                            </td>
+                            <td className="p-1">
+                              <button
+                                type="button"
+                                onClick={() => removeLine(idx)}
+                                className="text-red-500 hover:text-red-700 px-1"
+                                aria-label="Eliminar línea"
+                              >
+                                ×
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      {linesEditing && linesForm.length === 0 && (
                         <tr>
                           <td className="p-3 text-sm text-gray-500" colSpan={5}>
                             {t('albaranes.noLines')}
@@ -830,6 +1016,16 @@ export default function AlbaranesPage() {
                     </tbody>
                   </table>
                 </div>
+                {linesEditing && (
+                  <button
+                    type="button"
+                    onClick={addLine}
+                    className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+                    data-testid="lines-add-row-btn"
+                  >
+                    + {t('albaranes.linesEditAddRow')}
+                  </button>
+                )}
               </div>
                 </>
               )}
