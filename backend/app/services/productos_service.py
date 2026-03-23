@@ -29,9 +29,7 @@ def create_product(payload: ProductCreate, db: Session) -> ProductDB:
     return db_product
 
 
-def update_product(
-    product_id: int, payload: ProductCreate, db: Session
-) -> ProductDB:
+def update_product(product_id: int, payload: ProductCreate, db: Session) -> ProductDB:
     product = get_product_or_404(product_id, db)
     for key, value in payload.model_dump().items():
         setattr(product, key, value)

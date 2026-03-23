@@ -8,8 +8,8 @@ class SupplierDB(Base):
     __tablename__ = "proveedores"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column('nombre', String, index=True)
-    contact = Column('contacto', String)
+    name = Column("nombre", String, index=True)
+    contact = Column("contacto", String)
 
     products = relationship(
         "ProductDB", back_populates="supplier", cascade="all, delete"

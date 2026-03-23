@@ -14,14 +14,14 @@ class DeliveryNoteRouteDB(Base):
     id = Column(Integer, primary_key=True, index=True)
 
     delivery_note_id = Column(
-        'albaran_id',
+        "albaran_id",
         Integer,
         ForeignKey("albaranes.id", ondelete="CASCADE"),
         nullable=False,
         unique=True,
     )
 
-    truck_id = Column('camion_id', Integer, nullable=False)
+    truck_id = Column("camion_id", Integer, nullable=False)
 
     delivery_note = relationship("DeliveryNoteDB")
 

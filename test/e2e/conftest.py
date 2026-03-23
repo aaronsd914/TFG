@@ -40,6 +40,11 @@ def make_driver() -> webdriver.Chrome:
     opts.add_experimental_option("prefs", {"intl.accept_languages": "es-ES,es"})
     # Selenium Manager descarga ChromeDriver automáticamente (Selenium >= 4.6)
     drv = webdriver.Chrome(options=opts)
+    # Inyectar el idioma español antes de que cargue cualquier página,
+    # para que i18next siempre use ES sin importar el locale del sistema CI.
+    drv.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
+        "source": "window.localStorage.setItem('fg-lang', 'es');"
+    })
     drv.implicitly_wait(5)
     return drv
 
@@ -61,10 +66,6 @@ def do_login(driver: webdriver.Chrome, user: str = None, password: str = None) -
     pwd.clear()
     pwd.send_keys(password)
     driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
-    wait.until(lambda d: "/login" not in d.current_url)
-    # Force Spanish so i18next always uses ES translations regardless of CI locale
-    driver.execute_script("window.localStorage.setItem('fg-lang', 'es')")
-    driver.refresh()
     wait.until(lambda d: "/login" not in d.current_url)
 
 

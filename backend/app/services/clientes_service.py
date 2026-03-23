@@ -12,7 +12,9 @@ def upsert_customer(payload: CustomerCreate, db: Session) -> CustomerDB:
     if payload.dni:
         existing = db.query(CustomerDB).filter(CustomerDB.dni == payload.dni).first()
     if not existing and payload.email:
-        existing = db.query(CustomerDB).filter(CustomerDB.email == payload.email).first()
+        existing = (
+            db.query(CustomerDB).filter(CustomerDB.email == payload.email).first()
+        )
 
     if existing:
         for field, value in payload.model_dump().items():
@@ -36,7 +38,9 @@ def get_customer_or_404(customer_id: int, db: Session) -> CustomerDB:
     return customer
 
 
-def update_customer(customer_id: int, payload: CustomerCreate, db: Session) -> CustomerDB:
+def update_customer(
+    customer_id: int, payload: CustomerCreate, db: Session
+) -> CustomerDB:
     db_customer = get_customer_or_404(customer_id, db)
     for field, value in payload.model_dump().items():
         setattr(db_customer, field, value)

@@ -12,21 +12,21 @@ class CustomerDB(Base):
     id = Column(Integer, primary_key=True, index=True)
 
     # Identity
-    name = Column('nombre', String, index=True, nullable=False)
-    surnames = Column('apellidos', String, index=True, nullable=False)
+    name = Column("nombre", String, index=True, nullable=False)
+    surnames = Column("apellidos", String, index=True, nullable=False)
     dni = Column(String, index=True, unique=True, nullable=True)
 
     # Contact
     email = Column(String, index=True, nullable=True)
-    phone1 = Column('telefono1', String, nullable=True)
-    phone2 = Column('telefono2', String, nullable=True)
+    phone1 = Column("telefono1", String, nullable=True)
+    phone2 = Column("telefono2", String, nullable=True)
 
     # Address
-    street = Column('calle', String, nullable=True)
-    house_number = Column('numero_vivienda', String, nullable=True)
-    floor_entrance = Column('piso_portal', String, nullable=True)
-    city = Column('ciudad', String, index=True, nullable=True)
-    postal_code = Column('codigo_postal', String, index=True, nullable=True)
+    street = Column("calle", String, nullable=True)
+    house_number = Column("numero_vivienda", String, nullable=True)
+    floor_entrance = Column("piso_portal", String, nullable=True)
+    city = Column("ciudad", String, index=True, nullable=True)
+    postal_code = Column("codigo_postal", String, index=True, nullable=True)
 
     delivery_notes = relationship(
         "DeliveryNoteDB", back_populates="customer", cascade="all, delete"

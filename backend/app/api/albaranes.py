@@ -57,15 +57,24 @@ def _send_delivery_note_email_task(delivery_note_id: int):
     db = SessionLocal()
     try:
         log.info("[email] Preparing send for delivery note #%s", delivery_note_id)
-        delivery_note = db.query(DeliveryNoteDB).filter(DeliveryNoteDB.id == delivery_note_id).first()
+        delivery_note = (
+            db.query(DeliveryNoteDB)
+            .filter(DeliveryNoteDB.id == delivery_note_id)
+            .first()
+        )
         if not delivery_note:
             log.warning("[email] Delivery note %s does not exist", delivery_note_id)
             return
 
-        customer = db.query(CustomerDB).filter(CustomerDB.id == delivery_note.customer_id).first()
+        customer = (
+            db.query(CustomerDB)
+            .filter(CustomerDB.id == delivery_note.customer_id)
+            .first()
+        )
         if not customer or not customer.email:
             log.warning(
-                "[email] Customer missing or no email for delivery note %s", delivery_note_id
+                "[email] Customer missing or no email for delivery note %s",
+                delivery_note_id,
             )
             return
 
@@ -123,7 +132,9 @@ def _send_delivery_note_email_task(delivery_note_id: int):
             tienda_nombre=store_name,
             logo_base64=logo_base64,
         )
-        subject = f"Albaran #{delivery_note.id} - {delivery_note.date.strftime('%d/%m/%Y')}"
+        subject = (
+            f"Albaran #{delivery_note.id} - {delivery_note.date.strftime('%d/%m/%Y')}"
+        )
         filename = f"albaran_{delivery_note.id}.pdf"
 
         send_email_with_pdf(
@@ -134,10 +145,14 @@ def _send_delivery_note_email_task(delivery_note_id: int):
             pdf_filename=filename,
         )
         log.info(
-            "[email] Send OK to customer %s for delivery note #%s", customer.email, delivery_note.id
+            "[email] Send OK to customer %s for delivery note #%s",
+            customer.email,
+            delivery_note.id,
         )
     except Exception as e:
-        log.exception("[email] Error sending delivery note #%s: %s", delivery_note_id, e)
+        log.exception(
+            "[email] Error sending delivery note #%s: %s", delivery_note_id, e
+        )
     finally:
         db.close()
 
@@ -154,14 +169,20 @@ def create_delivery_note(
     customer in the background.
     """
     if payload.customer_id:
-        customer = db.query(CustomerDB).filter(CustomerDB.id == payload.customer_id).first()
+        customer = (
+            db.query(CustomerDB).filter(CustomerDB.id == payload.customer_id).first()
+        )
         if not customer:
             raise HTTPException(404, "Cliente no encontrado")
         customer_id = customer.id
     elif payload.customer:
         c = None
         if payload.customer.dni:
-            c = db.query(CustomerDB).filter(CustomerDB.dni == payload.customer.dni).first()
+            c = (
+                db.query(CustomerDB)
+                .filter(CustomerDB.dni == payload.customer.dni)
+                .first()
+            )
         if not c and payload.customer.email:
             c = (
                 db.query(CustomerDB)
@@ -245,7 +266,9 @@ def list_delivery_notes(db: Session = Depends(get_db)):
 
 @router.get("/albaranes/get/{delivery_note_id}", response_model=DeliveryNote)
 def get_delivery_note(delivery_note_id: int, db: Session = Depends(get_db)):
-    delivery_note = db.query(DeliveryNoteDB).filter(DeliveryNoteDB.id == delivery_note_id).first()
+    delivery_note = (
+        db.query(DeliveryNoteDB).filter(DeliveryNoteDB.id == delivery_note_id).first()
+    )
     if not delivery_note:
         raise HTTPException(404, "Albaran no encontrado")
     return delivery_note
@@ -276,7 +299,9 @@ def update_status(
             status_code=400, detail="Solo se permite cambiar a ENTREGADO."
         )
 
-    delivery_note = db.query(DeliveryNoteDB).filter(DeliveryNoteDB.id == delivery_note_id).first()
+    delivery_note = (
+        db.query(DeliveryNoteDB).filter(DeliveryNoteDB.id == delivery_note_id).first()
+    )
     if not delivery_note:
         raise HTTPException(404, "Albaran no encontrado")
 
@@ -314,14 +339,20 @@ def download_delivery_note_pdf(delivery_note_id: int, db: Session = Depends(get_
     from fastapi.responses import StreamingResponse
     from io import BytesIO
 
-    delivery_note = db.query(DeliveryNoteDB).filter(DeliveryNoteDB.id == delivery_note_id).first()
+    delivery_note = (
+        db.query(DeliveryNoteDB).filter(DeliveryNoteDB.id == delivery_note_id).first()
+    )
     if not delivery_note:
         raise HTTPException(404, "Albaran no encontrado")
 
-    customer = db.query(CustomerDB).filter(CustomerDB.id == delivery_note.customer_id).first()
+    customer = (
+        db.query(CustomerDB).filter(CustomerDB.id == delivery_note.customer_id).first()
+    )
 
     lines = (
-        db.query(DeliveryNoteLineDB).filter(DeliveryNoteLineDB.delivery_note_id == delivery_note.id).all()
+        db.query(DeliveryNoteLineDB)
+        .filter(DeliveryNoteLineDB.delivery_note_id == delivery_note.id)
+        .all()
     )
     prods = {}
     if lines:

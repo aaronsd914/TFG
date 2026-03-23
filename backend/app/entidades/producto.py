@@ -8,11 +8,13 @@ class ProductDB(Base):
     __tablename__ = "productos"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column('nombre', String, index=True)
-    description = Column('descripcion', String)
-    price = Column('precio', Float)
+    name = Column("nombre", String, index=True)
+    description = Column("descripcion", String)
+    price = Column("precio", Float)
 
-    supplier_id = Column('proveedor_id', Integer, ForeignKey("proveedores.id"), nullable=False)
+    supplier_id = Column(
+        "proveedor_id", Integer, ForeignKey("proveedores.id"), nullable=False
+    )
     supplier = relationship("SupplierDB", back_populates="products")
 
 

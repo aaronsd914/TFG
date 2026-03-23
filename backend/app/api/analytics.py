@@ -148,7 +148,9 @@ def top_products(db: Session, dfrom: date, dto: date, limit: int = 10):
 
 
 def averages(db: Session, dfrom: date, dto: date):
-    q = db.query(DeliveryNoteDB).filter(DeliveryNoteDB.date >= dfrom, DeliveryNoteDB.date <= dto)
+    q = db.query(DeliveryNoteDB).filter(
+        DeliveryNoteDB.date >= dfrom, DeliveryNoteDB.date <= dto
+    )
     orders = q.count()
     total = float(
         db.query(func.coalesce(func.sum(DeliveryNoteDB.total), 0.0))

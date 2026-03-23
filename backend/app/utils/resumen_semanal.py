@@ -104,7 +104,9 @@ def _run(db: Session) -> None:
 
     from_date = today - timedelta(days=intervalo)
     movements = db.query(MovementDB).filter(MovementDB.date >= from_date).all()
-    delivery_notes = db.query(DeliveryNoteDB).filter(DeliveryNoteDB.date >= from_date).all()
+    delivery_notes = (
+        db.query(DeliveryNoteDB).filter(DeliveryNoteDB.date >= from_date).all()
+    )
 
     income = sum(float(m.amount or 0) for m in movements if m.type == "INGRESO")
     expenses = sum(float(m.amount or 0) for m in movements if m.type == "EGRESO")
@@ -160,9 +162,7 @@ def _run(db: Session) -> None:
         insight,
         intervalo,
     )
-    subject = (
-        f"Resumen {store_name} - {from_date.strftime('%d/%m')}-{today.strftime('%d/%m/%Y')}"
-    )
+    subject = f"Resumen {store_name} - {from_date.strftime('%d/%m')}-{today.strftime('%d/%m/%Y')}"
     send_email_simple(email_destino, subject, html)
 
     _set(db, "resumen_ultima_vez", today.isoformat())

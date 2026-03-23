@@ -39,7 +39,9 @@ def _fmt_date(value) -> str:
 
 
 def generate_route_invoice_pdf(
-    truck_id: int, delivery_notes: List[DeliveryNoteDB], customers_map: Dict[int, CustomerDB]
+    truck_id: int,
+    delivery_notes: List[DeliveryNoteDB],
+    customers_map: Dict[int, CustomerDB],
 ) -> bytes:
     buf = BytesIO()
     doc = SimpleDocTemplate(
@@ -175,9 +177,14 @@ def get_routes(db: Session = Depends(get_db)) -> Dict[str, Any]:
     """
     rows = (
         db.query(DeliveryNoteDB, DeliveryNoteRouteDB.truck_id)
-        .outerjoin(DeliveryNoteRouteDB, DeliveryNoteRouteDB.delivery_note_id == DeliveryNoteDB.id)
+        .outerjoin(
+            DeliveryNoteRouteDB,
+            DeliveryNoteRouteDB.delivery_note_id == DeliveryNoteDB.id,
+        )
         .filter(DeliveryNoteDB.status == "RUTA")
-        .order_by(DeliveryNoteRouteDB.truck_id.asc().nullsfirst(), DeliveryNoteDB.id.asc())
+        .order_by(
+            DeliveryNoteRouteDB.truck_id.asc().nullsfirst(), DeliveryNoteDB.id.asc()
+        )
         .all()
     )
 
@@ -238,7 +245,9 @@ def assign_route(body: AssignRouteBody, db: Session = Depends(get_db)):
     if body.camion_id <= 0:
         raise HTTPException(status_code=400, detail="camion_id debe ser > 0")
 
-    delivery_notes = db.query(DeliveryNoteDB).filter(DeliveryNoteDB.id.in_(body.albaran_ids)).all()
+    delivery_notes = (
+        db.query(DeliveryNoteDB).filter(DeliveryNoteDB.id.in_(body.albaran_ids)).all()
+    )
     found_ids = {a.id for a in delivery_notes}
     missing = [i for i in body.albaran_ids if i not in found_ids]
     if missing:
@@ -282,7 +291,9 @@ def remove_route(body: RemoveRouteBody, db: Session = Depends(get_db)):
     if not body.albaran_ids:
         raise HTTPException(status_code=400, detail="albaran_ids vacio")
 
-    delivery_notes = db.query(DeliveryNoteDB).filter(DeliveryNoteDB.id.in_(body.albaran_ids)).all()
+    delivery_notes = (
+        db.query(DeliveryNoteDB).filter(DeliveryNoteDB.id.in_(body.albaran_ids)).all()
+    )
     found_ids = {a.id for a in delivery_notes}
     missing = [i for i in body.albaran_ids if i not in found_ids]
     if missing:
@@ -308,7 +319,9 @@ def set_pending(body: PendingBody, db: Session = Depends(get_db)):
     if not body.albaran_ids:
         raise HTTPException(status_code=400, detail="albaran_ids vacio")
 
-    delivery_notes = db.query(DeliveryNoteDB).filter(DeliveryNoteDB.id.in_(body.albaran_ids)).all()
+    delivery_notes = (
+        db.query(DeliveryNoteDB).filter(DeliveryNoteDB.id.in_(body.albaran_ids)).all()
+    )
     found_ids = {a.id for a in delivery_notes}
     missing = [i for i in body.albaran_ids if i not in found_ids]
     if missing:
@@ -343,8 +356,13 @@ def settle_truck(truck_id: int, db: Session = Depends(get_db)):
 
     delivery_notes = (
         db.query(DeliveryNoteDB)
-        .join(DeliveryNoteRouteDB, DeliveryNoteRouteDB.delivery_note_id == DeliveryNoteDB.id)
-        .filter(DeliveryNoteDB.status == "RUTA", DeliveryNoteRouteDB.truck_id == truck_id)
+        .join(
+            DeliveryNoteRouteDB,
+            DeliveryNoteRouteDB.delivery_note_id == DeliveryNoteDB.id,
+        )
+        .filter(
+            DeliveryNoteDB.status == "RUTA", DeliveryNoteRouteDB.truck_id == truck_id
+        )
         .order_by(DeliveryNoteDB.id.asc())
         .all()
     )

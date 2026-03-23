@@ -17,12 +17,12 @@ class DeliveryNoteDB(Base):
     __tablename__ = "albaranes"
 
     id = Column(Integer, primary_key=True, index=True)
-    date = Column('fecha', Date, nullable=False)
-    description = Column('descripcion', String)
+    date = Column("fecha", Date, nullable=False)
+    description = Column("descripcion", String)
     total = Column(Float, default=0.0)
-    status = Column('estado', String, default="FIANZA", nullable=False)
+    status = Column("estado", String, default="FIANZA", nullable=False)
 
-    customer_id = Column('cliente_id', Integer, ForeignKey("clientes.id"))
+    customer_id = Column("cliente_id", Integer, ForeignKey("clientes.id"))
     customer = relationship("CustomerDB", back_populates="delivery_notes")
 
     items = relationship(

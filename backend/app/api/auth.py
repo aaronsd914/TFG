@@ -55,9 +55,7 @@ def update_me(
         )
 
     if data.new_username and data.new_username != current_user.username:
-        clash = (
-            db.query(UserDB).filter(UserDB.username == data.new_username).first()
-        )
+        clash = db.query(UserDB).filter(UserDB.username == data.new_username).first()
         if clash:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,

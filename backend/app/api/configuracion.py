@@ -52,9 +52,7 @@ def read_config(db: Annotated[Session, Depends(get_db)]) -> dict[str, Any]:
     response_model=ConfigItem,
     responses={400: {"description": "Clave desconocida"}},
 )
-def write_config(
-    key: str, item: ConfigItem, db: Annotated[Session, Depends(get_db)]
-):
+def write_config(key: str, item: ConfigItem, db: Annotated[Session, Depends(get_db)]):
     if key not in DEFAULTS:
         raise HTTPException(status_code=400, detail=f"Clave desconocida: {key}")
     set_value(db, key, item.value or "")
