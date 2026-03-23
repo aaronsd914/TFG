@@ -1,20 +1,19 @@
-"""Tests para /transporte — almacén, rutas, asignar, quitar, liquidar."""
+"""Tests para /transporte - almacen, rutas, asignar, quitar, liquidar."""
 
 
-# ── Helper para crear albaran en estado ALMACEN ───────────────────────────────
+# Helper para crear albaran en estado ALMACEN
 def crear_albaran_almacen(client, cliente_id, producto_id):
     r = client.post("/api/albaranes/post", json={
-        "fecha": "2026-03-01",
-        "cliente_id": cliente_id,
-        "items": [{"producto_id": producto_id, "cantidad": 2, "precio_unitario": 50.0}],
-        "estado": "ALMACEN",
-        "registrar_fianza": False,
+        "date": "2026-03-01",
+        "customer_id": cliente_id,
+        "items": [{"product_id": producto_id, "quantity": 2, "unit_price": 50.0}],
+        "status": "ALMACEN",
+        "register_deposit": False,
     })
     assert r.status_code == 200
     return r.json()
 
 
-# ── Tests ─────────────────────────────────────────────────────────────────────
 class TestAlmacenRuta:
     def test_almacen_vacio(self, client):
         r = client.get("/api/transporte/almacen")
@@ -42,7 +41,6 @@ class TestAsignarRuta:
         })
         assert r.status_code == 200
         assert r.json()["ok"] is True
-        # Ya no está en almacén
         almacen_ids = [a["id"] for a in client.get("/api/transporte/almacen").json()]
         assert alb["id"] not in almacen_ids
 
@@ -60,12 +58,12 @@ class TestAsignarRuta:
         assert r.status_code == 404
 
     def test_asignar_albaran_no_en_almacen_devuelve_400(self, client, cliente_fixture, producto):
-        """Un albarán en estado FIANZA no puede asignarse a ruta."""
+        """Un albaran en estado FIANZA no puede asignarse a ruta."""
         r = client.post("/api/albaranes/post", json={
-            "fecha": "2026-03-01",
-            "cliente_id": cliente_fixture["id"],
-            "items": [{"producto_id": producto["id"], "cantidad": 1, "precio_unitario": 10.0}],
-            "estado": "FIANZA",
+            "date": "2026-03-01",
+            "customer_id": cliente_fixture["id"],
+            "items": [{"product_id": producto["id"], "quantity": 1, "unit_price": 10.0}],
+            "status": "FIANZA",
         })
         alb_id = r.json()["id"]
         r2 = client.post("/api/transporte/ruta/asignar", json={"albaran_ids": [alb_id], "camion_id": 1})
@@ -78,7 +76,6 @@ class TestQuitarRuta:
         client.post("/api/transporte/ruta/asignar", json={"albaran_ids": [alb["id"]], "camion_id": 1})
         r = client.post("/api/transporte/ruta/quitar", json={"albaran_ids": [alb["id"]]})
         assert r.status_code == 200
-        # Vuelve a almacén
         almacen_ids = [a["id"] for a in client.get("/api/transporte/almacen").json()]
         assert alb["id"] in almacen_ids
 
@@ -97,9 +94,8 @@ class TestLiquidarCamion:
         assert body["ok"] is True
         assert body["camion_id"] == 7
         assert body["importe"] > 0
-        # Registra un movimiento de EGRESO
         movs = client.get("/api/movimientos/get").json()
-        egresos = [m for m in movs if m["tipo"] == "EGRESO" and "camión 7" in m["concepto"]]
+        egresos = [m for m in movs if m["type"] == "EGRESO" and "camion 7" in m["description"]]
         assert len(egresos) >= 1
 
     def test_liquidar_camion_sin_albaranes_devuelve_404(self, client):
@@ -117,5 +113,5 @@ class TestLiquidarCamion:
         client.post("/api/transporte/ruta/3/liquidar")
         client.post("/api/transporte/ruta/3/liquidar")
         movs = client.get("/api/movimientos/get").json()
-        egresos = [m for m in movs if m["tipo"] == "EGRESO" and "camión 3" in m["concepto"]]
+        egresos = [m for m in movs if m["type"] == "EGRESO" and "camion 3" in m["description"]]
         assert len(egresos) == 1

@@ -1,11 +1,11 @@
-"""Business logic for productos, separated from the HTTP layer."""
+"""Business logic for products, separated from the HTTP layer."""
 
 import unicodedata
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException
 
-from backend.app.entidades.producto import ProductoCreate, ProductoDB
+from backend.app.entidades.producto import ProductCreate, ProductDB
 
 
 def _norm(s: str) -> str:
@@ -14,38 +14,38 @@ def _norm(s: str) -> str:
     return "".join(ch for ch in nfkd if not unicodedata.combining(ch)).lower()
 
 
-def get_producto_or_404(producto_id: int, db: Session) -> ProductoDB:
-    producto = db.query(ProductoDB).filter(ProductoDB.id == producto_id).first()
-    if not producto:
+def get_product_or_404(product_id: int, db: Session) -> ProductDB:
+    product = db.query(ProductDB).filter(ProductDB.id == product_id).first()
+    if not product:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
-    return producto
+    return product
 
 
-def create_producto(payload: ProductoCreate, db: Session) -> ProductoDB:
-    db_producto = ProductoDB(**payload.model_dump())
-    db.add(db_producto)
+def create_product(payload: ProductCreate, db: Session) -> ProductDB:
+    db_product = ProductDB(**payload.model_dump())
+    db.add(db_product)
     db.commit()
-    db.refresh(db_producto)
-    return db_producto
+    db.refresh(db_product)
+    return db_product
 
 
-def update_producto(
-    producto_id: int, payload: ProductoCreate, db: Session
-) -> ProductoDB:
-    producto = get_producto_or_404(producto_id, db)
+def update_product(
+    product_id: int, payload: ProductCreate, db: Session
+) -> ProductDB:
+    product = get_product_or_404(product_id, db)
     for key, value in payload.model_dump().items():
-        setattr(producto, key, value)
+        setattr(product, key, value)
     db.commit()
-    db.refresh(producto)
-    return producto
+    db.refresh(product)
+    return product
 
 
-def delete_producto(producto_id: int, db: Session) -> dict:
-    producto = get_producto_or_404(producto_id, db)
+def delete_product(product_id: int, db: Session) -> dict:
+    product = get_product_or_404(product_id, db)
     try:
-        db.delete(producto)
+        db.delete(product)
         db.commit()
-        return {"message": f"Producto {producto_id} eliminado"}
+        return {"message": f"Producto {product_id} eliminado"}
     except IntegrityError:
         db.rollback()
         raise HTTPException(
@@ -54,7 +54,7 @@ def delete_producto(producto_id: int, db: Session) -> dict:
         )
 
 
-def search_productos(q: str, limit: int, db: Session) -> list[ProductoDB]:
+def search_products(q: str, limit: int, db: Session) -> list[ProductDB]:
     qn = _norm(q)
-    productos = db.query(ProductoDB).all()
-    return [p for p in productos if qn in _norm(p.nombre)][:limit]
+    products = db.query(ProductDB).all()
+    return [p for p in products if qn in _norm(p.name)][:limit]

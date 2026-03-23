@@ -1,10 +1,10 @@
-"""Tests para /api/movimientos — CRUD completo."""
+"""Tests para /api/movimientos â€” CRUD completo."""
 
 MOV_BASE = {
-    "fecha": "2026-01-15",
-    "concepto": "Pago de alquiler",
-    "cantidad": 500.0,
-    "tipo": "EGRESO",
+    "date": "2026-01-15",
+    "description": "Pago de alquiler",
+    "amount": 500.0,
+    "type": "EGRESO",
 }
 
 
@@ -17,18 +17,18 @@ class TestCrearMovimiento:
         r = crear(client)
         assert r.status_code == 200
         body = r.json()
-        assert body["concepto"] == "Pago de alquiler"
-        assert body["cantidad"] == 500.0
-        assert body["tipo"] == "EGRESO"
+        assert body["description"] == "Pago de alquiler"
+        assert body["amount"] == 500.0
+        assert body["type"] == "EGRESO"
         assert "id" in body
 
     def test_crear_ingreso(self, client):
-        r = crear(client, {**MOV_BASE, "tipo": "INGRESO", "concepto": "Venta"})
+        r = crear(client, {**MOV_BASE, "type": "INGRESO", "description": "Venta"})
         assert r.status_code == 200
-        assert r.json()["tipo"] == "INGRESO"
+        assert r.json()["type"] == "INGRESO"
 
     def test_tipo_invalido(self, client):
-        r = crear(client, {**MOV_BASE, "tipo": "OTRO"})
+        r = crear(client, {**MOV_BASE, "type": "OTRO"})
         assert r.status_code == 422
 
 
@@ -42,10 +42,10 @@ class TestObtenerMovimientos:
         assert len(r.json()) == 1
 
     def test_ordenados_por_fecha_desc(self, client):
-        crear(client, {**MOV_BASE, "fecha": "2026-01-01", "concepto": "Primero"})
-        crear(client, {**MOV_BASE, "fecha": "2026-06-01", "concepto": "Último"})
+        crear(client, {**MOV_BASE, "date": "2026-01-01", "description": "Primero"})
+        crear(client, {**MOV_BASE, "date": "2026-06-01", "description": "Ãšltimo"})
         r = client.get("/api/movimientos/get").json()
-        assert r[0]["concepto"] == "Último"
+        assert r[0]["description"] == "Ãšltimo"
 
     def test_obtener_por_id(self, client):
         mid = crear(client).json()["id"]
@@ -60,9 +60,9 @@ class TestObtenerMovimientos:
 class TestActualizarMovimiento:
     def test_actualizar_ok(self, client):
         mid = crear(client).json()["id"]
-        r = client.put(f"/api/movimientos/put/{mid}", json={**MOV_BASE, "concepto": "Actualizado"})
+        r = client.put(f"/api/movimientos/put/{mid}", json={**MOV_BASE, "description": "Actualizado"})
         assert r.status_code == 200
-        assert r.json()["concepto"] == "Actualizado"
+        assert r.json()["description"] == "Actualizado"
 
     def test_actualizar_inexistente(self, client):
         assert client.put("/api/movimientos/put/9999", json=MOV_BASE).status_code == 404

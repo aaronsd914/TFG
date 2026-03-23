@@ -1,47 +1,47 @@
-"""Business logic for movimientos, separated from the HTTP layer."""
+"""Business logic for movements, separated from the HTTP layer."""
 
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 
-from backend.app.entidades.movimiento import MovimientoCreate, MovimientoDB
+from backend.app.entidades.movimiento import MovementCreate, MovementDB
 
 
-def get_movimiento_or_404(movimiento_id: int, db: Session) -> MovimientoDB:
-    movimiento = db.query(MovimientoDB).filter(MovimientoDB.id == movimiento_id).first()
-    if not movimiento:
+def get_movement_or_404(movement_id: int, db: Session) -> MovementDB:
+    movement = db.query(MovementDB).filter(MovementDB.id == movement_id).first()
+    if not movement:
         raise HTTPException(status_code=404, detail="Movimiento no encontrado")
-    return movimiento
+    return movement
 
 
-def create_movimiento(payload: MovimientoCreate, db: Session) -> MovimientoDB:
-    nuevo = MovimientoDB(**payload.model_dump())
-    db.add(nuevo)
+def create_movement(payload: MovementCreate, db: Session) -> MovementDB:
+    new_record = MovementDB(**payload.model_dump())
+    db.add(new_record)
     db.commit()
-    db.refresh(nuevo)
-    return nuevo
+    db.refresh(new_record)
+    return new_record
 
 
-def get_all_movimientos(db: Session) -> list[MovimientoDB]:
+def get_all_movements(db: Session) -> list[MovementDB]:
     return (
-        db.query(MovimientoDB)
-        .order_by(MovimientoDB.fecha.desc(), MovimientoDB.id.desc())
+        db.query(MovementDB)
+        .order_by(MovementDB.date.desc(), MovementDB.id.desc())
         .all()
     )
 
 
-def update_movimiento(
-    movimiento_id: int, payload: MovimientoCreate, db: Session
-) -> MovimientoDB:
-    movimiento = get_movimiento_or_404(movimiento_id, db)
+def update_movement(
+    movement_id: int, payload: MovementCreate, db: Session
+) -> MovementDB:
+    movement = get_movement_or_404(movement_id, db)
     for key, value in payload.model_dump().items():
-        setattr(movimiento, key, value)
+        setattr(movement, key, value)
     db.commit()
-    db.refresh(movimiento)
-    return movimiento
+    db.refresh(movement)
+    return movement
 
 
-def delete_movimiento(movimiento_id: int, db: Session) -> dict:
-    movimiento = get_movimiento_or_404(movimiento_id, db)
-    db.delete(movimiento)
+def delete_movement(movement_id: int, db: Session) -> dict:
+    movement = get_movement_or_404(movement_id, db)
+    db.delete(movement)
     db.commit()
-    return {"message": f"Movimiento {movimiento_id} eliminado correctamente"}
+    return {"message": f"Movimiento {movement_id} eliminado correctamente"}

@@ -1,12 +1,12 @@
 """
-test_e2e_clientes.py — Pruebas E2E de la página de Clientes.
+test_e2e_clientes.py â€” Pruebas E2E de la pÃ¡gina de Clientes.
 
 Cubre:
-  - La página carga y muestra la lista de clientes (datos del seed)
-  - El campo de búsqueda está presente y filtra resultados
+  - La pÃ¡gina carga y muestra la lista de clientes (datos del seed)
+  - El campo de bÃºsqueda estÃ¡ presente y filtra resultados
   - Se puede abrir el modal de detalle de un cliente
-  - El modal de detalle tiene las pestañas "info" y "albaranes"
-  - Se puede crear un nuevo cliente a través de la UI
+  - El modal de detalle tiene las pestaÃ±as "info" y "albaranes"
+  - Se puede crear un nuevo cliente a travÃ©s de la UI
   - Se puede editar el nombre de un cliente existente
   - Se puede eliminar un cliente creado por el test
 """
@@ -51,7 +51,7 @@ def go_to_clientes(driver):
 
 
 def test_clientes_pagina_carga(logged_in_browser):
-    """La página /clientes carga y su URL es correcta."""
+    """La pÃ¡gina /clientes carga y su URL es correcta."""
     logged_in_browser.get(f"{BASE_URL}/clientes")
     WebDriverWait(logged_in_browser, 10).until(EC.url_contains("/clientes"))
     assert "/clientes" in logged_in_browser.current_url
@@ -63,19 +63,19 @@ def test_clientes_lista_datos_seed(logged_in_browser):
     WebDriverWait(logged_in_browser, 15).until(
         EC.presence_of_element_located((By.XPATH, "//*[contains(@class, 'cursor') or contains(@class, 'card') or contains(@class, 'row') or contains(@class, 'item')]"))
     )
-    # Buscar algún nombre o email que indique datos cargados
+    # Buscar algÃºn nombre o email que indique datos cargados
     body_text = logged_in_browser.find_element(By.TAG_NAME, "body").text
-    assert len(body_text) > 100, "La página parece estar vacía"
+    assert len(body_text) > 100, "La pÃ¡gina parece estar vacÃ­a"
 
 
 def test_clientes_campo_busqueda_presente(logged_in_browser):
-    """Existe un campo de búsqueda (input type=text o search) en la página."""
+    """Existe un campo de bÃºsqueda (input type=text o search) en la pÃ¡gina."""
     logged_in_browser.get(f"{BASE_URL}/clientes")
     WebDriverWait(logged_in_browser, 10).until(EC.url_contains("/clientes"))
     inputs = logged_in_browser.find_elements(
         By.CSS_SELECTOR, "input[type='text'], input[type='search'], input:not([type])"
     )
-    assert len(inputs) >= 1, "No se encontró campo de búsqueda"
+    assert len(inputs) >= 1, "No se encontrÃ³ campo de bÃºsqueda"
 
 
 def test_clientes_busqueda_filtra_resultados(logged_in_browser):
@@ -92,10 +92,10 @@ def test_clientes_busqueda_filtra_resultados(logged_in_browser):
     search_input.send_keys("aaaa_no_existe_1234")
     time.sleep(1)  # debounce
     body_text = logged_in_browser.find_element(By.TAG_NAME, "main").text
-    # Con texto sin resultados la lista debería mostrar 0 o mensaje "no encontrado"
+    # Con texto sin resultados la lista deberÃ­a mostrar 0 o mensaje "no encontrado"
     assert "aaaa_no_existe_1234" not in body_text or "0" in body_text or len(
         logged_in_browser.find_elements(By.XPATH, "//*[contains(@class,'card') or contains(@class,'row')]")
-    ) == 0 or True  # Al menos verificamos que el componente respondió
+    ) == 0 or True  # Al menos verificamos que el componente respondiÃ³
     search_input.clear()
 
 
@@ -106,15 +106,15 @@ def test_clientes_crear_nuevo_cliente(logged_in_browser):
     resp = requests.post(
         f"{BACKEND_URL}/api/clientes/post",
         json={
-            "nombre": CLIENT_NAME,
-            "apellidos": CLIENT_APELLIDOS,
+            "name": CLIENT_NAME,
+            "surnames": CLIENT_APELLIDOS,
             "email": CLIENT_EMAIL,
             "dni": CLIENT_DNI,
-            "telefono1": CLIENT_TEL1,
+            "phone1": CLIENT_TEL1,
         },
         headers=headers,
     )
-    assert resp.status_code in (200, 201), f"La API no creó el cliente: {resp.text}"
+    assert resp.status_code in (200, 201), f"La API no creÃ³ el cliente: {resp.text}"
     # Verificar que el cliente aparece en la lista del navegador
     logged_in_browser.get(f"{BASE_URL}/clientes")
     wait = WebDriverWait(logged_in_browser, 15)
@@ -132,7 +132,7 @@ def test_clientes_abrir_modal_detalle(logged_in_browser):
     logged_in_browser.get(f"{BASE_URL}/clientes")
     wait = WebDriverWait(logged_in_browser, 15)
     time.sleep(1)
-    # Usar selector específico para el <li> con cursor-pointer que contiene el nombre
+    # Usar selector especÃ­fico para el <li> con cursor-pointer que contiene el nombre
     cliente_el = wait.until(
         EC.element_to_be_clickable(
             (By.XPATH, f"//li[contains(@class,'cursor-pointer') and contains(normalize-space(.), '{CLIENT_NAME}')]")
@@ -148,7 +148,7 @@ def test_clientes_abrir_modal_detalle(logged_in_browser):
 
 
 def test_clientes_modal_tiene_tabs(logged_in_browser):
-    """El modal de detalle de cliente contiene las pestañas 'Información' y 'Albaranes'."""
+    """El modal de detalle de cliente contiene las pestaÃ±as 'InformaciÃ³n' y 'Albaranes'."""
     logged_in_browser.get(f"{BASE_URL}/clientes")
     wait = WebDriverWait(logged_in_browser, 15)
     time.sleep(1)
@@ -160,7 +160,7 @@ def test_clientes_modal_tiene_tabs(logged_in_browser):
     cliente_el.click()
     time.sleep(0.5)
     body_text = logged_in_browser.find_element(By.TAG_NAME, "body").text.lower()
-    assert "información" in body_text or "albarán" in body_text or "albaran" in body_text
+    assert "informaciÃ³n" in body_text or "albarÃ¡n" in body_text or "albaran" in body_text
 
 
 def test_clientes_eliminar_cliente_test(logged_in_browser):
@@ -169,13 +169,13 @@ def test_clientes_eliminar_cliente_test(logged_in_browser):
     headers = {"Authorization": f"Bearer {token}"}
     clients_resp = requests.get(f"{BACKEND_URL}/api/clientes/get", headers=headers)
     clients = clients_resp.json()
-    client = next((c for c in clients if c["nombre"] == CLIENT_NAME), None)
+    client = next((c for c in clients if c["name"] == CLIENT_NAME), None)
     if client:
         del_resp = requests.delete(
             f"{BACKEND_URL}/api/clientes/delete/{client['id']}", headers=headers
         )
         assert del_resp.status_code in (200, 204), f"No se pudo eliminar: {del_resp.text}"
-    # Verificar que desapareció del navegador
+    # Verificar que desapareciÃ³ del navegador
     logged_in_browser.get(f"{BASE_URL}/clientes")
     time.sleep(1)
     body_text = logged_in_browser.find_element(By.TAG_NAME, "body").text

@@ -1,4 +1,4 @@
-﻿"""Tests para /api/analytics - summary, compare, export/pdf.
+"""Tests para /api/analytics - summary, compare, export/pdf.
 
 Los tests de esta suite utilizan pytest-mock (mocker fixture) para
 sustituir la llamada a la API de Groq por un Stub/Mock, siguiendo la
@@ -57,12 +57,12 @@ class TestAnalyticsSummary:
     def test_summary_con_albaran(self, client, mocker, cliente_fixture, producto):
         # Given - neutralizar email/PDF para crear el albaran, luego stub de Groq
         mocker.patch("backend.app.api.albaranes.send_email_with_pdf", return_value=None)
-        mocker.patch("backend.app.api.albaranes.generar_pdf_albaran", return_value=b"")
+        mocker.patch("backend.app.api.albaranes.generate_delivery_note_pdf", return_value=b"")
         mocker.patch("backend.app.api.albaranes.render", return_value="<html></html>")
         client.post("/api/albaranes/post", json={
-            "fecha": "2026-01-15",
-            "cliente_id": cliente_fixture["id"],
-            "items": [{"producto_id": producto["id"], "cantidad": 2, "precio_unitario": 15.0}],
+            "date": "2026-01-15",
+            "customer_id": cliente_fixture["id"],
+            "items": [{"product_id": producto["id"], "quantity": 2, "unit_price": 15.0}],
         })
         mock_groq = mocker.patch(GROQ_PATH, return_value=GROQ_STUB)
         # When

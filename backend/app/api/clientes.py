@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from typing import List
-from backend.app.entidades.cliente import Cliente, ClienteCreate, ClienteDB
+from backend.app.entidades.cliente import Customer, CustomerCreate, CustomerDB
 from backend.app.database import get_db
 from backend.app.dependencies import get_current_user
 from backend.app.services import clientes_service
@@ -9,28 +9,28 @@ from backend.app.services import clientes_service
 router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
-@router.post("/clientes/post", response_model=Cliente)
-def crear_cliente(payload: ClienteCreate, db: Session = Depends(get_db)):
-    return clientes_service.upsert_cliente(payload, db)
+@router.post("/clientes/post", response_model=Customer)
+def create_customer(payload: CustomerCreate, db: Session = Depends(get_db)):
+    return clientes_service.upsert_customer(payload, db)
 
 
-@router.get("/clientes/get", response_model=List[Cliente])
-def obtener_clientes(db: Session = Depends(get_db)):
-    return db.query(ClienteDB).all()
+@router.get("/clientes/get", response_model=List[Customer])
+def list_customers(db: Session = Depends(get_db)):
+    return db.query(CustomerDB).all()
 
 
-@router.get("/clientes/get/{cliente_id}", response_model=Cliente)
-def obtener_cliente(cliente_id: int, db: Session = Depends(get_db)):
-    return clientes_service.get_cliente_or_404(cliente_id, db)
+@router.get("/clientes/get/{customer_id}", response_model=Customer)
+def get_customer(customer_id: int, db: Session = Depends(get_db)):
+    return clientes_service.get_customer_or_404(customer_id, db)
 
 
-@router.put("/clientes/put/{cliente_id}", response_model=Cliente)
-def actualizar_cliente(
-    cliente_id: int, payload: ClienteCreate, db: Session = Depends(get_db)
+@router.put("/clientes/put/{customer_id}", response_model=Customer)
+def update_customer(
+    customer_id: int, payload: CustomerCreate, db: Session = Depends(get_db)
 ):
-    return clientes_service.update_cliente(cliente_id, payload, db)
+    return clientes_service.update_customer(customer_id, payload, db)
 
 
-@router.delete("/clientes/delete/{cliente_id}")
-def eliminar_cliente(cliente_id: int, db: Session = Depends(get_db)):
-    return clientes_service.delete_cliente(cliente_id, db)
+@router.delete("/clientes/delete/{customer_id}")
+def delete_customer(customer_id: int, db: Session = Depends(get_db)):
+    return clientes_service.delete_customer(customer_id, db)

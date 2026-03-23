@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { getClientes } from '../api/clientes.js';
+import { getCustomers } from '../api/clientes.js';
 
-export function useClientes() {
+export function useCustomers() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -10,7 +10,7 @@ export function useClientes() {
     setLoading(true);
     setError(null);
     try {
-      setData(await getClientes());
+      setData(await getCustomers());
     } catch (e) {
       setError(e?.message || String(e));
     } finally {

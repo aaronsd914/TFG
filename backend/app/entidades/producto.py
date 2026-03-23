@@ -4,32 +4,31 @@ from backend.app.database import Base
 from pydantic import BaseModel
 
 
-class ProductoDB(Base):
+class ProductDB(Base):
     __tablename__ = "productos"
 
     id = Column(Integer, primary_key=True, index=True)
-    nombre = Column(String, index=True)
-    descripcion = Column(String)
-    precio = Column(Float)
+    name = Column('nombre', String, index=True)
+    description = Column('descripcion', String)
+    price = Column('precio', Float)
 
-    # ahora requerimos proveedor (nullable=False) porque lo vamos a seedear
-    proveedor_id = Column(Integer, ForeignKey("proveedores.id"), nullable=False)
-    proveedor = relationship("ProveedorDB", back_populates="productos")
+    supplier_id = Column('proveedor_id', Integer, ForeignKey("proveedores.id"), nullable=False)
+    supplier = relationship("SupplierDB", back_populates="products")
 
 
-class Producto(BaseModel):
+class Product(BaseModel):
     id: int
-    nombre: str
-    descripcion: str
-    precio: float
-    proveedor_id: int
+    name: str
+    description: str
+    price: float
+    supplier_id: int
 
     class Config:
         from_attributes = True
 
 
-class ProductoCreate(BaseModel):
-    nombre: str
-    descripcion: str
-    precio: float
-    proveedor_id: int
+class ProductCreate(BaseModel):
+    name: str
+    description: str
+    price: float
+    supplier_id: int

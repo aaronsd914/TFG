@@ -1,11 +1,12 @@
-// components/NuevaVenta.jsx
+﻿// components/NuevaVenta.jsx
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { sileo } from 'sileo';
+import { useTranslation } from 'react-i18next';
 import { API_URL } from '../config.js';
 
 function formatEUR(n) {
   const num = Number(n || 0);
-  return `${num.toFixed(2)} €`;
+  return `${num.toFixed(2)} â‚¬`;
 }
 
 function Label({ children, required }) {
@@ -90,6 +91,7 @@ function Section({ title, subtitle, right, error, children }) {
 }
 
 export default function NuevaVenta() {
+  const { t } = useTranslation();
   // ---- Modo cliente ----
   const [useExisting, setUseExisting] = useState(true);
 
@@ -114,8 +116,8 @@ export default function NuevaVenta() {
   const [codigoPostal, setCodigoPostal] = useState('');
 
   // ---- Venta ----
-  const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0, 10));
-  const [descripcion, setDescripcion] = useState('');
+  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [description, setDescription] = useState('');
 
   // ---- Productos ----
   const [query, setQuery] = useState('');
@@ -127,13 +129,13 @@ export default function NuevaVenta() {
   // ---- Fianza ----
   const [registrarFianza, setRegistrarFianza] = useState(false);
   const total = useMemo(
-    () => items.reduce((acc, it) => acc + it.cantidad * (it.precio_unitario ?? it.producto.precio), 0),
+    () => items.reduce((acc, it) => acc + it.quantity * (it.unit_price ?? it.producto.price), 0),
     [items]
   );
   const fianzaPorDefecto = useMemo(() => Number((total * 0.30).toFixed(2)), [total]);
-  const [fianzaCantidad, setFianzaCantidad] = useState(''); // vacío = usar 30% auto
+  const [fianzaCantidad, setFianzaCantidad] = useState(''); // vacÃ­o = usar 30% auto
 
-  // ---- Validación UI (errores) ----
+  // ---- ValidaciÃ³n UI (errores) ----
   const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState('');
 
@@ -167,7 +169,7 @@ export default function NuevaVenta() {
     const t = setTimeout(async () => {
       if (!useExisting) return;
 
-      // ✅ Si ya hay cliente seleccionado, cerramos el buscador (no sugerencias)
+      // âœ… Si ya hay cliente seleccionado, cerramos el buscador (no sugerencias)
       if (selectedClient) {
         setClientSugs([]);
         setClientActiveIdx(-1);
@@ -192,7 +194,7 @@ export default function NuevaVenta() {
           const q = clientQuery.trim().toLowerCase();
           data = all.filter(
             (c) =>
-              `${c.nombre || ''} ${c.apellidos || ''}`.toLowerCase().includes(q) ||
+              `${c.name || ''} ${c.surnames || ''}`.toLowerCase().includes(q) ||
               (c.email || '').toLowerCase().includes(q) ||
               (c.dni || '').toLowerCase().includes(q)
           );
@@ -213,7 +215,7 @@ export default function NuevaVenta() {
     setSelectedClient(c);
     setClientSugs([]);
     setClientActiveIdx(-1);
-    setClientQuery(`${c.nombre} ${c.apellidos}${c.dni ? ' · ' + c.dni : c.email ? ' · ' + c.email : ''}`);
+    setClientQuery(`${c.name} ${c.surnames}${c.dni ? ' Â· ' + c.dni : c.email ? ' Â· ' + c.email : ''}`);
     clearError('cliente');
   }
 
@@ -261,7 +263,7 @@ export default function NuevaVenta() {
         const normalize = (s = '') => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
         const nq = normalize(query);
         const scored = data
-          .map((p) => ({ p, score: normalize(p.nombre).indexOf(nq) }))
+          .map((p) => ({ p, score: normalize(p.name).indexOf(nq) }))
           .filter((x) => x.score >= 0)
           .sort((a, b) => a.score - b.score)
           .map((x) => x.p);
@@ -283,10 +285,10 @@ export default function NuevaVenta() {
       const idx = prev.findIndex((p) => p.producto.id === prod.id);
       if (idx >= 0) {
         const copy = [...prev];
-        copy[idx] = { ...copy[idx], cantidad: copy[idx].cantidad + 1 };
+        copy[idx] = { ...copy[idx], quantity: copy[idx].quantity + 1 };
         return copy;
       }
-      return [...prev, { producto: prod, cantidad: 1, precio_unitario: prod.precio }];
+      return [...prev, { producto: prod, quantity: 1, unit_price: prod.price }];
     });
     setQuery('');
     setSugerencias([]);
@@ -294,9 +296,9 @@ export default function NuevaVenta() {
     clearError('items');
   }
 
-  function updateCantidad(id, val) {
-    const cantidad = Math.max(1, Number(val) || 1);
-    setItems((prev) => prev.map((it) => (it.producto.id === id ? { ...it, cantidad } : it)));
+  function updateQuantity(id, val) {
+    const quantity = Math.max(1, Number(val) || 1);
+    setItems((prev) => prev.map((it) => (it.producto.id === id ? { ...it, quantity } : it)));
   }
 
   function removeItem(id) {
@@ -330,17 +332,17 @@ export default function NuevaVenta() {
 
     const nextErrors = {};
     const requiredLabels = {
-      clienteNombre: 'Nombre',
-      clienteApellidos: 'Apellidos',
-      clienteDni: 'DNI',
-      clienteEmail: 'Email',
-      telefono1: 'Teléfono 1',
-      calle: 'Calle',
-      numeroVivienda: 'Número',
-      ciudad: 'Ciudad',
-      codigoPostal: 'Código postal',
-      cliente: 'Cliente',
-      items: 'Productos',
+      clienteNombre: t('newSale.fieldName'),
+      clienteApellidos: t('newSale.fieldSurnames'),
+      clienteDni: t('newSale.fieldDNI'),
+      clienteEmail: t('newSale.fieldEmail'),
+      telefono1: t('newSale.fieldPhone1'),
+      calle: t('newSale.fieldStreet'),
+      numeroVivienda: t('newSale.fieldNumber'),
+      ciudad: t('newSale.fieldCity'),
+      codigoPostal: t('newSale.fieldPostCode'),
+      cliente: t('newSale.fieldClient'),
+      items: t('newSale.colProduct'),
     };
 
     const mark = (key) => {
@@ -365,13 +367,13 @@ export default function NuevaVenta() {
 
     const firstErrorKey = Object.keys(nextErrors)[0];
     if (firstErrorKey) {
-      const msg = `${requiredLabels[firstErrorKey]} es obligatorio`;
+      const msg = t('newSale.isRequired', { field: requiredLabels[firstErrorKey] });
       setErrors(nextErrors);
       setFormError(msg);
 
       try {
         sileo.warning({
-          title: '⚠️ Revisa el formulario',
+          title: t('newSale.toastFormError'),
           description: msg,
         });
       } catch {}
@@ -379,40 +381,40 @@ export default function NuevaVenta() {
     }
 
     const payloadBase = {
-      fecha,
-      descripcion,
+      date,
+      description,
       items: items.map((it) => ({
-        producto_id: it.producto.id,
-        cantidad: it.cantidad,
-        precio_unitario: it.precio_unitario ?? it.producto.precio,
+        product_id: it.producto.id,
+        quantity: it.quantity,
+        unit_price: it.unit_price ?? it.producto.price,
       })),
     };
 
     if (registrarFianza) {
-      payloadBase.registrar_fianza = true;
-      payloadBase.fianza_cantidad = fianzaCantidad === '' ? null : Number(fianzaCantidad);
+      payloadBase.register_deposit = true;
+      payloadBase.deposit_amount = fianzaCantidad === '' ? null : Number(fianzaCantidad);
     } else {
-      payloadBase.registrar_fianza = false;
+      payloadBase.register_deposit = false;
     }
 
     let payload;
     if (useExisting) {
-      payload = { ...payloadBase, cliente_id: selectedClient.id };
+      payload = { ...payloadBase, customer_id: selectedClient.id };
     } else {
       payload = {
         ...payloadBase,
-        cliente: {
-          nombre: clienteNombre.trim(),
-          apellidos: clienteApellidos.trim(),
+        customer: {
+          name: clienteNombre.trim(),
+          surnames: clienteApellidos.trim(),
           dni: clienteDni.trim(),
           email: clienteEmail.trim(),
-          telefono1: telefono1.trim(),
-          telefono2: telefono2.trim() || null,
-          calle: calle.trim(),
-          numero_vivienda: numeroVivienda.trim(),
-          piso_portal: pisoPortal.trim() || null,
-          ciudad: ciudad.trim(),
-          codigo_postal: codigoPostal.trim(),
+          phone1: telefono1.trim(),
+          phone2: telefono2.trim() || null,
+          street: calle.trim(),
+          house_number: numeroVivienda.trim(),
+          floor_entrance: pisoPortal.trim() || null,
+          city: ciudad.trim(),
+          postal_code: codigoPostal.trim(),
         },
       };
     }
@@ -427,11 +429,11 @@ export default function NuevaVenta() {
       const body = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        const msg = `Error al crear albarán: ${body?.detail || res.statusText}`;
+        const msg = `Error al crear albarÃ¡n: ${body?.detail || res.statusText}`;
         setFormError(msg);
         try {
           sileo.error({
-            title: '❌ No se pudo crear el albarán',
+            title: t('newSale.toastCreateError'),
             description: body?.detail || res.statusText,
           });
         } catch {}
@@ -440,8 +442,8 @@ export default function NuevaVenta() {
 
       // Limpieza
       setItems([]);
-      setDescripcion('');
-      setFecha(new Date().toISOString().slice(0, 10));
+      setDescription('');
+      setDate(new Date().toISOString().slice(0, 10));
       setRegistrarFianza(false);
       setFianzaCantidad('');
       setErrors({});
@@ -463,16 +465,16 @@ export default function NuevaVenta() {
         setCodigoPostal('');
       }
 
-      // ✅ Notificación Sileo con icono (correo)
+      // âœ… NotificaciÃ³n Sileo con icono (correo)
       try {
         const albId = body?.id ? `#${body.id}` : '';
         sileo.success({
-          title: `📧 Albarán creado ${albId}`.trim(),
-          description: 'Se ha enviado al cliente por correo electrónico.',
+          title: t('newSale.toastCreated', { id: albId }).trim(),
+          description: t('newSale.toastCreatedDesc'),
         });
       } catch {}
 
-      // ✅ Descargar PDF del albarán
+      // âœ… Descargar PDF del albarÃ¡n
       if (body?.id) {
         try {
           const pdfRes = await fetch(`${API_URL}albaranes/${body.id}/pdf`);
@@ -480,12 +482,12 @@ export default function NuevaVenta() {
             const blob = await pdfRes.blob();
             const today = new Date().toISOString().slice(0, 10);
             const clientName = (useExisting && selectedClient)
-              ? `_${selectedClient.nombre}_${selectedClient.apellidos}`.replace(/\s+/g, '_')
+              ? `_${selectedClient.name}_${selectedClient.surnames}`.replace(/\s+/g, '_')
               : '';
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `${today}_albaran_${body.id}${clientName}.pdf`;
+            link.download = `${today}_delivery_note_${body.id}${clientName}.pdf`;
             document.body.appendChild(link);
             link.click();
             link.remove();
@@ -494,18 +496,18 @@ export default function NuevaVenta() {
         } catch {}
       }
     } catch (e) {
-      const msg = `Error de red: ${e?.message || 'desconocido'}`;
+      const msg = `${t('newSale.toastNetworkError')}: ${e?.message || 'desconocido'}`;
       setFormError(msg);
       try {
         sileo.error({
-          title: '🌐 Error de red',
-          description: e?.message || 'No se pudo conectar con el servidor.',
+          title: t('newSale.toastNetworkError'),
+          description: e?.message || t('newSale.toastNetworkDesc'),
         });
       } catch {}
     }
   }
 
-  const totalItems = useMemo(() => items.reduce((acc, it) => acc + (Number(it.cantidad) || 0), 0), [items]);
+  const totalItems = useMemo(() => items.reduce((acc, it) => acc + (Number(it.quantity) || 0), 0), [items]);
   const fianzaFinal = registrarFianza ? (fianzaCantidad === '' ? fianzaPorDefecto : Number(fianzaCantidad || 0)) : 0;
 
   const clienteColSpan = useExisting ? 'lg:col-span-4' : 'lg:col-span-12';
@@ -514,9 +516,9 @@ export default function NuevaVenta() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
       <div className="mb-6 flex flex-col gap-2">
-        <h1 className="text-2xl font-bold text-gray-900">Nueva venta</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('newSale.title')}</h1>
         <p className="text-sm text-gray-600">
-          Crea un albarán seleccionando cliente y productos. Opcionalmente puedes registrar una fianza.
+          {t('newSale.subtitle')}
         </p>
       </div>
 
@@ -524,8 +526,8 @@ export default function NuevaVenta() {
         {/* ===== CLIENTE + DATOS VENTA ===== */}
         <div className={clienteColSpan}>
           <Section
-            title="Cliente"
-            subtitle="Elige un cliente existente o registra uno nuevo."
+            title={t('newSale.clientSection')}
+            subtitle={t('newSale.clientSubtitle')}
             error={Boolean(errors.cliente)}
             right={
               <label className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm">
@@ -540,7 +542,7 @@ export default function NuevaVenta() {
                   }}
                   className="h-4 w-4"
                 />
-                <span className="text-gray-700">Usar existente</span>
+                <span className="text-gray-700">{t('newSale.useExisting')}</span>
               </label>
             }
           >
@@ -551,17 +553,17 @@ export default function NuevaVenta() {
                     value={clientQuery}
                     onChange={(e) => {
                       setClientQuery(e.target.value);
-                      // ✅ Si editas el input, permitimos volver a buscar (des-selecciona)
+                      // âœ… Si editas el input, permitimos volver a buscar (des-selecciona)
                       if (selectedClient) setSelectedClient(null);
                       clearError('cliente');
                     }}
                     onKeyDown={onClientKeyDown}
-                    placeholder="Busca por nombre, apellidos, email o DNI…"
-                    aria-label="Buscar cliente"
+                    placeholder={t('newSale.searchClientPlaceholder')}
+                    aria-label={t('newSale.searchClientLabel')}
                     error={Boolean(errors.cliente)}
                   />
 
-                  {/* ✅ Solo mostramos el desplegable si NO hay cliente seleccionado */}
+                  {/* âœ… Solo mostramos el desplegable si NO hay cliente seleccionado */}
                   {clientQuery && !selectedClient ? (
                     <div
                       ref={clientListRef}
@@ -569,7 +571,7 @@ export default function NuevaVenta() {
                     >
                       <div className="max-h-64 overflow-auto p-1">
                         {clientSugs.length === 0 ? (
-                          <div className="px-3 py-3 text-sm text-gray-500">Sin resultados</div>
+                          <div className="px-3 py-3 text-sm text-gray-500">{t('newSale.noResults')}</div>
                         ) : (
                           clientSugs.map((c, i) => (
                             <button
@@ -588,11 +590,11 @@ export default function NuevaVenta() {
                               <div className="flex items-center justify-between gap-4">
                                 <div className="min-w-0">
                                   <div className="truncate text-sm font-semibold text-gray-900">
-                                    {c.nombre} {c.apellidos}
+                                    {c.name} {c.surnames}
                                   </div>
                                   <div className="truncate text-xs text-gray-500">
-                                    {c.dni ? `${c.dni} · ` : ''}
-                                    {c.email || 'sin email'}
+                                    {c.dni ? `${c.dni} Â· ` : ''}
+                                    {c.email || t('newSale.noResults')}
                                   </div>
                                 </div>
                                 <span className="shrink-0 rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600">
@@ -612,11 +614,11 @@ export default function NuevaVenta() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="truncate text-sm font-semibold text-gray-900">
-                          {selectedClient.nombre} {selectedClient.apellidos}
+                          {selectedClient.name} {selectedClient.surnames}
                         </div>
                         <div className="mt-1 truncate text-sm text-gray-600">
-                          {selectedClient.dni ? selectedClient.dni : 'Sin DNI'}
-                          {selectedClient.email ? ` · ${selectedClient.email}` : ''}
+                          {selectedClient.dni ? selectedClient.dni : t('newSale.sinDNI')}
+                          {selectedClient.email ? ` Â· ${selectedClient.email}` : ''}
                         </div>
                       </div>
                       <button
@@ -627,7 +629,7 @@ export default function NuevaVenta() {
                         }}
                         className="rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
                       >
-                        Quitar
+                        {t('newSale.removeItem')}
                       </button>
                     </div>
                   </div>
@@ -636,32 +638,32 @@ export default function NuevaVenta() {
             ) : (
               <div className="grid grid-cols-1 gap-3">
                 <Field
-                  label="Nombre"
+                  label={t('newSale.fieldName')}
                   required
                   value={clienteNombre}
                   onChange={(e) => {
                     setClienteNombre(e.target.value);
                     clearError('clienteNombre');
                   }}
-                  placeholder="Nombre"
+                  placeholder={t('newSale.placeholderName')}
                   error={Boolean(errors.clienteNombre)}
                 />
 
                 <Field
-                  label="Apellidos"
+                  label={t('newSale.fieldSurnames')}
                   required
                   value={clienteApellidos}
                   onChange={(e) => {
                     setClienteApellidos(e.target.value);
                     clearError('clienteApellidos');
                   }}
-                  placeholder="Apellidos"
+                  placeholder={t('newSale.placeholderSurnames')}
                   error={Boolean(errors.clienteApellidos)}
                 />
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <Field
-                    label="DNI"
+                    label={t('newSale.fieldDNI')}
                     required
                     value={clienteDni}
                     onChange={(e) => {
@@ -673,14 +675,14 @@ export default function NuevaVenta() {
                   />
 
                   <Field
-                    label="Email"
+                    label={t('newSale.fieldEmail')}
                     required
                     value={clienteEmail}
                     onChange={(e) => {
                       setClienteEmail(e.target.value);
                       clearError('clienteEmail');
                     }}
-                    placeholder="correo@dominio.com"
+                    placeholder={t('newSale.placeholderEmail')}
                     type="email"
                     error={Boolean(errors.clienteEmail)}
                   />
@@ -688,40 +690,40 @@ export default function NuevaVenta() {
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <Field
-                    label="Teléfono 1"
+                    label={t('newSale.fieldPhone1')}
                     required
                     value={telefono1}
                     onChange={(e) => {
                       setTelefono1(e.target.value);
                       clearError('telefono1');
                     }}
-                    placeholder="Móvil"
+                    placeholder={t('newSale.placeholderPhone')}
                     error={Boolean(errors.telefono1)}
                   />
 
                   <Field
-                    label="Teléfono 2"
+                    label={t('newSale.fieldPhone2')}
                     value={telefono2}
                     onChange={(e) => setTelefono2(e.target.value)}
-                    placeholder="Otro teléfono"
+                    placeholder={t('newSale.placeholderPhone2')}
                   />
                 </div>
 
                 <Field
-                  label="Calle"
+                  label={t('newSale.fieldStreet')}
                   required
                   value={calle}
                   onChange={(e) => {
                     setCalle(e.target.value);
                     clearError('calle');
                   }}
-                  placeholder="Calle"
+                  placeholder={t('newSale.placeholderStreet')}
                   error={Boolean(errors.calle)}
                 />
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <Field
-                    label="Número"
+                    label={t('newSale.fieldNumber')}
                     required
                     value={numeroVivienda}
                     onChange={(e) => {
@@ -733,7 +735,7 @@ export default function NuevaVenta() {
                   />
 
                   <Field
-                    label="Piso/Portal"
+                    label={t('newSale.fieldFloor')}
                     value={pisoPortal}
                     onChange={(e) => setPisoPortal(e.target.value)}
                     placeholder="2A"
@@ -742,26 +744,26 @@ export default function NuevaVenta() {
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <Field
-                    label="Ciudad"
+                    label={t('newSale.fieldCity')}
                     required
                     value={ciudad}
                     onChange={(e) => {
                       setCiudad(e.target.value);
                       clearError('ciudad');
                     }}
-                    placeholder="Ciudad"
+                    placeholder={t('newSale.placeholderCity')}
                     error={Boolean(errors.ciudad)}
                   />
 
                   <Field
-                    label="Código postal"
+                    label={t('newSale.fieldPostCode')}
                     required
                     value={codigoPostal}
                     onChange={(e) => {
                       setCodigoPostal(e.target.value);
                       clearError('codigoPostal');
                     }}
-                    placeholder="CP"
+                    placeholder={t('newSale.placeholderPostCode')}
                     error={Boolean(errors.codigoPostal)}
                   />
                 </div>
@@ -769,13 +771,13 @@ export default function NuevaVenta() {
             )}
 
             <div className="mt-5 grid grid-cols-1 gap-3">
-              <Field label="Fecha" required type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
+              <Field label={t('newSale.fieldDate')} required type="date" value={date} onChange={(e) => setDate(e.target.value)} />
               <TextArea
-                label="Descripción"
-                value={descripcion}
-                onChange={(e) => setDescripcion(e.target.value)}
+                label={t('newSale.fieldDescription')}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
                 rows={3}
-                placeholder="Observaciones…"
+                placeholder={t('newSale.placeholderNotes')}
               />
             </div>
           </Section>
@@ -783,14 +785,14 @@ export default function NuevaVenta() {
 
         {/* ===== PRODUCTOS ===== */}
         <div className={productosColSpan}>
-          <Section title="Productos" subtitle="Busca productos y ajusta cantidades." error={Boolean(errors.items)}>
+          <Section title={t('newSale.productsSection')} subtitle={t('newSale.productsSubtitle')} error={Boolean(errors.items)}>
             <div className="relative">
               <Field
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={onKeyDown}
-                placeholder="Buscar producto por nombre…"
-                aria-label="Buscar producto"
+                placeholder={t('newSale.searchProductPlaceholder')}
+                aria-label={t('newSale.searchProductLabel')}
                 error={Boolean(errors.items) && items.length === 0}
               />
 
@@ -801,7 +803,7 @@ export default function NuevaVenta() {
                 >
                   <div className="max-h-80 overflow-auto p-1">
                     {sugerencias.length === 0 ? (
-                      <div className="px-3 py-3 text-sm text-gray-500">Sin resultados</div>
+                          <div className="px-3 py-3 text-sm text-gray-500">{t('newSale.noResults')}</div>
                     ) : (
                       sugerencias.map((p, i) => (
                         <button
@@ -819,9 +821,9 @@ export default function NuevaVenta() {
                         >
                           <div className="flex items-center justify-between gap-4">
                             <div className="min-w-0 truncate text-sm font-medium text-gray-900">
-                              <Highlight text={p.nombre} query={query} />
+                              <Highlight text={p.name} query={query} />
                             </div>
-                            <div className="shrink-0 text-sm font-semibold text-gray-700">{formatEUR(p.precio)}</div>
+                            <div className="shrink-0 text-sm font-semibold text-gray-700">{formatEUR(p.price)}</div>
                           </div>
                         </button>
                       ))
@@ -836,29 +838,29 @@ export default function NuevaVenta() {
                 <table className="min-w-full border-collapse">
                   <thead className="bg-gray-50">
                     <tr className="text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
-                      <th className="px-4 py-3">Producto</th>
-                      <th className="px-4 py-3 w-32">Cantidad</th>
-                      <th className="px-4 py-3 w-40">Precio</th>
-                      <th className="px-4 py-3 w-40">Subtotal</th>
+                      <th className="px-4 py-3">{t('newSale.colProduct')}</th>
+                      <th className="px-4 py-3 w-32">{t('newSale.colQty')}</th>
+                      <th className="px-4 py-3 w-40">{t('newSale.colPrice')}</th>
+                      <th className="px-4 py-3 w-40">{t('newSale.colSubtotal')}</th>
                       <th className="px-4 py-3 w-14"></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white">
                     {items.map((it) => {
-                      const precio = it.precio_unitario ?? it.producto.precio;
-                      const subtotal = it.cantidad * precio;
+                      const precio = it.unit_price ?? it.producto.price;
+                      const subtotal = it.quantity * precio;
                       return (
                         <tr key={it.producto.id} className="hover:bg-gray-50">
                           <td className="px-4 py-3">
-                            <div className="text-sm font-semibold text-gray-900">{it.producto.nombre}</div>
+                            <div className="text-sm font-semibold text-gray-900">{it.producto.name}</div>
                             <div className="text-xs text-gray-500">ID {it.producto.id}</div>
                           </td>
                           <td className="px-4 py-3">
                             <input
                               type="number"
                               min="1"
-                              value={it.cantidad}
-                              onChange={(e) => updateCantidad(it.producto.id, e.target.value)}
+                              value={it.quantity}
+                              onChange={(e) => updateQuantity(it.producto.id, e.target.value)}
                               className="w-24 rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
                             />
                           </td>
@@ -873,9 +875,9 @@ export default function NuevaVenta() {
                               type="button"
                               onClick={() => removeItem(it.producto.id)}
                               className="rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"
-                              title="Quitar"
+                              title={t('newSale.removeTitle')}
                             >
-                              ✕
+                              âœ•
                             </button>
                           </td>
                         </tr>
@@ -885,8 +887,8 @@ export default function NuevaVenta() {
                     {items.length === 0 ? (
                       <tr>
                         <td colSpan={5} className="px-4 py-10 text-center">
-                          <div className="text-sm font-semibold text-gray-700">No hay productos seleccionados</div>
-                          <div className="mt-1 text-sm text-gray-500">Usa el buscador para añadir productos a la venta.</div>
+                          <div className="text-sm font-semibold text-gray-700">{t('newSale.noProducts')}</div>
+                          <div className="mt-1 text-sm text-gray-500">{t('newSale.noProductsHint')}</div>
                         </td>
                       </tr>
                     ) : null}
@@ -897,10 +899,10 @@ export default function NuevaVenta() {
               <div className="flex flex-col gap-3 border-t border-gray-100 bg-gray-50 px-4 py-4">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div className="text-sm text-gray-600">
-                    {items.length} línea(s) · {totalItems} unidad(es)
+                    {t('newSale.linesSummary', { lines: items.length, items: totalItems })}
                   </div>
                   <div className="text-sm">
-                    <span className="text-gray-600">Total:</span>{' '}
+                    <span className="text-gray-600">{t('newSale.totalLabel')}</span>{' '}
                     <span className="font-extrabold text-gray-900">{formatEUR(total)}</span>
                   </div>
                 </div>
@@ -914,12 +916,12 @@ export default function NuevaVenta() {
                         onChange={(e) => setRegistrarFianza(e.target.checked)}
                         className="h-4 w-4"
                       />
-                      Registrar fianza (30% por defecto: {formatEUR(fianzaPorDefecto)})
+                      {t('newSale.depositLabel', { amount: formatEUR(fianzaPorDefecto) })}
                     </label>
 
                     {registrarFianza ? (
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm text-gray-600">Importe:</span>
+                        <span className="text-sm text-gray-600">{t('newSale.depositAmount')}</span>
                         <input
                           type="number"
                           step="0.01"
@@ -928,8 +930,8 @@ export default function NuevaVenta() {
                           placeholder={String(fianzaPorDefecto.toFixed(2))}
                           className="w-32 rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-200"
                         />
-                        <span className="text-xs text-gray-500">(vacío = {formatEUR(fianzaPorDefecto)})</span>
-                        <span className="ml-2 text-xs text-gray-500">Aplicada: {formatEUR(fianzaFinal)}</span>
+                        <span className="text-xs text-gray-500">{t('newSale.depositEmpty', { amount: formatEUR(fianzaPorDefecto) })}</span>
+                        <span className="ml-2 text-xs text-gray-500">{t('newSale.depositApplied', { amount: formatEUR(fianzaFinal) })}</span>
                       </div>
                     ) : null}
                   </div>
@@ -938,7 +940,7 @@ export default function NuevaVenta() {
                     type="submit"
                     className="rounded-2xl bg-green-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-200"
                   >
-                    Guardar albarán
+                    {t('newSale.submitBtn')}
                   </button>
                 </div>
               </div>

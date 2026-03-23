@@ -8,10 +8,10 @@ from pydantic import BaseModel
 
 from backend.app.database import get_db
 from backend.app.dependencies import get_current_user
-from backend.app.entidades.albaran import AlbaranDB, Albaran
-from backend.app.entidades.cliente import ClienteDB
-from backend.app.entidades.albaran_ruta import AlbaranRutaDB
-from backend.app.entidades.movimiento import MovimientoDB
+from backend.app.entidades.albaran import DeliveryNoteDB, DeliveryNote
+from backend.app.entidades.cliente import CustomerDB
+from backend.app.entidades.albaran_ruta import DeliveryNoteRouteDB
+from backend.app.entidades.movimiento import MovementDB
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
@@ -24,30 +24,24 @@ router = APIRouter(
 )
 
 
-# -----------------------
-# Helpers PDF
-# -----------------------
 def _eur(n: float) -> str:
-    """Formatea un número como cadena de euros con dos decimales."""
     try:
         return f"{float(n):.2f} €"
     except (TypeError, ValueError):
         return "0.00 €"
 
 
-def _fmt_fecha(value) -> str:
-    """Convierte un objeto date/datetime a cadena 'dd/mm/yyyy'. Devuelve '—' si es None."""
+def _fmt_date(value) -> str:
     if value is None:
-        return "—"
+        return "-"
     if isinstance(value, (datetime, date)):
         return value.strftime("%d/%m/%Y")
     return str(value)
 
 
-def generar_pdf_factura_ruta(
-    camion_id: int, albaranes: List[AlbaranDB], clientes_map: Dict[int, ClienteDB]
+def generate_route_invoice_pdf(
+    truck_id: int, delivery_notes: List[DeliveryNoteDB], customers_map: Dict[int, CustomerDB]
 ) -> bytes:
-    """Genera un PDF con el listado de albaranes asignados a un camión, incluyendo cliente, total y datos del pedido."""
     buf = BytesIO()
     doc = SimpleDocTemplate(
         buf,
@@ -56,7 +50,7 @@ def generar_pdf_factura_ruta(
         rightMargin=18 * mm,
         topMargin=26 * mm,
         bottomMargin=18 * mm,
-        title=f"Factura Ruta Camión {camion_id}",
+        title=f"Factura Ruta Camion {truck_id}",
         author="Tienda",
     )
 
@@ -93,28 +87,27 @@ def generar_pdf_factura_ruta(
         )
     )
 
-    total = sum(float(a.total or 0) for a in albaranes)
-    comision = total * 0.07
-    neto_tienda = total - comision
+    total = sum(float(a.total or 0) for a in delivery_notes)
+    commission = total * 0.07
+    net_revenue = total - commission
 
     story = []
     story.append(Spacer(1, 10))
-    story.append(Paragraph(f"Factura de ruta · Camión {camion_id}", styles["H1"]))
+    story.append(Paragraph(f"Factura de ruta - Camion {truck_id}", styles["H1"]))
     story.append(
-        Paragraph(f"Fecha de emisión: {_fmt_fecha(date.today())}", styles["Muted"])
+        Paragraph(f"Fecha de emision: {_fmt_date(date.today())}", styles["Muted"])
     )
     story.append(Spacer(1, 10))
 
-    # Resumen
-    resumen = Table(
+    summary_table = Table(
         [
             ["Total albaranes", _eur(total)],
-            ["Comisión transportista (7%)", _eur(comision)],
-            ["Importe tienda (Total - 7%)", _eur(neto_tienda)],
+            ["Comision transportista (7%)", _eur(commission)],
+            ["Importe tienda (Total - 7%)", _eur(net_revenue)],
         ],
         colWidths=[90 * mm, 70 * mm],
     )
-    resumen.setStyle(
+    summary_table.setStyle(
         TableStyle(
             [
                 ("BOX", (0, 0), (-1, -1), 1, colors.HexColor("#E5E7EB")),
@@ -131,20 +124,19 @@ def generar_pdf_factura_ruta(
             ]
         )
     )
-    story.append(resumen)
+    story.append(summary_table)
     story.append(Spacer(1, 14))
 
-    # Tabla albaranes
-    data = [["Albarán", "Fecha", "Cliente", "Total"]]
-    for a in albaranes:
-        c = clientes_map.get(a.cliente_id)
-        cliente = (
-            "—"
+    data = [["Albaran", "Fecha", "Cliente", "Total"]]
+    for a in delivery_notes:
+        c = customers_map.get(a.customer_id)
+        customer_label = (
+            "-"
             if not c
-            else f"{(c.nombre or '').strip()} {(c.apellidos or '').strip()}".strip()
-            or f"Cliente #{a.cliente_id}"
+            else f"{(c.name or '').strip()} {(c.surnames or '').strip()}".strip()
+            or f"Cliente #{a.customer_id}"
         )
-        data.append([f"#{a.id}", _fmt_fecha(a.fecha), cliente, _eur(a.total or 0)])
+        data.append([f"#{a.id}", _fmt_date(a.date), customer_label, _eur(a.total or 0)])
 
     tbl = Table(data, colWidths=[22 * mm, 28 * mm, 92 * mm, 28 * mm])
     tbl.setStyle(
@@ -170,68 +162,63 @@ def generar_pdf_factura_ruta(
     )
     story.append(tbl)
     story.append(Spacer(1, 10))
-    story.append(Paragraph("Documento generado automáticamente.", styles["Muted"]))
+    story.append(Paragraph("Documento generado automaticamente.", styles["Muted"]))
 
     doc.build(story)
     return buf.getvalue()
 
 
-# -----------------------
-# Endpoints
-# -----------------------
-
-
 @router.get("/rutas")
-def get_rutas(db: Session = Depends(get_db)) -> Dict[str, Any]:
+def get_routes(db: Session = Depends(get_db)) -> Dict[str, Any]:
     """
-    Devuelve todos los albaranes en estado RUTA agrupados por camión.
-    Los que aún no tienen camión asignado aparecen en la lista 'sin_camion'.
+    Returns all delivery notes in RUTA status grouped by truck.
+    Those without an assigned truck appear in the 'without_truck' list.
     """
     rows = (
-        db.query(AlbaranDB, AlbaranRutaDB.camion_id)
-        .outerjoin(AlbaranRutaDB, AlbaranRutaDB.albaran_id == AlbaranDB.id)
-        .filter(AlbaranDB.estado == "RUTA")
-        .order_by(AlbaranRutaDB.camion_id.asc().nullsfirst(), AlbaranDB.id.asc())
+        db.query(DeliveryNoteDB, DeliveryNoteRouteDB.truck_id)
+        .outerjoin(DeliveryNoteRouteDB, DeliveryNoteRouteDB.delivery_note_id == DeliveryNoteDB.id)
+        .filter(DeliveryNoteDB.status == "RUTA")
+        .order_by(DeliveryNoteRouteDB.truck_id.asc().nullsfirst(), DeliveryNoteDB.id.asc())
         .all()
     )
 
-    grupos: Dict[int, List[AlbaranDB]] = {}
-    sin_camion: List[AlbaranDB] = []
+    groups: Dict[int, List[DeliveryNoteDB]] = {}
+    without_truck: List[DeliveryNoteDB] = []
 
-    for alb, cid in rows:
-        if cid is None:
-            sin_camion.append(alb)
+    for dn, truck_id in rows:
+        if truck_id is None:
+            without_truck.append(dn)
         else:
-            grupos.setdefault(int(cid), []).append(alb)
+            groups.setdefault(int(truck_id), []).append(dn)
 
-    camiones = [
+    trucks = [
         {
-            "camion_id": cid,
-            "albaranes": [Albaran.model_validate(x) for x in grupos[cid]],
+            "camion_id": tid,
+            "albaranes": [DeliveryNote.model_validate(x) for x in groups[tid]],
         }
-        for cid in sorted(grupos.keys())
+        for tid in sorted(groups.keys())
     ]
 
     return {
-        "camiones": camiones,
-        "sin_camion": [Albaran.model_validate(x) for x in sin_camion],
+        "camiones": trucks,
+        "sin_camion": [DeliveryNote.model_validate(x) for x in without_truck],
     }
 
 
-class AsignarRutaBody(BaseModel):
+class AssignRouteBody(BaseModel):
     camion_id: int
     albaran_ids: List[int]
 
 
-class QuitarRutaBody(BaseModel):
+class RemoveRouteBody(BaseModel):
     albaran_ids: List[int]
 
 
-class PendienteBody(BaseModel):
+class PendingBody(BaseModel):
     albaran_ids: List[int]
 
 
-class LiquidarCamionOut(BaseModel):
+class SettleTruckOut(BaseModel):
     ok: bool
     camion_id: int
     n_albaranes: int
@@ -242,202 +229,167 @@ class LiquidarCamionOut(BaseModel):
 
 
 @router.post("/ruta/asignar")
-def asignar_ruta(body: AsignarRutaBody, db: Session = Depends(get_db)):
+def assign_route(body: AssignRouteBody, db: Session = Depends(get_db)):
     """
-    Asigna uno o varios albaranes a un camión concreto. Los albaranes en
-    estado ALMACEN pasan a RUTA. También admite reasignar albaranes ya en RUTA.
+    Assigns one or more delivery notes to a specific truck. Notes in ALMACEN
+    status move to RUTA. Also accepts reassigning notes already in RUTA.
     """
     if not body.albaran_ids:
-        raise HTTPException(status_code=400, detail="albaran_ids vacío")
+        raise HTTPException(status_code=400, detail="albaran_ids vacio")
     if body.camion_id <= 0:
         raise HTTPException(status_code=400, detail="camion_id debe ser > 0")
 
-    albs = db.query(AlbaranDB).filter(AlbaranDB.id.in_(body.albaran_ids)).all()
-    found_ids = {a.id for a in albs}
+    delivery_notes = db.query(DeliveryNoteDB).filter(DeliveryNoteDB.id.in_(body.albaran_ids)).all()
+    found_ids = {a.id for a in delivery_notes}
     missing = [i for i in body.albaran_ids if i not in found_ids]
     if missing:
         raise HTTPException(status_code=404, detail=f"No existen albaranes: {missing}")
 
-    invalid = [a.id for a in albs if a.estado not in ("ALMACEN", "RUTA")]
+    invalid = [a.id for a in delivery_notes if a.status not in ("ALMACEN", "RUTA")]
     if invalid:
         raise HTTPException(
             status_code=400,
-            detail=f"No se pueden asignar (no están en ALMACEN/RUTA): {invalid}",
+            detail=f"No se pueden asignar (no estan en ALMACEN/RUTA): {invalid}",
         )
 
-    for a in albs:
-        if a.estado == "ALMACEN":
-            a.estado = "RUTA"
+    for a in delivery_notes:
+        if a.status == "ALMACEN":
+            a.status = "RUTA"
 
-    existentes = (
-        db.query(AlbaranRutaDB)
-        .filter(AlbaranRutaDB.albaran_id.in_(body.albaran_ids))
+    existing = (
+        db.query(DeliveryNoteRouteDB)
+        .filter(DeliveryNoteRouteDB.delivery_note_id.in_(body.albaran_ids))
         .all()
     )
-    map_exist = {r.albaran_id: r for r in existentes}
+    existing_map = {r.delivery_note_id: r for r in existing}
 
-    for aid in body.albaran_ids:
-        r = map_exist.get(aid)
+    for dn_id in body.albaran_ids:
+        r = existing_map.get(dn_id)
         if r:
-            r.camion_id = body.camion_id
+            r.truck_id = body.camion_id
         else:
-            db.add(AlbaranRutaDB(albaran_id=aid, camion_id=body.camion_id))
+            db.add(DeliveryNoteRouteDB(delivery_note_id=dn_id, truck_id=body.camion_id))
 
     db.commit()
-    return {"ok": True, "camion_id": body.camion_id, "n": len(albs)}
+    return {"ok": True, "camion_id": body.camion_id, "n": len(delivery_notes)}
 
 
 @router.post("/ruta/quitar")
-def quitar_ruta(body: QuitarRutaBody, db: Session = Depends(get_db)):
+def remove_route(body: RemoveRouteBody, db: Session = Depends(get_db)):
     """
-    Retira albaranes de su camión y los devuelve a estado ALMACEN,
-    eliminando también su entrada en la tabla de rutas.
+    Removes delivery notes from their truck and returns them to ALMACEN status,
+    also deleting their route table entry.
     """
     if not body.albaran_ids:
-        raise HTTPException(status_code=400, detail="albaran_ids vacío")
+        raise HTTPException(status_code=400, detail="albaran_ids vacio")
 
-    albs = db.query(AlbaranDB).filter(AlbaranDB.id.in_(body.albaran_ids)).all()
-    found_ids = {a.id for a in albs}
+    delivery_notes = db.query(DeliveryNoteDB).filter(DeliveryNoteDB.id.in_(body.albaran_ids)).all()
+    found_ids = {a.id for a in delivery_notes}
     missing = [i for i in body.albaran_ids if i not in found_ids]
     if missing:
         raise HTTPException(status_code=404, detail=f"No existen albaranes: {missing}")
 
-    for a in albs:
-        a.estado = "ALMACEN"
+    for a in delivery_notes:
+        a.status = "ALMACEN"
 
-    db.query(AlbaranRutaDB).filter(
-        AlbaranRutaDB.albaran_id.in_(body.albaran_ids)
+    db.query(DeliveryNoteRouteDB).filter(
+        DeliveryNoteRouteDB.delivery_note_id.in_(body.albaran_ids)
     ).delete(synchronize_session=False)
 
     db.commit()
-    return {"ok": True, "n": len(albs)}
+    return {"ok": True, "n": len(delivery_notes)}
 
 
 @router.post("/ruta/pendiente")
-def poner_pendiente(body: PendienteBody, db: Session = Depends(get_db)):
+def set_pending(body: PendingBody, db: Session = Depends(get_db)):
     """
-    Marca albaranes como 'en ruta sin camión asignado' (conservan estado RUTA
-    pero se elimina su asignación de camión para poder reasignarlos más tarde).
+    Marks delivery notes as 'in route without assigned truck' (keeps RUTA status
+    but removes the truck assignment so they can be reassigned later).
     """
     if not body.albaran_ids:
-        raise HTTPException(status_code=400, detail="albaran_ids vacío")
+        raise HTTPException(status_code=400, detail="albaran_ids vacio")
 
-    albs = db.query(AlbaranDB).filter(AlbaranDB.id.in_(body.albaran_ids)).all()
-    found_ids = {a.id for a in albs}
+    delivery_notes = db.query(DeliveryNoteDB).filter(DeliveryNoteDB.id.in_(body.albaran_ids)).all()
+    found_ids = {a.id for a in delivery_notes}
     missing = [i for i in body.albaran_ids if i not in found_ids]
     if missing:
         raise HTTPException(status_code=404, detail=f"No existen albaranes: {missing}")
 
-    invalid = [a.id for a in albs if a.estado not in ("ALMACEN", "RUTA")]
+    invalid = [a.id for a in delivery_notes if a.status not in ("ALMACEN", "RUTA")]
     if invalid:
         raise HTTPException(
             status_code=400,
-            detail=f"No se pueden poner pendientes (no están en ALMACEN/RUTA): {invalid}",
+            detail=f"No se pueden poner pendientes (no estan en ALMACEN/RUTA): {invalid}",
         )
 
-    for a in albs:
-        a.estado = "RUTA"
+    for a in delivery_notes:
+        a.status = "RUTA"
 
-    db.query(AlbaranRutaDB).filter(
-        AlbaranRutaDB.albaran_id.in_(body.albaran_ids)
+    db.query(DeliveryNoteRouteDB).filter(
+        DeliveryNoteRouteDB.delivery_note_id.in_(body.albaran_ids)
     ).delete(synchronize_session=False)
 
     db.commit()
-    return {"ok": True, "n": len(albs)}
+    return {"ok": True, "n": len(delivery_notes)}
 
 
-@router.post("/ruta/{camion_id}/liquidar", response_model=LiquidarCamionOut)
-def liquidar_camion(camion_id: int, db: Session = Depends(get_db)):
+@router.post("/ruta/{truck_id}/liquidar", response_model=SettleTruckOut)
+def settle_truck(truck_id: int, db: Session = Depends(get_db)):
     """
-    Liquida un camión: calcula el 7 % del valor total de sus albaranes y registra
-    un movimiento de EGRESO. Evita duplicados si se llama varias veces el mismo día.
+    Settles a truck: calculates 7% of the total value of its delivery notes and
+    registers an EGRESO movement. Avoids duplicates if called multiple times the same day.
     """
-    if camion_id <= 0:
-        raise HTTPException(status_code=400, detail="camion_id inválido")
+    if truck_id <= 0:
+        raise HTTPException(status_code=400, detail="truck_id invalido")
 
-    albs = (
-        db.query(AlbaranDB)
-        .join(AlbaranRutaDB, AlbaranRutaDB.albaran_id == AlbaranDB.id)
-        .filter(AlbaranDB.estado == "RUTA", AlbaranRutaDB.camion_id == camion_id)
-        .order_by(AlbaranDB.id.asc())
+    delivery_notes = (
+        db.query(DeliveryNoteDB)
+        .join(DeliveryNoteRouteDB, DeliveryNoteRouteDB.delivery_note_id == DeliveryNoteDB.id)
+        .filter(DeliveryNoteDB.status == "RUTA", DeliveryNoteRouteDB.truck_id == truck_id)
+        .order_by(DeliveryNoteDB.id.asc())
         .all()
     )
 
-    if not albs:
-        raise HTTPException(status_code=404, detail="No hay albaranes en ese camión.")
+    if not delivery_notes:
+        raise HTTPException(status_code=404, detail="No hay albaranes en ese camion.")
 
-    base_total = round(sum(float(a.total or 0) for a in albs), 2)
-    porcentaje = 0.07
-    importe = round(base_total * porcentaje, 2)
+    base_total = round(sum(float(a.total or 0) for a in delivery_notes), 2)
+    percentage = 0.07
+    amount = round(base_total * percentage, 2)
 
-    concepto_prefix = f"Transporte camión {camion_id}"
-    hoy = date.today()
+    description_prefix = f"Transporte camion {truck_id}"
+    today = date.today()
 
-    # Evitar duplicados si el usuario liquida varias veces en el mismo día.
-    existente = (
-        db.query(MovimientoDB)
+    existing = (
+        db.query(MovementDB)
         .filter(
-            MovimientoDB.tipo == "EGRESO",
-            MovimientoDB.fecha == hoy,
-            MovimientoDB.concepto.like(f"{concepto_prefix}%"),
+            MovementDB.type == "EGRESO",
+            MovementDB.date == today,
+            MovementDB.description.like(f"{description_prefix}%"),
         )
-        .order_by(MovimientoDB.id.desc())
+        .order_by(MovementDB.id.desc())
         .first()
     )
 
-    if existente:
-        mov = existente
+    if existing:
+        mov = existing
     else:
-        mov = MovimientoDB(
-            fecha=hoy,
-            concepto=f"{concepto_prefix} (7% de {base_total:.2f} € · {len(albs)} pedidos)",
-            cantidad=float(importe),
-            tipo="EGRESO",
+        mov = MovementDB(
+            date=today,
+            description=f"{description_prefix} (7% de {base_total:.2f} € - {len(delivery_notes)} pedidos)",
+            amount=float(amount),
+            type="EGRESO",
         )
         db.add(mov)
         db.commit()
         db.refresh(mov)
 
-    return LiquidarCamionOut(
+    return SettleTruckOut(
         ok=True,
-        camion_id=camion_id,
-        n_albaranes=len(albs),
+        camion_id=truck_id,
+        n_albaranes=len(delivery_notes),
         base_total=base_total,
         porcentaje=7.0,
-        importe=float(importe),
+        importe=float(amount),
         movimiento_id=int(mov.id),
-    )
-
-
-@router.get("/ruta/{camion_id}/factura")
-def factura_ruta(camion_id: int, db: Session = Depends(get_db)):
-    """
-    Genera y descarga el PDF de la hoja de ruta de un camión con todos
-    sus albaranes en curso.
-    """
-    if camion_id <= 0:
-        raise HTTPException(status_code=400, detail="camion_id inválido")
-
-    albs = (
-        db.query(AlbaranDB)
-        .join(AlbaranRutaDB, AlbaranRutaDB.albaran_id == AlbaranDB.id)
-        .filter(AlbaranDB.estado == "RUTA", AlbaranRutaDB.camion_id == camion_id)
-        .order_by(AlbaranDB.id.asc())
-        .all()
-    )
-
-    if not albs:
-        raise HTTPException(status_code=404, detail="No hay albaranes en ese camión.")
-
-    cliente_ids = list({a.cliente_id for a in albs})
-    clientes = db.query(ClienteDB).filter(ClienteDB.id.in_(cliente_ids)).all()
-    clientes_map = {c.id: c for c in clientes}
-
-    pdf_bytes = generar_pdf_factura_ruta(camion_id, albs, clientes_map)
-    filename = f"factura_ruta_camion_{camion_id}.pdf"
-
-    return StreamingResponse(
-        BytesIO(pdf_bytes),
-        media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )

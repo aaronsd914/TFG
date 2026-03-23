@@ -8,13 +8,13 @@ import logging
 from datetime import date, timedelta
 import random
 from sqlalchemy.orm import Session
-from backend.app.entidades.cliente import ClienteDB
-from backend.app.entidades.proveedor import ProveedorDB
-from backend.app.entidades.producto import ProductoDB
-from backend.app.entidades.albaran import AlbaranDB
-from backend.app.entidades.linea_albaran import LineaAlbaranDB
-from backend.app.entidades.movimiento import MovimientoDB
-from backend.app.entidades.usuario import UsuarioDB
+from backend.app.entidades.cliente import CustomerDB
+from backend.app.entidades.proveedor import SupplierDB
+from backend.app.entidades.producto import ProductDB
+from backend.app.entidades.albaran import DeliveryNoteDB
+from backend.app.entidades.linea_albaran import DeliveryNoteLineDB
+from backend.app.entidades.movimiento import MovementDB
+from backend.app.entidades.usuario import UserDB
 from passlib.context import CryptContext
 
 _pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -874,12 +874,12 @@ def _gen_dni(existing: set) -> str:
 # ---------------------------------------------------------------------------
 def _wipe(db: Session):
     """Elimina todos los datos en el orden correcto (FK) para dejar la BD limpia."""
-    db.query(LineaAlbaranDB).delete()
-    db.query(AlbaranDB).delete()
-    db.query(MovimientoDB).delete()
-    db.query(ProductoDB).delete()
-    db.query(ClienteDB).delete()
-    db.query(ProveedorDB).delete()
+    db.query(DeliveryNoteLineDB).delete()
+    db.query(DeliveryNoteDB).delete()
+    db.query(MovementDB).delete()
+    db.query(ProductDB).delete()
+    db.query(CustomerDB).delete()
+    db.query(SupplierDB).delete()
     db.commit()
 
 
@@ -889,18 +889,18 @@ def _wipe(db: Session):
 def _insert_providers_and_products(db: Session):
     prov_objs = []
     for nombre, contacto in PROVEEDORES:
-        p = ProveedorDB(nombre=nombre, contacto=contacto)
+        p = SupplierDB(name=nombre, contact=contacto)
         db.add(p)
         prov_objs.append(p)
     db.flush()  # obtener IDs
 
     for nombre, desc, precio, prov_idx in PRODUCTOS:
         db.add(
-            ProductoDB(
-                nombre=nombre,
-                descripcion=desc,
-                precio=float(precio),
-                proveedor_id=prov_objs[prov_idx].id,
+            ProductDB(
+                name=nombre,
+                description=desc,
+                price=float(precio),
+                supplier_id=prov_objs[prov_idx].id,
             )
         )
     db.commit()
@@ -934,24 +934,24 @@ def _insert_clients(db: Session, n: int = 100) -> list:
         used_emails.add(email)
 
         ciudad, cp = random.choice(_CIUDADES_CP)
-        c = ClienteDB(
-            nombre=nombre,
-            apellidos=apellidos,
+        c = CustomerDB(
+            name=nombre,
+            surnames=apellidos,
             dni=_gen_dni(used_dnis),
             email=email,
-            telefono1=f"6{random.randint(10, 99)}{random.randint(100000, 999999)}",
-            telefono2=f"9{random.randint(10, 99)}{random.randint(100000, 999999)}"
+            phone1=f"6{random.randint(10, 99)}{random.randint(100000, 999999)}",
+            phone2=f"9{random.randint(10, 99)}{random.randint(100000, 999999)}"
             if random.random() < 0.35
             else None,
-            calle=random.choice(_CALLES),
-            numero_vivienda=str(random.randint(1, 150)),
-            piso_portal=random.choice(
+            street=random.choice(_CALLES),
+            house_number=str(random.randint(1, 150)),
+            floor_entrance=random.choice(
                 ["1ºA", "1ºB", "2ºA", "2ºB", "3ºA", "3ºC", "Bajo", "Ático"]
             )
             if random.random() < 0.55
             else None,
-            ciudad=ciudad,
-            codigo_postal=cp,
+            city=ciudad,
+            postal_code=cp,
         )
         db.add(c)
         clients.append(c)
@@ -964,7 +964,7 @@ def _insert_clients(db: Session, n: int = 100) -> list:
 # Insertar albaranes y movimientos asociados
 # ---------------------------------------------------------------------------
 def _insert_orders(db: Session, clients: list):
-    products = db.query(ProductoDB).all()
+    products = db.query(ProductDB).all()
 
     # Distribución de albaranes por cliente (1, 2 o 3)
     shuffled = clients[:]
@@ -1006,12 +1006,12 @@ def _insert_orders(db: Session, clients: list):
                 else:
                     estado = "ENTREGADO"
 
-            alb = AlbaranDB(
-                fecha=fecha,
-                descripcion=random.choice(_DESCRIPCIONES_ALBARAN),
-                cliente_id=cli.id,
+            alb = DeliveryNoteDB(
+                date=fecha,
+                description=random.choice(_DESCRIPCIONES_ALBARAN),
+                customer_id=cli.id,
                 total=0.0,
-                estado=estado,
+                status=estado,
             )
             db.add(alb)
             db.flush()
@@ -1022,25 +1022,25 @@ def _insert_orders(db: Session, clients: list):
             for prod in prods_elegidos:
                 cant = random.randint(1, 3)
                 db.add(
-                    LineaAlbaranDB(
-                        albaran_id=alb.id,
-                        producto_id=prod.id,
-                        cantidad=cant,
-                        precio_unitario=float(prod.precio),
+                    DeliveryNoteLineDB(
+                        delivery_note_id=alb.id,
+                        product_id=prod.id,
+                        quantity=cant,
+                        unit_price=float(prod.price),
                     )
                 )
-                total += cant * float(prod.precio)
+                total += cant * float(prod.price)
 
             alb.total = round(total, 2)
 
             # Movimiento de fianza (30%) siempre al crear
             fianza = round(alb.total * 0.30, 2)
             db.add(
-                MovimientoDB(
-                    fecha=fecha,
-                    concepto=f"Fianza albarán #{alb.id}",
-                    cantidad=fianza,
-                    tipo="INGRESO",
+                MovementDB(
+                    date=fecha,
+                    description=f"Fianza albarán #{alb.id}",
+                    amount=fianza,
+                    type="INGRESO",
                 )
             )
 
@@ -1052,11 +1052,11 @@ def _insert_orders(db: Session, clients: list):
                     if fecha_entrega > today:
                         fecha_entrega = today
                     db.add(
-                        MovimientoDB(
-                            fecha=fecha_entrega,
-                            concepto=f"Cobro albarán #{alb.id} (pendiente)",
-                            cantidad=pendiente,
-                            tipo="INGRESO",
+                        MovementDB(
+                            date=fecha_entrega,
+                            description=f"Cobro albarán #{alb.id} (pendiente)",
+                            amount=pendiente,
+                            type="INGRESO",
                         )
                     )
 
@@ -1086,11 +1086,11 @@ def _insert_orders(db: Session, clients: list):
     for i, (concepto, cantidad) in enumerate(gastos):
         dias_egreso = random.randint(5, 400)
         db.add(
-            MovimientoDB(
-                fecha=today - timedelta(days=dias_egreso),
-                concepto=concepto,
-                cantidad=float(cantidad),
-                tipo="EGRESO",
+            MovementDB(
+                date=today - timedelta(days=dias_egreso),
+                description=concepto,
+                amount=float(cantidad),
+                type="EGRESO",
             )
         )
 
@@ -1103,9 +1103,9 @@ def _insert_orders(db: Session, clients: list):
 def seed(db: Session):
     """Inserta los datos de demostración solo si la base de datos está vacía."""
     # Ensure default admin user always exists
-    if not db.query(UsuarioDB).filter_by(username="admin").first():
+    if not db.query(UserDB).filter_by(username="admin").first():
         db.add(
-            UsuarioDB(
+            UserDB(
                 username="admin",
                 hashed_password=_pwd_context.hash("admin123"),
                 role="admin",
@@ -1115,7 +1115,7 @@ def seed(db: Session):
         db.commit()
         log.info("Usuario admin creado (admin/admin123).")
 
-    if db.query(ProveedorDB).count() > 0:
+    if db.query(SupplierDB).count() > 0:
         log.info("Seed omitido: la base de datos ya contiene datos.")
         return
 

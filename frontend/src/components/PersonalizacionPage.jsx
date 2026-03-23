@@ -256,37 +256,37 @@ export default function PersonalizacionPage() {
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col gap-4 max-w-xl">
-      <h2 className="text-lg font-semibold">Configuración</h2>
+      <h2 className="text-lg font-semibold">{t('settings.title')}</h2>
 
       {/* ── Mi cuenta ───────────────────────────────────────────────────── */}
-      <Accordion title="Mi cuenta" icon="👤">
+      <Accordion title={t('settings.accountSection')} icon="👤">
         <div className="flex items-center gap-3 bg-[var(--fg-sidebar)] rounded-xl px-4 py-3">
           <span className="text-xl">👤</span>
           <div>
-            <div className="text-xs text-gray-500">Usuario activo</div>
+            <div className="text-xs text-gray-500">{t('settings.activeUser')}</div>
             <div className="font-semibold text-gray-900">{currentUsername}</div>
           </div>
         </div>
 
         <form onSubmit={handleUsernameSubmit} className="flex flex-col gap-3">
-          <p className="text-sm text-gray-500">Al cambiar el nombre se cerrará la sesión.</p>
-          <Field label="Contraseña actual" type="password" value={uForm.current_password}
+          <p className="text-sm text-gray-500">{t('settings.changeSessionWarning')}</p>
+          <Field label={t('settings.currentPassword')} type="password" value={uForm.current_password}
             onChange={v => setUForm(f => ({ ...f, current_password: v }))} required />
-          <Field label="Nuevo nombre de usuario" type="text" value={uForm.new_username}
+          <Field label={t('settings.newUsername')} type="text" value={uForm.new_username}
             onChange={v => setUForm(f => ({ ...f, new_username: v }))} required minLength={3} />
-          <SaveBtn loading={uLoading} label="Cambiar usuario" />
+          <SaveBtn loading={uLoading} label={t('settings.btnChangeUser')} />
         </form>
 
         <hr className="border-gray-200" />
 
         <form onSubmit={handlePasswordSubmit} className="flex flex-col gap-3">
-          <Field label="Contraseña actual" type="password" value={pForm.current_password}
+          <Field label={t('settings.currentPassword')} type="password" value={pForm.current_password}
             onChange={v => setPForm(f => ({ ...f, current_password: v }))} required />
-          <Field label="Nueva contraseña (mín. 8 caracteres)" type="password" value={pForm.new_password}
+          <Field label={t('settings.newPasswordFull')} type="password" value={pForm.new_password}
             onChange={v => setPForm(f => ({ ...f, new_password: v }))} required minLength={8} />
-          <Field label="Confirmar nueva contraseña" type="password" value={pForm.confirm}
+          <Field label={t('settings.confirmPassword')} type="password" value={pForm.confirm}
             onChange={v => setPForm(f => ({ ...f, confirm: v }))} required minLength={8} />
-          <SaveBtn loading={pLoading} label="Cambiar contraseña" />
+          <SaveBtn loading={pLoading} label={t('settings.btnChangePassword')} />
         </form>
       </Accordion>
 
@@ -372,20 +372,17 @@ export default function PersonalizacionPage() {
       </Accordion>
 
       {/* ── Resumen por email ────────────────────────────────────────────── */}
-      <Accordion title="Resumen por email (IA)" icon="📧">
-        <p className="text-sm text-gray-500">
-          FurniGest genera automáticamente un resumen de actividad con análisis IA y lo envía
-          al email configurado según el intervalo de días elegido.
-        </p>
+      <Accordion title={t('settings.resumeSection')} icon="📧">
+        <p className="text-sm text-gray-500">{t('settings.resumeDesc')}</p>
         <form onSubmit={handleEmailSave} className="flex flex-col gap-3">
-          <Field label="Email destinatario" type="email"
+          <Field label={t('settings.emailDest')} type="email"
             value={emailDest} onChange={setEmailDest}
             placeholder="tu@email.com" required />
 
           {/* Fecha inicio + intervalo */}
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
-              <label htmlFor="email-fecha-inicio" className="text-sm text-gray-600">Fecha de inicio</label>
+              <label htmlFor="email-fecha-inicio" className="text-sm text-gray-600">{t('settings.startDate')}</label>
               <input
                 id="email-fecha-inicio"
                 type="date"
@@ -395,7 +392,7 @@ export default function PersonalizacionPage() {
               />
             </div>
             <div className="flex flex-col gap-1">
-              <label htmlFor="email-intervalo-dias" className="text-sm text-gray-600">Intervalo (días)</label>
+              <label htmlFor="email-intervalo-dias" className="text-sm text-gray-600">{t('settings.intervalDays')}</label>
               <input
                 id="email-intervalo-dias"
                 type="number"
@@ -410,7 +407,7 @@ export default function PersonalizacionPage() {
 
           {/* Hora de envío */}
           <div className="flex flex-col gap-1">
-            <label htmlFor="email-hora-envio" className="text-sm text-gray-600">Hora de envío</label>
+            <label htmlFor="email-hora-envio" className="text-sm text-gray-600">{t('settings.sendTime')}</label>
             <input
               id="email-hora-envio"
               type="time"
@@ -424,7 +421,7 @@ export default function PersonalizacionPage() {
           {nextDates.length > 0 && (
             <div data-testid="schedule-preview" className="rounded-xl border border-gray-200 bg-gray-50 p-3 flex flex-col gap-2">
               <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                Próximos envíos programados
+                {t('settings.nextScheduled')}
               </div>
               <div className="flex flex-wrap gap-2">
                 {nextDates.map((d) => (
@@ -444,21 +441,19 @@ export default function PersonalizacionPage() {
 
           <span className="text-xs text-gray-400">
             {config.resumen_ultima_vez
-              ? `Último envío: ${config.resumen_ultima_vez}`
-              : 'Aún no se ha enviado ningún resumen'}
+              ? t('settings.lastSent', { date: config.resumen_ultima_vez })
+              : t('settings.neverSent')}
           </span>
           <SaveBtn loading={emailLoading} />
         </form>
       </Accordion>
 
       {/* ── Identidad ───────────────────────────────────────────────────── */}
-      <Accordion title="Identidad de la tienda" icon="🏪">
+      <Accordion title={t('settings.identitySection')} icon="🏪">
         {/* Logo */}
         <div className="flex flex-col gap-2">
-          <div className="text-sm font-medium text-gray-700">Logo</div>
-          <p className="text-xs text-gray-500">
-            Aparece en el Sidebar y en el encabezado del PDF de albaranes. PNG/JPG, máx. 4 MB.
-          </p>
+          <div className="text-sm font-medium text-gray-700">{t('settings.logoLabel')}</div>
+          <p className="text-xs text-gray-500">{t('settings.logoDesc')}</p>
           <div className="flex items-center gap-3 flex-wrap">
             {config.logo_empresa ? (
               <>
@@ -472,15 +467,15 @@ export default function PersonalizacionPage() {
                   onClick={handleLogoRemove}
                   className="text-sm text-red-500 hover:text-red-700 transition-colors"
                 >
-                  Eliminar
+                  {t('settings.removeLogo')}
                 </button>
               </>
             ) : (
-              <span className="text-sm text-gray-400 italic">Sin logo</span>
+              <span className="text-sm text-gray-400 italic">{t('settings.noLogo')}</span>
             )}
           </div>
           <label className="self-start cursor-pointer px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-            {config.logo_empresa ? 'Cambiar logo' : 'Subir logo'}
+            {config.logo_empresa ? t('settings.changeLogo') : t('settings.uploadLogo')}
             <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
           </label>
         </div>
@@ -489,10 +484,8 @@ export default function PersonalizacionPage() {
 
         {/* Firma de email */}
         <form onSubmit={handleFirmaSave} className="flex flex-col gap-3">
-          <div className="text-sm font-medium text-gray-700">Firma en emails de albarán</div>
-          <p className="text-xs text-gray-500">
-            Texto que aparece al final de los emails enviados al entregar un albarán.
-          </p>
+          <div className="text-sm font-medium text-gray-700">{t('settings.emailSignature')}</div>
+          <p className="text-xs text-gray-500">{t('settings.emailSignatureDesc')}</p>
           <textarea
             value={firma}
             onChange={e => setFirma(e.target.value)}
@@ -500,7 +493,7 @@ export default function PersonalizacionPage() {
             placeholder="Ej: FurniGest · Calle Mayor 10 · Tel: 666 123 456"
             className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 resize-none"
           />
-          <SaveBtn loading={firmaLoading} label="Guardar firma" />
+          <SaveBtn loading={firmaLoading} label={t('settings.saveSignature')} />
         </form>
       </Accordion>
     </div>

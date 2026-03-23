@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { getMovimientos } from '../api/movimientos.js';
+import { getMovements } from '../api/movimientos.js';
 
-export function useMovimientos() {
+export function useMovements() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -10,7 +10,7 @@ export function useMovimientos() {
     setLoading(true);
     setError(null);
     try {
-      setData(await getMovimientos());
+      setData(await getMovements());
     } catch (e) {
       setError(e?.message || String(e));
     } finally {

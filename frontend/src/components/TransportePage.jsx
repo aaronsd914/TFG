@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { sileo } from 'sileo';
 import { AnimatedTabs } from './ui/AnimatedTabs.jsx';
 
@@ -13,7 +14,7 @@ function eur(n) {
 }
 function fmtDate(d) {
   const dt = new Date(d);
-  if (Number.isNaN(dt.getTime())) return '—';
+  if (Number.isNaN(dt.getTime())) return 'â€”';
   return dt.toLocaleDateString('es-ES');
 }
 function sumTotal(albaranes) {
@@ -22,25 +23,26 @@ function sumTotal(albaranes) {
 function clienteLabel(clientesMap, clienteId) {
   const c = clientesMap.get(clienteId);
   if (!c) return `Cliente #${clienteId}`;
-  return `${c.nombre} ${c.apellidos}`.trim();
+  return `${c.name} ${c.surnames}`.trim();
 }
 
 function AlbaranCard({ a, clientesMap, draggable, onDragStart, onDragEnd, children }) {
+  const { t } = useTranslation();
   return (
     <div
       className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm hover:shadow transition"
       draggable={draggable}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      title={draggable ? "Arrastra para mover" : undefined}
+      title={draggable ? t('transport.dragHandle') : undefined}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="font-semibold">#{a.id}</div>
-          <div className="text-sm text-gray-600 truncate">{clienteLabel(clientesMap, a.cliente_id)}</div>
+          <div className="text-sm text-gray-600 truncate">{clienteLabel(clientesMap, a.customer_id)}</div>
         </div>
         <div className="text-right text-sm">
-          <div className="text-gray-600">{fmtDate(a.fecha)}</div>
+          <div className="text-gray-600">{fmtDate(a.date)}</div>
           <div className="font-semibold">{eur(a.total)}</div>
         </div>
       </div>
@@ -78,6 +80,7 @@ function ModalCenter({ isOpen, onClose, children, maxWidth = 'max-w-xl' }) {
 }
 
 export default function TransportePage() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
   const [processing, setProcessing] = useState(false);
@@ -152,15 +155,15 @@ export default function TransportePage() {
   }, [clientes]);
 
 
-  // Filtrado general: almacén, en ruta y camiones
+  // Filtrado general: almacÃ©n, en ruta y camiones
   const filterAlbaranes = useCallback((albaranes) => {
     const q = (search || '').trim().toLowerCase();
     if (!q) return albaranes;
     return (albaranes || []).filter(a => {
       const idStr = String(a.id);
-      const cli = clienteLabel(clientesMap, a.cliente_id).toLowerCase();
+      const cli = clienteLabel(clientesMap, a.customer_id).toLowerCase();
       const totalStr = a.total !== undefined ? String(a.total) : '';
-      const fechaStr = a.fecha ? String(a.fecha) : '';
+      const fechaStr = a.date ? String(a.date) : '';
       // Buscar en id, cliente, total y fecha
       return (
         idStr.includes(q) ||
@@ -171,15 +174,15 @@ export default function TransportePage() {
     });
   }, [search, clientesMap]);
 
-  // Filtrar almacén
+  // Filtrar almacÃ©n
   const almacenFiltrado = useMemo(() => filterAlbaranes(almacen), [almacen, filterAlbaranes]);
-  // Filtrar en ruta (sin camión)
+  // Filtrar en ruta (sin camiÃ³n)
   const pendienteFiltrado = useMemo(() => filterAlbaranes(rutas.sin_camion || []), [rutas, filterAlbaranes]);
-  // Filtrar camiones: para cada camión, filtrar sus albaranes
+  // Filtrar camiones: para cada camiÃ³n, filtrar sus albaranes
   const camionesMapFiltrado = useMemo(() => {
     const m = new Map();
     (rutas.camiones || []).forEach(c => m.set(Number(c.camion_id), filterAlbaranes(c.albaranes || [])));
-    // También filtrar los camiones extra aunque estén vacíos
+    // TambiÃ©n filtrar los camiones extra aunque estÃ©n vacÃ­os
     camionesExtra.forEach(cid => {
       if (!m.has(cid)) m.set(cid, []);
     });
@@ -197,7 +200,7 @@ export default function TransportePage() {
         fetch(`${API_URL}clientes/get`),
       ]);
 
-      if (!rAlm.ok) throw new Error(`Almacén HTTP ${rAlm.status}`);
+      if (!rAlm.ok) throw new Error(`AlmacÃ©n HTTP ${rAlm.status}`);
       if (!rRut.ok) throw new Error(`Rutas HTTP ${rRut.status}`);
       if (!rCli.ok) throw new Error(`Clientes HTTP ${rCli.status}`);
 
@@ -211,7 +214,7 @@ export default function TransportePage() {
       setRutas(rut);
       setClientes(cli);
 
-      // ✅ Persistimos camiones “vistos” (para que no desaparezcan cuando queden vacíos)
+      // âœ… Persistimos camiones â€œvistosâ€ (para que no desaparezcan cuando queden vacÃ­os)
       try {
         const idsServer = (rut?.camiones || []).map(x => Number(x.camion_id)).filter(Boolean);
         if (idsServer.length) {
@@ -257,13 +260,13 @@ export default function TransportePage() {
         return;
       }
       setCamionesOcultos(prev => prev.filter(x => x !== Number(camion_id)));
-      // Aseguramos que el camión quede persistido.
+      // Aseguramos que el camiÃ³n quede persistido.
       setCamionesExtra(prev => Array.from(new Set([...(prev || []), Number(camion_id)])).sort((a, b) => a - b));
       await fetchAll();
 
       sileo.success({
-        title: `Asignado al camión ${camion_id}`,
-        description: `Albarán #${albaran_id} añadido a la ruta.`,
+        title: `Asignado al camiÃ³n ${camion_id}`,
+        description: `AlbarÃ¡n #${albaran_id} aÃ±adido a la ruta.`,
       });
     } catch (e) {
       sileo.error({
@@ -286,7 +289,7 @@ export default function TransportePage() {
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
         sileo.error({
-          title: 'No se pudo volver a Almacén',
+          title: 'No se pudo volver a AlmacÃ©n',
           description: j.detail || res.statusText,
         });
         return;
@@ -294,8 +297,8 @@ export default function TransportePage() {
       await fetchAll();
 
       sileo.success({
-        title: 'Devuelto a Almacén',
-        description: `Albarán #${albaran_id} vuelto a ALMACÉN.`,
+        title: 'Devuelto a AlmacÃ©n',
+        description: `AlbarÃ¡n #${albaran_id} vuelto a ALMACÃ‰N.`,
       });
     } catch (e) {
       sileo.error({
@@ -327,7 +330,7 @@ export default function TransportePage() {
 
       sileo.success({
         title: 'En ruta',
-        description: `Albarán #${albaran_id} movido a “En ruta (pendiente camión)”.`,
+        description: `AlbarÃ¡n #${albaran_id} movido a â€œEn ruta (pendiente camiÃ³n)â€.`,
       });
     } catch (e) {
       sileo.error({
@@ -359,7 +362,7 @@ export default function TransportePage() {
 
       sileo.success({
         title: 'Entregado',
-        description: `Albarán #${id} marcado como ENTREGADO.`,
+        description: `AlbarÃ¡n #${id} marcado como ENTREGADO.`,
       });
     } catch (e) {
       sileo.error({
@@ -420,8 +423,8 @@ export default function TransportePage() {
       }));
 
       sileo.success({
-        title: `Ruta aceptada (Camión ${camion_id})`,
-        description: `Gasto registrado: ${eur(liq.importe)} (7%) · Factura descargada.`,
+        title: `Ruta aceptada (CamiÃ³n ${camion_id})`,
+        description: `Gasto registrado: ${eur(liq.importe)} (7%) Â· Factura descargada.`,
       });
     } catch (e) {
       sileo.error({
@@ -462,15 +465,15 @@ export default function TransportePage() {
       setDragging(null);
       if (!payload) return;
 
-      // ✅ Flujo lógico: Almacén -> En ruta -> Camión
-      // (y también permitimos atajo Almacén -> Camión)
+      // âœ… Flujo lÃ³gico: AlmacÃ©n -> En ruta -> CamiÃ³n
+      // (y tambiÃ©n permitimos atajo AlmacÃ©n -> CamiÃ³n)
       if (payload.from === 'sin_camion' || payload.from === 'almacen') {
         await asignarA(camion_id, payload.id);
       }
     };
   }
 
-  // ✅ FIX: ahora es async
+  // âœ… FIX: ahora es async
   async function onDropToAlmacen(e) {
     e.preventDefault();
     setOverZone(null);
@@ -482,14 +485,14 @@ export default function TransportePage() {
     }
   }
 
-  // ✅ FIX: ahora es async
+  // âœ… FIX: ahora es async
   async function onDropToPendiente(e) {
     e.preventDefault();
     setOverZone(null);
     const payload = dragging;
     setDragging(null);
     if (!payload) return;
-    // Desde almacén → En ruta, o desde camión → En ruta
+    // Desde almacÃ©n â†’ En ruta, o desde camiÃ³n â†’ En ruta
     if (payload.from === 'almacen' || (payload.from && payload.from.startsWith('camion:'))) {
       await ponerPendiente(payload.id);
     }
@@ -499,8 +502,8 @@ export default function TransportePage() {
     const n = Number(nuevoCamion);
     if (!Number.isInteger(n) || n <= 0) {
       sileo.warning({
-        title: 'Número inválido',
-        description: 'El camión debe ser un número entero mayor que 0.',
+        title: 'NÃºmero invÃ¡lido',
+        description: 'El camiÃ³n debe ser un nÃºmero entero mayor que 0.',
       });
       return;
     }
@@ -514,8 +517,8 @@ export default function TransportePage() {
     setNuevoCamion('');
 
     sileo.success({
-      title: 'Camión añadido',
-      description: `Camión ${n} creado.`,
+      title: 'CamiÃ³n aÃ±adido',
+      description: `CamiÃ³n ${n} creado.`,
     });
   }
   function quitarCamion(cid) {
@@ -528,8 +531,8 @@ export default function TransportePage() {
     });
 
     sileo.success({
-      title: 'Camión eliminado',
-      description: `Camión ${cid} eliminado.`,
+      title: 'CamiÃ³n eliminado',
+      description: `CamiÃ³n ${cid} eliminado.`,
     });
   }
 
@@ -553,13 +556,13 @@ export default function TransportePage() {
     const isEmpty = (albs || []).length === 0;
     const accepted = Boolean(camionesAceptados?.[String(cid)]);
 
-    // vacío: otro color (y no desaparece)
+    // vacÃ­o: otro color (y no desaparece)
     if (isEmpty) {
       return {
         box: 'bg-white',
         header: 'bg-gray-100',
         border: 'border-gray-200',
-        badge: 'Vacío',
+        badge: 'VacÃ­o',
         badgeClass: 'bg-gray-100 border-gray-200 text-gray-700',
       };
     }
@@ -582,7 +585,7 @@ export default function TransportePage() {
   }
 
   if (loading) {
-    return <div className="p-3 md:p-6 text-gray-600">Cargando…</div>;
+    return <div className="p-3 md:p-6 text-gray-600">{t('transport.loading')}</div>;
   }
   if (err) {
     return <div className="p-3 md:p-6 text-red-600">{err}</div>;
@@ -592,11 +595,11 @@ export default function TransportePage() {
     <>
       <div className="p-3 md:p-6 space-y-6">
         <div className="flex items-center justify-between gap-3">
-          <h1 className="text-2xl font-semibold">Transporte</h1>
+          <h1 className="text-2xl font-semibold">{t('transport.title')}</h1>
           <AnimatedTabs
             tabs={[
-              { value: 'almacen', label: `Almacén (${almacenFiltrado.length})` },
-              { value: 'ruta', label: `En ruta (${pendienteFiltrado.length})` },
+              { value: 'almacen', label: t('transport.tabWarehouse', { n: almacenFiltrado.length }) },
+              { value: 'ruta', label: t('transport.tabInRoute', { n: pendienteFiltrado.length }) },
             ]}
             activeTab={activeTab}
             onChange={setActiveTab}
@@ -607,31 +610,31 @@ export default function TransportePage() {
           <div className="flex flex-col md:flex-row gap-3 md:items-end">
             <div className="flex-1">
               <div className="text-sm text-gray-600 mb-1 flex items-center justify-between">
-                <span>Buscar</span>
+                <span>{t('transport.search')}</span>
                 <button
                   onClick={() => setCamionesModalOpen(true)}
                   className="px-3 py-2 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 ml-2"
                   disabled={processing}
                   type="button"
                 >
-                  Camiones
+                  {t('transport.trucks')}
                 </button>
               </div>
               <input
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="ID, cliente, total o fecha…"
+                placeholder={t('transport.searchPlaceholder')}
                 className="w-full border rounded-lg px-3 py-2"
               />
               <div className="text-xs text-gray-500 mt-2">
-                Flujo recomendado: <span className="font-medium">Almacén → En ruta → Camión</span>.
+                {t('transport.flowHint')} <span className="font-medium">{t('transport.flowRoute')}</span>.
               </div>
             </div>
           </div>
         </div>
 
         <div className="flex gap-4 overflow-x-auto pb-2">
-        {/* ALMACÉN */}
+        {/* ALMACÃ‰N */}
         <div
           className={`min-w-[320px] max-w-[360px] flex-shrink-0 rounded-2xl border overflow-hidden bg-gray-50 transition-all duration-200 ${
             activeTab === 'ruta' ? 'hidden md:flex md:flex-col' : 'flex flex-col'
@@ -643,8 +646,8 @@ export default function TransportePage() {
           onDrop={onDropToAlmacen}
         >
           <DropZoneHeader
-            title="Almacén"
-            subtitle={`${almacenFiltrado.length} pedidos`}
+            title={t('transport.warehouse')}
+            subtitle={t('transport.ordersCount', { n: almacenFiltrado.length })}
             isOver={overZone === 'almacen'}
           />
           <div className="p-4 space-y-3">
@@ -662,18 +665,18 @@ export default function TransportePage() {
                     className="flex-1 px-3 py-2 rounded-lg border bg-black text-white hover:opacity-90 disabled:opacity-50 text-sm"
                     onClick={() => ponerPendiente(a.id)}
                     disabled={processing}
-                    title="Pasa el pedido a EN RUTA (pendiente de camión)"
+                    title={t('transport.moveToRoute')}
                   >
-                    En ruta
+                    {t('transport.toRouteBtn')}
                   </button>
                 </div>
               </AlbaranCard>
             ))}
-            {almacenFiltrado.length === 0 && <div className="text-sm text-gray-600">Sin pedidos.</div>}
+            {almacenFiltrado.length === 0 && <div className="text-sm text-gray-600">{t('transport.noPedidos')}</div>}
           </div>
         </div>
 
-        {/* PENDIENTE (sin camión) */}
+        {/* PENDIENTE (sin camiÃ³n) */}
         <div
           className={`min-w-[320px] max-w-[360px] flex-shrink-0 rounded-2xl border overflow-hidden bg-gray-50 transition-all duration-200 ${
             activeTab === 'almacen' ? 'hidden md:flex md:flex-col' : 'flex flex-col'
@@ -685,8 +688,8 @@ export default function TransportePage() {
           onDrop={onDropToPendiente}
         >
           <DropZoneHeader
-            title="En ruta (pendiente camión)"
-            subtitle={`${pendienteFiltrado.length} pedidos`}
+            title={t('transport.inRoutePending')}
+            subtitle={t('transport.ordersCount', { n: pendienteFiltrado.length })}
             isOver={overZone === 'pendiente'}
           />
           <div className="p-4 space-y-3">
@@ -705,19 +708,19 @@ export default function TransportePage() {
                     onClick={() => marcarEntregado(a.id)}
                     disabled={processing}
                   >
-                    Entregado
+                    {t('transport.delivered')}
                   </button>
                   <button
                     className="flex-1 px-3 py-2 rounded-lg border hover:bg-white/60 disabled:opacity-50 text-sm"
                     onClick={() => volverAlmacen(a.id)}
                     disabled={processing}
                   >
-                    Almacén
+                    {t('transport.warehouse')}
                   </button>
                 </div>
               </AlbaranCard>
             ))}
-            {pendienteFiltrado.length === 0 && <div className="text-sm text-gray-600">Nada por asignar.</div>}
+            {pendienteFiltrado.length === 0 && <div className="text-sm text-gray-600">{t('transport.nothingToAssign')}</div>}
           </div>
         </div>
 
@@ -744,13 +747,13 @@ export default function TransportePage() {
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <div className="flex items-center gap-2">
-                      <div className="font-semibold">Camión {cid}</div>
+                      <div className="font-semibold">{t('transport.truckLabel', { id: cid })}</div>
                       {st.badge ? (
                         <span className={`text-[11px] px-2 py-0.5 rounded-full border ${st.badgeClass}`}>{st.badge}</span>
                       ) : null}
                     </div>
                     <div className="text-xs text-gray-600">
-                      {albs.length} · {eur(sumTotal(albs))}
+                      {albs.length} Â· {eur(sumTotal(albs))}
                     </div>
                   </div>
 
@@ -761,9 +764,9 @@ export default function TransportePage() {
                       }`}
                       onClick={() => aceptarRuta(cid)}
                       disabled={processing || albs.length === 0}
-                      title={albs.length > 0 ? "Registrar gasto (7%) y descargar factura" : "No hay albaranes en este camión"}
+                      title={albs.length > 0 ? t('transport.invoiceTitle') : t('transport.noAlbaranes')}
                     >
-                      Aceptar ruta
+                      {t('transport.acceptRoute')}
                     </button>
 
                     <button
@@ -773,17 +776,17 @@ export default function TransportePage() {
                       onClick={() => {
                         if (!puedeQuitar) {
                           sileo.warning({
-                            title: 'No se puede eliminar',
-                            description: 'Vacía el camión para poder eliminarlo.',
+                            title: t('transport.cannotDelete'),
+                            description: t('transport.emptyTruckHint'),
                           });
                           return;
                         }
                         quitarCamion(cid);
                       }}
                       disabled={processing || !puedeQuitar}
-                      title={puedeQuitar ? "Eliminar camión (solo si está vacío)" : "Vacía el camión para eliminarlo"}
+                      title={puedeQuitar ? t('transport.deleteTruckTitle') : t('transport.emptyTruckFirst')}
                     >
-                      Quitar
+                      {t('transport.removeBtn')}
                     </button>
                   </div>
                 </div>
@@ -805,19 +808,19 @@ export default function TransportePage() {
                         onClick={() => marcarEntregado(a.id)}
                         disabled={processing}
                       >
-                        Entregado
+                        {t('transport.delivered')}
                       </button>
                       <button
                         className="flex-1 px-3 py-2 rounded-lg border hover:bg-white/60 disabled:opacity-50 text-sm"
                         onClick={() => volverAlmacen(a.id)}
                         disabled={processing}
                       >
-                        Almacén
+                        {t('transport.warehouse')}
                       </button>
                     </div>
                   </AlbaranCard>
                 ))}
-                {albs.length === 0 && <div className="text-sm text-gray-600">Arrastra aquí para asignar.</div>}
+                {albs.length === 0 && <div className="text-sm text-gray-600">{t('transport.dropHere')}</div>}
               </div>
             </div>
           );
@@ -827,19 +830,19 @@ export default function TransportePage() {
         {/* Modal camiones */}
         <ModalCenter isOpen={camionesModalOpen} onClose={() => setCamionesModalOpen(false)} maxWidth="max-w-lg">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">Camiones</h2>
+            <h2 className="text-xl font-semibold">{t('transport.trucks')}</h2>
             <button
               onClick={() => setCamionesModalOpen(false)}
               className="text-gray-500 hover:text-gray-700"
               type="button"
             >
-              Cerrar
+              {t('transport.closeBtn')}
             </button>
           </div>
 
           <div className="space-y-4">
             <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4">
-              <div className="text-sm font-medium mb-2">Añadir camión</div>
+              <div className="text-sm font-medium mb-2">{t('transport.addTruck')}</div>
               <div className="flex items-end gap-2">
                 <input
                   value={nuevoCamion}
@@ -847,7 +850,7 @@ export default function TransportePage() {
                   type="number"
                   min={1}
                   className="border rounded-lg px-3 py-2 w-40"
-                  placeholder="Nº"
+                  placeholder={t('transport.truckPlaceholder')}
                 />
                 <button
                   onClick={addCamionExtra}
@@ -855,19 +858,19 @@ export default function TransportePage() {
                   disabled={processing}
                   type="button"
                 >
-                  Añadir
+                  {t('transport.addBtn')}
                 </button>
               </div>
               <div className="text-xs text-gray-500 mt-2">
-                Los camiones que aparezcan en rutas también se guardan, para que no desaparezcan cuando queden vacíos.
+                {t('transport.truckNote')}
               </div>
             </div>
 
             <div>
-              <div className="text-sm font-medium mb-2">Listado</div>
+              <div className="text-sm font-medium mb-2">{t('transport.list')}</div>
               <div className="border border-gray-200 rounded-2xl overflow-hidden">
                 {(allCamiones || []).length === 0 ? (
-                  <div className="p-4 text-sm text-gray-600">No hay camiones aún.</div>
+                  <div className="p-4 text-sm text-gray-600">{t('transport.noTrucks')}</div>
                 ) : (
                   <ul>
                     {allCamiones.map((cid) => {
@@ -878,20 +881,20 @@ export default function TransportePage() {
                         <li key={cid} className="flex items-center justify-between gap-3 px-4 py-3 border-t first:border-t-0">
                           <div className="min-w-0">
                             <div className="font-medium flex items-center gap-2">
-                              Camión {cid}
+                              {t('transport.truckLabel', { id: cid })}
                               {accepted ? (
                                 <span className="text-[11px] px-2 py-0.5 rounded-full border bg-green-50 border-green-200 text-green-800">
-                                  Aceptada
+                                  {t('transport.accepted')}
                                 </span>
                               ) : null}
                               {albs.length === 0 ? (
                                 <span className="text-[11px] px-2 py-0.5 rounded-full border bg-gray-50 border-gray-200 text-gray-700">
-                                  Vacío
+                                  {t('transport.emptyBadge')}
                                 </span>
                               ) : null}
                             </div>
                             <div className="text-xs text-gray-600 truncate">
-                              {albs.length} pedidos · {eur(sumTotal(albs))}
+                              {t('transport.ordersCount', { n: albs.length })} Â· {eur(sumTotal(albs))}
                             </div>
                           </div>
 
@@ -902,8 +905,8 @@ export default function TransportePage() {
                             onClick={() => {
                               if (!puedeQuitar) {
                                 sileo.warning({
-                                  title: 'No se puede eliminar',
-                                  description: 'Vacía el camión para poder eliminarlo.',
+                                  title: t('transport.cannotDelete'),
+                                  description: t('transport.emptyTruckHint'),
                                 });
                                 return;
                               }
@@ -912,7 +915,7 @@ export default function TransportePage() {
                             disabled={processing || !puedeQuitar}
                             type="button"
                           >
-                            Eliminar
+                            {t('transport.deleteBtn')}
                           </button>
                         </li>
                       );

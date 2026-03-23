@@ -1,10 +1,10 @@
 """
-conftest.py — Fixtures compartidos para todos los tests del backend.
+conftest.py â€” Fixtures compartidos para todos los tests del backend.
 
 Usa SQLite en memoria para no necesitar PostgreSQL arrancado.
 El motor de la app se parchea ANTES de importar main para evitar
 que el lifespan intente conectarse a PostgreSQL.
-El seed se neutraliza para que cada test empiece con la BD vacía.
+El seed se neutraliza para que cada test empiece con la BD vacÃ­a.
 """
 import pytest
 from unittest.mock import patch
@@ -12,7 +12,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-# ── Motor SQLite en memoria compartido (StaticPool = misma conexión siempre) ─
+# â”€â”€ Motor SQLite en memoria compartido (StaticPool = misma conexiÃ³n siempre) â”€
 SQLITE_URL = "sqlite:///:memory:"
 
 engine = create_engine(
@@ -21,7 +21,7 @@ engine = create_engine(
     poolclass=StaticPool,
 )
 
-# Habilitar foreign keys en SQLite (por defecto están desactivadas)
+# Habilitar foreign keys en SQLite (por defecto estÃ¡n desactivadas)
 from sqlalchemy import event  # noqa: E402
 
 @event.listens_for(engine, "connect")
@@ -29,17 +29,17 @@ def _enable_foreign_keys(dbapi_connection, _):
     dbapi_connection.execute("PRAGMA foreign_keys=ON")
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# ── Parchear el módulo database ANTES de importar la app ────────────────────
+# â”€â”€ Parchear el mÃ³dulo database ANTES de importar la app â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 import backend.app.database as _db_module  # noqa: E402
 _db_module.engine = engine
 _db_module.SessionLocal = TestingSessionLocal
 
-# Ahora ya es seguro importar la app (el lifespan usará el engine de SQLite)
+# Ahora ya es seguro importar la app (el lifespan usarÃ¡ el engine de SQLite)
 from fastapi.testclient import TestClient  # noqa: E402
 from backend.app.database import Base, get_db  # noqa: E402
 from backend.app.main import app  # noqa: E402
 
-# Forzar importación de todos los modelos para que Base.metadata quede completo
+# Forzar importaciÃ³n de todos los modelos para que Base.metadata quede completo
 import backend.app.entidades.albaran        # noqa: F401
 import backend.app.entidades.albaran_ruta   # noqa: F401
 import backend.app.entidades.cliente        # noqa: F401
@@ -50,12 +50,12 @@ import backend.app.entidades.proveedor      # noqa: F401
 import backend.app.entidades.stripe_checkout  # noqa: F401
 import backend.app.entidades.usuario        # noqa: F401
 
-from backend.app.entidades.usuario import UsuarioDB
+from backend.app.entidades.usuario import UserDB
 from backend.app.dependencies import get_current_user
 from backend.app.utils.jwt_utils import create_access_token
 
 
-# ── Override de get_db ───────────────────────────────────────────────────────
+# â”€â”€ Override de get_db â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 def override_get_db():
     db = TestingSessionLocal()
     try:
@@ -64,7 +64,7 @@ def override_get_db():
         db.close()
 
 
-# ── Fixtures ─────────────────────────────────────────────────────────────────
+# â”€â”€ Fixtures â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @pytest.fixture(autouse=True)
 def setup_db():
     """Crea todas las tablas antes de cada test y las borra al terminar."""
@@ -77,7 +77,7 @@ def setup_db():
 def admin_user(setup_db):
     """Inserta un usuario admin en la BD de prueba y devuelve el objeto ORM."""
     db = TestingSessionLocal()
-    user = UsuarioDB(username="admin", hashed_password="hashed", role="admin", is_active=True)
+    user = UserDB(username="admin", hashed_password="hashed", role="admin", is_active=True)
     db.add(user)
     db.commit()
     db.refresh(user)
@@ -87,7 +87,7 @@ def admin_user(setup_db):
 
 @pytest.fixture()
 def auth_headers(admin_user):
-    """Cabeceras HTTP con token JWT válido para el usuario admin."""
+    """Cabeceras HTTP con token JWT vÃ¡lido para el usuario admin."""
     token = create_access_token({"sub": admin_user.username, "role": admin_user.role})
     return {"Authorization": f"Bearer {token}"}
 
@@ -98,18 +98,18 @@ def client(setup_db, admin_user, auth_headers):
     app.dependency_overrides[get_db] = override_get_db
     # Bypass de get_current_user para que los tests existentes no necesiten token
     app.dependency_overrides[get_current_user] = lambda: admin_user
-    # Neutralizamos el seed para que la BD empiece vacía en cada test
+    # Neutralizamos el seed para que la BD empiece vacÃ­a en cada test
     with patch("backend.app.main.seed", return_value=None):
         with TestClient(app, raise_server_exceptions=True) as c:
             yield c
     app.dependency_overrides.clear()
 
 
-# ── Helpers reutilizables ────────────────────────────────────────────────────
+# â”€â”€ Helpers reutilizables â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @pytest.fixture()
 def proveedor(client):
     """Crea un proveedor de prueba y devuelve su JSON."""
-    r = client.post("/api/proveedores/post", json={"nombre": "Proveedor Test", "contacto": "600000000"})
+    r = client.post("/api/proveedores/post", json={"name": "Proveedor Test", "contact": "600000000"})
     assert r.status_code == 200
     return r.json()
 
@@ -118,10 +118,10 @@ def proveedor(client):
 def producto(client, proveedor):
     """Crea un producto de prueba vinculado al proveedor fixture."""
     r = client.post("/api/productos/post", json={
-        "nombre": "Producto Test",
-        "descripcion": "Descripción de prueba",
-        "precio": 10.0,
-        "proveedor_id": proveedor["id"],
+        "name": "Producto Test",
+        "description": "DescripciÃ³n de prueba",
+        "price": 10.0,
+        "supplier_id": proveedor["id"],
     })
     assert r.status_code == 200
     return r.json()
@@ -131,8 +131,8 @@ def producto(client, proveedor):
 def cliente_fixture(client):
     """Crea un cliente de prueba y devuelve su JSON."""
     r = client.post("/api/clientes/post", json={
-        "nombre": "Juan",
-        "apellidos": "García",
+        "name": "Juan",
+        "surnames": "GarcÃ­a",
         "dni": "12345678A",
         "email": "juan@test.com",
     })

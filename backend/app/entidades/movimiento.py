@@ -4,35 +4,32 @@ from pydantic import BaseModel
 from datetime import date
 from typing import Literal
 
-# Etiquetas de 1 palabra para UI:
-# INGRESO -> "Ingreso"
-# EGRESO  -> "Egreso"
-OneWordTipo = Literal["INGRESO", "EGRESO"]
+MovementType = Literal["INGRESO", "EGRESO"]
 
 
-class MovimientoDB(Base):
+class MovementDB(Base):
     __tablename__ = "movimientos"
 
     id = Column(Integer, primary_key=True, index=True)
-    fecha = Column(Date, nullable=False)
-    concepto = Column(String)
-    cantidad = Column(Float)
-    tipo = Column(String, nullable=False, default="INGRESO")
+    date = Column('fecha', Date, nullable=False)
+    description = Column('concepto', String)
+    amount = Column('cantidad', Float)
+    type = Column('tipo', String, nullable=False, default="INGRESO")
 
 
-class Movimiento(BaseModel):
+class Movement(BaseModel):
     id: int
-    fecha: date
-    concepto: str
-    cantidad: float
-    tipo: OneWordTipo
+    date: date
+    description: str
+    amount: float
+    type: MovementType
 
     class Config:
         from_attributes = True
 
 
-class MovimientoCreate(BaseModel):
-    fecha: date
-    concepto: str
-    cantidad: float
-    tipo: OneWordTipo = "INGRESO"
+class MovementCreate(BaseModel):
+    date: date
+    description: str
+    amount: float
+    type: MovementType = "INGRESO"

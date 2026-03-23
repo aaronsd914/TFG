@@ -143,25 +143,27 @@
 FurniGest manages **8 entities** stored in a PostgreSQL database:
 
 ```
-Cliente ──< Albaran ──< LineaAlbaran >── Producto >── Proveedor
-                 │
-                 └──< AlbaranRuta (camion_id)
-Movimiento   (standalone — created automatically by business rules)
-StripeCheckout (idempotency record for Stripe sessions)
+CustomerDB ──< DeliveryNoteDB ──< DeliveryNoteLineDB >── ProductDB >── SupplierDB
+                        │
+                        └──< DeliveryNoteRouteDB (truck_id)
+MovementDB   (standalone — created automatically by business rules)
+StripeCheckoutDB (idempotency record for Stripe sessions)
 ```
 
-| Entity | Table | Key relationships |
+> **Note on naming convention:** All Python/SQLAlchemy ORM class names and field names use English identifiers (e.g. `CustomerDB`, `customer.name`, `delivery_note.date`). The underlying PostgreSQL table and column names remain in Spanish (`clientes`, `nombre`, `fecha`) to avoid database migrations. SQLAlchemy column aliases map between the two: `name = Column('nombre', String)`.
+
+| Python class | Table | Key relationships |
 |--------|-------|-------------------|
-| `Cliente` | `clientes` | Has many `Albaran` |
-| `Proveedor` | `proveedores` | Has many `Producto` |
-| `Producto` | `productos` | Belongs to `Proveedor`; referenced from `LineaAlbaran` |
-| `Albaran` | `albaranes` | Belongs to `Cliente`; has many `LineaAlbaran`; optionally in `AlbaranRuta` |
-| `LineaAlbaran` | `lineas_albaran` | Join between `Albaran` and `Producto` (quantity + unit price) |
-| `Movimiento` | `movimientos` | Standalone income/expense record; auto-created by business logic |
-| `AlbaranRuta` | `albaran_rutas` | Maps one `Albaran` to a truck (`camion_id`) |
-| `StripeCheckout` | `stripe_checkouts` | Audit record per Stripe Checkout Session (prevents duplicate payments) |
-| `Usuario` | `usuarios` | Staff account with hashed password for JWT authentication |
-| `Configuracion` | `configuracion` | Key-value store for application settings (store name, logo, email signature, scheduler config) |
+| `CustomerDB` | `clientes` | Has many `DeliveryNoteDB` |
+| `SupplierDB` | `proveedores` | Has many `ProductDB` |
+| `ProductDB` | `productos` | Belongs to `SupplierDB`; referenced from `DeliveryNoteLineDB` |
+| `DeliveryNoteDB` | `albaranes` | Belongs to `CustomerDB`; has many `DeliveryNoteLineDB`; optionally in `DeliveryNoteRouteDB` |
+| `DeliveryNoteLineDB` | `lineas_albaran` | Join between `DeliveryNoteDB` and `ProductDB` (quantity + unit price) |
+| `MovementDB` | `movimientos` | Standalone income/expense record; auto-created by business logic |
+| `DeliveryNoteRouteDB` | `albaran_rutas` | Maps one `DeliveryNoteDB` to a truck (`truck_id`) |
+| `StripeCheckoutDB` | `stripe_checkouts` | Audit record per Stripe Checkout Session (prevents duplicate payments) |
+| `UserDB` | `usuarios` | Staff account with hashed password for JWT authentication |
+| `ConfigDB` | `configuracion` | Key-value store for application settings (store name, logo, email signature, scheduler config) |
 
 ---
 
@@ -323,20 +325,20 @@ TFG/
 │       │   ├── clientes_service.py
 │       │   ├── productos_service.py
 │       │   └── movimientos_service.py
-│       ├── entidades/           # SQLAlchemy models + Pydantic schemas
-│       │   ├── cliente.py
-│       │   ├── producto.py
-│       │   ├── proveedor.py
-│       │   ├── albaran.py
-│       │   ├── linea_albaran.py
-│       │   ├── movimiento.py
-│       │   ├── albaran_ruta.py
-│       │   └── stripe_checkout.py
+│       ├── entidades/           # SQLAlchemy ORM models (English attrs) + Pydantic schemas
+│       │   ├── cliente.py       # CustomerDB  + Customer / CustomerCreate
+│       │   ├── producto.py      # ProductDB   + Product / ProductCreate
+│       │   ├── proveedor.py     # SupplierDB  + Supplier / SupplierCreate
+│       │   ├── albaran.py       # DeliveryNoteDB + DeliveryNote / DeliveryNoteCreate
+│       │   ├── linea_albaran.py # DeliveryNoteLineDB + DeliveryNoteLine
+│       │   ├── movimiento.py    # MovementDB  + Movement / MovementCreate
+│       │   ├── albaran_ruta.py  # DeliveryNoteRouteDB
+│       │   └── stripe_checkout.py # StripeCheckoutDB
 │       └── utils/
-│           ├── albaran_pdf.py   # Delivery note PDF builder
+│           ├── albaran_pdf.py   # generate_delivery_note_pdf()
 │           ├── tendencias_pdf.py# Analytics PDF builder
 │           ├── emailer.py       # SMTP mail sender
-│           ├── groq_llm.py      # Groq API wrapper
+│           ├── groq_llm.py      # Groq API wrapper (groq_chat)
 │           └── templates.py     # Jinja2 HTML template renderer
 └── frontend/
     └── src/
@@ -722,130 +724,136 @@ POST /api/albaranes/post  (creates albaran in DB)
 ### Database diagram
 
 ```
-┌──────────────┐       ┌──────────────────┐       ┌──────────────┐
-│   clientes   │       │    albaranes     │       │   productos  │
-│──────────────│       │──────────────────│       │──────────────│
-│ id (PK)      │──1──< │ id (PK)          │       │ id (PK)      │
-│ nombre       │       │ cliente_id (FK)  │       │ nombre       │
-│ apellidos    │       │ fecha            │       │ descripcion  │
-│ dni          │       │ descripcion      │       │ precio       │
-│ email        │       │ total            │  ┌──> │ proveedor_id │
-│ telefono1    │       │ estado           │  │    └──────────────┘
-│ telefono2    │       └──────────────────┘  │           │
-│ calle        │              │              │    ┌──────────────┐
-│ numero_viv.  │              │ 1:N          │    │ proveedores  │
-│ piso_portal  │              ▼              │    │──────────────│
-│ ciudad       │    ┌──────────────────┐     │    │ id (PK)      │
-│ codigo_postal│    │  lineas_albaran  │     │    │ nombre       │
-└──────────────┘    │──────────────────│     │    │ contacto     │
-                    │ id (PK)          │     │    └──────────────┘
-                    │ albaran_id (FK)  │     │
-                    │ producto_id (FK) │─────┘
-                    │ cantidad         │
-                    │ precio_unitario  │
-                    └──────────────────┘
-                              │
-                    ┌──────────────────┐
-                    │  albaran_rutas   │
-                    │──────────────────│
-                    │ id (PK)          │
-                    │ albaran_id (FK)  │
-                    │ camion_id        │
-                    └──────────────────┘
+┌──────────────┐       ┌──────────────────────┐       ┌──────────────┐
+│  CustomerDB  │       │    DeliveryNoteDB     │       │  ProductDB   │
+│  (clientes)  │       │    (albaranes)        │       │  (productos) │
+│──────────────│       │──────────────────────│       │──────────────│
+│ id (PK)      │──1──< │ id (PK)              │       │ id (PK)      │
+│ name         │       │ customer_id (FK)      │       │ name         │
+│ surnames     │       │ date                  │       │ description  │
+│ dni          │       │ description           │       │ price        │
+│ email        │       │ total                 │  ┌──> │ supplier_id  │
+│ phone1       │       │ status                │  │    └──────────────┘
+│ phone2       │       └──────────────────────┘  │           │
+│ street       │                  │              │    ┌──────────────┐
+│ street_num   │                  │ 1:N          │    │  SupplierDB  │
+│ floor        │                  ▼              │    │ (proveedores)│
+│ city         │    ┌──────────────────────┐     │    │──────────────│
+│ post_code    │    │  DeliveryNoteLineDB  │     │    │ id (PK)      │
+└──────────────┘    │  (lineas_albaran)    │     │    │ name         │
+                    │──────────────────────│     │    │ contact      │
+                    │ id (PK)              │     │    └──────────────┘
+                    │ delivery_note_id(FK) │     │
+                    │ product_id (FK)      │─────┘
+                    │ quantity             │
+                    │ unit_price           │
+                    └──────────────────────┘
+                                  │
+                    ┌──────────────────────┐
+                    │ DeliveryNoteRouteDB  │
+                    │  (albaran_rutas)     │
+                    │──────────────────────│
+                    │ id (PK)              │
+                    │ delivery_note_id(FK) │
+                    │ truck_id             │
+                    └──────────────────────┘
 
 ┌──────────────────┐    ┌──────────────────┐
-│   movimientos    │    │ stripe_checkouts │
+│   MovementDB     │    │ StripeCheckoutDB │
+│  (movimientos)   │    │(stripe_checkouts)│
 │──────────────────│    │──────────────────│
 │ id (PK)          │    │ id (PK)          │
-│ fecha            │    │ session_id       │
-│ concepto         │    │ payment_intent_id│
-│ cantidad         │    │ amount           │
-│ tipo (ING/EGR)   │    │ currency         │
+│ date             │    │ session_id       │
+│ description      │    │ payment_intent_id│
+│ amount           │    │ amount           │
+│ type (ING/EGR)   │    │ currency         │
 └──────────────────┘    │ description      │
                         │ status           │
                         │ created_at       │
                         └──────────────────┘
 ```
 
-> **Normalisation:** The schema is in **Third Normal Form (3NF)** — every non-key attribute depends only on the primary key of its table. This eliminates redundancy and prevents update, insertion, and deletion anomalies. For example, supplier data is not duplicated in every product row but is referenced via `proveedor_id`; likewise, each delivery note line stores its own `precio_unitario` independently from the product's current catalogue price, preserving the sales history without coupling both tables.
+> **Naming convention:** Python ORM attributes use English names (e.g. `movement.date`, `movement.description`, `movement.amount`, `movement.type`). The underlying PostgreSQL columns keep their original Spanish names (`fecha`, `concepto`, `cantidad`, `tipo`) via SQLAlchemy column aliasing: `date = Column('fecha', Date)`. This avoids database migrations while keeping all Python/API code in English.
 
 #### Full SQL schema
 
-All tables are created by SQLAlchemy's `Base.metadata.create_all(engine)` at startup. Column types are defined using SQLAlchemy's type system and map to the following PostgreSQL types:
+All tables are created by SQLAlchemy's `Base.metadata.create_all(engine)` at startup. Column types are defined using SQLAlchemy's type system and map to the following PostgreSQL types.
 
-**`clientes`**
+> **Column alias convention:** Python ORM attribute names use English. The Spanish column name (actual PostgreSQL column name) is shown alongside. Example: `name = Column('nombre', String(100))`.
 
-| Column | SQLAlchemy type | PostgreSQL | Notes |
-|--------|----------------|-----------|-------|
-| `id` | `Integer` | `SERIAL` | Primary key, auto-increment |
-| `nombre` | `String(100)` | `VARCHAR(100)` | First name |
-| `apellidos` | `String(150)` | `VARCHAR(150)` | Last name(s) |
-| `dni` | `String(20)` | `VARCHAR(20)` | National ID |
-| `email` | `String(200)` | `VARCHAR(200)` | Contact email |
-| `telefono1` | `String(20)` | `VARCHAR(20)` | Primary phone |
-| `telefono2` | `String(20)` | `VARCHAR(20)` | Secondary phone (optional) |
-| `calle` | `String(200)` | `VARCHAR(200)` | Street name |
-| `numero_vivienda` | `String(10)` | `VARCHAR(10)` | Street number |
-| `piso_portal` | `String(50)` | `VARCHAR(50)` | Floor / entrance (optional) |
-| `ciudad` | `String(100)` | `VARCHAR(100)` | City |
-| `codigo_postal` | `String(10)` | `VARCHAR(10)` | Postcode |
+**`clientes` — `CustomerDB`**
 
-**`proveedores`**
+| Python attr | DB column | SQLAlchemy type | PostgreSQL | Notes |
+|-------------|-----------|----------------|-----------|-------|
+| `id` | `id` | `Integer` | `SERIAL` | Primary key, auto-increment |
+| `name` | `nombre` | `String(100)` | `VARCHAR(100)` | First name |
+| `surnames` | `apellidos` | `String(150)` | `VARCHAR(150)` | Last name(s) |
+| `dni` | `dni` | `String(20)` | `VARCHAR(20)` | National ID |
+| `email` | `email` | `String(200)` | `VARCHAR(200)` | Contact email |
+| `phone1` | `telefono1` | `String(20)` | `VARCHAR(20)` | Primary phone |
+| `phone2` | `telefono2` | `String(20)` | `VARCHAR(20)` | Secondary phone (optional) |
+| `street` | `calle` | `String(200)` | `VARCHAR(200)` | Street name |
+| `street_number` | `numero_vivienda` | `String(10)` | `VARCHAR(10)` | Street number |
+| `floor` | `piso_portal` | `String(50)` | `VARCHAR(50)` | Floor / entrance (optional) |
+| `city` | `ciudad` | `String(100)` | `VARCHAR(100)` | City |
+| `post_code` | `codigo_postal` | `String(10)` | `VARCHAR(10)` | Postcode |
 
-| Column | SQLAlchemy type | PostgreSQL | Notes |
-|--------|----------------|-----------|-------|
-| `id` | `Integer` | `SERIAL` | Primary key |
-| `nombre` | `String(200)` | `VARCHAR(200)` | Supplier name |
-| `contacto` | `String(200)` | `VARCHAR(200)` | Contact person / phone |
+**`proveedores` — `SupplierDB`**
 
-**`productos`**
+| Python attr | DB column | SQLAlchemy type | PostgreSQL | Notes |
+|-------------|-----------|----------------|-----------|-------|
+| `id` | `id` | `Integer` | `SERIAL` | Primary key |
+| `name` | `nombre` | `String(200)` | `VARCHAR(200)` | Supplier name |
+| `contact` | `contacto` | `String(200)` | `VARCHAR(200)` | Contact person / phone |
 
-| Column | SQLAlchemy type | PostgreSQL | Notes |
-|--------|----------------|-----------|-------|
-| `id` | `Integer` | `SERIAL` | Primary key |
-| `nombre` | `String(200)` | `VARCHAR(200)` | Product name |
-| `descripcion` | `Text` | `TEXT` | Long description |
-| `precio` | `Float` | `DOUBLE PRECISION` | Unit price (€) |
-| `proveedor_id` | `Integer (FK)` | `INTEGER` | → `proveedores.id` |
+**`productos` — `ProductDB`**
 
-**`albaranes`**
+| Python attr | DB column | SQLAlchemy type | PostgreSQL | Notes |
+|-------------|-----------|----------------|-----------|-------|
+| `id` | `id` | `Integer` | `SERIAL` | Primary key |
+| `name` | `nombre` | `String(200)` | `VARCHAR(200)` | Product name |
+| `description` | `descripcion` | `Text` | `TEXT` | Long description |
+| `price` | `precio` | `Float` | `DOUBLE PRECISION` | Unit price (€) |
+| `supplier_id` | `proveedor_id` | `Integer (FK)` | `INTEGER` | → `proveedores.id` |
 
-| Column | SQLAlchemy type | PostgreSQL | Notes |
-|--------|----------------|-----------|-------|
-| `id` | `Integer` | `SERIAL` | Primary key |
-| `cliente_id` | `Integer (FK)` | `INTEGER` | → `clientes.id` |
-| `fecha` | `DateTime` | `TIMESTAMP` | Creation timestamp |
-| `descripcion` | `String(500)` | `VARCHAR(500)` | Order description |
-| `total` | `Float` | `DOUBLE PRECISION` | Sum of line totals |
-| `estado` | `String(20)` | `VARCHAR(20)` | `FIANZA` / `ALMACEN` / `RUTA` / `ENTREGADO` |
+**`albaranes` — `DeliveryNoteDB`**
 
-**`lineas_albaran`**
+| Python attr | DB column | SQLAlchemy type | PostgreSQL | Notes |
+|-------------|-----------|----------------|-----------|-------|
+| `id` | `id` | `Integer` | `SERIAL` | Primary key |
+| `customer_id` | `cliente_id` | `Integer (FK)` | `INTEGER` | → `clientes.id` |
+| `date` | `fecha` | `DateTime` | `TIMESTAMP` | Creation timestamp |
+| `description` | `descripcion` | `String(500)` | `VARCHAR(500)` | Order description |
+| `total` | `total` | `Float` | `DOUBLE PRECISION` | Sum of line totals |
+| `status` | `estado` | `String(20)` | `VARCHAR(20)` | `FIANZA` / `ALMACEN` / `RUTA` / `ENTREGADO` |
 
-| Column | SQLAlchemy type | PostgreSQL | Notes |
-|--------|----------------|-----------|-------|
-| `id` | `Integer` | `SERIAL` | Primary key |
-| `albaran_id` | `Integer (FK)` | `INTEGER` | → `albaranes.id` |
-| `producto_id` | `Integer (FK)` | `INTEGER` | → `productos.id` |
-| `cantidad` | `Integer` | `INTEGER` | Number of units |
-| `precio_unitario` | `Float` | `DOUBLE PRECISION` | Price at time of order |
+**`lineas_albaran` — `DeliveryNoteLineDB`**
 
-**`movimientos`**
+| Python attr | DB column | SQLAlchemy type | PostgreSQL | Notes |
+|-------------|-----------|----------------|-----------|-------|
+| `id` | `id` | `Integer` | `SERIAL` | Primary key |
+| `delivery_note_id` | `albaran_id` | `Integer (FK)` | `INTEGER` | → `albaranes.id` |
+| `product_id` | `producto_id` | `Integer (FK)` | `INTEGER` | → `productos.id` |
+| `quantity` | `cantidad` | `Integer` | `INTEGER` | Number of units |
+| `unit_price` | `precio_unitario` | `Float` | `DOUBLE PRECISION` | Price at time of order |
 
-| Column | SQLAlchemy type | PostgreSQL | Notes |
-|--------|----------------|-----------|-------|
-| `id` | `Integer` | `SERIAL` | Primary key |
-| `fecha` | `DateTime` | `TIMESTAMP` | Movement timestamp |
-| `concepto` | `String(500)` | `VARCHAR(500)` | Human-readable description |
-| `cantidad` | `Float` | `DOUBLE PRECISION` | Amount (€, always positive) |
-| `tipo` | `String(10)` | `VARCHAR(10)` | `INGRESO` or `EGRESO` |
+**`movimientos` — `MovementDB`**
 
-**`albaran_rutas`**
+| Python attr | DB column | SQLAlchemy type | PostgreSQL | Notes |
+|-------------|-----------|----------------|-----------|-------|
+| `id` | `id` | `Integer` | `SERIAL` | Primary key |
+| `date` | `fecha` | `DateTime` | `TIMESTAMP` | Movement timestamp |
+| `description` | `concepto` | `String(500)` | `VARCHAR(500)` | Human-readable description |
+| `amount` | `cantidad` | `Float` | `DOUBLE PRECISION` | Amount (€, always positive) |
+| `type` | `tipo` | `String(10)` | `VARCHAR(10)` | `INGRESO` or `EGRESO` |
 
-| Column | SQLAlchemy type | PostgreSQL | Notes |
-|--------|----------------|-----------|-------|
-| `id` | `Integer` | `SERIAL` | Primary key |
-| `albaran_id` | `Integer (FK)` | `INTEGER` | → `albaranes.id` (unique) |
-| `camion_id` | `Integer` | `INTEGER` | Truck number (1–N) |
+**`albaran_rutas` — `DeliveryNoteRouteDB`**
+
+| Python attr | DB column | SQLAlchemy type | PostgreSQL | Notes |
+|-------------|-----------|----------------|-----------|-------|
+| `id` | `id` | `Integer` | `SERIAL` | Primary key |
+| `delivery_note_id` | `albaran_id` | `Integer (FK)` | `INTEGER` | → `albaranes.id` (unique) |
+| `truck_id` | `camion_id` | `Integer` | `INTEGER` | Truck number (1–N) |
 
 **`stripe_checkouts`**
 
@@ -859,6 +867,8 @@ All tables are created by SQLAlchemy's `Base.metadata.create_all(engine)` at sta
 | `description` | `String(500)` | `VARCHAR(500)` | Payment description |
 | `status` | `String(50)` | `VARCHAR(50)` | `paid` / `unpaid` / `no_payment_required` |
 | `created_at` | `DateTime` | `TIMESTAMP` | Record creation timestamp |
+
+> **Normalisation note:** The schema is in **Third Normal Form (3NF)** — every non-key attribute depends only on the primary key of its table. For example, supplier data is not duplicated in every product row but referenced via `supplier_id`; each delivery note line stores its own `unit_price` independently from the product's current catalogue price, preserving sales history.
 
 ---
 

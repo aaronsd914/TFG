@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ProductosPage.test.jsx
  * Verifica el layout inicial, las llamadas a la API y el panel de productos.
  */
@@ -42,14 +42,14 @@ describe('ProductosPage', () => {
     });
   });
 
-  it('muestra el título "Productos"', async () => {
+  it('muestra el tÃ­tulo "Productos"', async () => {
     renderPage();
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: /productos/i })).toBeInTheDocument();
     });
   });
 
-  it('no muestra errores visibles con listas vacías', async () => {
+  it('no muestra errores visibles con listas vacÃ­as', async () => {
     renderPage();
     await waitFor(() => {
       expect(screen.queryByText(/error/i)).not.toBeInTheDocument();
@@ -63,7 +63,7 @@ describe('ProductosPage', () => {
     expect(document.body).toBeTruthy();
   });
 
-  it('muestra el botón "Nuevo producto" en el header', async () => {
+  it('muestra el botÃ³n "Nuevo producto" en el header', async () => {
     await act(async () => { renderPage(); });
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /nuevo producto/i })).toBeInTheDocument();
@@ -71,10 +71,10 @@ describe('ProductosPage', () => {
   });
 });
 
-describe('ProductosPage — modal crear producto', () => {
+describe('ProductosPage â€” modal crear producto', () => {
   const mockProveedores = [
-    { id: 1, nombre: 'Proveedor Test A' },
-    { id: 2, nombre: 'Proveedor Test B' },
+    { id: 1, name: 'Proveedor Test A' },
+    { id: 2, name: 'Proveedor Test B' },
   ];
 
   beforeEach(() => {
@@ -93,7 +93,7 @@ describe('ProductosPage — modal crear producto', () => {
     await waitFor(() => screen.getByPlaceholderText(/ej: mesa de comedor/i));
   }
 
-  it('abre el modal y muestra el formulario de creación', async () => {
+  it('abre el modal y muestra el formulario de creaciÃ³n', async () => {
     await openModal();
     expect(screen.getByPlaceholderText(/ej: mesa de comedor/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Limpiar' })).toBeInTheDocument();
@@ -105,7 +105,7 @@ describe('ProductosPage — modal crear producto', () => {
     expect(screen.getByText('Proveedor Test B')).toBeInTheDocument();
   });
 
-  it('cierra el modal al pulsar el botón cerrar (×)', async () => {
+  it('cierra el modal al pulsar el botÃ³n cerrar (Ã—)', async () => {
     await openModal();
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /cerrar/i }));
@@ -113,7 +113,7 @@ describe('ProductosPage — modal crear producto', () => {
     expect(screen.queryByPlaceholderText(/ej: mesa de comedor/i)).not.toBeInTheDocument();
   });
 
-  it('el botón Limpiar vacía todos los campos del formulario', async () => {
+  it('el botÃ³n Limpiar vacÃ­a todos los campos del formulario', async () => {
     await openModal();
     const nombreInput = screen.getByPlaceholderText(/ej: mesa de comedor/i);
     const precioInput = screen.getByPlaceholderText(/ej: 199.99/i);
@@ -129,7 +129,7 @@ describe('ProductosPage — modal crear producto', () => {
   it('el onChange del form revalida cuando createTouched es verdadero', async () => {
     await openModal();
     const form = screen.getByPlaceholderText(/ej: mesa de comedor/i).closest('form');
-    // Submit vacío → setCreateTouched(true) → createErrors se activa
+    // Submit vacÃ­o â†’ setCreateTouched(true) â†’ createErrors se activa
     await act(async () => { fireEvent.submit(form); });
     // onChange ahora ejecuta validateCreate (createTouched=true)
     await act(async () => {
@@ -138,24 +138,24 @@ describe('ProductosPage — modal crear producto', () => {
     expect(document.body).toBeTruthy();
   });
 
-  it('rellena precio, descripción y proveedor correctamente', async () => {
+  it('rellena precio, descripciÃ³n y proveedor correctamente', async () => {
     await openModal();
     const precioInput = screen.getByPlaceholderText(/ej: 199.99/i);
     const descInput = screen.getByPlaceholderText(/detalles, medidas/i);
     const selectProveedor = screen.getByRole('combobox');
     await act(async () => {
       fireEvent.change(precioInput, { target: { value: '25.50' } });
-      fireEvent.change(descInput, { target: { value: 'Descripción de prueba' } });
+      fireEvent.change(descInput, { target: { value: 'DescripciÃ³n de prueba' } });
       fireEvent.change(selectProveedor, { target: { value: '1' } });
     });
     expect(precioInput.value).toBe('25.5');
-    expect(descInput.value).toBe('Descripción de prueba');
+    expect(descInput.value).toBe('DescripciÃ³n de prueba');
     expect(selectProveedor.value).toBe('1');
   });
 
-  it('envía el formulario completo y cierra el modal al tener éxito', async () => {
-    // Mock para el POST de creación
-    const nuevoProducto = { id: 99, nombre: 'Mesa nueva', precio: 199.99, proveedor_id: 1 };
+  it('envÃ­a el formulario completo y cierra el modal al tener Ã©xito', async () => {
+    // Mock para el POST de creaciÃ³n
+    const nuevoProducto = { id: 99, name: 'Mesa nueva', price: 199.99, supplier_id: 1 };
     fetch.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(nuevoProducto) });
 
     await openModal();

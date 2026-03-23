@@ -1,11 +1,11 @@
-"""Tests para /api/clientes — CRUD completo + upsert por DNI/email."""
+"""Tests para /api/clientes â€” CRUD completo + upsert por DNI/email."""
 from datetime import date
 
 
-# ── Helpers locales ──────────────────────────────────────────────────────────
+# â”€â”€ Helpers locales â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 CLIENTE_BASE = {
-    "nombre": "Ana",
-    "apellidos": "López",
+    "name": "Ana",
+    "surnames": "LÃ³pez",
     "dni": "87654321B",
     "email": "ana@test.com",
     "telefono1": "611222333",
@@ -17,18 +17,18 @@ def crear(client, data=None):
     return client.post("/api/clientes/post", json=data or CLIENTE_BASE)
 
 
-# ── Tests ────────────────────────────────────────────────────────────────────
+# â”€â”€ Tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class TestCrearCliente:
     def test_crear_ok(self, client):
         r = crear(client)
         assert r.status_code == 200
         body = r.json()
-        assert body["nombre"] == "Ana"
+        assert body["name"] == "Ana"
         assert body["dni"] == "87654321B"
         assert "id" in body
 
     def test_campos_opcionales_nulos(self, client):
-        r = client.post("/api/clientes/post", json={"nombre": "Sin", "apellidos": "Datos"})
+        r = client.post("/api/clientes/post", json={"name": "Sin", "surnames": "Datos"})
         assert r.status_code == 200
         body = r.json()
         assert body["dni"] is None
@@ -37,19 +37,19 @@ class TestCrearCliente:
     def test_upsert_mismo_dni(self, client):
         """Si ya existe un cliente con el mismo DNI, se actualiza en lugar de duplicar."""
         crear(client)
-        r2 = client.post("/api/clientes/post", json={**CLIENTE_BASE, "nombre": "Ana Modificada"})
+        r2 = client.post("/api/clientes/post", json={**CLIENTE_BASE, "name": "Ana Modificada"})
         assert r2.status_code == 200
-        assert r2.json()["nombre"] == "Ana Modificada"
+        assert r2.json()["name"] == "Ana Modificada"
         # Sigue habiendo solo 1 cliente
         total = client.get("/api/clientes/get").json()
         assert len(total) == 1
 
     def test_upsert_mismo_email(self, client):
-        """Si coincide el email y no el DNI, también hace upsert."""
+        """Si coincide el email y no el DNI, tambiÃ©n hace upsert."""
         crear(client)
         r2 = client.post("/api/clientes/post", json={
-            "nombre": "Ana Nueva",
-            "apellidos": "López",
+            "name": "Ana Nueva",
+            "surnames": "LÃ³pez",
             "dni": None,
             "email": "ana@test.com",
         })
@@ -84,9 +84,9 @@ class TestObtenerClientes:
 class TestActualizarCliente:
     def test_actualizar_ok(self, client):
         cid = crear(client).json()["id"]
-        r = client.put(f"/api/clientes/put/{cid}", json={**CLIENTE_BASE, "nombre": "Ana Actualizada"})
+        r = client.put(f"/api/clientes/put/{cid}", json={**CLIENTE_BASE, "name": "Ana Actualizada"})
         assert r.status_code == 200
-        assert r.json()["nombre"] == "Ana Actualizada"
+        assert r.json()["name"] == "Ana Actualizada"
 
     def test_actualizar_inexistente(self, client):
         r = client.put("/api/clientes/put/9999", json=CLIENTE_BASE)

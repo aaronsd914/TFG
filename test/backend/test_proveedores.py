@@ -1,6 +1,6 @@
-"""Tests para /api/proveedores — CRUD completo."""
+"""Tests para /api/proveedores Ã¢â‚¬â€ CRUD completo."""
 
-PROV_BASE = {"nombre": "Mi Proveedor", "contacto": "info@proveedor.com"}
+PROV_BASE = {"name": "Mi Proveedor", "contact": "info@proveedor.com"}
 
 
 def crear(client, data=None):
@@ -12,12 +12,12 @@ class TestCrearProveedor:
         r = crear(client)
         assert r.status_code == 200
         body = r.json()
-        assert body["nombre"] == "Mi Proveedor"
+        assert body["name"] == "Mi Proveedor"
         assert "id" in body
 
     def test_multiples_proveedores(self, client):
         crear(client)
-        crear(client, {"nombre": "Otro", "contacto": "otro@test.com"})
+        crear(client, {"name": "Otro", "contact": "otro@test.com"})
         r = client.get("/api/proveedores/get")
         assert len(r.json()) == 2
 
@@ -39,9 +39,9 @@ class TestObtenerProveedores:
 class TestActualizarProveedor:
     def test_actualizar_ok(self, client):
         pid = crear(client).json()["id"]
-        r = client.put(f"/api/proveedores/put/{pid}", json={"nombre": "Actualizado", "contacto": "x"})
+        r = client.put(f"/api/proveedores/put/{pid}", json={"name": "Actualizado", "contact": "x"})
         assert r.status_code == 200
-        assert r.json()["nombre"] == "Actualizado"
+        assert r.json()["name"] == "Actualizado"
 
     def test_actualizar_inexistente(self, client):
         assert client.put("/api/proveedores/put/9999", json=PROV_BASE).status_code == 404

@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 
-class ConfiguracionDB(Base):
+class ConfigDB(Base):
     __tablename__ = "configuracion"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -12,7 +12,7 @@ class ConfiguracionDB(Base):
     value = Column(Text, nullable=True)
 
 
-class ConfiguracionItem(BaseModel):
+class ConfigItem(BaseModel):
     key: str
     value: Optional[str] = None
 

@@ -1,18 +1,18 @@
-"""Business logic for clientes, separated from the HTTP layer."""
+"""Business logic for customers, separated from the HTTP layer."""
 
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 
-from backend.app.entidades.cliente import ClienteCreate, ClienteDB
+from backend.app.entidades.cliente import CustomerCreate, CustomerDB
 
 
-def upsert_cliente(payload: ClienteCreate, db: Session) -> ClienteDB:
-    """Create a new cliente or update an existing one by DNI/email (upsert)."""
+def upsert_customer(payload: CustomerCreate, db: Session) -> CustomerDB:
+    """Create a new customer or update an existing one by DNI/email (upsert)."""
     existing = None
     if payload.dni:
-        existing = db.query(ClienteDB).filter(ClienteDB.dni == payload.dni).first()
+        existing = db.query(CustomerDB).filter(CustomerDB.dni == payload.dni).first()
     if not existing and payload.email:
-        existing = db.query(ClienteDB).filter(ClienteDB.email == payload.email).first()
+        existing = db.query(CustomerDB).filter(CustomerDB.email == payload.email).first()
 
     if existing:
         for field, value in payload.model_dump().items():
@@ -22,31 +22,31 @@ def upsert_cliente(payload: ClienteCreate, db: Session) -> ClienteDB:
         db.refresh(existing)
         return existing
 
-    nuevo = ClienteDB(**payload.model_dump())
-    db.add(nuevo)
+    new_record = CustomerDB(**payload.model_dump())
+    db.add(new_record)
     db.commit()
-    db.refresh(nuevo)
-    return nuevo
+    db.refresh(new_record)
+    return new_record
 
 
-def get_cliente_or_404(cliente_id: int, db: Session) -> ClienteDB:
-    cliente = db.query(ClienteDB).filter(ClienteDB.id == cliente_id).first()
-    if cliente is None:
+def get_customer_or_404(customer_id: int, db: Session) -> CustomerDB:
+    customer = db.query(CustomerDB).filter(CustomerDB.id == customer_id).first()
+    if customer is None:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
-    return cliente
+    return customer
 
 
-def update_cliente(cliente_id: int, payload: ClienteCreate, db: Session) -> ClienteDB:
-    cliente_db = get_cliente_or_404(cliente_id, db)
+def update_customer(customer_id: int, payload: CustomerCreate, db: Session) -> CustomerDB:
+    db_customer = get_customer_or_404(customer_id, db)
     for field, value in payload.model_dump().items():
-        setattr(cliente_db, field, value)
+        setattr(db_customer, field, value)
     db.commit()
-    db.refresh(cliente_db)
-    return cliente_db
+    db.refresh(db_customer)
+    return db_customer
 
 
-def delete_cliente(cliente_id: int, db: Session) -> dict:
-    cliente_db = get_cliente_or_404(cliente_id, db)
-    db.delete(cliente_db)
+def delete_customer(customer_id: int, db: Session) -> dict:
+    db_customer = get_customer_or_404(customer_id, db)
+    db.delete(db_customer)
     db.commit()
-    return {"message": f"Cliente con ID {cliente_id} eliminado correctamente"}
+    return {"message": f"Cliente con ID {customer_id} eliminado correctamente"}

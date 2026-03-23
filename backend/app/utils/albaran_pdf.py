@@ -27,7 +27,7 @@ def eur(n: float) -> str:
         return "0.00 €"
 
 
-def _fmt_fecha(value) -> str:
+def _fmt_date(value) -> str:
     if value is None:
         return ""
     if isinstance(value, (datetime, date)):
@@ -114,7 +114,7 @@ def _build_header_footer(
     canvas.restoreState()
 
 
-def generar_pdf_albaran(
+def generate_delivery_note_pdf(
     albaran,
     cliente,
     lineas_con_nombre,
@@ -186,21 +186,21 @@ def generar_pdf_albaran(
     )
 
     albaran_id = _safe(getattr(albaran, "id", ""))
-    fecha = _fmt_fecha(getattr(albaran, "fecha", None))
+    fecha = _fmt_date(getattr(albaran, "date", None))
 
     # ---- Datos cliente
-    c_nombre = f"{_safe(getattr(cliente, 'nombre', ''))} {_safe(getattr(cliente, 'apellidos', ''))}".strip()
+    c_nombre = f"{_safe(getattr(cliente, 'name', ''))} {_safe(getattr(cliente, 'surnames', ''))}".strip()
     c_dni = _safe(getattr(cliente, "dni", ""))
     c_email = _safe(getattr(cliente, "email", ""))
-    c_tel1 = _safe(getattr(cliente, "telefono1", ""))
-    c_tel2 = _safe(getattr(cliente, "telefono2", ""))
+    c_tel1 = _safe(getattr(cliente, "phone1", ""))
+    c_tel2 = _safe(getattr(cliente, "phone2", ""))
 
     dir_parts = [
-        _safe(getattr(cliente, "calle", "")),
-        _safe(getattr(cliente, "numero_vivienda", "")),
-        _safe(getattr(cliente, "piso_portal", "")),
-        _safe(getattr(cliente, "codigo_postal", "")),
-        _safe(getattr(cliente, "ciudad", "")),
+        _safe(getattr(cliente, "street", "")),
+        _safe(getattr(cliente, "house_number", "")),
+        _safe(getattr(cliente, "floor_entrance", "")),
+        _safe(getattr(cliente, "postal_code", "")),
+        _safe(getattr(cliente, "city", "")),
     ]
     direccion = " ".join([p for p in dir_parts if p]).strip()
 
@@ -358,7 +358,7 @@ def generar_pdf_albaran(
     story.append(total_tbl)
 
     # Observaciones
-    descripcion = _safe(getattr(albaran, "descripcion", ""))
+    descripcion = _safe(getattr(albaran, "description", ""))
     if descripcion:
         story.append(Spacer(1, 10))
         obs_tbl = Table(

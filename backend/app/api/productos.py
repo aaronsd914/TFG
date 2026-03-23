@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from backend.app.entidades.producto import Producto, ProductoCreate, ProductoDB
+from backend.app.entidades.producto import Product, ProductCreate, ProductDB
 from backend.app.database import get_db
 from backend.app.dependencies import get_current_user
 from backend.app.services import productos_service
@@ -9,37 +9,37 @@ from typing import List
 router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
-@router.post("/productos/post", response_model=Producto)
-def crear_producto(producto: ProductoCreate, db: Session = Depends(get_db)):
-    return productos_service.create_producto(producto, db)
+@router.post("/productos/post", response_model=Product)
+def create_product(payload: ProductCreate, db: Session = Depends(get_db)):
+    return productos_service.create_product(payload, db)
 
 
-@router.get("/productos/get", response_model=List[Producto])
-def obtener_productos(db: Session = Depends(get_db)):
-    return db.query(ProductoDB).all()
+@router.get("/productos/get", response_model=List[Product])
+def list_products(db: Session = Depends(get_db)):
+    return db.query(ProductDB).all()
 
 
-@router.get("/productos/get/{producto_id}", response_model=Producto)
-def obtener_producto(producto_id: int, db: Session = Depends(get_db)):
-    return productos_service.get_producto_or_404(producto_id, db)
+@router.get("/productos/get/{product_id}", response_model=Product)
+def get_product(product_id: int, db: Session = Depends(get_db)):
+    return productos_service.get_product_or_404(product_id, db)
 
 
-@router.put("/productos/put/{producto_id}", response_model=Producto)
-def actualizar_producto(
-    producto_id: int, actualizado: ProductoCreate, db: Session = Depends(get_db)
+@router.put("/productos/put/{product_id}", response_model=Product)
+def update_product(
+    product_id: int, payload: ProductCreate, db: Session = Depends(get_db)
 ):
-    return productos_service.update_producto(producto_id, actualizado, db)
+    return productos_service.update_product(product_id, payload, db)
 
 
-@router.delete("/productos/delete/{producto_id}")
-def eliminar_producto(producto_id: int, db: Session = Depends(get_db)):
-    return productos_service.delete_producto(producto_id, db)
+@router.delete("/productos/delete/{product_id}")
+def delete_product(product_id: int, db: Session = Depends(get_db)):
+    return productos_service.delete_product(product_id, db)
 
 
-@router.get("/productos/search", response_model=List[Producto])
-def buscar_productos(
+@router.get("/productos/search", response_model=List[Product])
+def search_products(
     q: str = Query(..., min_length=1),
     limit: int = 20,
     db: Session = Depends(get_db),
 ):
-    return productos_service.search_productos(q, limit, db)
+    return productos_service.search_products(q, limit, db)
