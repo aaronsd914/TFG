@@ -62,6 +62,10 @@ def do_login(driver: webdriver.Chrome, user: str = None, password: str = None) -
     pwd.send_keys(password)
     driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
     wait.until(lambda d: "/login" not in d.current_url)
+    # Force Spanish so i18next always uses ES translations regardless of CI locale
+    driver.execute_script("window.localStorage.setItem('fg-lang', 'es')")
+    driver.refresh()
+    wait.until(lambda d: "/login" not in d.current_url)
 
 
 def wait_for_text(driver: webdriver.Chrome, text: str, timeout: int = 10):

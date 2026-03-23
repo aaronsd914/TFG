@@ -106,10 +106,10 @@ export default function MovimientosPage() {
     try {
       setPosting(true);
       const payload = {
-        fecha,
-        concepto,
-        cantidad: Number(cantidad),
-        tipo,
+        date: fecha,
+        description: concepto,
+        amount: Number(cantidad),
+        type: tipo,
       };
       const res = await fetch(`${API_URL}movimientos/post`, {
         method: 'POST',
