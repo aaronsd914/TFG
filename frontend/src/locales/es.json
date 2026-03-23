@@ -153,7 +153,21 @@
     "colUnitPrice": "P. Unitario",
     "noLines": "No hay líneas para este albarán.",
     "registeredCount": "Clientes registrados:",
-    "loadError": "No se pudieron cargar los clientes."
+    "loadError": "No se pudieron cargar los clientes.",
+    "editTitle": "Editar cliente",
+    "editSuccess": "Cliente actualizado correctamente.",
+    "editError": "No se pudo actualizar el cliente.",
+    "editName": "Nombre",
+    "editSurnames": "Apellidos",
+    "editDni": "DNI",
+    "editEmail": "Email",
+    "editPhone1": "Teléfono 1",
+    "editPhone2": "Teléfono 2",
+    "editStreet": "Calle",
+    "editHouseNumber": "Número",
+    "editFloorEntrance": "Piso/Entrada",
+    "editCity": "Ciudad",
+    "editPostalCode": "Código postal"
   },
   "products": {
     "title": "Productos",
@@ -291,7 +305,13 @@
     "tabClient": "Cliente",
     "noLines": "Este albarán no tiene líneas.",
     "viewClient": "Ver cliente →",
-    "loadError": "No se pudieron cargar los albaranes."
+    "loadError": "No se pudieron cargar los albaranes.",
+    "editTitle": "Editar albarán",
+    "editSuccess": "Albarán actualizado correctamente.",
+    "editError": "No se pudo actualizar el albarán.",
+    "editDate": "Fecha",
+    "editDescription": "Descripción",
+    "editStatus": "Estado"
   },
   "newSale": {
     "title": "Nueva venta",

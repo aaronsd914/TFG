@@ -49,6 +49,15 @@ class StatusUpdate(BaseModel):
     status: DeliveryNoteStatus
 
 
+_Date = date  # alias avoids shadowing when 'date' is also used as a field name
+
+
+class DeliveryNoteUpdate(BaseModel):
+    date: Optional[_Date] = None
+    description: Optional[str] = None
+    status: Optional[DeliveryNoteStatus] = None
+
+
 def _send_delivery_note_email_task(delivery_note_id: int):
     """
     Background task: generates the delivery note PDF and sends it by email to the customer.
@@ -352,6 +361,35 @@ def update_status(
         db.add(mov)
         db.commit()
 
+    return delivery_note
+
+
+@router.put(
+    "/albaranes/put/{delivery_note_id}",
+    response_model=DeliveryNote,
+    responses={404: {"description": "Not found"}},
+)
+def update_delivery_note(
+    delivery_note_id: int,
+    payload: DeliveryNoteUpdate,
+    db: Annotated[Session, Depends(get_db)],
+):
+    """Updates editable fields (date, description, status) of a delivery note."""
+    delivery_note = (
+        db.query(DeliveryNoteDB)
+        .filter(DeliveryNoteDB.id == delivery_note_id)
+        .first()
+    )
+    if not delivery_note:
+        raise HTTPException(404, "Albaran no encontrado")
+    if payload.date is not None:
+        delivery_note.date = payload.date
+    if payload.description is not None:
+        delivery_note.description = payload.description
+    if payload.status is not None:
+        delivery_note.status = payload.status
+    db.commit()
+    db.refresh(delivery_note)
     return delivery_note
 
 

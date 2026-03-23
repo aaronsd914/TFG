@@ -110,6 +110,12 @@ export default function AlbaranesPage() {
   const [detailError, setDetailError] = useState(null);
   const [detailTab, setDetailTab] = useState('albaran'); // 'albaran' | 'cliente'
 
+  // edición de albarán
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({});
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState(null);
+
   // ✅ ID pendiente para abrir desde Clientes
   const [pendingOpenId, setPendingOpenId] = useState(null);
 
@@ -363,6 +369,52 @@ export default function AlbaranesPage() {
     setSelectedClient(null);
     setDetailError(null);
     setDetailTab('albaran');
+  }
+
+  function openEdit() {
+    if (!selected) return;
+    setEditForm({
+      date: selected.date ? String(selected.date).slice(0, 10) : '',
+      description: selected.description || '',
+      status: selected.status || 'FIANZA',
+    });
+    setEditError(null);
+    setEditOpen(true);
+  }
+
+  function closeEdit() {
+    setEditOpen(false);
+    setEditForm({});
+    setEditError(null);
+  }
+
+  async function saveEdit() {
+    if (!selected) return;
+    setEditSaving(true);
+    setEditError(null);
+    try {
+      const res = await fetch(`${API_URL}albaranes/put/${selected.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date: editForm.date || null,
+          description: editForm.description || null,
+          status: editForm.status || null,
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const updated = await res.json();
+      setSelected(updated);
+      setAlbaranes((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+      closeEdit();
+      sileo.success({ title: t('albaranes.editSuccess') });
+    } catch (e) {
+      const msg = e?.message || t('albaranes.editError');
+      setEditError(msg);
+      sileo.error({ title: t('albaranes.editError'), description: msg });
+    } finally {
+      setEditSaving(false);
+    }
   }
 
   // ✅ Abrir detalle desde ClientesPage si llega ID
@@ -663,9 +715,21 @@ export default function AlbaranesPage() {
         <ModalCenter isOpen={detailOpen} onClose={closeDetail} maxWidth="max-w-3xl">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">{t('albaranes.detailTitle')}</h2>
-            <button onClick={closeDetail} className="text-gray-500 hover:text-gray-700" type="button">
-              {t('common.close')}
-            </button>
+            <div className="flex items-center gap-2">
+              {selected && (
+                <button
+                  onClick={openEdit}
+                  className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-sm"
+                  type="button"
+                  data-testid="albaran-edit-btn"
+                >
+                  {t('common.edit')}
+                </button>
+              )}
+              <button onClick={closeDetail} className="text-gray-500 hover:text-gray-700" type="button">
+                {t('common.close')}
+              </button>
+            </div>
           </div>
 
           {!selected ? (
@@ -821,6 +885,74 @@ export default function AlbaranesPage() {
               )}
             </div>
           )}
+        </ModalCenter>
+
+        {/* Modal editar albarán */}
+        <ModalCenter isOpen={editOpen} onClose={closeEdit} maxWidth="max-w-lg">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">{t('albaranes.editTitle')}</h2>
+            <button onClick={closeEdit} className="text-gray-500 hover:text-gray-700" type="button">
+              {t('common.close')}
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">{t('albaranes.editDate')}</label>
+              <input
+                type="date"
+                value={editForm.date || ''}
+                onChange={(e) => setEditForm((f) => ({ ...f, date: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">{t('albaranes.editDescription')}</label>
+              <textarea
+                value={editForm.description || ''}
+                onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))}
+                rows={3}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 resize-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">{t('albaranes.editStatus')}</label>
+              <select
+                value={editForm.status || 'FIANZA'}
+                onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              >
+                <option value="FIANZA">{t('albaranes.stateFianza')}</option>
+                <option value="ALMACEN">{t('albaranes.stateAlmacen')}</option>
+                <option value="RUTA">{t('albaranes.stateRuta')}</option>
+                <option value="ENTREGADO">{t('albaranes.stateEntregado')}</option>
+              </select>
+            </div>
+
+            {editError && <p className="text-red-600 text-sm">{editError}</p>}
+          </div>
+
+          <div className="mt-6 flex justify-end gap-3">
+            <button
+              onClick={closeEdit}
+              className="px-4 py-2 rounded-xl bg-gray-200 text-gray-900 hover:bg-gray-300"
+              type="button"
+              disabled={editSaving}
+            >
+              {t('common.cancel')}
+            </button>
+            <button
+              onClick={saveEdit}
+              className="px-4 py-2 rounded-xl bg-black text-white hover:opacity-90 disabled:opacity-50"
+              type="button"
+              disabled={editSaving}
+              data-testid="albaran-edit-save-btn"
+            >
+              {editSaving ? t('common.saving') : t('common.save')}
+            </button>
+          </div>
         </ModalCenter>
       </div>
     </>

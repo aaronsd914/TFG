@@ -153,7 +153,21 @@
     "colUnitPrice": "Unit Price",
     "noLines": "No lines for this delivery note.",
     "registeredCount": "Registered clients:",
-    "loadError": "Could not load clients."
+    "loadError": "Could not load clients.",
+    "editTitle": "Edit client",
+    "editSuccess": "Client updated successfully.",
+    "editError": "Could not update the client.",
+    "editName": "Name",
+    "editSurnames": "Surnames",
+    "editDni": "ID No.",
+    "editEmail": "Email",
+    "editPhone1": "Phone 1",
+    "editPhone2": "Phone 2",
+    "editStreet": "Street",
+    "editHouseNumber": "Number",
+    "editFloorEntrance": "Floor/Entrance",
+    "editCity": "City",
+    "editPostalCode": "Post code"
   },
   "products": {
     "title": "Products",
@@ -291,7 +305,13 @@
     "tabClient": "Client",
     "noLines": "This delivery note has no lines.",
     "viewClient": "View client →",
-    "loadError": "Could not load delivery notes."
+    "loadError": "Could not load delivery notes.",
+    "editTitle": "Edit delivery note",
+    "editSuccess": "Delivery note updated successfully.",
+    "editError": "Could not update the delivery note.",
+    "editDate": "Date",
+    "editDescription": "Description",
+    "editStatus": "Status"
   },
   "newSale": {
     "title": "New sale",

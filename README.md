@@ -508,6 +508,7 @@ The API is served at `http://localhost:8000`. All domain endpoints are prefixed 
 | `GET` | `/api/albaranes/get` | List all delivery notes |
 | `GET` | `/api/albaranes/get/{id}` | Get one delivery note |
 | `GET` | `/api/albaranes/by-cliente/{id}` | All orders for a customer |
+| `PUT` | `/api/albaranes/put/{id}` | Update editable fields (date, description, status) |
 | `PATCH` | `/api/albaranes/{id}/estado` | Advance state to `ENTREGADO` (auto-registers pending payment) |
 
 #### Financial movements — `/api/movimientos`
@@ -595,8 +596,8 @@ export const API_URL  = `${BASE_URL}/api/`;
 ```
 /                  → Dashboard           (KPIs, revenue chart, status pie)
 /ventas/nueva      → NuevaVenta          (new order wizard)
-/clientes          → ClientesPage        (customer list, order history)
-/albaranes         → AlbaranesPage       (delivery note list, state control)
+/clientes          → ClientesPage        (customer list, order history, edit modal)
+/albaranes         → AlbaranesPage       (delivery note list, state control, edit modal)
 /productos         → ProductosPage       (products + suppliers)
 /movimientos       → MovimientosPage     (financial ledger)
 /tendencias        → Tendencias          (analytics, AI chat, PDF export)
