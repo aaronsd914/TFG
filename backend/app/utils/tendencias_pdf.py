@@ -391,7 +391,9 @@ def generar_pdf_tendencias(
     # Previsión (Holt's double ES)
     if prediction and prediction.get("forecast"):
         story.append(Spacer(1, 8))
-        story.append(Paragraph("Previsión de ventas (análisis predictivo)", styles["H2"]))
+        story.append(
+            Paragraph("Previsión de ventas (análisis predictivo)", styles["H2"])
+        )
         story.append(
             Paragraph(
                 "Proyección de ingresos usando suavizado exponencial doble (Holt). "

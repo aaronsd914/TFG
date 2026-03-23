@@ -196,14 +196,14 @@ def basket_pairs(
         by_alb[r.delivery_note_id].append(r.product_id)
 
     pair_count, prod_count = defaultdict(int), defaultdict(int)
-    for _, prods in by_alb.items():
+    for prods in by_alb.values():
         uniq = sorted(set(prods))
         for p in uniq:
             prod_count[p] += 1
         for a, b in combinations(uniq, 2):
             pair_count[(a, b)] += 1
 
-    prod_ids = list(set([p for pair in pair_count.keys() for p in pair]))
+    prod_ids = list({p for pair in pair_count for p in pair})
     name_map = {
         p.id: p.name
         for p in db.query(ProductDB).filter(ProductDB.id.in_(prod_ids)).all()
@@ -465,6 +465,7 @@ def generate_ai_compare_report(compare_obj_full: Dict[str, Any]) -> str:
 
 # ---------- Analíticas predictivas (Holt double exponential smoothing) ----------
 
+
 def monthly_sales(db: Session, from_date: date, to_date: date) -> list:
     """Aggregate daily sales into monthly buckets (YYYY-MM)."""
     daily = sales_by_day(db, from_date, to_date)
@@ -510,29 +511,31 @@ def _holt_forecast(values: list, n_ahead: int, alpha: float = 0.3, beta: float =
 
     # Smooth the series to obtain the final level and trend
     for v in vals[1:]:
-        L_prev, T_prev = L, T
-        L = alpha * v + (1 - alpha) * (L_prev + T_prev)
-        T = beta * (L - L_prev) + (1 - beta) * T_prev
+        l_prev, t_prev = L, T
+        L = alpha * v + (1 - alpha) * (l_prev + t_prev)
+        T = beta * (L - l_prev) + (1 - beta) * t_prev
 
     forecasts = [max(0.0, L + h * T) for h in range(1, n_ahead + 1)]
 
     # Compute RMSE of one-step-ahead in-sample residuals (for interval width)
     if n >= 3:
-        L_t = vals[0]
-        T_t = (vals[-1] - vals[0]) / (n - 1)
+        l_t = vals[0]
+        t_t = (vals[-1] - vals[0]) / (n - 1)
         residuals = []
         for v in vals[1:]:
-            one_step = L_t + T_t
+            one_step = l_t + t_t
             residuals.append(v - one_step)
-            L_prev_t = L_t
-            L_t = alpha * v + (1 - alpha) * one_step
-            T_t = beta * (L_t - L_prev_t) + (1 - beta) * T_t
+            l_prev_t = l_t
+            l_t = alpha * v + (1 - alpha) * one_step
+            t_t = beta * (l_t - l_prev_t) + (1 - beta) * t_t
         rmse = math.sqrt(sum(r**2 for r in residuals) / len(residuals))
     else:
         rmse = abs(vals[-1] - vals[0])
 
     # 80% prediction interval: ±1.28 × RMSE × √h  (uncertainty grows with horizon)
-    lower = [max(0.0, f - 1.28 * rmse * math.sqrt(h)) for h, f in enumerate(forecasts, 1)]
+    lower = [
+        max(0.0, f - 1.28 * rmse * math.sqrt(h)) for h, f in enumerate(forecasts, 1)
+    ]
     upper = [f + 1.28 * rmse * math.sqrt(h) for h, f in enumerate(forecasts, 1)]
 
     return forecasts, lower, upper
@@ -555,7 +558,9 @@ def _next_months(last_month_str: str, n: int) -> list:
     return result
 
 
-def _prediction_data(db: Session, from_date: date, to_date: date, n_months: int = 3) -> dict:
+def _prediction_data(
+    db: Session, from_date: date, to_date: date, n_months: int = 3
+) -> dict:
     """Core prediction helper — reusable from the endpoint and the PDF export."""
     # Extend history to at least 12 months for a better smoothing baseline
     if to_date.month > 1:
@@ -600,8 +605,8 @@ def _prediction_data(db: Session, from_date: date, to_date: date, n_months: int 
 @router.get("/summary", responses={400: {"description": "Bad request"}})
 def analytics_summary(
     db: Annotated[Session, Depends(get_db)],
-    date_from: Optional[date] = Query(None),
-    date_to: Optional[date] = Query(None),
+    date_from: Annotated[Optional[date], Query()] = None,
+    date_to: Annotated[Optional[date], Query()] = None,
 ):
     dfrom, dto = daterange_defaults(date_from, date_to)
 
@@ -620,8 +625,8 @@ def analytics_summary(
 @router.get("/compare", responses={400: {"description": "Bad request"}})
 def analytics_compare(
     db: Annotated[Session, Depends(get_db)],
-    date_from: Optional[date] = Query(None),
-    date_to: Optional[date] = Query(None),
+    date_from: Annotated[Optional[date], Query()] = None,
+    date_to: Annotated[Optional[date], Query()] = None,
 ):
     dfrom, dto = daterange_defaults(date_from, date_to)
     compare_obj = compare_periods(db, dfrom, dto)
@@ -632,9 +637,9 @@ def analytics_compare(
 @router.get("/export/pdf", responses={400: {"description": "Bad request"}})
 def analytics_export_pdf(
     db: Annotated[Session, Depends(get_db)],
-    date_from: Optional[date] = Query(None),
-    date_to: Optional[date] = Query(None),
-    include_compare: bool = Query(True),
+    date_from: Annotated[Optional[date], Query()] = None,
+    date_to: Annotated[Optional[date], Query()] = None,
+    include_compare: Annotated[bool, Query()] = True,
 ):
     dfrom, dto = daterange_defaults(date_from, date_to)
 
@@ -689,9 +694,9 @@ def analytics_export_pdf(
 @router.get("/predict", responses={400: {"description": "Bad request"}})
 def analytics_predict(
     db: Annotated[Session, Depends(get_db)],
-    date_from: Optional[date] = Query(None),
-    date_to: Optional[date] = Query(None),
-    n_months: int = Query(3, ge=1, le=12),
+    date_from: Annotated[Optional[date], Query()] = None,
+    date_to: Annotated[Optional[date], Query()] = None,
+    n_months: Annotated[int, Query(ge=1, le=12)] = 3,
 ):
     """Forecast monthly revenue using Holt's double exponential smoothing.
 
