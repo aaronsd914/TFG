@@ -543,6 +543,8 @@ def _holt_forecast(values: list, n_ahead: int, alpha: float = 0.3, beta: float =
 
 def _next_months(last_month_str: str, n: int) -> list:
     """Return n month labels (YYYY-MM) following last_month_str."""
+    # Clamp to a safe constant bound so loop size is not user-controlled
+    n = min(max(0, n), 24)
     try:
         year, month = int(last_month_str[:4]), int(last_month_str[5:7])
     except Exception:
@@ -562,6 +564,9 @@ def _prediction_data(
     db: Session, from_date: date, to_date: date, n_months: int = 3
 ) -> dict:
     """Core prediction helper — reusable from the endpoint and the PDF export."""
+    # Sanitize n_months to a fixed safe bound so that allocation and loop sizes
+    # are application-controlled and not directly determined by user input.
+    n_months = min(max(1, int(n_months)), 12)
     # Extend history to at least 12 months for a better smoothing baseline
     if to_date.month > 1:
         history_from = min(from_date, date(to_date.year - 1, to_date.month, 1))
