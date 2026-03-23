@@ -11,11 +11,11 @@ const TIPO_META = {
 
 function formatEUR(n) {
   const v = Number(n || 0);
-  return `${v.toFixed(2)} â‚¬`;
+  return `${v.toFixed(2)} €`;
 }
 function formatDate(d) {
   const dt = new Date(d);
-  return Number.isNaN(dt.getTime()) ? 'â€”' : dt.toLocaleDateString();
+  return Number.isNaN(dt.getTime()) ? '—' : dt.toLocaleDateString();
 }
 
 function Chip({ label, onRemove }) {
@@ -80,7 +80,7 @@ export default function MovimientosPage() {
     }
   }
 
-  // âœ… Se actualiza siempre que entras en la pÃ¡gina
+  // ✅ Se actualiza siempre que entras en la página
   useEffect(() => {
     fetchMovs();
   }, []);
@@ -230,7 +230,7 @@ export default function MovimientosPage() {
                   placeholder={t('movements.searchPlaceholder')}
                   className="w-full border border-gray-300 rounded-xl px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-gray-300"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">âŒ•</span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">⌕</span>
               </div>
               <button
                 type="button"
@@ -362,7 +362,7 @@ export default function MovimientosPage() {
 
           <div>
             <label className="block text-sm font-medium mb-1">
-              Cantidad (â‚¬) <span className="text-red-600">*</span>
+              Cantidad (€) <span className="text-red-600">*</span>
             </label>
             <input
               type="number"

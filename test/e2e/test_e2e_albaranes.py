@@ -111,3 +111,53 @@ def test_albaranes_pdf_export_disponible(logged_in_browser):
             By.XPATH, "//button[contains(normalize-space(.), 'PDF') or contains(normalize-space(.), 'Exportar') or contains(@aria-label,'PDF')]"
         )
         assert len(pdf_btns) >= 1 or True  # pass si el modal no tiene PDF en este estado
+
+
+def test_albaranes_boton_editar_visible_en_detalle(logged_in_browser):
+    """El modal de detalle de un albarán contiene el botón 'Editar'."""
+    logged_in_browser.get(f"{BASE_URL}/albaranes")
+    WebDriverWait(logged_in_browser, 15).until(EC.url_contains("/albaranes"))
+    time.sleep(1)
+    rows = logged_in_browser.find_elements(
+        By.CSS_SELECTOR, "li.cursor-pointer"
+    )
+    if not rows:
+        pytest.skip("No hay albaranes en la lista para testear el botón Editar")
+    rows[0].click()
+    WebDriverWait(logged_in_browser, 10).until(
+        EC.presence_of_element_located((By.XPATH, "//h2[contains(., 'Detalle')]"))
+    )
+    edit_btn = WebDriverWait(logged_in_browser, 10).until(
+        EC.presence_of_element_located(
+            (By.XPATH, "//button[@data-testid='albaran-edit-btn' or contains(normalize-space(.), 'Editar')]")
+        )
+    )
+    assert edit_btn is not None
+
+
+def test_albaranes_modal_edicion_se_abre(logged_in_browser):
+    """Pulsar Editar en el detalle abre el modal de edición del albarán."""
+    logged_in_browser.get(f"{BASE_URL}/albaranes")
+    WebDriverWait(logged_in_browser, 15).until(EC.url_contains("/albaranes"))
+    time.sleep(1)
+    rows = logged_in_browser.find_elements(By.CSS_SELECTOR, "li.cursor-pointer")
+    if not rows:
+        pytest.skip("No hay albaranes en la lista para testear la edición")
+    rows[0].click()
+    WebDriverWait(logged_in_browser, 10).until(
+        EC.presence_of_element_located((By.XPATH, "//h2[contains(., 'Detalle')]"))
+    )
+    edit_btn = WebDriverWait(logged_in_browser, 10).until(
+        EC.element_to_be_clickable(
+            (By.XPATH, "//button[@data-testid='albaran-edit-btn']")
+        )
+    )
+    edit_btn.click()
+    # El modal de edición tiene el título "Editar albarán"
+    WebDriverWait(logged_in_browser, 10).until(
+        EC.presence_of_element_located(
+            (By.XPATH, "//h2[contains(., 'ditar') and contains(., 'albar')]")
+        )
+    )
+    body_text = logged_in_browser.find_element(By.TAG_NAME, "body").text.lower()
+    assert "editar" in body_text or "edit" in body_text

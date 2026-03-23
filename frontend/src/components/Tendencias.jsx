@@ -53,6 +53,10 @@ export default function TendenciasPage() {
   const [compare, setCompare] = useState(null);
   const compareAbortRef = useRef(null);
 
+  // --- Predicción ---
+  const [prediction, setPrediction] = useState(null);
+  const [predLoading, setPredLoading] = useState(false);
+
   // --- Chat ---
   const [messages, setMessages] = useState(() => [
     {
@@ -224,6 +228,26 @@ export default function TendenciasPage() {
     };
     loadCompare();
   }, [compareEnabled, range.from, range.to]);
+
+  // Cargar previsión
+  useEffect(() => {
+    const loadPrediction = async () => {
+      setPredLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (range.from) params.set("date_from", range.from);
+        if (range.to) params.set("date_to", range.to);
+        params.set("n_months", "3");
+        const res = await fetch(`${API_URL}analytics/predict?${params.toString()}`);
+        if (res.ok) setPrediction(await res.json());
+      } catch {
+        // prediction is optional, ignore errors
+      } finally {
+        setPredLoading(false);
+      }
+    };
+    loadPrediction();
+  }, [range.from, range.to]);
 
   // Scroll chat
   useEffect(() => {
@@ -576,6 +600,8 @@ export default function TendenciasPage() {
                   {t('trends.aiReportFooter')}
                 </div>
               </div>
+
+              <PredictionSection prediction={prediction} loading={predLoading} t={t} />
             </>
           )}
 
@@ -921,6 +947,113 @@ function MarkdownTable({ table }) {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+// ------------------------------
+// Prediction section
+// ------------------------------
+function PredictionSection({ prediction, loading, t }) {
+  if (loading) {
+    return (
+      <div className="rounded-2xl border bg-white p-4">
+        <div className="text-sm text-gray-500">{t('trends.predLoading')}</div>
+      </div>
+    );
+  }
+  if (!prediction || !prediction.forecast || prediction.forecast.length === 0) return null;
+
+  const { historical = [], forecast } = prediction;
+  const histSlice = historical.slice(-12);
+
+  // Build combined labels
+  const histLabels = histSlice.map((h) => h.month);
+  const fcLabels = forecast.map((f) => f.month);
+  const allLabels = [...histLabels, ...fcLabels];
+
+  // Historical dataset (null for forecast positions)
+  const histRevenue = [
+    ...histSlice.map((h) => h.revenue),
+    ...Array(fcLabels.length).fill(null),
+  ];
+
+  // Forecast dataset (null for historical positions, overlap last hist point so lines connect)
+  const connectValue = histSlice.length > 0 ? histSlice[histSlice.length - 1].revenue : null;
+  const fcRevenue = [
+    ...Array(Math.max(0, histSlice.length - 1)).fill(null),
+    connectValue,
+    ...forecast.map((f) => f.predicted_revenue),
+  ];
+
+  const chartData = {
+    labels: allLabels,
+    datasets: [
+      {
+        label: t('trends.predHistorical'),
+        data: histRevenue,
+        borderColor: "#3B82F6",
+        backgroundColor: "rgba(59,130,246,0.08)",
+        fill: false,
+        tension: 0.2,
+        pointRadius: 3,
+        spanGaps: false,
+      },
+      {
+        label: t('trends.predForecast'),
+        data: fcRevenue,
+        borderColor: "#22C55E",
+        borderDash: [6, 4],
+        backgroundColor: "rgba(34,197,94,0.08)",
+        fill: false,
+        tension: 0.2,
+        pointRadius: 4,
+        spanGaps: false,
+      },
+    ],
+  };
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: { position: "top" },
+      title: { display: false },
+    },
+    scales: { y: { beginAtZero: true } },
+  };
+
+  return (
+    <div className="rounded-2xl border bg-white p-4 space-y-4" data-testid="prediction-section">
+      <div>
+        <h3 className="font-semibold">{t('trends.predTitle')}</h3>
+        <p className="text-xs text-gray-500 mt-0.5">{t('trends.predSubtitle')}</p>
+      </div>
+
+      <div style={{ height: 280 }}>
+        <Line data={chartData} options={chartOptions} />
+      </div>
+
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b bg-green-50">
+            <th className="text-left p-2 text-green-800">{t('trends.predTableMonth')}</th>
+            <th className="text-right p-2 text-green-800">{t('trends.predTableRevenue')}</th>
+            <th className="text-right p-2 text-green-800">{t('trends.predTableCI')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {forecast.map((f) => (
+            <tr key={f.month} className="border-b last:border-b-0">
+              <td className="p-2 font-medium">{f.month}</td>
+              <td className="p-2 text-right">{eur(f.predicted_revenue)}</td>
+              <td className="p-2 text-right text-gray-600">
+                {eur(f.lower_80)} – {eur(f.upper_80)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <div className="text-xs text-gray-400">{t('trends.predMethod')}</div>
     </div>
   );
 }

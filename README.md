@@ -237,6 +237,14 @@ Two independent analytical models run on the historical order data:
 
 Both algorithms run entirely in Python/SQLAlchemy on request — no pre-computation or background jobs required.
 
+3. **Predictive analytics — Holt's double exponential smoothing** (`analytics.predict`):
+   Monthly revenue is aggregated from daily albaran data and fed into Holt's double exponential smoothing (equivalent to ARIMA(0,1,1)+drift). The model maintains a level $L_t$ and a trend $T_t$, updated with smoothing parameters $\alpha=0.3$ and $\beta=0.1$. The forecast for $h$ months ahead is $\hat{y}_{t+h} = L_t + h \cdot T_t$, with 80% prediction intervals of $\pm 1.28\,\hat{\sigma}\sqrt{h}$ based on in-sample RMSE. Implementation is in plain Python (`math` stdlib, no scipy/statsmodels needed).
+
+   - **Endpoint**: `GET /api/analytics/predict?date_from&date_to&n_months=3` — returns historical months + n-step ahead forecast with confidence intervals
+   - **Tendencias page**: combined line chart (historical solid blue + forecast dashed green) and a table with month, estimated revenue, and 80% interval
+   - **Weekly email**: next-month revenue estimate appended in a green block
+   - **PDF export**: prediction table included in the trends PDF report
+
 ---
 
 ## Phase 1 — Implementation
@@ -500,6 +508,7 @@ The API is served at `http://localhost:8000`. All domain endpoints are prefixed 
 | `GET` | `/api/albaranes/get` | List all delivery notes |
 | `GET` | `/api/albaranes/get/{id}` | Get one delivery note |
 | `GET` | `/api/albaranes/by-cliente/{id}` | All orders for a customer |
+| `PUT` | `/api/albaranes/put/{id}` | Update editable fields (date, description, status) |
 | `PATCH` | `/api/albaranes/{id}/estado` | Advance state to `ENTREGADO` (auto-registers pending payment) |
 
 #### Financial movements — `/api/movimientos`
@@ -587,8 +596,8 @@ export const API_URL  = `${BASE_URL}/api/`;
 ```
 /                  → Dashboard           (KPIs, revenue chart, status pie)
 /ventas/nueva      → NuevaVenta          (new order wizard)
-/clientes          → ClientesPage        (customer list, order history)
-/albaranes         → AlbaranesPage       (delivery note list, state control)
+/clientes          → ClientesPage        (customer list, order history, edit modal)
+/albaranes         → AlbaranesPage       (delivery note list, state control, edit modal)
 /productos         → ProductosPage       (products + suppliers)
 /movimientos       → MovimientosPage     (financial ledger)
 /tendencias        → Tendencias          (analytics, AI chat, PDF export)

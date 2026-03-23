@@ -144,3 +144,49 @@ class TestEstadoAlbaran:
     def test_cambiar_estado_inexistente(self, client):
         r = client.patch("/api/albaranes/9999/estado", json={"status": "ENTREGADO"})
         assert r.status_code == 404
+
+
+class TestActualizarAlbaran:
+    def test_actualizar_descripcion(self, client, cliente_fixture, producto):
+        aid = crear_albaran(client, cliente_fixture["id"], producto["id"]).json()["id"]
+        r = client.put(f"/api/albaranes/put/{aid}", json={"description": "Nueva descripcion"})
+        assert r.status_code == 200
+        assert r.json()["description"] == "Nueva descripcion"
+
+    def test_actualizar_estado(self, client, cliente_fixture, producto):
+        aid = crear_albaran(client, cliente_fixture["id"], producto["id"]).json()["id"]
+        r = client.put(f"/api/albaranes/put/{aid}", json={"status": "ALMACEN"})
+        assert r.status_code == 200
+        assert r.json()["status"] == "ALMACEN"
+
+    def test_actualizar_fecha(self, client, cliente_fixture, producto):
+        aid = crear_albaran(client, cliente_fixture["id"], producto["id"]).json()["id"]
+        r = client.put(f"/api/albaranes/put/{aid}", json={"date": "2027-06-15"})
+        assert r.status_code == 200
+        assert r.json()["date"] == "2027-06-15"
+
+    def test_actualizar_varios_campos_a_la_vez(self, client, cliente_fixture, producto):
+        aid = crear_albaran(client, cliente_fixture["id"], producto["id"]).json()["id"]
+        r = client.put(f"/api/albaranes/put/{aid}", json={
+            "description": "Editado",
+            "status": "RUTA",
+            "date": "2027-01-01",
+        })
+        assert r.status_code == 200
+        body = r.json()
+        assert body["description"] == "Editado"
+        assert body["status"] == "RUTA"
+        assert body["date"] == "2027-01-01"
+
+    def test_actualizar_albaran_inexistente(self, client):
+        r = client.put("/api/albaranes/put/9999", json={"description": "X"})
+        assert r.status_code == 404
+
+    def test_actualizar_sin_payload_no_modifica(self, client, cliente_fixture, producto):
+        aid = crear_albaran(client, cliente_fixture["id"], producto["id"]).json()["id"]
+        original = client.get(f"/api/albaranes/get/{aid}").json()
+        r = client.put(f"/api/albaranes/put/{aid}", json={})
+        assert r.status_code == 200
+        updated = r.json()
+        assert updated["status"] == original["status"]
+        assert updated["description"] == original["description"]

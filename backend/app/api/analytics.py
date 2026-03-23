@@ -7,6 +7,7 @@ from datetime import date, datetime, timedelta
 from typing import Annotated, Optional, Dict, Any, Tuple
 import json
 import logging
+import math
 
 from backend.app.database import get_db
 from backend.app.entidades.albaran import DeliveryNoteDB
@@ -195,14 +196,14 @@ def basket_pairs(
         by_alb[r.delivery_note_id].append(r.product_id)
 
     pair_count, prod_count = defaultdict(int), defaultdict(int)
-    for _, prods in by_alb.items():
+    for prods in by_alb.values():
         uniq = sorted(set(prods))
         for p in uniq:
             prod_count[p] += 1
         for a, b in combinations(uniq, 2):
             pair_count[(a, b)] += 1
 
-    prod_ids = list(set([p for pair in pair_count.keys() for p in pair]))
+    prod_ids = list({p for pair in pair_count for p in pair})
     name_map = {
         p.id: p.name
         for p in db.query(ProductDB).filter(ProductDB.id.in_(prod_ids)).all()
@@ -462,12 +463,155 @@ def generate_ai_compare_report(compare_obj_full: Dict[str, Any]) -> str:
         return ""
 
 
+# ---------- Analíticas predictivas (Holt double exponential smoothing) ----------
+
+
+def monthly_sales(db: Session, from_date: date, to_date: date) -> list:
+    """Aggregate daily sales into monthly buckets (YYYY-MM)."""
+    daily = sales_by_day(db, from_date, to_date)
+    buckets: dict = {}
+    for r in daily:
+        ds = r.get("date", "")
+        if len(ds) >= 7:
+            key = ds[:7]
+            b = buckets.setdefault(key, {"month": key, "orders": 0, "revenue": 0.0})
+            b["orders"] += int(r.get("orders") or 0)
+            b["revenue"] += float(r.get("revenue") or 0.0)
+    return sorted(buckets.values(), key=lambda x: x["month"])
+
+
+def _holt_forecast(values: list, n_ahead: int, alpha: float = 0.3, beta: float = 0.1):
+    """
+    Holt's double exponential smoothing (trend model), equivalent to ARIMA(0,1,1)+drift.
+
+    Parameters
+    ----------
+    values  : historical observations (monthly revenue), oldest first
+    n_ahead : number of future steps to forecast
+    alpha   : level smoothing factor  (0 < α < 1)
+    beta    : trend smoothing factor  (0 < β < 1)
+
+    Returns
+    -------
+    (forecasts, lower_80, upper_80)  — each a list of length n_ahead, all non-negative.
+    """
+    if not values or n_ahead <= 0:
+        return [], [], []
+
+    vals = [max(0.0, float(v)) for v in values]
+    n = len(vals)
+
+    if n == 1:
+        fc = [vals[0]] * n_ahead
+        return fc, fc[:], fc[:]
+
+    # Initialization: level = first value, trend = average first-differences
+    L = vals[0]
+    T = (vals[-1] - vals[0]) / (n - 1)
+
+    # Smooth the series to obtain the final level and trend
+    for v in vals[1:]:
+        l_prev, t_prev = L, T
+        L = alpha * v + (1 - alpha) * (l_prev + t_prev)
+        T = beta * (L - l_prev) + (1 - beta) * t_prev
+
+    forecasts = [max(0.0, L + h * T) for h in range(1, n_ahead + 1)]
+
+    # Compute RMSE of one-step-ahead in-sample residuals (for interval width)
+    if n >= 3:
+        l_t = vals[0]
+        t_t = (vals[-1] - vals[0]) / (n - 1)
+        residuals = []
+        for v in vals[1:]:
+            one_step = l_t + t_t
+            residuals.append(v - one_step)
+            l_prev_t = l_t
+            l_t = alpha * v + (1 - alpha) * one_step
+            t_t = beta * (l_t - l_prev_t) + (1 - beta) * t_t
+        rmse = math.sqrt(sum(r**2 for r in residuals) / len(residuals))
+    else:
+        rmse = abs(vals[-1] - vals[0])
+
+    # 80% prediction interval: ±1.28 × RMSE × √h  (uncertainty grows with horizon)
+    lower = [
+        max(0.0, f - 1.28 * rmse * math.sqrt(h)) for h, f in enumerate(forecasts, 1)
+    ]
+    upper = [f + 1.28 * rmse * math.sqrt(h) for h, f in enumerate(forecasts, 1)]
+
+    return forecasts, lower, upper
+
+
+def _next_months(last_month_str: str, n: int) -> list:
+    """Return n month labels (YYYY-MM) following last_month_str."""
+    # Clamp to a safe constant bound so loop size is not user-controlled
+    n = min(max(0, n), 24)
+    try:
+        year, month = int(last_month_str[:4]), int(last_month_str[5:7])
+    except Exception:
+        today = date.today()
+        year, month = today.year, today.month
+    result = []
+    for _ in range(n):
+        month += 1
+        if month > 12:
+            month = 1
+            year += 1
+        result.append(f"{year:04d}-{month:02d}")
+    return result
+
+
+def _prediction_data(
+    db: Session, from_date: date, to_date: date, n_months: int = 3
+) -> dict:
+    """Core prediction helper — reusable from the endpoint and the PDF export."""
+    # Sanitize n_months to a fixed safe bound so that allocation and loop sizes
+    # are application-controlled and not directly determined by user input.
+    n_months = min(max(1, int(n_months)), 12)
+    # Extend history to at least 12 months for a better smoothing baseline
+    if to_date.month > 1:
+        history_from = min(from_date, date(to_date.year - 1, to_date.month, 1))
+    else:
+        history_from = min(from_date, date(to_date.year - 2, 12, 1))
+
+    historical = monthly_sales(db, history_from, to_date)
+    revenues = [h["revenue"] for h in historical]
+
+    if len(revenues) < 2:
+        forecasts_list = [0.0] * n_months
+        lo_list = [0.0] * n_months
+        hi_list = [0.0] * n_months
+        method = "insufficient_data"
+    else:
+        forecasts_list, lo_list, hi_list = _holt_forecast(revenues, n_months)
+        method = "holt_double_exponential_smoothing"
+
+    last_month = historical[-1]["month"] if historical else to_date.strftime("%Y-%m")
+    future_months = _next_months(last_month, n_months)
+
+    return {
+        "historical": historical,
+        "forecast": [
+            {
+                "month": future_months[i],
+                "predicted_revenue": round(forecasts_list[i], 2),
+                "lower_80": round(lo_list[i], 2),
+                "upper_80": round(hi_list[i], 2),
+            }
+            for i in range(n_months)
+        ],
+        "method": method,
+        "n_months": n_months,
+        "alpha": 0.3,
+        "beta": 0.1,
+    }
+
+
 # ---------- Endpoints ----------
 @router.get("/summary", responses={400: {"description": "Bad request"}})
 def analytics_summary(
     db: Annotated[Session, Depends(get_db)],
-    date_from: Optional[date] = Query(None),
-    date_to: Optional[date] = Query(None),
+    date_from: Annotated[Optional[date], Query()] = None,
+    date_to: Annotated[Optional[date], Query()] = None,
 ):
     dfrom, dto = daterange_defaults(date_from, date_to)
 
@@ -486,8 +630,8 @@ def analytics_summary(
 @router.get("/compare", responses={400: {"description": "Bad request"}})
 def analytics_compare(
     db: Annotated[Session, Depends(get_db)],
-    date_from: Optional[date] = Query(None),
-    date_to: Optional[date] = Query(None),
+    date_from: Annotated[Optional[date], Query()] = None,
+    date_to: Annotated[Optional[date], Query()] = None,
 ):
     dfrom, dto = daterange_defaults(date_from, date_to)
     compare_obj = compare_periods(db, dfrom, dto)
@@ -498,9 +642,9 @@ def analytics_compare(
 @router.get("/export/pdf", responses={400: {"description": "Bad request"}})
 def analytics_export_pdf(
     db: Annotated[Session, Depends(get_db)],
-    date_from: Optional[date] = Query(None),
-    date_to: Optional[date] = Query(None),
-    include_compare: bool = Query(True),
+    date_from: Annotated[Optional[date], Query()] = None,
+    date_to: Annotated[Optional[date], Query()] = None,
+    include_compare: Annotated[bool, Query()] = True,
 ):
     dfrom, dto = daterange_defaults(date_from, date_to)
 
@@ -526,6 +670,12 @@ def analytics_export_pdf(
         delta = comp["delta"]
         ai_compare = generate_ai_compare_report(comp)
 
+    prediction = None
+    try:
+        prediction = _prediction_data(db, dfrom, dto, n_months=3)
+    except Exception as exc:
+        log.warning("No se pudo calcular la predicción para el PDF: %s", exc)
+
     buffer = generar_pdf_tendencias(
         tienda_nombre="Tienda",
         rango_actual=metrics_actual["range"],
@@ -535,6 +685,7 @@ def analytics_export_pdf(
         metrics_prev=metrics_prev,
         compare_delta=delta,
         ai_compare_report=ai_compare,
+        prediction=prediction,
     )
 
     filename = f"tendencias_{to_iso(dfrom)}_a_{to_iso(dto)}.pdf"
@@ -543,3 +694,19 @@ def analytics_export_pdf(
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+@router.get("/predict", responses={400: {"description": "Bad request"}})
+def analytics_predict(
+    db: Annotated[Session, Depends(get_db)],
+    date_from: Annotated[Optional[date], Query()] = None,
+    date_to: Annotated[Optional[date], Query()] = None,
+    n_months: Annotated[int, Query(ge=1, le=12)] = 3,
+):
+    """Forecast monthly revenue using Holt's double exponential smoothing.
+
+    Returns historical monthly aggregates and a forecast for *n_months* ahead
+    with 80% prediction intervals (±1.28 × RMSE × √h).
+    """
+    dfrom, dto = daterange_defaults(date_from, date_to)
+    return _prediction_data(db, dfrom, dto, n_months)

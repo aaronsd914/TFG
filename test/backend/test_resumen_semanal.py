@@ -195,6 +195,73 @@ class TestBuildHtml:
         )
         assert "#dc2626" in html
 
+    def test_build_html_sin_db_no_incluye_prediccion(self):
+        """Sin db, el bloque de predicción no se genera (db is None)."""
+        desde = date.today() - timedelta(days=7)
+        html = _build_html(
+            "Tienda", desde, date.today(),
+            100.0, 0.0, 100.0, 1, 100.0,
+            "", 7,
+        )
+        assert isinstance(html, str)
+        # Sin db, no hay bloque de predicción (la variable prediction_html permanece "")
+        assert "Previsión" not in html
+
+    def test_build_html_con_db_prediccion_activa(self, db):
+        """Con db y >= 2 meses, se genera el bloque de predicción via Holt."""
+        desde = date.today() - timedelta(days=30)
+        hasta = date.today()
+        with patch("backend.app.api.analytics.monthly_sales", return_value=[
+            {"month": "2026-01", "orders": 5, "revenue": 1000.0},
+            {"month": "2026-02", "orders": 8, "revenue": 1500.0},
+        ]), patch("backend.app.api.analytics._holt_forecast", return_value=(
+            [1800.0], [1200.0], [2400.0]
+        )):
+            html = _build_html(
+                "Tienda", desde, hasta,
+                2500.0, 500.0, 2000.0, 13, 2500.0,
+                "Insight AI", 30, db=db,
+            )
+        assert isinstance(html, str)
+        assert "Previsión" in html
+
+    def test_build_html_con_db_un_solo_mes(self, db):
+        """Con db y solo 1 mes de datos, NO se activa Holt (len < 2)."""
+        desde = date.today() - timedelta(days=30)
+        hasta = date.today()
+        with patch("backend.app.api.analytics.monthly_sales", return_value=[
+            {"month": "2026-01", "orders": 3, "revenue": 800.0},
+        ]):
+            html = _build_html(
+                "Tienda", desde, hasta,
+                800.0, 0.0, 800.0, 3, 800.0,
+                "", 30, db=db,
+            )
+        assert isinstance(html, str)
+
+    def test_build_html_con_db_excepcion_prediccion(self, db):
+        """Si monthly_sales lanza excepción, _build_html no falla y sigue sin predicción."""
+        desde = date.today() - timedelta(days=30)
+        hasta = date.today()
+        with patch("backend.app.api.analytics.monthly_sales", side_effect=Exception("DB error")):
+            html = _build_html(
+                "Tienda", desde, hasta,
+                500.0, 0.0, 500.0, 2, 500.0,
+                "", 30, db=db,
+            )
+        assert isinstance(html, str)
+
+
+# ─── _next_month_label ─────────────────────────────────────────────────────────
+class TestNextMonthLabel:
+    def test_mes_normal(self):
+        from backend.app.utils.resumen_semanal import _next_month_label
+        assert _next_month_label(date(2026, 3, 15)) == "2026-04"
+
+    def test_diciembre_transicion_a_enero(self):
+        from backend.app.utils.resumen_semanal import _next_month_label
+        assert _next_month_label(date(2026, 12, 1)) == "2027-01"
+
 
 # â”€â”€ _run â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class TestRun:

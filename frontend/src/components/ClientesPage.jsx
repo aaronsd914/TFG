@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sileo } from 'sileo';
 import { useTranslation } from 'react-i18next';
@@ -34,7 +34,7 @@ function Chip({ label, onRemove }) {
     <span className="inline-flex items-center gap-2 bg-gray-100 border border-gray-200 px-3 py-1 rounded-full text-sm">
       {label}
       <button className="text-gray-500 hover:text-gray-700" onClick={onRemove} aria-label={`Quitar ${label}`} type="button">
-        Ã—
+        ×
       </button>
     </span>
   );
@@ -46,17 +46,17 @@ function safeNumber(x) {
 }
 
 function formatEUR(n) {
-  return `${safeNumber(n).toFixed(2)} â‚¬`;
+  return `${safeNumber(n).toFixed(2)} €`;
 }
 
 function formatDate(d) {
   const dt = new Date(d);
-  return Number.isNaN(dt.getTime()) ? 'â€”' : dt.toLocaleDateString();
+  return Number.isNaN(dt.getTime()) ? '—' : dt.toLocaleDateString();
 }
 
 const ESTADO_META = {
   FIANZA: { label: 'Fianza', className: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
-  ALMACEN: { label: 'AlmacÃ©n', className: 'bg-blue-100 text-blue-800 border-blue-300' },
+  ALMACEN: { label: 'Almacén', className: 'bg-blue-100 text-blue-800 border-blue-300' },
   TRANSPORTE: { label: 'Ruta', className: 'bg-purple-100 text-purple-800 border-purple-300' },
   ENTREGADO: { label: 'Entregado', className: 'bg-green-100 text-green-800 border-green-300' },
 };
@@ -66,14 +66,14 @@ function Chevron({ open }) {
     <span
       className="inline-flex items-center justify-center w-7 h-7 rounded-lg border border-gray-200 bg-white text-gray-700"
       aria-hidden="true"
-      title={open ? 'Ocultar lÃ­neas' : 'Ver lÃ­neas'}
+      title={open ? 'Ocultar líneas' : 'Ver líneas'}
     >
-      {open ? 'â–²' : 'â–¼'}
+      {open ? '▲' : '▼'}
     </span>
   );
 }
 
-// ===== PÃ¡gina =====
+// ===== Página =====
 export default function ClientesPage() {
   const { t } = useTranslation();
 
@@ -105,13 +105,19 @@ export default function ClientesPage() {
   const [selected, setSelected] = useState(null);
   const [detailTab, setDetailTab] = useState('info'); // info | albaranes
 
+  // edición de cliente
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({});
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState(null);
+
   // albaranes del cliente
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersError, setOrdersError] = useState(null);
   const [orders, setOrders] = useState([]);
   const [expanded, setExpanded] = useState({}); // { [albaranId]: { open, loading, error, lineas } }
 
-  // âœ… ID pendiente para abrir detalle (desde Albaranes)
+  // ✅ ID pendiente para abrir detalle (desde Albaranes)
   const [pendingOpenClienteId, setPendingOpenClienteId] = useState(null);
 
   function toastError(title, errLike) {
@@ -157,7 +163,7 @@ export default function ClientesPage() {
     })();
   }, []);
 
-  // âœ… Leer localStorage para abrir cliente automÃ¡ticamente
+  // ✅ Leer localStorage para abrir cliente automáticamente
   useEffect(() => {
     try {
       const stored = localStorage.getItem('cliente_open_id');
@@ -165,7 +171,7 @@ export default function ClientesPage() {
     } catch {}
   }, []);
 
-  // âœ… Cuando ya tengo la lista de clientes, abro el detalle
+  // ✅ Cuando ya tengo la lista de clientes, abro el detalle
   useEffect(() => {
     if (!pendingOpenClienteId) return;
     if (!data || data.length === 0) return;
@@ -191,7 +197,7 @@ export default function ClientesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingOpenClienteId, data]);
 
-  // Dominios Ãºnicos
+  // Dominios únicos
   const domains = useMemo(() => {
     const set = new Set();
     data.forEach((c) => {
@@ -204,7 +210,7 @@ export default function ClientesPage() {
   const defaultMin = data.length ? Math.min(...data.map((d) => d.id)) : 0;
   const defaultMax = data.length ? Math.max(...data.map((d) => d.id)) : 999999;
 
-  // AplicaciÃ³n de buscador + filtros + orden
+  // Aplicación de buscador + filtros + orden
 
   const filtered = useMemo(() => {
     let list = [...data];
@@ -250,7 +256,7 @@ export default function ClientesPage() {
   const activeChips = [
     ...(q ? [{ key: 'q', label: `${t('common.search')}: "${q}"`, onRemove: () => setQuery('') }] : []),
     ...(idRange[0] !== defaultMin || idRange[1] !== defaultMax
-      ? [{ key: 'id', label: `ID ${idRange[0]}â€“${idRange[1]}`, onRemove: () => setIdRange([defaultMin, defaultMax]) }]
+      ? [{ key: 'id', label: `ID ${idRange[0]}–${idRange[1]}`, onRemove: () => setIdRange([defaultMin, defaultMax]) }]
       : []),
     ...selectedDomains.map((dom) => ({
       key: `dom-${dom}`,
@@ -261,7 +267,7 @@ export default function ClientesPage() {
       ? [
           {
             key: 'sort',
-            label: `${t('clients.orderLabel')}: ${({ az: 'Aâ†’Z', za: 'Zâ†’A', id_up: 'IDâ†‘', id_down: 'IDâ†“' })[sort]}`,
+            label: `${t('clients.orderLabel')}: ${({ az: 'A→Z', za: 'Z→A', id_up: 'ID↑', id_down: 'ID↓' })[sort]}`,
             onRemove: () => setSort('az'),
           },
         ]
@@ -306,7 +312,7 @@ export default function ClientesPage() {
       setSelected(resCli.ok ? await resCli.json() : c);
     } catch {
       setSelected(c);
-      // aquÃ­ no meto toast: seguimos con fallback y no es un fallo crÃ­tico
+      // aquí no meto toast: seguimos con fallback y no es un fallo crítico
     }
     await loadOrders(c.id);
     setExpanded({});
@@ -322,7 +328,69 @@ export default function ClientesPage() {
     setExpanded({});
   }
 
-  // Cargar lÃ­neas bajo demanda
+  function openEdit() {
+    if (!selected) return;
+    setEditForm({
+      name: selected.name || '',
+      surnames: selected.surnames || '',
+      dni: selected.dni || '',
+      email: selected.email || '',
+      phone1: selected.phone1 || '',
+      phone2: selected.phone2 || '',
+      street: selected.street || '',
+      house_number: selected.house_number || '',
+      floor_entrance: selected.floor_entrance || '',
+      city: selected.city || '',
+      postal_code: selected.postal_code || '',
+    });
+    setEditError(null);
+    setEditOpen(true);
+  }
+
+  function closeEdit() {
+    setEditOpen(false);
+    setEditForm({});
+    setEditError(null);
+  }
+
+  async function saveEdit() {
+    if (!selected) return;
+    setEditSaving(true);
+    setEditError(null);
+    try {
+      const res = await fetch(`${API_URL}clientes/put/${selected.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editForm.name,
+          surnames: editForm.surnames,
+          dni: editForm.dni || null,
+          email: editForm.email || null,
+          phone1: editForm.phone1 || null,
+          phone2: editForm.phone2 || null,
+          street: editForm.street || null,
+          house_number: editForm.house_number || null,
+          floor_entrance: editForm.floor_entrance || null,
+          city: editForm.city || null,
+          postal_code: editForm.postal_code || null,
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const updated = await res.json();
+      setSelected(updated);
+      setData((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+      closeEdit();
+      sileo.success({ title: t('clients.editSuccess') });
+    } catch (e) {
+      const msg = e?.message || t('clients.editError');
+      setEditError(msg);
+      sileo.error({ title: t('clients.editError'), description: msg });
+    } finally {
+      setEditSaving(false);
+    }
+  }
+
+  // Cargar líneas bajo demanda
   async function toggleExpand(albaran) {
     const id = albaran.id;
     const current = expanded[id];
@@ -338,7 +406,7 @@ export default function ClientesPage() {
       setExpanded((prev) => ({ ...prev, [id]: { ...prev[id], open: true, loading: false, lineas: full.lineas || [] } }));
     } catch (e) {
       setExpanded((prev) => ({ ...prev, [id]: { ...prev[id], open: true, loading: false, error: e.message } }));
-      toastError('Error cargando lÃ­neas del albarÃ¡n', e);
+      toastError('Error cargando líneas del albarán', e);
     }
   }
 
@@ -353,7 +421,7 @@ export default function ClientesPage() {
 
   return (
     <div className="p-3 md:p-6">
-      {/* TÃ­tulo + contador */}
+      {/* Título + contador */}
       <div className="flex items-end justify-between mb-4">
         <div>
           <h1 className="text-2xl font-semibold">{t('clients.title')}</h1>
@@ -373,7 +441,7 @@ export default function ClientesPage() {
             placeholder={t('clients.searchPlaceholder')}
             className="w-full rounded-xl border border-gray-300 px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-gray-300"
           />
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">âŒ•</span>
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">⌕</span>
         </div>
 
         <button
@@ -423,7 +491,7 @@ export default function ClientesPage() {
                 onClick={() => openDetail(c)}
               >
                 <div className="col-span-4">{c.name} {c.surnames}</div>
-                <div className="col-span-2">{c.phone1 || 'â€”'}</div>
+                <div className="col-span-2">{c.phone1 || '—'}</div>
                 <div className="col-span-4">{c.email}</div>
                 <div className="col-span-2">{c.dni}</div>
               </li>
@@ -491,9 +559,21 @@ export default function ClientesPage() {
       <ModalCenter isOpen={detailOpen} onClose={closeDetail} maxWidth="max-w-4xl">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">{t('clients.detailTitle')}</h2>
-          <button onClick={closeDetail} className="text-gray-500 hover:text-gray-700" type="button">
-            {t('common.close')}
-          </button>
+          <div className="flex items-center gap-2">
+            {selected && (
+              <button
+                onClick={openEdit}
+                className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-sm"
+                type="button"
+                data-testid="cliente-edit-btn"
+              >
+                {t('common.edit')}
+              </button>
+            )}
+            <button onClick={closeDetail} className="text-gray-500 hover:text-gray-700" type="button">
+              {t('common.close')}
+            </button>
+          </div>
         </div>
 
         {!selected ? (
@@ -538,17 +618,17 @@ export default function ClientesPage() {
                 </div>
                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
                   <div className="text-xs text-gray-500">{t('clients.colDNI')}</div>
-                  <div className="font-medium break-all">{selected.dni || 'â€”'}</div>
+                  <div className="font-medium break-all">{selected.dni || '—'}</div>
                 </div>
                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 md:col-span-2">
                   <div className="text-xs text-gray-500">{t('clients.colEmail')}</div>
-                  <div className="font-medium break-all">{selected.email || 'â€”'}</div>
+                  <div className="font-medium break-all">{selected.email || '—'}</div>
                 </div>
                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
                   <div className="text-xs text-gray-500">{t('clients.colPhones')}</div>
                   <div className="font-medium break-all">
-                    {selected.phone1 || 'â€”'}
-                    {selected.phone2 ? ` Â· ${selected.phone2}` : ''}
+                    {selected.phone1 || '—'}
+                    {selected.phone2 ? ` · ${selected.phone2}` : ''}
                   </div>
                 </div>
                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 md:col-span-3">
@@ -562,7 +642,7 @@ export default function ClientesPage() {
                       selected.city,
                     ]
                       .filter(Boolean)
-                      .join(' Â· ') || 'â€”'}
+                      .join(' · ') || '—'}
                   </div>
                 </div>
               </div>
@@ -609,7 +689,7 @@ export default function ClientesPage() {
                                     <td className="p-2">#{alb.id}</td>
                                     <td className="p-2">{formatDate(alb.date)}</td>
                                     <td className="p-2 truncate" title={alb.description || ''}>
-                                      {alb.description || 'â€”'}
+                                      {alb.description || '—'}
                                     </td>
                                     <td className="p-2">
                                       <span className={`inline-block border px-2 py-1 rounded-lg text-xs ${meta.className}`}>
@@ -695,6 +775,142 @@ export default function ClientesPage() {
             )}
           </div>
         )}
+      </ModalCenter>
+
+      {/* Modal editar cliente */}
+      <ModalCenter isOpen={editOpen} onClose={closeEdit} maxWidth="max-w-lg">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">{t('clients.editTitle')}</h2>
+          <button onClick={closeEdit} className="text-gray-500 hover:text-gray-700" type="button">
+            {t('common.close')}
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">{t('clients.editName')}</label>
+              <input
+                type="text"
+                value={editForm.name || ''}
+                onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">{t('clients.editSurnames')}</label>
+              <input
+                type="text"
+                value={editForm.surnames || ''}
+                onChange={(e) => setEditForm((f) => ({ ...f, surnames: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">{t('clients.editDni')}</label>
+              <input
+                type="text"
+                value={editForm.dni || ''}
+                onChange={(e) => setEditForm((f) => ({ ...f, dni: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">{t('clients.editEmail')}</label>
+              <input
+                type="email"
+                value={editForm.email || ''}
+                onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">{t('clients.editPhone1')}</label>
+              <input
+                type="text"
+                value={editForm.phone1 || ''}
+                onChange={(e) => setEditForm((f) => ({ ...f, phone1: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">{t('clients.editPhone2')}</label>
+              <input
+                type="text"
+                value={editForm.phone2 || ''}
+                onChange={(e) => setEditForm((f) => ({ ...f, phone2: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">{t('clients.editStreet')}</label>
+              <input
+                type="text"
+                value={editForm.street || ''}
+                onChange={(e) => setEditForm((f) => ({ ...f, street: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">{t('clients.editHouseNumber')}</label>
+              <input
+                type="text"
+                value={editForm.house_number || ''}
+                onChange={(e) => setEditForm((f) => ({ ...f, house_number: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">{t('clients.editFloorEntrance')}</label>
+              <input
+                type="text"
+                value={editForm.floor_entrance || ''}
+                onChange={(e) => setEditForm((f) => ({ ...f, floor_entrance: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">{t('clients.editCity')}</label>
+              <input
+                type="text"
+                value={editForm.city || ''}
+                onChange={(e) => setEditForm((f) => ({ ...f, city: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">{t('clients.editPostalCode')}</label>
+              <input
+                type="text"
+                value={editForm.postal_code || ''}
+                onChange={(e) => setEditForm((f) => ({ ...f, postal_code: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              />
+            </div>
+          </div>
+
+          {editError && <p className="text-red-600 text-sm">{editError}</p>}
+        </div>
+
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            onClick={closeEdit}
+            className="px-4 py-2 rounded-xl bg-gray-200 text-gray-900 hover:bg-gray-300"
+            type="button"
+            disabled={editSaving}
+          >
+            {t('common.cancel')}
+          </button>
+          <button
+            onClick={saveEdit}
+            className="px-4 py-2 rounded-xl bg-black text-white hover:opacity-90 disabled:opacity-50"
+            type="button"
+            disabled={editSaving}
+            data-testid="cliente-edit-save-btn"
+          >
+            {editSaving ? t('common.saving') : t('common.save')}
+          </button>
+        </div>
       </ModalCenter>
     </div>
   );

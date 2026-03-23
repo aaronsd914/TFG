@@ -153,7 +153,21 @@
     "colUnitPrice": "P. Unitario",
     "noLines": "No hay líneas para este albarán.",
     "registeredCount": "Clientes registrados:",
-    "loadError": "No se pudieron cargar los clientes."
+    "loadError": "No se pudieron cargar los clientes.",
+    "editTitle": "Editar cliente",
+    "editSuccess": "Cliente actualizado correctamente.",
+    "editError": "No se pudo actualizar el cliente.",
+    "editName": "Nombre",
+    "editSurnames": "Apellidos",
+    "editDni": "DNI",
+    "editEmail": "Email",
+    "editPhone1": "Teléfono 1",
+    "editPhone2": "Teléfono 2",
+    "editStreet": "Calle",
+    "editHouseNumber": "Número",
+    "editFloorEntrance": "Piso/Entrada",
+    "editCity": "Ciudad",
+    "editPostalCode": "Código postal"
   },
   "products": {
     "title": "Productos",
@@ -291,7 +305,13 @@
     "tabClient": "Cliente",
     "noLines": "Este albarán no tiene líneas.",
     "viewClient": "Ver cliente →",
-    "loadError": "No se pudieron cargar los albaranes."
+    "loadError": "No se pudieron cargar los albaranes.",
+    "editTitle": "Editar albarán",
+    "editSuccess": "Albarán actualizado correctamente.",
+    "editError": "No se pudo actualizar el albarán.",
+    "editDate": "Fecha",
+    "editDescription": "Descripción",
+    "editStatus": "Estado"
   },
   "newSale": {
     "title": "Nueva venta",
@@ -474,7 +494,18 @@
     "chipInput3": "Dame 3 acciones para subir el ticket medio (AOV).",
     "restartBtn": "Reiniciar",
     "aiContextNote": "La IA responde con el contexto del rango seleccionado.",
-    "chartError": "Gráfico no interpretable (config incompleta)."
+    "chartError": "Gráfico no interpretable (config incompleta).",
+    "predTitle": "Previsión de ventas",
+    "predSubtitle": "Proyección de ingresos para los próximos 3 meses usando suavizado exponencial doble (Holt).",
+    "predChartLabel": "Histórico + previsión",
+    "predHistorical": "Ingresos históricos",
+    "predForecast": "Previsión",
+    "predTableMonth": "Mes",
+    "predTableRevenue": "Ingresos estimados",
+    "predTableCI": "Intervalo 80%",
+    "predMethod": "Modelo: Suavizado exponencial doble (Holt)",
+    "predInsufficient": "Datos insuficientes para calcular una previsión.",
+    "predLoading": "Calculando previsión…"
   },
   "transport": {
     "title": "Transporte",

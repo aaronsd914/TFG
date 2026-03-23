@@ -180,3 +180,88 @@ def test_clientes_eliminar_cliente_test(logged_in_browser):
     time.sleep(1)
     body_text = logged_in_browser.find_element(By.TAG_NAME, "body").text
     assert CLIENT_NAME not in body_text, f"El cliente '{CLIENT_NAME}' sigue en la lista tras eliminarlo"
+
+
+def test_clientes_boton_editar_visible_en_detalle(logged_in_browser):
+    """El modal de detalle de un cliente contiene el botón 'Editar'."""
+    # Crear cliente temporal para el test
+    token = _get_token()
+    headers = {"Authorization": f"Bearer {token}"}
+    resp = requests.post(
+        f"{BACKEND_URL}/api/clientes/post",
+        json={
+            "name": "SELENIUM_EDIT",
+            "surnames": "Test Edicion",
+            "email": "edit_test@selenium.com",
+            "dni": "88888888X",
+            "phone1": "611000001",
+        },
+        headers=headers,
+    )
+    assert resp.status_code in (200, 201)
+    cliente_id = resp.json()["id"]
+
+    try:
+        logged_in_browser.get(f"{BASE_URL}/clientes")
+        wait = WebDriverWait(logged_in_browser, 15)
+        time.sleep(1)
+        cliente_el = wait.until(
+            EC.element_to_be_clickable(
+                (By.XPATH, "//li[contains(@class,'cursor-pointer') and contains(normalize-space(.), 'SELENIUM_EDIT')]")
+            )
+        )
+        cliente_el.click()
+        wait.until(EC.presence_of_element_located((By.XPATH, "//h2[contains(., 'Detalle')]")))
+        edit_btn = wait.until(
+            EC.presence_of_element_located(
+                (By.XPATH, "//button[@data-testid='cliente-edit-btn' or contains(normalize-space(.), 'Editar')]")
+            )
+        )
+        assert edit_btn is not None
+    finally:
+        requests.delete(f"{BACKEND_URL}/api/clientes/delete/{cliente_id}", headers=headers)
+
+
+def test_clientes_modal_edicion_se_abre(logged_in_browser):
+    """Pulsar Editar en el detalle del cliente abre el modal de edición."""
+    token = _get_token()
+    headers = {"Authorization": f"Bearer {token}"}
+    resp = requests.post(
+        f"{BACKEND_URL}/api/clientes/post",
+        json={
+            "name": "SELENIUM_EDIT2",
+            "surnames": "Modal Test",
+            "email": "edit2_test@selenium.com",
+            "dni": "77777777X",
+            "phone1": "611000002",
+        },
+        headers=headers,
+    )
+    assert resp.status_code in (200, 201)
+    cliente_id = resp.json()["id"]
+
+    try:
+        logged_in_browser.get(f"{BASE_URL}/clientes")
+        wait = WebDriverWait(logged_in_browser, 15)
+        time.sleep(1)
+        cliente_el = wait.until(
+            EC.element_to_be_clickable(
+                (By.XPATH, "//li[contains(@class,'cursor-pointer') and contains(normalize-space(.), 'SELENIUM_EDIT2')]")
+            )
+        )
+        cliente_el.click()
+        wait.until(EC.presence_of_element_located((By.XPATH, "//h2[contains(., 'Detalle')]")))
+        edit_btn = wait.until(
+            EC.element_to_be_clickable((By.XPATH, "//button[@data-testid='cliente-edit-btn']"))
+        )
+        edit_btn.click()
+        # El modal de edición debe aparecer
+        wait.until(
+            EC.presence_of_element_located(
+                (By.XPATH, "//h2[contains(., 'ditar') and contains(., 'lient')]")
+            )
+        )
+        body_text = logged_in_browser.find_element(By.TAG_NAME, "body").text.lower()
+        assert "editar" in body_text or "edit" in body_text
+    finally:
+        requests.delete(f"{BACKEND_URL}/api/clientes/delete/{cliente_id}", headers=headers)

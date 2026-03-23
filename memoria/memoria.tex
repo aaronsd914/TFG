@@ -711,6 +711,8 @@ La Tabla~\ref{tab:requisitos_funcionales} recoge los requisitos funcionales iden
     \hline
     RF-05 & El sistema permitirá avanzar el estado de un albarán por la transición: Fianza $\to$ Almacén $\to$ Ruta $\to$ Entregado; al marcar Entregado se registra el importe pendiente como ingreso. \\
     \hline
+    RF-05b & El sistema permitirá editar los campos editables de un albarán (fecha, descripción y estado) mediante un modal de edición accesible desde el detalle del albarán. De igual forma, el sistema permitirá editar los datos de un cliente (nombre, apellidos, DNI, email, teléfonos y dirección) desde el modal de detalle del cliente. \\
+    \hline
     RF-06 & El sistema registrará movimientos financieros (ingresos y gastos) de forma manual y automática; mostrará el listado filtrable por tipo y rango de fechas. \\
     \hline
     RF-07 & El dashboard mostrará: ingresos y gastos totales del mes, número de pedidos activos, últimos pedidos y gráfica de evolución de ventas. \\
@@ -1212,6 +1214,31 @@ El análisis de \textit{market basket} \cite{agrawal1994} identifica pares de pr
 \label{alg:basket}
 \end{algorithm}
 
+\subsubsection{Analíticas predictivas: suavizado exponencial doble (Holt)}
+\label{sec:holt}
+
+Con el objetivo de proporcionar un \textit{sistema de soporte a la decisión} (DSS), FurniGest incorpora un módulo de analítica predictiva que proyecta los ingresos mensuales para los próximos meses a partir del historial de ventas. El método empleado es el \textbf{suavizado exponencial doble de Holt} \cite{holt1957,box2015}, equivalente a un modelo ARIMA(0,1,1)+deriva, y fue elegido por su bajo coste computacional y por no requerir dependencias externas como \texttt{statsmodels} o \texttt{scipy}.
+
+El modelo mantiene dos estados: el nivel $L_t$ y la tendencia $T_t$, actualizados en cada observación mensual $y_t$ según:
+
+\begin{equation}
+  L_t = \alpha\, y_t + (1-\alpha)(L_{t-1} + T_{t-1}), \qquad
+  T_t = \beta(L_t - L_{t-1}) + (1-\beta)\,T_{t-1}
+\end{equation}
+
+\noindent donde $\alpha=0{,}3$ y $\beta=0{,}1$ son los parámetros de suavizado. La predicción a $h$ pasos vista es:
+
+\begin{equation}
+  \hat{y}_{t+h} = L_t + h\,T_t
+\end{equation}
+
+Se calculan además intervalos de predicción al 80\,\% basados en el RMSE de los residuos de un paso:
+
+\begin{equation}
+  \hat{y}_{t+h} \pm 1{,}28\,\hat{\sigma}\sqrt{h}
+\end{equation}
+
+La función \texttt{\_holt\_forecast} está implementada íntegramente en Python estándar (módulo \texttt{math}), sin dependencias externas. El nuevo endpoint \texttt{GET /api/analytics/predict} expone la previsión con su intervalo de confianza. La página de Tendencias muestra estos datos en un gráfico de línea (histórico sólido + previsión discontinua) y en una tabla. El resumen periódico por correo electrónico incluye también el bloque de previsión del mes siguiente.
 
 \subsection{Asistente de inteligencia artificial}
 \label{sec:ia}
@@ -1469,7 +1496,7 @@ Las pruebas del \textit{backend} son \textbf{pruebas de integración HTTP} imple
     \texttt{test\_proveedores.py}         & 8  \\
     \texttt{test\_productos.py}           & 8  \\
     \texttt{test\_movimientos.py}         & 9  \\
-    \texttt{test\_albaranes.py}           & 16 \\
+    \texttt{test\_albaranes.py}           & 22 \\
     \texttt{test\_analytics.py}          & 9  \\
     \texttt{test\_transportes.py}         & 13 \\
     \texttt{test\_stripe.py}             & 10 \\
@@ -1479,7 +1506,7 @@ Las pruebas del \textit{backend} son \textbf{pruebas de integración HTTP} imple
     \texttt{test\_emailer.py}           & 7  \\
     \texttt{test\_resumen\_semanal.py}   & 22 \\
     \hline
-    \textbf{Total}                      & \textbf{150} \\
+    \textbf{Total}                      & \textbf{156} \\
     \hline
   \end{tabular}
   \end{footnotesize}
@@ -1532,8 +1559,8 @@ Las pruebas del \textit{frontend} emplean \textbf{Vitest} \cite{vitest} con \tex
     \texttt{App.test.jsx}                & 5  \\
     \texttt{Sidebar.test.jsx}             & 9  \\
     \texttt{Dashboard.test.jsx}           & 4  \\
-    \texttt{ClientesPage.test.jsx}        & 6  \\
-    \texttt{AlbaranesPage.test.jsx}       & 5  \\
+    \texttt{ClientesPage.test.jsx}        & 9  \\
+    \texttt{AlbaranesPage.test.jsx}       & 8  \\
     \texttt{MovimientosPage.test.jsx}     & 6  \\
     \texttt{ProductosPage.test.jsx}       & 6  \\
     \texttt{NuevaVenta.test.jsx}          & 5  \\
@@ -1547,7 +1574,7 @@ Las pruebas del \textit{frontend} emplean \textbf{Vitest} \cite{vitest} con \tex
     \texttt{PerfilPage.test.jsx}          & 17 \\
     \texttt{ThemeContext.test.jsx}        & 11 \\
     \hline
-    \textbf{Total}                       & \textbf{144} \\
+    \textbf{Total}                       & \textbf{150} \\
     \hline
   \end{tabular}
   \end{footnotesize}
@@ -1673,16 +1700,16 @@ Los tests se encuentran en \texttt{test/e2e/} e incluyen diez módulos de test, 
     \hline
     \texttt{test\_e2e\_login.py}       & 11 \\
     \texttt{test\_e2e\_dashboard.py}   & 8 \\
-    \texttt{test\_e2e\_clientes.py}    & 7 \\
+    \texttt{test\_e2e\_clientes.py}    & 9 \\
     \texttt{test\_e2e\_productos.py}   & 7 \\
     \texttt{test\_e2e\_movimientos.py} & 6 \\
-    \texttt{test\_e2e\_albaranes.py}   & 6 \\
+    \texttt{test\_e2e\_albaranes.py}   & 8 \\
     \texttt{test\_e2e\_nueva\_venta.py} & 8 \\
     \texttt{test\_e2e\_transporte.py}  & 6 \\
     \texttt{test\_e2e\_tendencias.py}  & 6 \\
     \texttt{test\_e2e\_banco.py}       & 5 \\
     \hline
-    \textbf{Total}                     & \textbf{$\sim$70} \\
+    \textbf{Total}                     & \textbf{$\sim$74} \\
     \hline
   \end{tabular}
   \end{footnotesize}
@@ -1696,10 +1723,10 @@ Las pruebas E2E cubren los siguientes escenarios:
 \begin{itemize}
   \item \textbf{Autenticación:} renderizado del formulario de login, campo \textit{show/hide} de contraseña, credenciales incorrectas, login correcto, protección de todas las rutas (redirección a \texttt{/login} sin token) y cierre de sesión.
   \item \textbf{Dashboard:} carga después del login, presencia de tarjetas KPI, gráficos (canvas), barra lateral completa y navegación a otras páginas.
-  \item \textbf{CRUD de clientes:} listado con datos del \textit{seed}, buscador, apertura del modal de detalle, creación de un cliente nuevo, verificación en la lista y eliminación (limpieza).
+  \item \textbf{CRUD de clientes:} listado con datos del \textit{seed}, buscador, apertura del modal de detalle, creación de un cliente nuevo, verificación en la lista, modal de edición de cliente y eliminación (limpieza).
   \item \textbf{CRUD de productos:} pestaña Listado, pestaña Gestión, creación de un producto de prueba y eliminación.
   \item \textbf{Movimientos:} resumen mensual, botón de añadir, creación de movimientos INGRESO y EGRESO, panel de filtros.
-  \item \textbf{Albaranes:} lista con datos del \textit{seed}, buscador, filtros de estado, apertura del modal de detalle y acceso al botón de exportación PDF.
+  \item \textbf{Albaranes:} lista con datos del \textit{seed}, buscador, filtros de estado, apertura del modal de detalle, botón de edición y modal de edición del albarán, y acceso al botón de exportación PDF.
   \item \textbf{Nueva Venta:} secciones de cliente y productos, toggle nuevo cliente, campos del formulario, sección de fianza y botón de envío.
   \item \textbf{Transporte:} pestañas Almacén / En ruta / Camiones, buscador y sección de gestión de camiones.
   \item \textbf{Tendencias:} selector de fechas, gráficos, estadísticas de resumen, exportación PDF y apertura del chat con IA.

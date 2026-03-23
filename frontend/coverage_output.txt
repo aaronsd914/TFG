@@ -1,0 +1,543 @@
+﻿
+[1m[46m RUN [49m[22m [36mv4.1.0 [39m[90mC:/Users/aaron/Documents/TFG/frontend[39m
+      [2mCoverage enabled with [22m[33mv8[39m
+
+node.exe : [90mstderr[2m | ../test/frontend/PersonalizacionPage.test.jsx[2m 
+> [22m[2mPersonalizacionPage ├óÔé¼ÔÇØ renderizado[2m > [22m[2mrenderiza 
+sin errores
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\aaron\AppData\Roaming\ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([90mstderr[2m...iza sin errores 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[22m[39mAn update to ConfigProvider inside a test was not wrapped in 
+act(...).
+
+When testing, code that causes React state updates should be wrapped into 
+act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the 
+browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | ../test/frontend/PersonalizacionPage.test.jsx[2m > 
+[22m[2mPersonalizacionPage ├óÔé¼ÔÇØ renderizado[2m > [22m[2mmuestra el 
+t├¡tulo de la p├ígina
+[22m[39mAn update to ConfigProvider inside a test was not wrapped in 
+act(...).
+
+When testing, code that causes React state updates should be wrapped into 
+act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the 
+browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | ../test/frontend/PersonalizacionPage.test.jsx[2m > 
+[22m[2mPersonalizacionPage ├óÔé¼ÔÇØ renderizado[2m > [22m[2mmuestra la 
+secci├â┬│n Mi cuenta
+[22m[39mAn update to ConfigProvider inside a test was not wrapped in 
+act(...).
+
+When testing, code that causes React state updates should be wrapped into 
+act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the 
+browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | ../test/frontend/Dashboard.test.jsx[2m > 
+[22m[2mDashboard[2m > [22m[2mse monta sin errores
+[22m[39mFailed to create chart: can't acquire context from the given item
+Failed to create chart: can't acquire context from the given item
+Failed to create chart: can't acquire context from the given item
+
+[90mstderr[2m | ../test/frontend/PersonalizacionPage.test.jsx[2m > 
+[22m[2mPersonalizacionPage ├óÔé¼ÔÇØ renderizado[2m > [22m[2mmuestra la 
+secci├â┬│n Apariencia
+[22m[39mAn update to ConfigProvider inside a test was not wrapped in 
+act(...).
+
+When testing, code that causes React state updates should be wrapped into 
+act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the 
+browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | ../test/frontend/PersonalizacionPage.test.jsx[2m > 
+[22m[2mPersonalizacionPage ├óÔé¼ÔÇØ renderizado[2m > [22m[2mmuestra la 
+secci├â┬│n Resumen por email
+[22m[39mAn update to ConfigProvider inside a test was not wrapped in 
+act(...).
+
+When testing, code that causes React state updates should be wrapped into 
+act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the 
+browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | ../test/frontend/PersonalizacionPage.test.jsx[2m > 
+[22m[2mPersonalizacionPage ├óÔé¼ÔÇØ renderizado[2m > [22m[2mmuestra la 
+secci├â┬│n Identidad
+[22m[39mAn update to ConfigProvider inside a test was not wrapped in 
+act(...).
+
+When testing, code that causes React state updates should be wrapped into 
+act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the 
+browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | ../test/frontend/Dashboard.test.jsx[2m > 
+[22m[2mDashboard[2m > [22m[2mno muestra errores en el DOM con respuestas 
+vac├¡as
+[22m[39mFailed to create chart: can't acquire context from the given item
+Failed to create chart: can't acquire context from the given item
+Failed to create chart: can't acquire context from the given item
+
+[90mstderr[2m | ../test/frontend/PersonalizacionPage.test.jsx[2m > 
+[22m[2mPersonalizacionPage ├óÔé¼ÔÇØ Apariencia[2m > [22m[2mmuestra el 
+toggle de modo oscuro
+[22m[39mAn update to ConfigProvider inside a test was not wrapped in 
+act(...).
+
+When testing, code that causes React state updates should be wrapped into 
+act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the 
+browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | ../test/frontend/PersonalizacionPage.test.jsx[2m > 
+[22m[2mPersonalizacionPage ├óÔé¼ÔÇØ Apariencia[2m > [22m[2mmuestra las 3 
+paletas de color
+[22m[39mAn update to ConfigProvider inside a test was not wrapped in 
+act(...).
+
+When testing, code that causes React state updates should be wrapped into 
+act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the 
+browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ [32mÔ£ô[39m ../test/frontend/Dashboard.test.jsx [2m([22m[2m4 tests[22m[2m)[22m[33m 372[2mms[22m[39m
+[90mstderr[2m | ../test/frontend/PersonalizacionPage.test.jsx[2m > 
+[22m[2mPersonalizacionPage ├óÔé¼ÔÇØ Apariencia[2m > [22m[2mel toggle de 
+modo oscuro responde al click
+[22m[39mAn update to ConfigProvider inside a test was not wrapped in 
+act(...).
+
+When testing, code that causes React state updates should be wrapped into 
+act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the 
+browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | ../test/frontend/PersonalizacionPage.test.jsx[2m > 
+[22m[2mPersonalizacionPage ├óÔé¼ÔÇØ Mi cuenta[2m > [22m[2mmuestra los 
+campos de cambio de usuario
+[22m[39mAn update to ConfigProvider inside a test was not wrapped in 
+act(...).
+
+When testing, code that causes React state updates should be wrapped into 
+act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the 
+browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ [32mÔ£ô[39m ../test/frontend/Sidebar.test.jsx [2m([22m[2m9 tests[22m[2m)[22m[33m 520[2mms[22m[39m
+[90mstderr[2m | ../test/frontend/PersonalizacionPage.test.jsx[2m > 
+[22m[2mPersonalizacionPage ├óÔé¼ÔÇØ Mi cuenta[2m > [22m[2mmuestra los 
+botones de guardar
+[22m[39mAn update to ConfigProvider inside a test was not wrapped in 
+act(...).
+
+When testing, code that causes React state updates should be wrapped into 
+act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the 
+browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ [32mÔ£ô[39m ../test/frontend/LoginPage.test.jsx [2m([22m[2m12 tests[22m[2m)[22m[33m 625[2mms[22m[39m
+ [32mÔ£ô[39m ../test/frontend/PerfilPage.test.jsx [2m([22m[2m17 tests[22m[2m)[22m[33m 634[2mms[22m[39m
+[90mstderr[2m | ../test/frontend/PersonalizacionPage.test.jsx[2m > 
+[22m[2mPersonalizacionPage ├óÔé¼ÔÇØ Identidad[2m > [22m[2mmuestra el 
+├â┬írea de firma de email
+[22m[39mAn update to ConfigProvider inside a test was not wrapped in 
+act(...).
+
+When testing, code that causes React state updates should be wrapped into 
+act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the 
+browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | ../test/frontend/PersonalizacionPage.test.jsx[2m > 
+[22m[2mPersonalizacionPage ├óÔé¼ÔÇØ Identidad[2m > [22m[2mmuestra el 
+bot├â┬│n de subir logo
+[22m[39mAn update to ConfigProvider inside a test was not wrapped in 
+act(...).
+
+When testing, code that causes React state updates should be wrapped into 
+act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the 
+browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ [32mÔ£ô[39m ../test/frontend/AlbaranesPage.test.jsx [2m([22m[2m5 tests[22m[2m)[22m[32m 197[2mms[22m[39m
+[90mstderr[2m | ../test/frontend/PersonalizacionPage.test.jsx[2m > 
+[22m[2mPersonalizacionPage ├óÔé¼ÔÇØ Formularios cuenta[2m > 
+[22m[2menv├â┬¡a el formulario de resumen por email
+[22m[39mAn update to ConfigProvider inside a test was not wrapped in 
+act(...).
+
+When testing, code that causes React state updates should be wrapped into 
+act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the 
+browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ [32mÔ£ô[39m ../test/frontend/MovimientosPage.test.jsx [2m([22m[2m6 tests[22m[2m)[22m[32m 289[2mms[22m[39m
+ [32mÔ£ô[39m ../test/frontend/ClientesPage.test.jsx [2m([22m[2m6 tests[22m[2m)[22m[32m 212[2mms[22m[39m
+[90mstderr[2m | ../test/frontend/PersonalizacionPage.test.jsx[2m > 
+[22m[2mPersonalizacionPage ÔÇö Accordion[2m > [22m[2mlas secciones 
+empiezan cerradas (contenido no visible)
+[22m[39mAn update to ConfigProvider inside a test was not wrapped in 
+act(...).
+
+When testing, code that causes React state updates should be wrapped into 
+act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the 
+browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | ../test/frontend/PersonalizacionPage.test.jsx[2m > 
+[22m[2mPersonalizacionPage ÔÇö Accordion[2m > [22m[2mabre y cierra una 
+secci├│n al hacer clic dos veces
+[22m[39mAn update to ConfigProvider inside a test was not wrapped in 
+act(...).
+
+When testing, code that causes React state updates should be wrapped into 
+act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the 
+browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ [32mÔ£ô[39m ../test/frontend/NuevaVenta.test.jsx [2m([22m[2m5 tests[22m[2m)[22m[33m 406[2mms[22m[39m
+[90mstderr[2m | ../test/frontend/PersonalizacionPage.test.jsx[2m > 
+[22m[2mPersonalizacionPage ÔÇö Accordion[2m > [22m[2mabre varias 
+secciones independientemente
+[22m[39mAn update to ConfigProvider inside a test was not wrapped in 
+act(...).
+
+When testing, code that causes React state updates should be wrapped into 
+act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the 
+browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | ../test/frontend/PersonalizacionPage.test.jsx[2m > 
+[22m[2mPersonalizacionPage ÔÇö Resumen email nuevos campos[2m > 
+[22m[2mmuestra el campo fecha de inicio
+[22m[39mAn update to ConfigProvider inside a test was not wrapped in 
+act(...).
+
+When testing, code that causes React state updates should be wrapped into 
+act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the 
+browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | ../test/frontend/PersonalizacionPage.test.jsx[2m > 
+[22m[2mPersonalizacionPage ÔÇö Resumen email nuevos campos[2m > 
+[22m[2mmuestra el campo hora de env├¡o
+[22m[39mAn update to ConfigProvider inside a test was not wrapped in 
+act(...).
+
+When testing, code that causes React state updates should be wrapped into 
+act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the 
+browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | ../test/frontend/PersonalizacionPage.test.jsx[2m > 
+[22m[2mPersonalizacionPage ÔÇö Resumen email nuevos campos[2m > [22m[2mno 
+muestra previsualizaci├│n sin fecha de inicio
+[22m[39mAn update to ConfigProvider inside a test was not wrapped in 
+act(...).
+
+When testing, code that causes React state updates should be wrapped into 
+act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the 
+browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ [32mÔ£ô[39m ../test/frontend/Tendencias.test.jsx [2m([22m[2m6 tests[22m[2m)[22m[33m 819[2mms[22m[39m
+ [32mÔ£ô[39m ../test/frontend/ProductosPage.test.jsx [2m([22m[2m11 tests[22m[2m)[22m[33m 1364[2mms[22m[39m
+[90mstderr[2m | ../test/frontend/PersonalizacionPage.test.jsx[2m > 
+[22m[2mPersonalizacionPage ÔÇö Identidad edge cases[2m > [22m[2mrechaza 
+un archivo de logo demasiado grande
+[22m[39mAn update to ConfigProvider inside a test was not wrapped in 
+act(...).
+
+When testing, code that causes React state updates should be wrapped into 
+act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the 
+browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | ../test/frontend/App.test.jsx[2m > [22m[2mApp layout[2m 
+> [22m[2mrenderiza sin errores
+[22m[39mAn update to ConfigProvider inside a test was not wrapped in 
+act(...).
+
+When testing, code that causes React state updates should be wrapped into 
+act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the 
+browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ [32mÔ£ô[39m ../test/frontend/ThemeContext.test.jsx [2m([22m[2m11 tests[22m[2m)[22m[32m 62[2mms[22m[39m
+[90mstderr[2m | ../test/frontend/App.test.jsx[2m > [22m[2mApp layout[2m 
+> [22m[2mmuestra el Sidebar con el nombre de la app
+[22m[39mAn update to ConfigProvider inside a test was not wrapped in 
+act(...).
+
+When testing, code that causes React state updates should be wrapped into 
+act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the 
+browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | ../test/frontend/App.test.jsx[2m > [22m[2mApp layout[2m 
+> [22m[2mtiene el contenedor ra├¡z con flex y h-screen
+[22m[39mAn update to ConfigProvider inside a test was not wrapped in 
+act(...).
+
+When testing, code that causes React state updates should be wrapped into 
+act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the 
+browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | ../test/frontend/App.test.jsx[2m > [22m[2mApp layout[2m 
+> [22m[2mcontiene un elemento <main>
+[22m[39mAn update to ConfigProvider inside a test was not wrapped in 
+act(...).
+
+When testing, code that causes React state updates should be wrapped into 
+act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the 
+browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | ../test/frontend/App.test.jsx[2m > [22m[2mApp layout[2m 
+> [22m[2mel <aside> (sidebar) es visible
+[22m[39mAn update to ConfigProvider inside a test was not wrapped in 
+act(...).
+
+When testing, code that causes React state updates should be wrapped into 
+act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the 
+browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ [32mÔ£ô[39m ../test/frontend/App.test.jsx [2m([22m[2m5 tests[22m[2m)[22m[32m 141[2mms[22m[39m
+ [32mÔ£ô[39m ../test/frontend/fetchInterceptor.test.js [2m([22m[2m9 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+[90mstderr[2m | ../test/frontend/PersonalizacionPage.test.jsx[2m > 
+[22m[2mPersonalizacionPage ÔÇö intervalo d├¡as onChange[2m > 
+[22m[2mactualiza el estado al cambiar el campo intervalo de d├¡as
+[22m[39mAn update to ConfigProvider inside a test was not wrapped in 
+act(...).
+
+When testing, code that causes React state updates should be wrapped into 
+act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the 
+browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ [32mÔ£ô[39m ../test/frontend/auth.test.js [2m([22m[2m13 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32mÔ£ô[39m ../test/frontend/PersonalizacionPage.test.jsx [2m([22m[2m45 tests[22m[2m)[22m[33m 2904[2mms[22m[39m
+ [32mÔ£ô[39m ../test/frontend/BancoPage.test.jsx [2m([22m[2m5 tests[22m[2m)[22m[32m 78[2mms[22m[39m
+ [32mÔ£ô[39m ../test/frontend/TransportePage.test.jsx [2m([22m[2m6 tests[22m[2m)[22m[32m 112[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m17 passed[39m[22m[90m (17)[39m
+[2m      Tests [22m [1m[32m175 passed[39m[22m[90m (175)[39m
+[2m   Start at [22m 17:15:35
+[2m   Duration [22m 6.90s[2m (transform 2.80s, setup 4.82s, import 15.84s, tests 8.77s, environment 21.77s)[22m
+
+[34m % [39m[2mCoverage report from [22m[33mv8[39m
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   42.01 |    30.96 |   33.37 |   44.42 |                   
+ api               |   30.63 |    48.97 |   23.68 |    34.4 |                   
+  albaranes.js     |       0 |      100 |       0 |       0 | 3-25              
+  analytics.js     |       0 |        0 |       0 |       0 | 3-26              
+  auth.js          |     100 |      100 |     100 |     100 |                   
+  clientes.js      |       0 |      100 |       0 |       0 | 3-22              
+  ...nterceptor.js |     100 |    93.33 |     100 |     100 | 17                
+  http.js          |   35.71 |    30.76 |      40 |   41.66 | 22-23,29-37       
+  movimientos.js   |       0 |      100 |       0 |       0 | 3-22              
+  productos.js     |       0 |        0 |       0 |       0 | 3-25              
+ components        |   42.58 |    30.67 |   33.23 |   44.96 |                   
+  ...ranesPage.jsx |    37.9 |    22.34 |   18.98 |    41.5 | ...05-597,620-775 
+  App.jsx          |      50 |       75 |   33.33 |      50 | 19-30             
+  BancoPage.jsx    |   38.66 |    18.64 |   33.33 |   40.57 | ...62-149,159-252 
+  ClientesPage.jsx |   33.64 |    19.39 |   17.39 |   37.01 | ...41-340,363-659 
+  Dashboard.jsx    |   65.93 |    46.77 |   55.31 |   69.74 | ...89,616-619,637 
+  LoginPage.jsx    |     100 |      100 |     100 |     100 |                   
+  ...entosPage.jsx |   36.61 |    30.27 |   27.02 |   42.24 | ...27-271,282-428 
+  NuevaVenta.jsx   |   15.96 |    14.76 |   18.18 |   16.55 | ...82-500,536-927 
+  PerfilPage.jsx   |   95.91 |    72.22 |     100 |   95.45 | 16,42             
+  ...acionPage.jsx |   92.41 |    82.55 |   97.36 |   93.54 | 142,230-239       
+  ...uctosPage.jsx |   44.73 |    31.14 |   31.57 |   47.43 | ...1200,1280-1284 
+  ...ctedRoute.jsx |       0 |        0 |       0 |       0 | 5                 
+  Sidebar.jsx      |      60 |       50 |   42.85 |   69.23 | 43,70-72          
+  Tendencias.jsx   |   38.76 |    29.52 |   34.32 |   40.61 | ...63-914,940-953 
+  ...portePage.jsx |   33.03 |    21.71 |      20 |   34.16 | ...53-575,612-910 
+ components/ui     |   31.42 |    11.11 |   35.71 |   34.48 |                   
+  AnimatedTabs.jsx |   91.66 |       75 |   83.33 |    90.9 | 34                
+  Badge.jsx        |       0 |        0 |       0 |       0 | 3-15              
+  Pagination.jsx   |       0 |        0 |       0 |       0 | 4-63              
+ context           |     100 |      100 |   77.77 |     100 |                   
+  ...igContext.jsx |     100 |      100 |   77.77 |     100 |                   
+  ThemeContext.jsx |     100 |      100 |   77.77 |     100 |                   
+ hooks             |       0 |        0 |       0 |       0 |                   
+  useClientes.js   |       0 |        0 |       0 |       0 | 5-23              
+  ...ovimientos.js |       0 |        0 |       0 |       0 | 5-23              
+  useProductos.js  |       0 |        0 |       0 |       0 | 6-30              
+-------------------|---------|----------|---------|---------|-------------------
