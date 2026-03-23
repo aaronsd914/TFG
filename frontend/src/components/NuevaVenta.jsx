@@ -1,4 +1,4 @@
-﻿// components/NuevaVenta.jsx
+// components/NuevaVenta.jsx
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { sileo } from 'sileo';
 import { useTranslation } from 'react-i18next';
@@ -6,7 +6,7 @@ import { API_URL } from '../config.js';
 
 function formatEUR(n) {
   const num = Number(n || 0);
-  return `${num.toFixed(2)} â‚¬`;
+  return `${num.toFixed(2)} €`;
 }
 
 function Label({ children, required }) {
@@ -133,9 +133,9 @@ export default function NuevaVenta() {
     [items]
   );
   const fianzaPorDefecto = useMemo(() => Number((total * 0.30).toFixed(2)), [total]);
-  const [fianzaCantidad, setFianzaCantidad] = useState(''); // vacÃ­o = usar 30% auto
+  const [fianzaCantidad, setFianzaCantidad] = useState(''); // vacío = usar 30% auto
 
-  // ---- ValidaciÃ³n UI (errores) ----
+  // ---- Validación UI (errores) ----
   const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState('');
 
@@ -169,7 +169,7 @@ export default function NuevaVenta() {
     const t = setTimeout(async () => {
       if (!useExisting) return;
 
-      // âœ… Si ya hay cliente seleccionado, cerramos el buscador (no sugerencias)
+      // ✅ Si ya hay cliente seleccionado, cerramos el buscador (no sugerencias)
       if (selectedClient) {
         setClientSugs([]);
         setClientActiveIdx(-1);
@@ -215,7 +215,7 @@ export default function NuevaVenta() {
     setSelectedClient(c);
     setClientSugs([]);
     setClientActiveIdx(-1);
-    setClientQuery(`${c.name} ${c.surnames}${c.dni ? ' Â· ' + c.dni : c.email ? ' Â· ' + c.email : ''}`);
+    setClientQuery(`${c.name} ${c.surnames}${c.dni ? ' · ' + c.dni : c.email ? ' · ' + c.email : ''}`);
     clearError('cliente');
   }
 
@@ -429,7 +429,7 @@ export default function NuevaVenta() {
       const body = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        const msg = `Error al crear albarÃ¡n: ${body?.detail || res.statusText}`;
+        const msg = `Error al crear albarán: ${body?.detail || res.statusText}`;
         setFormError(msg);
         try {
           sileo.error({
@@ -465,7 +465,7 @@ export default function NuevaVenta() {
         setCodigoPostal('');
       }
 
-      // âœ… NotificaciÃ³n Sileo con icono (correo)
+      // ✅ Notificación Sileo con icono (correo)
       try {
         const albId = body?.id ? `#${body.id}` : '';
         sileo.success({
@@ -474,7 +474,7 @@ export default function NuevaVenta() {
         });
       } catch {}
 
-      // âœ… Descargar PDF del albarÃ¡n
+      // ✅ Descargar PDF del albarán
       if (body?.id) {
         try {
           const pdfRes = await fetch(`${API_URL}albaranes/${body.id}/pdf`);
@@ -553,7 +553,7 @@ export default function NuevaVenta() {
                     value={clientQuery}
                     onChange={(e) => {
                       setClientQuery(e.target.value);
-                      // âœ… Si editas el input, permitimos volver a buscar (des-selecciona)
+                      // ✅ Si editas el input, permitimos volver a buscar (des-selecciona)
                       if (selectedClient) setSelectedClient(null);
                       clearError('cliente');
                     }}
@@ -563,7 +563,7 @@ export default function NuevaVenta() {
                     error={Boolean(errors.cliente)}
                   />
 
-                  {/* âœ… Solo mostramos el desplegable si NO hay cliente seleccionado */}
+                  {/* ✅ Solo mostramos el desplegable si NO hay cliente seleccionado */}
                   {clientQuery && !selectedClient ? (
                     <div
                       ref={clientListRef}
@@ -593,7 +593,7 @@ export default function NuevaVenta() {
                                     {c.name} {c.surnames}
                                   </div>
                                   <div className="truncate text-xs text-gray-500">
-                                    {c.dni ? `${c.dni} Â· ` : ''}
+                                    {c.dni ? `${c.dni} · ` : ''}
                                     {c.email || t('newSale.noResults')}
                                   </div>
                                 </div>
@@ -618,7 +618,7 @@ export default function NuevaVenta() {
                         </div>
                         <div className="mt-1 truncate text-sm text-gray-600">
                           {selectedClient.dni ? selectedClient.dni : t('newSale.sinDNI')}
-                          {selectedClient.email ? ` Â· ${selectedClient.email}` : ''}
+                          {selectedClient.email ? ` · ${selectedClient.email}` : ''}
                         </div>
                       </div>
                       <button
@@ -877,7 +877,7 @@ export default function NuevaVenta() {
                               className="rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"
                               title={t('newSale.removeTitle')}
                             >
-                              âœ•
+                              ✕
                             </button>
                           </td>
                         </tr>

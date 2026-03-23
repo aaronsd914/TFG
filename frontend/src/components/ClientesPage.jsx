@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sileo } from 'sileo';
 import { useTranslation } from 'react-i18next';
@@ -34,7 +34,7 @@ function Chip({ label, onRemove }) {
     <span className="inline-flex items-center gap-2 bg-gray-100 border border-gray-200 px-3 py-1 rounded-full text-sm">
       {label}
       <button className="text-gray-500 hover:text-gray-700" onClick={onRemove} aria-label={`Quitar ${label}`} type="button">
-        Ã—
+        ×
       </button>
     </span>
   );
@@ -46,17 +46,17 @@ function safeNumber(x) {
 }
 
 function formatEUR(n) {
-  return `${safeNumber(n).toFixed(2)} â‚¬`;
+  return `${safeNumber(n).toFixed(2)} €`;
 }
 
 function formatDate(d) {
   const dt = new Date(d);
-  return Number.isNaN(dt.getTime()) ? 'â€”' : dt.toLocaleDateString();
+  return Number.isNaN(dt.getTime()) ? '—' : dt.toLocaleDateString();
 }
 
 const ESTADO_META = {
   FIANZA: { label: 'Fianza', className: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
-  ALMACEN: { label: 'AlmacÃ©n', className: 'bg-blue-100 text-blue-800 border-blue-300' },
+  ALMACEN: { label: 'Almacén', className: 'bg-blue-100 text-blue-800 border-blue-300' },
   TRANSPORTE: { label: 'Ruta', className: 'bg-purple-100 text-purple-800 border-purple-300' },
   ENTREGADO: { label: 'Entregado', className: 'bg-green-100 text-green-800 border-green-300' },
 };
@@ -66,14 +66,14 @@ function Chevron({ open }) {
     <span
       className="inline-flex items-center justify-center w-7 h-7 rounded-lg border border-gray-200 bg-white text-gray-700"
       aria-hidden="true"
-      title={open ? 'Ocultar lÃ­neas' : 'Ver lÃ­neas'}
+      title={open ? 'Ocultar líneas' : 'Ver líneas'}
     >
-      {open ? 'â–²' : 'â–¼'}
+      {open ? '▲' : '▼'}
     </span>
   );
 }
 
-// ===== PÃ¡gina =====
+// ===== Página =====
 export default function ClientesPage() {
   const { t } = useTranslation();
 
@@ -111,7 +111,7 @@ export default function ClientesPage() {
   const [orders, setOrders] = useState([]);
   const [expanded, setExpanded] = useState({}); // { [albaranId]: { open, loading, error, lineas } }
 
-  // âœ… ID pendiente para abrir detalle (desde Albaranes)
+  // ✅ ID pendiente para abrir detalle (desde Albaranes)
   const [pendingOpenClienteId, setPendingOpenClienteId] = useState(null);
 
   function toastError(title, errLike) {
@@ -157,7 +157,7 @@ export default function ClientesPage() {
     })();
   }, []);
 
-  // âœ… Leer localStorage para abrir cliente automÃ¡ticamente
+  // ✅ Leer localStorage para abrir cliente automáticamente
   useEffect(() => {
     try {
       const stored = localStorage.getItem('cliente_open_id');
@@ -165,7 +165,7 @@ export default function ClientesPage() {
     } catch {}
   }, []);
 
-  // âœ… Cuando ya tengo la lista de clientes, abro el detalle
+  // ✅ Cuando ya tengo la lista de clientes, abro el detalle
   useEffect(() => {
     if (!pendingOpenClienteId) return;
     if (!data || data.length === 0) return;
@@ -191,7 +191,7 @@ export default function ClientesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingOpenClienteId, data]);
 
-  // Dominios Ãºnicos
+  // Dominios únicos
   const domains = useMemo(() => {
     const set = new Set();
     data.forEach((c) => {
@@ -204,7 +204,7 @@ export default function ClientesPage() {
   const defaultMin = data.length ? Math.min(...data.map((d) => d.id)) : 0;
   const defaultMax = data.length ? Math.max(...data.map((d) => d.id)) : 999999;
 
-  // AplicaciÃ³n de buscador + filtros + orden
+  // Aplicación de buscador + filtros + orden
 
   const filtered = useMemo(() => {
     let list = [...data];
@@ -250,7 +250,7 @@ export default function ClientesPage() {
   const activeChips = [
     ...(q ? [{ key: 'q', label: `${t('common.search')}: "${q}"`, onRemove: () => setQuery('') }] : []),
     ...(idRange[0] !== defaultMin || idRange[1] !== defaultMax
-      ? [{ key: 'id', label: `ID ${idRange[0]}â€“${idRange[1]}`, onRemove: () => setIdRange([defaultMin, defaultMax]) }]
+      ? [{ key: 'id', label: `ID ${idRange[0]}–${idRange[1]}`, onRemove: () => setIdRange([defaultMin, defaultMax]) }]
       : []),
     ...selectedDomains.map((dom) => ({
       key: `dom-${dom}`,
@@ -261,7 +261,7 @@ export default function ClientesPage() {
       ? [
           {
             key: 'sort',
-            label: `${t('clients.orderLabel')}: ${({ az: 'Aâ†’Z', za: 'Zâ†’A', id_up: 'IDâ†‘', id_down: 'IDâ†“' })[sort]}`,
+            label: `${t('clients.orderLabel')}: ${({ az: 'A→Z', za: 'Z→A', id_up: 'ID↑', id_down: 'ID↓' })[sort]}`,
             onRemove: () => setSort('az'),
           },
         ]
@@ -306,7 +306,7 @@ export default function ClientesPage() {
       setSelected(resCli.ok ? await resCli.json() : c);
     } catch {
       setSelected(c);
-      // aquÃ­ no meto toast: seguimos con fallback y no es un fallo crÃ­tico
+      // aquí no meto toast: seguimos con fallback y no es un fallo crítico
     }
     await loadOrders(c.id);
     setExpanded({});
@@ -322,7 +322,7 @@ export default function ClientesPage() {
     setExpanded({});
   }
 
-  // Cargar lÃ­neas bajo demanda
+  // Cargar líneas bajo demanda
   async function toggleExpand(albaran) {
     const id = albaran.id;
     const current = expanded[id];
@@ -338,7 +338,7 @@ export default function ClientesPage() {
       setExpanded((prev) => ({ ...prev, [id]: { ...prev[id], open: true, loading: false, lineas: full.lineas || [] } }));
     } catch (e) {
       setExpanded((prev) => ({ ...prev, [id]: { ...prev[id], open: true, loading: false, error: e.message } }));
-      toastError('Error cargando lÃ­neas del albarÃ¡n', e);
+      toastError('Error cargando líneas del albarán', e);
     }
   }
 
@@ -353,7 +353,7 @@ export default function ClientesPage() {
 
   return (
     <div className="p-3 md:p-6">
-      {/* TÃ­tulo + contador */}
+      {/* Título + contador */}
       <div className="flex items-end justify-between mb-4">
         <div>
           <h1 className="text-2xl font-semibold">{t('clients.title')}</h1>
@@ -373,7 +373,7 @@ export default function ClientesPage() {
             placeholder={t('clients.searchPlaceholder')}
             className="w-full rounded-xl border border-gray-300 px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-gray-300"
           />
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">âŒ•</span>
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">⌕</span>
         </div>
 
         <button
@@ -423,7 +423,7 @@ export default function ClientesPage() {
                 onClick={() => openDetail(c)}
               >
                 <div className="col-span-4">{c.name} {c.surnames}</div>
-                <div className="col-span-2">{c.phone1 || 'â€”'}</div>
+                <div className="col-span-2">{c.phone1 || '—'}</div>
                 <div className="col-span-4">{c.email}</div>
                 <div className="col-span-2">{c.dni}</div>
               </li>
@@ -538,17 +538,17 @@ export default function ClientesPage() {
                 </div>
                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
                   <div className="text-xs text-gray-500">{t('clients.colDNI')}</div>
-                  <div className="font-medium break-all">{selected.dni || 'â€”'}</div>
+                  <div className="font-medium break-all">{selected.dni || '—'}</div>
                 </div>
                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 md:col-span-2">
                   <div className="text-xs text-gray-500">{t('clients.colEmail')}</div>
-                  <div className="font-medium break-all">{selected.email || 'â€”'}</div>
+                  <div className="font-medium break-all">{selected.email || '—'}</div>
                 </div>
                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
                   <div className="text-xs text-gray-500">{t('clients.colPhones')}</div>
                   <div className="font-medium break-all">
-                    {selected.phone1 || 'â€”'}
-                    {selected.phone2 ? ` Â· ${selected.phone2}` : ''}
+                    {selected.phone1 || '—'}
+                    {selected.phone2 ? ` · ${selected.phone2}` : ''}
                   </div>
                 </div>
                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 md:col-span-3">
@@ -562,7 +562,7 @@ export default function ClientesPage() {
                       selected.city,
                     ]
                       .filter(Boolean)
-                      .join(' Â· ') || 'â€”'}
+                      .join(' · ') || '—'}
                   </div>
                 </div>
               </div>
@@ -609,7 +609,7 @@ export default function ClientesPage() {
                                     <td className="p-2">#{alb.id}</td>
                                     <td className="p-2">{formatDate(alb.date)}</td>
                                     <td className="p-2 truncate" title={alb.description || ''}>
-                                      {alb.description || 'â€”'}
+                                      {alb.description || '—'}
                                     </td>
                                     <td className="p-2">
                                       <span className={`inline-block border px-2 py-1 rounded-lg text-xs ${meta.className}`}>

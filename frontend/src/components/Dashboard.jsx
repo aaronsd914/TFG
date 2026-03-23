@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Line, Pie } from 'react-chartjs-2';
 import 'chart.js/auto';
@@ -17,7 +17,7 @@ function monthLabelShort(index0, months) {
 }
 function fmtDate(d) {
   const dt = new Date(d);
-  if (Number.isNaN(dt.getTime())) return 'â€”';
+  if (Number.isNaN(dt.getTime())) return '—';
   return dt.toLocaleDateString('es-ES');
 }
 
@@ -27,7 +27,7 @@ export default function Dashboard() {
   const [movs, setMovs] = useState([]);
   const [albaranes, setAlbaranes] = useState([]);
   const [almacen, setAlmacen] = useState([]);
-  const [_ruta, setRuta] = useState([]); // se mantiene para mÃ©tricas/estados, aunque no se muestre secciÃ³n
+  const [_ruta, setRuta] = useState([]); // se mantiene para métricas/estados, aunque no se muestre sección
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
@@ -37,7 +37,7 @@ export default function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
 
-  // GrÃ¡fica principal: ALL | ING | EGR
+  // Gráfica principal: ALL | ING | EGR
   const [chartMode, setChartMode] = useState('ALL');
 
   const firstLoadRef = useRef(true);
@@ -90,7 +90,7 @@ export default function Dashboard() {
     return m;
   }, [clientes]);
 
-  // MÃ©tricas del mes actual
+  // Métricas del mes actual
   const now = new Date();
   const currY = now.getFullYear();
   const currM = now.getMonth();
@@ -183,7 +183,7 @@ export default function Dashboard() {
     return { labels, datasets };
   }, [movs, currY, currM, monthsWindowMovs, chartMode, i18n.language]);
 
-  // Nueva grÃ¡fica: ventas por mes (nÃºmero de albaranes)
+  // Nueva gráfica: ventas por mes (número de albaranes)
   const ventasSeries = useMemo(() => {
     const keys = [];
     for (let i = monthsWindowVentas - 1; i >= 0; i--) {
@@ -222,7 +222,7 @@ export default function Dashboard() {
     return { labels, datasets: [{ data, backgroundColor }] };
   }, [albaranes, i18n.language]);
 
-  // Ãšltimos 8 movimientos
+  // Últimos 8 movimientos
   const ultimosMovs = useMemo(() => {
     const sorted = [...movs].sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
     return sorted.slice(0, 8);
@@ -313,7 +313,7 @@ export default function Dashboard() {
 
 
 
-      {/* GrÃ¡ficas */}
+      {/* Gráficas */}
       {!err && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           <div className="bg-white p-4 rounded-xl shadow-sm self-start">
@@ -366,7 +366,7 @@ export default function Dashboard() {
               <>
                 <div className="flex items-center justify-between mb-2 text-sm text-gray-600">
                   <div>
-                    {t('dashboard.currentMonth')} <span className="font-semibold text-gray-900">{eur(ingresosMes)}</span> {t('dashboard.incomeUnit')} Â·{' '}
+                    {t('dashboard.currentMonth')} <span className="font-semibold text-gray-900">{eur(ingresosMes)}</span> {t('dashboard.incomeUnit')} ·{' '}
                     <span className="font-semibold text-gray-900">{eur(egresosMes)}</span> {t('dashboard.expensesUnit')}
                   </div>
                   <div className="text-xs">
@@ -393,7 +393,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Nueva grÃ¡fica: Ventas por mes */}
+      {/* Nueva gráfica: Ventas por mes */}
       {!err && (
         <div className="bg-white p-4 rounded-xl shadow-sm">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-3">
@@ -413,7 +413,7 @@ export default function Dashboard() {
               >
                 12M
               </button>
-              <div className="text-sm text-gray-600">{loading ? 'â€¦' : t('dashboard.totalDeliveries', { count: albaranes.length })}</div>
+              <div className="text-sm text-gray-600">{loading ? '…' : t('dashboard.totalDeliveries', { count: albaranes.length })}</div>
             </div>
           </div>
           {loading ? (
@@ -426,7 +426,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Ãšltimos movimientos */}
+      {/* Últimos movimientos */}
       <div className="bg-white p-4 rounded-xl shadow-sm">
         <div className="flex items-center justify-between gap-3 mb-3">
           <h3 className="text-base font-semibold">{t('dashboard.recentMovements')}</h3>
@@ -469,11 +469,11 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* AlmacÃ©n (ALMACEN) */}
+      {/* Almacén (ALMACEN) */}
       <div className="bg-white p-4 rounded-xl shadow-sm">
         <div className="flex items-center justify-between gap-3 mb-3">
           <h3 className="text-base font-semibold">{t('dashboard.warehouseSection')}</h3>
-          <div className="text-sm text-gray-600">{loading ? 'â€¦' : `${almacen.length} total`}</div>
+          <div className="text-sm text-gray-600">{loading ? '…' : `${almacen.length} total`}</div>
         </div>
 
         <TablaPedidos
@@ -491,7 +491,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* NOTA: Se ha eliminado la secciÃ³n visual de â€œEn rutaâ€ */}
+      {/* NOTA: Se ha eliminado la sección visual de “En ruta” */}
     </div>
   );
 }
@@ -521,12 +521,12 @@ function TablaPedidos({ rows, clientesMap }) {
                 key={a.id}
                 className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
                 onClick={() => { try { localStorage.setItem('albaran_open_id', String(a.id)); } catch {} window.location.href = '/albaranes'; }}
-                title={`Ir al albarÃ¡n #${a.id}`}
+                title={`Ir al albarán #${a.id}`}
               >
                 <td className="p-2">#{a.id}</td>
                 <td className="p-2">{fmtDate(a.date)}</td>
                 <td className="p-2">{c ? `${c.name} ${c.surnames}` : `Cliente #${a.customer_id}`}</td>
-                <td className="p-2">{c?.dni || 'â€”'}</td>
+                <td className="p-2">{c?.dni || '—'}</td>
                 <td className="p-2">{eur(a.total)}</td>
               </tr>
             );
@@ -548,7 +548,7 @@ function SkeletonCard() {
 }
 
 function StatCard({ title, value, delta, deltaLabel, hint, invertColors = false }) {
-  const [displayed, setDisplayed] = useState('â€¦');
+  const [displayed, setDisplayed] = useState('…');
 
   useEffect(() => {
     // Try to extract a number from the value string to animate

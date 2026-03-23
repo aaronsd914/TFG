@@ -1,4 +1,4 @@
-﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sileo } from 'sileo';
 import { AnimatedTabs } from './ui/AnimatedTabs.jsx';
@@ -14,7 +14,7 @@ function eur(n) {
 }
 function fmtDate(d) {
   const dt = new Date(d);
-  if (Number.isNaN(dt.getTime())) return 'â€”';
+  if (Number.isNaN(dt.getTime())) return '—';
   return dt.toLocaleDateString('es-ES');
 }
 function sumTotal(albaranes) {
@@ -155,7 +155,7 @@ export default function TransportePage() {
   }, [clientes]);
 
 
-  // Filtrado general: almacÃ©n, en ruta y camiones
+  // Filtrado general: almacén, en ruta y camiones
   const filterAlbaranes = useCallback((albaranes) => {
     const q = (search || '').trim().toLowerCase();
     if (!q) return albaranes;
@@ -174,15 +174,15 @@ export default function TransportePage() {
     });
   }, [search, clientesMap]);
 
-  // Filtrar almacÃ©n
+  // Filtrar almacén
   const almacenFiltrado = useMemo(() => filterAlbaranes(almacen), [almacen, filterAlbaranes]);
-  // Filtrar en ruta (sin camiÃ³n)
+  // Filtrar en ruta (sin camión)
   const pendienteFiltrado = useMemo(() => filterAlbaranes(rutas.sin_camion || []), [rutas, filterAlbaranes]);
-  // Filtrar camiones: para cada camiÃ³n, filtrar sus albaranes
+  // Filtrar camiones: para cada camión, filtrar sus albaranes
   const camionesMapFiltrado = useMemo(() => {
     const m = new Map();
     (rutas.camiones || []).forEach(c => m.set(Number(c.camion_id), filterAlbaranes(c.albaranes || [])));
-    // TambiÃ©n filtrar los camiones extra aunque estÃ©n vacÃ­os
+    // También filtrar los camiones extra aunque estén vacíos
     camionesExtra.forEach(cid => {
       if (!m.has(cid)) m.set(cid, []);
     });
@@ -200,7 +200,7 @@ export default function TransportePage() {
         fetch(`${API_URL}clientes/get`),
       ]);
 
-      if (!rAlm.ok) throw new Error(`AlmacÃ©n HTTP ${rAlm.status}`);
+      if (!rAlm.ok) throw new Error(`Almacén HTTP ${rAlm.status}`);
       if (!rRut.ok) throw new Error(`Rutas HTTP ${rRut.status}`);
       if (!rCli.ok) throw new Error(`Clientes HTTP ${rCli.status}`);
 
@@ -214,7 +214,7 @@ export default function TransportePage() {
       setRutas(rut);
       setClientes(cli);
 
-      // âœ… Persistimos camiones â€œvistosâ€ (para que no desaparezcan cuando queden vacÃ­os)
+      // ✅ Persistimos camiones “vistos” (para que no desaparezcan cuando queden vacíos)
       try {
         const idsServer = (rut?.camiones || []).map(x => Number(x.camion_id)).filter(Boolean);
         if (idsServer.length) {
@@ -260,13 +260,13 @@ export default function TransportePage() {
         return;
       }
       setCamionesOcultos(prev => prev.filter(x => x !== Number(camion_id)));
-      // Aseguramos que el camiÃ³n quede persistido.
+      // Aseguramos que el camión quede persistido.
       setCamionesExtra(prev => Array.from(new Set([...(prev || []), Number(camion_id)])).sort((a, b) => a - b));
       await fetchAll();
 
       sileo.success({
-        title: `Asignado al camiÃ³n ${camion_id}`,
-        description: `AlbarÃ¡n #${albaran_id} aÃ±adido a la ruta.`,
+        title: `Asignado al camión ${camion_id}`,
+        description: `Albarán #${albaran_id} añadido a la ruta.`,
       });
     } catch (e) {
       sileo.error({
@@ -289,7 +289,7 @@ export default function TransportePage() {
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
         sileo.error({
-          title: 'No se pudo volver a AlmacÃ©n',
+          title: 'No se pudo volver a Almacén',
           description: j.detail || res.statusText,
         });
         return;
@@ -297,8 +297,8 @@ export default function TransportePage() {
       await fetchAll();
 
       sileo.success({
-        title: 'Devuelto a AlmacÃ©n',
-        description: `AlbarÃ¡n #${albaran_id} vuelto a ALMACÃ‰N.`,
+        title: 'Devuelto a Almacén',
+        description: `Albarán #${albaran_id} vuelto a ALMACÉN.`,
       });
     } catch (e) {
       sileo.error({
@@ -330,7 +330,7 @@ export default function TransportePage() {
 
       sileo.success({
         title: 'En ruta',
-        description: `AlbarÃ¡n #${albaran_id} movido a â€œEn ruta (pendiente camiÃ³n)â€.`,
+        description: `Albarán #${albaran_id} movido a “En ruta (pendiente camión)”.`,
       });
     } catch (e) {
       sileo.error({
@@ -362,7 +362,7 @@ export default function TransportePage() {
 
       sileo.success({
         title: 'Entregado',
-        description: `AlbarÃ¡n #${id} marcado como ENTREGADO.`,
+        description: `Albarán #${id} marcado como ENTREGADO.`,
       });
     } catch (e) {
       sileo.error({
@@ -423,8 +423,8 @@ export default function TransportePage() {
       }));
 
       sileo.success({
-        title: `Ruta aceptada (CamiÃ³n ${camion_id})`,
-        description: `Gasto registrado: ${eur(liq.importe)} (7%) Â· Factura descargada.`,
+        title: `Ruta aceptada (Camión ${camion_id})`,
+        description: `Gasto registrado: ${eur(liq.importe)} (7%) · Factura descargada.`,
       });
     } catch (e) {
       sileo.error({
@@ -465,15 +465,15 @@ export default function TransportePage() {
       setDragging(null);
       if (!payload) return;
 
-      // âœ… Flujo lÃ³gico: AlmacÃ©n -> En ruta -> CamiÃ³n
-      // (y tambiÃ©n permitimos atajo AlmacÃ©n -> CamiÃ³n)
+      // ✅ Flujo lógico: Almacén -> En ruta -> Camión
+      // (y también permitimos atajo Almacén -> Camión)
       if (payload.from === 'sin_camion' || payload.from === 'almacen') {
         await asignarA(camion_id, payload.id);
       }
     };
   }
 
-  // âœ… FIX: ahora es async
+  // ✅ FIX: ahora es async
   async function onDropToAlmacen(e) {
     e.preventDefault();
     setOverZone(null);
@@ -485,14 +485,14 @@ export default function TransportePage() {
     }
   }
 
-  // âœ… FIX: ahora es async
+  // ✅ FIX: ahora es async
   async function onDropToPendiente(e) {
     e.preventDefault();
     setOverZone(null);
     const payload = dragging;
     setDragging(null);
     if (!payload) return;
-    // Desde almacÃ©n â†’ En ruta, o desde camiÃ³n â†’ En ruta
+    // Desde almacén → En ruta, o desde camión → En ruta
     if (payload.from === 'almacen' || (payload.from && payload.from.startsWith('camion:'))) {
       await ponerPendiente(payload.id);
     }
@@ -502,8 +502,8 @@ export default function TransportePage() {
     const n = Number(nuevoCamion);
     if (!Number.isInteger(n) || n <= 0) {
       sileo.warning({
-        title: 'NÃºmero invÃ¡lido',
-        description: 'El camiÃ³n debe ser un nÃºmero entero mayor que 0.',
+        title: 'Número inválido',
+        description: 'El camión debe ser un número entero mayor que 0.',
       });
       return;
     }
@@ -517,8 +517,8 @@ export default function TransportePage() {
     setNuevoCamion('');
 
     sileo.success({
-      title: 'CamiÃ³n aÃ±adido',
-      description: `CamiÃ³n ${n} creado.`,
+      title: 'Camión añadido',
+      description: `Camión ${n} creado.`,
     });
   }
   function quitarCamion(cid) {
@@ -531,8 +531,8 @@ export default function TransportePage() {
     });
 
     sileo.success({
-      title: 'CamiÃ³n eliminado',
-      description: `CamiÃ³n ${cid} eliminado.`,
+      title: 'Camión eliminado',
+      description: `Camión ${cid} eliminado.`,
     });
   }
 
@@ -556,13 +556,13 @@ export default function TransportePage() {
     const isEmpty = (albs || []).length === 0;
     const accepted = Boolean(camionesAceptados?.[String(cid)]);
 
-    // vacÃ­o: otro color (y no desaparece)
+    // vacío: otro color (y no desaparece)
     if (isEmpty) {
       return {
         box: 'bg-white',
         header: 'bg-gray-100',
         border: 'border-gray-200',
-        badge: 'VacÃ­o',
+        badge: 'Vacío',
         badgeClass: 'bg-gray-100 border-gray-200 text-gray-700',
       };
     }
@@ -634,7 +634,7 @@ export default function TransportePage() {
         </div>
 
         <div className="flex gap-4 overflow-x-auto pb-2">
-        {/* ALMACÃ‰N */}
+        {/* ALMACÉN */}
         <div
           className={`min-w-[320px] max-w-[360px] flex-shrink-0 rounded-2xl border overflow-hidden bg-gray-50 transition-all duration-200 ${
             activeTab === 'ruta' ? 'hidden md:flex md:flex-col' : 'flex flex-col'
@@ -676,7 +676,7 @@ export default function TransportePage() {
           </div>
         </div>
 
-        {/* PENDIENTE (sin camiÃ³n) */}
+        {/* PENDIENTE (sin camión) */}
         <div
           className={`min-w-[320px] max-w-[360px] flex-shrink-0 rounded-2xl border overflow-hidden bg-gray-50 transition-all duration-200 ${
             activeTab === 'almacen' ? 'hidden md:flex md:flex-col' : 'flex flex-col'
@@ -753,7 +753,7 @@ export default function TransportePage() {
                       ) : null}
                     </div>
                     <div className="text-xs text-gray-600">
-                      {albs.length} Â· {eur(sumTotal(albs))}
+                      {albs.length} · {eur(sumTotal(albs))}
                     </div>
                   </div>
 
@@ -894,7 +894,7 @@ export default function TransportePage() {
                               ) : null}
                             </div>
                             <div className="text-xs text-gray-600 truncate">
-                              {t('transport.ordersCount', { n: albs.length })} Â· {eur(sumTotal(albs))}
+                              {t('transport.ordersCount', { n: albs.length })} · {eur(sumTotal(albs))}
                             </div>
                           </div>
 
