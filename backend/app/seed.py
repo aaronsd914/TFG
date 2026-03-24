@@ -15,6 +15,7 @@ from backend.app.entidades.albaran import DeliveryNoteDB
 from backend.app.entidades.linea_albaran import DeliveryNoteLineDB
 from backend.app.entidades.movimiento import MovementDB
 from backend.app.entidades.usuario import UserDB
+from backend.app.entidades.stripe_checkout import StripeCheckoutDB
 from passlib.context import CryptContext
 
 _pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -24,49 +25,36 @@ log = logging.getLogger("seed")
 random.seed(42)  # Reproducible entre reinicios
 
 # ---------------------------------------------------------------------------
-# Proveedores
+# Proveedores (5)
 # ---------------------------------------------------------------------------
 PROVEEDORES = [
     ("Muebles Rivera S.L.", "pedro.rivera@mueblesrivera.es"),
     ("Nordic Home Supplies", "ventas@nordichome.eu"),
     ("OfiComfort España", "comercial@oficomfort.es"),
     ("Madera Noble Ibérica S.A.", "pedidos@maderannoble.es"),
-    ("Textil Decoración Hogar", "info@textilhogar.es"),
-    ("Iluminación Moderna S.L.", "catalogo@iluminacionmoderna.es"),
-    ("Colchones Descanso Plus", "mayorista@descansopluscom"),
     ("Dormitorios Premium S.L.", "ventas@dormitoriospremium.es"),
-    ("Aceralia Metálicos S.A.", "contratos@aceralia-metalicos.es"),
-    ("Vintage Wood Factory", "hola@vintagewoodfactory.com"),
-    ("Cocinas & Complementos", "tienda@cocinasycomplementos.es"),
-    ("Terrazo y Exterior S.L.", "exteriores@terrazzoyexterior.es"),
-    ("Infancia Creativa", "pedidos@infanciacreativa.es"),
-    ("DesignPro Contract", "contratos@designprocontract.com"),
-    ("Arte y Cerámica España", "galeria@arteyceramica.es"),
-    ("Europa Mueble Import", "import@europamueble.eu"),
-    ("Tapicerías Andrés Hermanos", "taller@tapiceriasandres.es"),
-    ("Estilo Nórdico Valencia", "showroom@estilonodrdicovalencia.es"),
 ]
 
 # ---------------------------------------------------------------------------
-# Productos  (nombre, descripción, precio, índice de proveedor en la lista)
+# Productos – 200 (nombre, descripción, precio, índice proveedor 0-4)
 # ---------------------------------------------------------------------------
 PRODUCTOS = [
-    # Muebles Rivera S.L.
+    # ── Muebles Rivera S.L. (0) ── 40 productos ─────────────────────────────
     (
         "Sofá Chester 3 plazas",
-        "Sofá clásico capitoné en terciopelo azul marino, patas doradas",
+        "Sofá clásico capitoné terciopelo azul marino, patas doradas",
         1350.0,
         0,
     ),
     (
         "Sofá rinconera Modena",
-        "Rinconera modular en tejido gris marengo con chaise longue reversible",
+        "Rinconera modular tejido gris marengo con chaise longue reversible",
         1890.0,
         0,
     ),
     (
-        "Butaca Relax Volterra",
-        "Butaca reclinable eléctrica en cuero envejecido marrón",
+        "Butaca relax Volterra",
+        "Butaca reclinable eléctrica cuero envejecido marrón",
         520.0,
         0,
     ),
@@ -78,590 +66,1143 @@ PRODUCTOS = [
     ),
     (
         "Chaiselongue Capri",
-        "Chaiselongue tapizada en lino beige, pies de madera natural",
+        "Chaiselongue tapizada lino beige, pies madera natural",
+        640.0,
+        0,
+    ),
+    ("Sofá 2 plazas Nápoles", "Sofá compacto tela antimanchas gris", 590.0, 0),
+    (
+        "Sofá orejero Chesterfield cognac",
+        "Butaca orejera Chesterfield cuero genuino cognac",
+        780.0,
+        0,
+    ),
+    (
+        "Sofá modular Milano 4 módulos",
+        "Composición modular 4 piezas, tela borreguillo gris",
+        2200.0,
+        0,
+    ),
+    (
+        "Butaca giratoria Barcelona",
+        "Butaca de diseño giratoria, tapizado bouclé crema",
+        670.0,
+        0,
+    ),
+    (
+        "Sofá cama Santiago 160",
+        "Sofá cama matrimonio con arcón de almacenaje",
+        1050.0,
+        0,
+    ),
+    (
+        "Chaiselongue eléctrica Amalfi",
+        "Chaiselongue reclinable eléctrica, USB integrado",
+        890.0,
+        0,
+    ),
+    (
+        "Sofá 3 plazas Valencia velvet",
+        "Sofá terciopelo verde esmeralda, patas acero negro",
+        1120.0,
+        0,
+    ),
+    (
+        "Sillón relax manual León",
+        "Sillón reclinable manual palanca lateral, cuero negro",
+        430.0,
+        0,
+    ),
+    (
+        "Sofá rinconera Florencia XL",
+        "Rinconera XXL 5 plazas tejido gris oscuro, reposacabezas ajustables",
+        2480.0,
+        0,
+    ),
+    ("Sofá 2 plazas Toscana", "Sofá compacto elegante terciopelo mostaza", 720.0, 0),
+    (
+        "Puf otomano cuadrado Verona",
+        "Puf 70×70 cm cuero PU negro, con bandeja incluida",
+        195.0,
+        0,
+    ),
+    (
+        "Sillón Chester wing azul",
+        "Sillón orejero capitoné en tela azul petróleo",
+        560.0,
+        0,
+    ),
+    (
+        "Sofá esquinero Brindisi reversible",
+        "Esquinero reversible tejido antimanchas antracita",
+        1340.0,
+        0,
+    ),
+    (
+        "Butaca Marsella giratoria",
+        "Butaca giratoria 360° con reposapiés desmontable",
+        490.0,
+        0,
+    ),
+    (
+        "Sofá cama compacto Liguria",
+        "Sofá 3 plazas con cama 120 cm, mecanismo clic-clac",
+        830.0,
+        0,
+    ),
+    (
+        "Chaiselongue Palermo izq.",
+        "Chaiselongue lado izquierdo tejido arena, cojines incluidos",
+        710.0,
+        0,
+    ),
+    ("Sofá 4 plazas Rimini", "Sofá XL 290 cm tela microfibra gris", 1580.0, 0),
+    (
+        "Sillón masajeador Relax Pro",
+        "Sillón masajeador 9 programas, calor lumbar, cuero negro",
+        620.0,
+        0,
+    ),
+    (
+        "Sofá nórdico Venecia compacto",
+        "Sofá 2 plazas nórdico patas madera, tejido gris perla",
+        660.0,
+        0,
+    ),
+    (
+        "Puf baúl almacenaje 100cm",
+        "Puf baúl apertura frontal, 100×40 cm, tejido gris",
+        245.0,
+        0,
+    ),
+    (
+        "Sofá esquinero Sicilia R",
+        "Rinconera derecha 5 plazas, cuero PU marrón",
+        1760.0,
+        0,
+    ),
+    ("Butaca Mónaco vintage", "Butaca estilo vintage tapizado lino natural", 385.0, 0),
+    (
+        "Sofá 3+2 Nápoles set",
+        "Conjunto sofá 3 plazas y 2 plazas coordinados, tela gris",
+        1290.0,
+        0,
+    ),
+    (
+        "Silla longue Ravena",
+        "Tumbona interior madera de haya, tapizado lino beige",
+        380.0,
+        0,
+    ),
+    (
+        "Sofá modular Bolonia Plus",
+        "Sistema modular 6 piezas configurables, tejido azul navy",
+        2850.0,
+        0,
+    ),
+    (
+        "Sofá tatami bajo Roma",
+        "Sofá estilo japandi bajo al suelo, cojines intercambiables",
+        770.0,
+        0,
+    ),
+    (
+        "Butaca Córdoba con reposapiés",
+        "Butaca con ottomán coordinado en cuero cognac",
+        510.0,
+        0,
+    ),
+    (
+        "Sofá biplaza Ferrara slim",
+        "Sofá estrecho 145 cm ideal pasillos, tejido beige",
+        495.0,
+        0,
+    ),
+    (
+        "Puf pelota gigante XL",
+        "Puf esfera Ø100 cm relleno EPS, funda lavable gris",
+        135.0,
+        0,
+    ),
+    (
+        "Sofá cama Génova 160 Plus",
+        "Sofá cama matrimonial 160 cm con somier lamelar",
+        1100.0,
+        0,
+    ),
+    (
+        "Esquinero Palena modular",
+        "Esquinero en tejido borreguillo blanco roto, 4 módulos",
+        1950.0,
+        0,
+    ),
+    (
+        "Sillón orejero Parma cuero",
+        "Sillón orejero cuero genuino negro, patas nogal",
         640.0,
         0,
     ),
     (
-        "Sofá 2 plazas Nápoles",
-        "Sofá compacto para espacios pequeños, tela antimanchas gris",
-        590.0,
+        "Sofá 3 plazas Lecce gris",
+        "Sofá tejido gris marengo, cojines lumbares incluidos",
+        875.0,
         0,
     ),
-    # Nordic Home Supplies
+    (
+        "Butaca relax Trieste 360",
+        "Butaca giratoria 360° reclinable manual, cuero PU",
+        480.0,
+        0,
+    ),
+    (
+        "Sofá modular Bérgamo 3P",
+        "Módulos independientes 3 piezas, tejido azul celeste",
+        1420.0,
+        0,
+    ),
+    # ── Nordic Home Supplies (1) ── 40 productos ─────────────────────────────
     (
         "Mesa comedor extensible Fjord",
-        "Mesa de roble macizo extensible 140–220 cm, 8 comensales",
+        "Mesa roble macizo extensible 140-220 cm, 8 comensales",
         920.0,
         1,
     ),
-    ("Mesa auxiliar Björk", "Mesita nórdica de abedul con bandeja extraíble", 135.0, 1),
+    ("Mesa auxiliar Björk", "Mesita nórdica abedul con bandeja extraíble", 135.0, 1),
     (
         "Escritorio Oslo Compact",
-        "Escritorio 120 cm con cajonera integrada en fresno blanco",
+        "Escritorio 120 cm cajonera integrada fresno blanco",
         340.0,
         1,
     ),
     (
-        "Mesa centro Lund",
-        "Mesa de centro elevable en roble, tapa de cristal antirrayaduras",
+        "Mesa centro Lund elevable",
+        "Mesa de centro elevable roble, tapa cristal antirrayaduras",
         295.0,
         1,
     ),
     (
-        "Estantería librería Stavanger",
-        "Librería modular 5 baldas en pino lacado blanco, 80×195 cm",
+        "Estantería Stavanger 5 baldas",
+        "Librería modular pino lacado blanco, 80×195 cm",
         210.0,
         1,
     ),
     (
+        "Mesa reuniones ovalada 10P",
+        "Mesa 300×120 cm laminado wengué, patas metálicas",
+        1850.0,
+        1,
+    ),
+    (
+        "Mesa TV flotante Uppsala",
+        "Mueble TV suspendido 150 cm con puertas correderas, roble",
+        390.0,
+        1,
+    ),
+    (
         "Mesa escritorio esquinero Bergen",
-        "Escritorio en L, superficie laminada blanca, soporte CPU incluido",
+        "Escritorio en L laminado blanco, soporte CPU incluido",
         385.0,
         1,
     ),
-    # OfiComfort España
+    (
+        "Mesa bar alta Tampere 2 plazas",
+        "Mesa alta 80×80 cm pino y estructura acero",
+        220.0,
+        1,
+    ),
+    (
+        "Mesa plegable Turku 120",
+        "Mesa comedor plegable 120 cm abedul, ideal espacios pequeños",
+        175.0,
+        1,
+    ),
+    (
+        "Estantería flotante Kalmar x3",
+        "Set 3 baldas flotantes roble 60 cm, soportes ocultos",
+        95.0,
+        1,
+    ),
+    (
+        "Mesa consola nórdica 120 cm",
+        "Consola delgada roble con un cajón central",
+        265.0,
+        1,
+    ),
+    (
+        "Mesa auxiliar esquinero Eskilstuna",
+        "Mesa rincón triangular pino blanco, 75 cm",
+        115.0,
+        1,
+    ),
+    (
+        "Mesa escritorio Linköping 140",
+        "Escritorio amplio 140×70 cm, tablero roble, patas horquilla",
+        420.0,
+        1,
+    ),
+    (
+        "Mesa comedor redonda Örebro 120",
+        "Mesa redonda 120 cm roble macizo, base cruzada",
+        750.0,
+        1,
+    ),
+    (
+        "Mesa auxiliar apilable Luleå x2",
+        "Set 2 mesas apilables pino natural, alturas 45/55 cm",
+        145.0,
+        1,
+    ),
+    (
+        "Mesa comedor mármol Göteborg",
+        "Mesa 180 cm tapa mármol Carrara, patas acero inox",
+        1680.0,
+        1,
+    ),
+    (
+        "Mesa escritorio salud Umeå",
+        "Mesa elevable eléctrica 120×60 cm, roble, 3 alturas memoria",
+        680.0,
+        1,
+    ),
+    (
+        "Mesa de cocina Borås",
+        "Mesa 140 cm madera de pino con cajón integrado",
+        310.0,
+        1,
+    ),
+    (
+        "Estantería escalera Rosskär 5P",
+        "Estantería escalera asimétrica roble natural, 5 baldas",
+        199.0,
+        1,
+    ),
+    (
+        "Mesa nido Härnösand x3",
+        "Set 3 mesas nido roble, almacenamiento compacto",
+        220.0,
+        1,
+    ),
+    (
+        "Mesa centro redonda Sundsvall",
+        "Mesa 90 cm base cruzada pino blanco con bandeja inferior",
+        185.0,
+        1,
+    ),
+    (
+        "Mesa escritorio Skövde pliegue",
+        "Escritorio plegable de pared 90 cm, carpetón con ganchos",
+        210.0,
+        1,
+    ),
+    (
+        "Mesa comedor industrial Gävle",
+        "Mesa 200 cm tablero pino encerado, patas horquilla acero negro",
+        840.0,
+        1,
+    ),
+    (
+        "Mesa oval jardín Helsingborg",
+        "Mesa 180 cm resina tejida color blanco, 8 plazas",
+        560.0,
+        1,
+    ),
+    (
+        "Mesa alta cocina Ystad",
+        "Mesa alta 60×60 cm pino macizo, 4 taburetes incluidos",
+        380.0,
+        1,
+    ),
+    (
+        "Mesa reuniones circular Västerås",
+        "Mesa 120 cm redonda pied tulip, tablero laminado blanco",
+        490.0,
+        1,
+    ),
+    (
+        "Mesa plegable pared Falun",
+        "Mesa abatible pared 60×90 cm, madera de roble barnizado",
+        165.0,
+        1,
+    ),
+    (
+        "Mesa comedor Kristianstad vintage",
+        "Mesa 160 cm pino macizo envejecido, patas torneadas",
+        670.0,
+        1,
+    ),
+    (
+        "Estantería cube Skellefteå 9 módulos",
+        "Sistema 9 cubos combinables lacados blanco, 110×110 cm",
+        290.0,
+        1,
+    ),
+    (
+        "Mesa de centro Norrköping hexagonal",
+        "Mesa hexagonal 80 cm, roble macizo, patas palillo negro",
+        265.0,
+        1,
+    ),
+    (
+        "Mesa TV suelo Trollhättan 180",
+        "Mueble TV bajo 180 cm, 2 cajones y 2 puertas, roble",
+        470.0,
+        1,
+    ),
+    (
+        "Mesa escritorio Vänersborg Kids",
+        "Escritorio infantil 100 cm regulable en altura, pino blanco",
+        220.0,
+        1,
+    ),
+    (
+        "Mesa comedor Borlänge extens.",
+        "Mesa extensible 120-180 cm contrachapado roble con detalle negro",
+        610.0,
+        1,
+    ),
+    (
+        "Mesa auxiliar cubo Piteå",
+        "Mesita cubo 40×40 cm fresno natural, 2 alturas disponibles",
+        85.0,
+        1,
+    ),
+    (
+        "Estantería bibliofilia Karlskrona",
+        "Librería alta 5×2 módulos abiertos lacados gris",
+        380.0,
+        1,
+    ),
+    (
+        "Mesa comedor piedra Nacka",
+        "Mesa 160 cm tapa piedra sinterizada, patas acero carbono",
+        1240.0,
+        1,
+    ),
+    (
+        "Mesa escritorio esquinero Motala",
+        "Escritorio esquinero 160×120 cm, tablero blanco, ruedas",
+        450.0,
+        1,
+    ),
+    (
+        "Mesa plegable multiusos Östersund",
+        "Mesa plegable 180×90 cm, superficie laminada blanca",
+        155.0,
+        1,
+    ),
+    (
+        "Mesa alta bistró Arvika",
+        "Mesa bistro alta 70 cm Ø con asiento giratorio plegable",
+        210.0,
+        1,
+    ),
+    # ── OfiComfort España (2) ── 40 productos ────────────────────────────────
     (
         "Silla ejecutiva TechPro 600",
-        "Silla de dirección con reposacabezas y soporte lumbar ajustable",
+        "Dirección con reposacabezas y soporte lumbar ajustable",
         420.0,
         2,
     ),
-    (
-        "Silla operativa ErgoNet",
-        "Silla de malla transpirable, brazos 4D regulables",
-        280.0,
-        2,
-    ),
+    ("Silla operativa ErgoNet", "Malla transpirable, brazos 4D regulables", 280.0, 2),
     (
         "Silla de visitas Confort Plus",
-        "Silla apilable para salas de reuniones, asiento acolchado",
+        "Apilable salas reuniones, asiento acolchado",
         95.0,
         2,
     ),
     (
         "Silla gaming Racing XL",
-        "Silla gaming con soporte lumbar y reposapiés extensible",
+        "Gaming con soporte lumbar y reposapiés extensible",
         310.0,
         2,
     ),
     (
         "Taburete elevable OfiBar",
-        "Taburete de cocina u oficina en pie cromado, asiento regulable",
+        "Taburete pie cromado, asiento regulable cocina u oficina",
         115.0,
         2,
     ),
     (
         "Silla plegable Slim",
-        "Silla plegable para espacios polivalentes, carga máx. 120 kg",
+        "Plegable espacios polivalentes, carga máx. 120 kg",
         55.0,
         2,
     ),
-    # Madera Noble Ibérica
+    (
+        "Silla ergonómica Hara Plus",
+        "Ergonómica premium con soporte pélvico activo, malla",
+        580.0,
+        2,
+    ),
+    (
+        "Silla de dirección Presidente XL",
+        "Dirección XL con reposapiés retráctil, cuero genuino negro",
+        750.0,
+        2,
+    ),
+    (
+        "Silla confidente eco cuero",
+        "Visitas 4 patas, asiento eco-cuero negro, apilable x4",
+        145.0,
+        2,
+    ),
+    (
+        "Silla reuniones giratorias Zoom",
+        "Giratoria sin brazos, ruedas blanda, malla gris",
+        195.0,
+        2,
+    ),
+    (
+        "Taburete de bar Nordic",
+        "Taburete madera haya y asiento tapizado gris 75 cm",
+        95.0,
+        2,
+    ),
+    (
+        "Silla apilable polipropileno Color",
+        "Apilable PP en 4 colores, uso interior/exterior",
+        38.0,
+        2,
+    ),
+    (
+        "Silla gaming Titan Pro Negro",
+        "Gaming ajustable 360°, apoyabrazos 4D, base 5 ruedas",
+        420.0,
+        2,
+    ),
+    (
+        "Silla escritorio júnior Estudio",
+        "Silla juvenil regulable, reposabrazos ajustables",
+        98.0,
+        2,
+    ),
+    (
+        "Silla ejecutiva Málaga",
+        "Cuero PU negro, cabecero estándar, base aluminio pulido",
+        360.0,
+        2,
+    ),
+    (
+        "Taburete giratorio sin respaldo Rondo",
+        "Taburete ajustable 45-65 cm, asiento acolchado negro",
+        88.0,
+        2,
+    ),
+    (
+        "Silla activa Bambach",
+        "Silla de montura para corrección postural en oficina",
+        490.0,
+        2,
+    ),
+    (
+        "Silla operativa LightMesh",
+        "Malla transpirable ultraligera, brazos abatibles",
+        210.0,
+        2,
+    ),
+    (
+        "Silla de visitas apilable Aran 4P",
+        "Pack 4 sillas metálicas negro con asiento vinilo negro",
+        280.0,
+        2,
+    ),
+    (
+        "Silla Eames réplica blanco",
+        "Réplica Eames polipropileno blanco, patas madera haya",
+        115.0,
+        2,
+    ),
+    (
+        "Taburete ajustable Atelier alto",
+        "Taburete de trabajo 55-85 cm, reposapiés integrado",
+        135.0,
+        2,
+    ),
+    (
+        "Silla de espera 3 plazas Fix",
+        "Banco espera 3 asientos acero cromado, asiento tapizado azul",
+        195.0,
+        2,
+    ),
+    (
+        "Silla recepción Aura giratoria",
+        "Recepcionista giratoria sin brazos, eco-cuero blanco",
+        230.0,
+        2,
+    ),
+    (
+        "Silla de ducha plegable Care",
+        "Silla ducha aluminio anodizado, antideslizante, 120 kg",
+        68.0,
+        2,
+    ),
+    (
+        "Silla alta regulable Stool Pro",
+        "Taburete ergonómico 60-80 cm con respaldo lumbar",
+        175.0,
+        2,
+    ),
+    (
+        "Silla ejecutiva Bilbao cuero blanco",
+        "Ejecutiva cuero premium blanco, base cromada",
+        520.0,
+        2,
+    ),
+    (
+        "Silla operativa Krak mesh",
+        "Operativa malla azul, ruedas ruido-silencioso",
+        245.0,
+        2,
+    ),
+    (
+        "Silla secretaria Compact S",
+        "Compacta sin apoyabrazos, altura 38-50 cm, polipropileno",
+        72.0,
+        2,
+    ),
+    (
+        "Silla Knoll réplica blanca",
+        "Réplica silla Knoll plástico blanco patas acero inox",
+        140.0,
+        2,
+    ),
+    (
+        "Silla balancín Kneeling ergonómica",
+        "Balancín de rodillas ergonómico, funda lavable negro",
+        190.0,
+        2,
+    ),
+    (
+        "Taburete madera maciza vintage",
+        "Taburete 45 cm madera de olmo macizo natural",
+        78.0,
+        2,
+    ),
+    (
+        "Silla operativa NeoFlex Plus",
+        "HD lumbar continuo, brazos 3D, ruedas blandas parquet",
+        315.0,
+        2,
+    ),
+    (
+        "Silla comedor acero Milán",
+        "Estructura acero cromado, asiento cuero PU negro",
+        135.0,
+        2,
+    ),
+    (
+        "Silla gaming RGB VR Pro",
+        "Gaming RGB integrado, ajuste ángulo respaldo 90-170°",
+        370.0,
+        2,
+    ),
+    (
+        "Silla visitante cuero Madrid",
+        "Cuero marrón cognac 4 patas, metalico, sin ruedas",
+        178.0,
+        2,
+    ),
+    (
+        "Taburete cuero alto Premium",
+        "Taburete cuero genuino negro, base giratoria cromada 75 cm",
+        245.0,
+        2,
+    ),
+    (
+        "Silla diseño Tulip réplica",
+        "Diseño Tulip, ABS blanco, pie aluminio pulido",
+        185.0,
+        2,
+    ),
+    (
+        "Silla asistencial Rehab Plus",
+        "Silla con apoyabrazos elevables certificada EN 12520",
+        320.0,
+        2,
+    ),
+    (
+        "Silla lectura bucket Lima",
+        "Silla bucket bucket bajo estudio, terciopelo verde",
+        165.0,
+        2,
+    ),
+    (
+        "Silla de director cine outdoor",
+        "Silla director plegable mariposa, lona beige marcos roble",
+        95.0,
+        2,
+    ),
+    # ── Madera Noble Ibérica S.A. (3) ── 40 productos ────────────────────────
     (
         "Armario ropero Formentera 3P",
-        "Armario 3 puertas correderas con espejo, interior equipado",
+        "3 puertas correderas con espejo, interior equipado",
         1150.0,
         3,
     ),
-    (
-        "Cómoda Guadalquivir 6 cajones",
-        "Cómoda 120 cm en madera de pino macizo, acabado natural",
-        320.0,
-        3,
-    ),
-    (
-        "Zapatero Marbella 18 pares",
-        "Zapatero 3 puertas abatibles en blanco mate",
-        185.0,
-        3,
-    ),
+    ("Cómoda Guadalquivir 6 cajones", "120 cm pino macizo, acabado natural", 320.0, 3),
+    ("Zapatero Marbella 18 pares", "3 puertas abatibles blanco mate", 185.0, 3),
     (
         "Aparador Ebro 3 puertas",
-        "Aparador rústico en roble envejecido con herrajes de forja",
+        "Rústico roble envejecido con herrajes de forja",
         710.0,
         3,
     ),
     (
-        "Vitrina Alhambra cristal",
-        "Vitrina 2 puertas con iluminación LED interior, 90×195 cm",
+        "Vitrina Alhambra cristal LED",
+        "2 puertas iluminación LED interior, 90×195 cm",
         590.0,
         3,
     ),
+    ("Librería Segura 7 módulos", "Sistema modular combinable roble oscuro", 460.0, 3),
     (
-        "Librería Segura 7 módulos",
-        "Sistema modular de estanterías combinables en roble oscuro",
-        460.0,
+        "Estantería industrial loft 5B",
+        "Tubo negro y tablero madera, 180×200 cm",
+        210.0,
         3,
     ),
-    # Textil Decoración Hogar
     (
-        "Alfombra bereber Tarifa",
-        "Alfombra tejida a mano 200×300 cm, lana natural cruda",
+        "Armario vestidor rincón Guadalupe",
+        "Armario esquinero abierto 80×80×180 cm, pino blanco",
+        540.0,
+        3,
+    ),
+    (
+        "Cómoda vintage Castellón 4 cajones",
+        "Cómoda pintada a mano, motivos florales",
         380.0,
-        4,
+        3,
     ),
     (
-        "Alfombra vinílica Mosaico",
-        "Alfombra vinílica lavable 160×230 cm, patrón geométrico",
-        125.0,
-        4,
-    ),
-    (
-        "Cojín terciopelo Nerja 50×50",
-        "Pack de 2 cojines decorativos en terciopelo verde botella",
-        45.0,
-        4,
-    ),
-    (
-        "Cortina oscureciente Dublin",
-        "Par de cortinas blackout 140×260 cm, gris antracita",
-        110.0,
-        4,
-    ),
-    (
-        "Edredón nórdico 400g Polar",
-        "Edredón de plumón sintético 400 g/m², cama 150",
-        135.0,
-        4,
-    ),
-    (
-        "Funda nórdica percal Mallorca",
-        "Funda nórdica 100% algodón percal 200 hilos, cama 150",
-        89.0,
-        4,
-    ),
-    # Iluminación Moderna
-    (
-        "Lámpara pie Arco Dorado",
-        "Lámpara de pie en metal dorado con pantalla de lino, altura 180 cm",
+        "Armario escobero Huelva",
+        "Armario escobero alto 2 puertas 55×35×180 cm, DM blanco",
         195.0,
-        5,
+        3,
     ),
     (
-        "Lámpara sobremesa Milano",
-        "Lámpara táctil 3 intensidades, base mármol blanco",
-        120.0,
-        5,
-    ),
-    (
-        "Plafón LED Techo Plano 60W",
-        "Plafón redondo 60 cm empotrable, luz cálida 3000 K",
+        "Zapatero banco entrada Almería",
+        "Banco zapatero 3 compartimentos abiertos, pino natural",
         145.0,
-        5,
+        3,
     ),
     (
-        "Tira LED RGB 5m Controller",
-        "Tira LED multicolor con mando a distancia y app",
-        48.0,
-        5,
+        "Aparador bajo salón Tajo 2P",
+        "Aparador bajo 2 puertas correderas, tablero roble claro",
+        350.0,
+        3,
     ),
     (
-        "Foco carril orientable TRIO",
-        "Conjunto 3 focos carril GU10 8W orientables, acabado negro mate",
-        130.0,
-        5,
+        "Armario ropero 2 puertas Cádiz",
+        "2 puertas abisagradas espejo, interior barra + balda",
+        780.0,
+        3,
     ),
     (
-        "Lámpara Arco Arc Ámbar",
-        "Lámpara de arco con brazo articulado y pantalla ambarina",
+        "Cómoda Asturias 3 cajones",
+        "Cómoda estrecha 80 cm, 3 cajones ancho, pino encerado",
+        270.0,
+        3,
+    ),
+    (
+        "Librería mural Segovia 8 cubos",
+        "8 cubos abiertos combinables, lacado gris claro",
+        320.0,
+        3,
+    ),
+    (
+        "Armario colonial Extremadura 4P",
+        "4 puertas madera maciza con incrustaciones de caoba recuperada",
+        1350.0,
+        3,
+    ),
+    (
+        "Aparador bodega Rioja",
+        "Mueble vinoteca 12 botellas + 2 cajones, roble oscuro",
+        480.0,
+        3,
+    ),
+    (
+        "Estantería garaje acero 5 alturas",
+        "Estantería metálica 180×90×40 cm, carga 150 kg/balda",
+        145.0,
+        3,
+    ),
+    (
+        "Cómoda baño 3 cajones Nerja",
+        "Cómoda auxiliar baño 80 cm, lacado blanco brillo, soft-close",
+        290.0,
+        3,
+    ),
+    (
+        "Armario zapatero giró Tarifa 16P",
+        "Zapatero giratorio 16 pares, pino y espejo frontal",
+        215.0,
+        3,
+    ),
+    (
+        "Estantería rústica Badajoz 6B",
+        "6 baldas hierro y madera pino encerado",
+        285.0,
+        3,
+    ),
+    (
+        "Aparador vitrina Évora",
+        "Aparador 2 puertas ciegas + 2 con cristal, cerezo",
+        830.0,
+        3,
+    ),
+    (
+        "Cómoda tocador Sigüenza",
+        "Tocador 100 cm con espejo ovalado incluido, pino blanco",
+        410.0,
+        3,
+    ),
+    (
+        "Armario infantil Bosque 3P",
+        "3 puertas pintadas motivos bosque, 120 cm",
+        490.0,
+        3,
+    ),
+    (
+        "Librería mural Salamanca escalera",
+        "Librería escalera reversible 5 estantes, blanco/roble",
+        215.0,
+        3,
+    ),
+    (
+        "Armario baño suspendido Portimão",
+        "Mueble bajo lavabo 80 cm 2 cajones, lacado blanco",
+        310.0,
+        3,
+    ),
+    (
+        "Aparador rústico medieval Ávila",
+        "Aparador 3 puertas talladas a mano, encina maciza",
+        960.0,
+        3,
+    ),
+    (
+        "Cómoda industrial Sagunto 5C",
+        "5 cajones marco metálico negro, interior roble",
+        445.0,
+        3,
+    ),
+    (
+        "Estantería flotante rústica Zamora x4",
+        "Set 4 baldas flotantes madera de pino macizo encerado 80 cm",
+        155.0,
+        3,
+    ),
+    (
+        "Armario ropero Pamplona 6P",
+        "6 puertas correderas espejo completo 270 cm, interior modular",
+        1690.0,
+        3,
+    ),
+    (
+        "Cómoda Córdoba 8 cajones",
+        "150 cm madera maciza nogal, tiradores dorados",
+        680.0,
+        3,
+    ),
+    (
+        "Aparador rincón Zaragoza",
+        "Aparador esquinero 3 puertas, DM blanco liso, patas cónicas",
+        380.0,
+        3,
+    ),
+    (
+        "Armario Kit Cuenca ensamble",
+        "Armario 180 cm para montar, pino lacado blanco",
+        295.0,
+        3,
+    ),
+    (
+        "Librería Valladolid 4×2 módulos",
+        "8 módulos open roble claro con 4 puertas abatibles",
+        420.0,
+        3,
+    ),
+    (
+        "Estantería herramienta Teruel 7B",
+        "Estantería taller 7 baldas ajustables, acero galvanizado",
+        175.0,
+        3,
+    ),
+    (
+        "Aparador rústico Segovia 2 cajones",
+        "Aparador macizo 140 cm pino encerado, 2 cajones + 2 puertas",
+        550.0,
+        3,
+    ),
+    (
+        "Cómoda blanca provenzal Ronda",
+        "Cómoda 100 cm pintada blanco envejecido, 4 cajones",
+        360.0,
+        3,
+    ),
+    (
+        "Armario señora Gijón 5P",
+        "5 puertas batientes, interior con 3 módulos, roble natural",
+        1280.0,
+        3,
+    ),
+    (
+        "Librería gigante Alcalá 3m",
+        "Composición 3 módulos Torre 200 cm cada uno, lacado blanco",
+        870.0,
+        3,
+    ),
+    (
+        "Estantería escalera duo Burgos",
+        "Estantería escalera 2 uni. simétricas roble+negro",
+        340.0,
+        3,
+    ),
+    # ── Dormitorios Premium S.L. (4) ── 40 productos ─────────────────────────
+    (
+        "Cama tapizada Élite 150",
+        "150×190 cabecero acolchado terciopelo gris grafito",
+        1100.0,
+        4,
+    ),
+    (
+        "Cama con cajones Dalia 90",
+        "90×190 con 4 cajones y somier láminas incluido",
+        540.0,
+        4,
+    ),
+    (
+        "Cabecero tapizado Ágora 160",
+        "160 cm herradura, tela bouclé color arena",
+        245.0,
+        4,
+    ),
+    (
+        "Mesita noche flotante Box",
+        "Mesita suspendida con cajón y estante, roble claro",
         165.0,
-        5,
+        4,
     ),
-    # Colchones Descanso Plus
+    (
+        "Mesita noche Triana 2 cajones",
+        "Madera maciza, 2 cajones con cierre suave",
+        130.0,
+        4,
+    ),
     (
         "Colchón viscoelástico Noche 150",
-        "Colchón 150×190 cm, núcleo viscoelástico 5 cm, firmeza media",
+        "150×190 cm núcleo viscoelástico 5 cm, firmeza media",
         490.0,
-        6,
+        4,
     ),
     (
-        "Colchón muelles ensacados Sueño",
-        "Colchón 150×190 cm, 1000 muelles independientes más viscoelástico",
+        "Colchón muelles ensacados Sueño 150",
+        "150×190 cm 1000 muelles independientes más viscoelástico",
         680.0,
-        6,
+        4,
     ),
     (
         "Colchón látex Natural 135",
-        "Colchón látex 100% natural 135×190 cm, certificado Oeko-Tex",
+        "135×190 cm látex 100% natural, certificado Oeko-Tex",
         590.0,
-        6,
+        4,
     ),
     (
-        "Topper viscoelástico 5cm",
-        "Topper adaptable 150×190 cm para renovar tu colchón actual",
+        "Topper viscoelástico 5 cm 150",
+        "Topper adaptable 150×190 cm para renovar colchón",
         149.0,
-        6,
+        4,
     ),
     (
         "Almohada cervical Memory",
         "Almohada ergonómica viscoelástica, certificada ortopédica",
         65.0,
-        6,
+        4,
     ),
     (
         "Somier articulado eléctrico 150",
-        "Somier elevable con motor silencioso, mando Bluetooth",
+        "Elevable motor silencioso mando Bluetooth",
         720.0,
-        6,
-    ),
-    # Dormitorios Premium
-    (
-        "Cama tapizada Élite 150",
-        "Cama 150×190 con cabecero acolchado en terciopelo gris grafito",
-        1100.0,
-        7,
+        4,
     ),
     (
-        "Cama con cajones Dalia 90",
-        "Cama 90×190 con 4 cajones y somier de láminas incluido",
-        540.0,
-        7,
-    ),
-    (
-        "Cabecero tapizado Ágora 160",
-        "Cabecero 160 cm en herradura, tela bouclé color arena",
-        245.0,
-        7,
-    ),
-    (
-        "Mesita noche flotante Box",
-        "Mesita suspendida con un cajón y estante abierto, roble claro",
-        165.0,
-        7,
-    ),
-    (
-        "Mesita noche Triana 2 cajones",
-        "Mesita de madera maciza, 2 cajones con cierre suave",
-        130.0,
-        7,
-    ),
-    (
-        "Armario infantil 2 puertas Pino",
-        "Armario pequeño 90 cm en pino macizo pintado blanco",
-        395.0,
-        7,
-    ),
-    # Aceralia Metálicos
-    (
-        "Estantería industrial loft 5B",
-        "Estantería de tubo negro y tablero de madera, 180×200 cm",
-        210.0,
-        8,
-    ),
-    (
-        "Perchero de pie Manhattan",
-        "Perchero industrial 180 cm, tubo de acero negro, 8 ganchos",
-        79.0,
-        8,
-    ),
-    (
-        "Banco recibidor hierro Rouen",
-        "Banco con estructura de hierro forjado y asiento de madera",
-        155.0,
-        8,
-    ),
-    (
-        "Mueble TV industrial Loft 180",
-        "Mueble TV en acero laminado y tablero de MDF oscuro",
-        340.0,
-        8,
-    ),
-    (
-        "Papelera metálica rejilla",
-        "Papelera de oficina en chapa de acero perforada, 20 L",
-        28.0,
-        8,
-    ),
-    (
-        "Archivador metálico 4 cajones",
-        "Archivador de acero con cierre de seguridad, certificado A4",
-        260.0,
-        8,
-    ),
-    # Vintage Wood Factory
-    (
-        "Mesa de granja Provençal",
-        "Mesa rectangular 180 cm en pino macizo encerado estilo provenzal",
-        760.0,
-        9,
-    ),
-    (
-        "Aparador vintage Colmar",
-        "Aparador 3 puertas pintado en blanco roto con detalles de madera cruda",
-        680.0,
-        9,
-    ),
-    (
-        "Silla Windsor madera natural",
-        "Silla Windsor respaldo de varillas, madera de olmo vaporizada",
-        145.0,
-        9,
-    ),
-    (
-        "Baúl de madera Alsacia",
-        "Baúl almacenaje en madera de pino envejecida, apertura frontal",
-        230.0,
-        9,
-    ),
-    (
-        "Cama canapé rústica Rouen",
-        "Cama canapé 135×190 en madera de roble macizo, altura 42 cm",
-        890.0,
-        9,
-    ),
-    (
-        "Espejo marco madera bruta",
-        "Espejo ovalado 120×180 con marco de madera recuperada",
-        295.0,
-        9,
-    ),
-    # Cocinas & Complementos
-    (
-        "Módulo base cocina 60 Blanco",
-        "Módulo inferior 60 cm con cajón y puerta, acabado lacado blanco",
-        195.0,
-        10,
-    ),
-    (
-        "Campana extractora Isla 90cm",
-        "Campana de isla 90 cm, 3 velocidades, iluminación LED",
-        490.0,
-        10,
-    ),
-    (
-        "Taburete cocina alto Bamberg",
-        "Taburete alto apilable en haya lacada, asiento tapizado gris",
-        95.0,
-        10,
-    ),
-    (
-        "Fregadero granito negro 1 seno",
-        "Fregadero de granito negro 1 seno con escurridor integrado",
-        345.0,
-        10,
-    ),
-    (
-        "Encimera laminada roble natural",
-        "Tablero de cocina 300×60×3,8 cm en laminado roble natural",
-        185.0,
-        10,
-    ),
-    # Terrazo y Exterior
-    (
-        "Conjunto jardín ratán 4 sillas",
-        "Mesa y 4 sillones en ratán sintético blanco, cojines incluidos",
-        1250.0,
-        11,
-    ),
-    (
-        "Tumbona playa plegable Premium",
-        "Tumbona reclinable 7 posiciones, aluminio anodizado y textilene",
-        195.0,
-        11,
-    ),
-    (
-        "Mesa bistró exterior Mónaco",
-        "Mesa redonda 70 cm en hierro fundido color Negro Oxford",
-        125.0,
-        11,
-    ),
-    (
-        "Hamaca colgante con soporte",
-        "Hamaca de algodón trenzado con soporte de acero galvanizado",
-        180.0,
-        11,
-    ),
-    (
-        "Parasol excentrico Ø350 cm",
-        "Parasol con mástil lateral, tela impermeable UV50+",
-        320.0,
-        11,
-    ),
-    # Infancia Creativa
-    (
-        "Cama evolutiva Nube 70×140",
-        "Cama infantil 70×140 cm convertible en cama de 140×190",
-        420.0,
-        12,
-    ),
-    (
-        "Escritorio infantil Estudio Plus",
-        "Escritorio 120 cm regulable en altura y ángulo, con cajones",
-        265.0,
-        12,
-    ),
-    (
-        "Armario infantil Bosque 3P",
-        "Armario 3 puertas pintadas con motivos de bosque, 120 cm",
-        490.0,
-        12,
-    ),
-    (
-        "Estantería árbol escalera Kids",
-        "Estantería escalera en MDF, 5 baldas, acabado turquesa",
-        135.0,
-        12,
-    ),
-    (
-        "Silla regulable estudio Joven",
-        "Silla juvenil con altura y reposabrazos ajustables",
-        98.0,
-        12,
-    ),
-    # DesignPro Contract
-    (
-        "Mesa reuniones ovalada 10P",
-        "Mesa de reuniones 300×120 cm en laminado wengué, patas metálicas",
-        1850.0,
-        13,
-    ),
-    (
-        "Silla confidente eco cuero",
-        "Silla de visitas 4 patas, asiento eco-cuero negro, apilable hasta x4",
-        145.0,
-        13,
-    ),
-    (
-        "Recepción mostrador curvo",
-        "Mostrador de recepción curvo 2m en MDF blanco con zócalo iluminado",
-        2100.0,
-        13,
-    ),
-    (
-        "Sofá modular oficina 3+2",
-        "Conjunto de sofás modulares para sala de espera, tela ignífuga",
-        980.0,
-        13,
-    ),
-    (
-        "Biombo divisor acústico 4 hojas",
-        "Biombo de tela ignífuga con absorción acústica, 4 hojas 60×180 cm",
-        340.0,
-        13,
-    ),
-    # Arte y Cerámica España
-    (
-        "Espejo redondo Arco 80cm",
-        "Espejo de pared redondo con marco de madera natural ø80 cm",
-        185.0,
-        14,
-    ),
-    (
-        "Jarrón cerámica artesanal Almería",
-        "Jarrón alto de cerámica vidriada en turquesa, fabricación artesanal",
-        95.0,
-        14,
-    ),
-    (
-        "Cuadro abstracto díptico 100×70",
-        "Díptico de lienzo pintado a mano, técnica mixta sobre bastidor",
-        210.0,
-        14,
-    ),
-    (
-        "Portacandelas hierro forjado x3",
-        "Conjunto de 3 portavelas de distintas alturas en hierro negro",
-        65.0,
-        14,
-    ),
-    (
-        "Reloj de pared industrial 60cm",
-        "Reloj ø60 cm en metal negro con esfera estilo industrial vintage",
-        88.0,
-        14,
-    ),
-    # Europa Mueble Import
-    (
-        "Sofá cama italiano Brindisi",
-        "Sofá cama 3 plazas con mecanismo italiano de fácil apertura",
-        920.0,
-        15,
-    ),
-    (
-        "Mesa de comedor mármol 6P",
-        "Mesa 180 cm con tapa de mármol Carrara y pies de acero inox.",
-        1680.0,
-        15,
-    ),
-    (
-        "Silla comedor acero Milán",
-        "Silla de comedor estructura acero cromado y asiento de cuero pu",
-        135.0,
-        15,
-    ),
-    (
-        "Aparador diseño italiano Lumina",
-        "Aparador lacado en blanco brillante con patas de latón dorado",
-        990.0,
-        15,
-    ),
-    (
-        "Cama de diseño Venezia King",
-        "Cama 180×200 cm con cabecero de madera lacada y somier listo",
+        "Cama de diseño Venezia King 180",
+        "180×200 cabecero madera lacada, somier listo",
         1750.0,
-        15,
+        4,
     ),
-    # Tapicerías Andrés Hermanos
+    (
+        "Cama canapé rústica Rouen 135",
+        "Canapé 135×190 roble macizo, altura 42 cm",
+        890.0,
+        4,
+    ),
     (
         "Cabecero tapizado Kensington 150",
-        "Cabecero 150 cm en capitoné con botones en terciopelo antelope",
+        "150 cm capitoné botones terciopelo antelope",
         310.0,
-        16,
+        4,
     ),
     (
-        "Sofá orejero Chesterfield",
-        "Butaca orejera estilo Chesterfield en cuero genuino cognac",
-        780.0,
-        16,
+        "Cama evolutiva Nube 70×140",
+        "Infantil 70×140 cm convertible cama 140×190",
+        420.0,
+        4,
     ),
     (
-        "Silla comedor tapizada Kali",
-        "Silla de comedor con respaldo capitoné, patas negro mate",
+        "Colchón viscoelástico 90 cm",
+        "90×190 cm firmeza media, funda desenfundable",
+        320.0,
+        4,
+    ),
+    (
+        "Somier madera láminas 150",
+        "Somier 150×190 pino macizo 28 láminas flexibles",
         185.0,
-        16,
+        4,
     ),
     (
-        "Banco pie cama tapizado 140",
-        "Banco acolchado para pie de cama 140 cm, tejido bouclé gris",
-        220.0,
-        16,
-    ),
-    # Estilo Nórdico Valencia
-    (
-        "Estantería escalera roble 5P",
-        "Estantería escalera asimétrica en roble natural, 5 baldas abiertas",
-        199.0,
-        17,
+        "Cama infantil Estrella 90",
+        "Cama 90 cm con protectores incluidos, pino blanco",
+        350.0,
+        4,
     ),
     (
-        "Mesa consola nórdica 120 cm",
-        "Consola delgada en madera de roble con un cajón central",
-        265.0,
-        17,
+        "Cama nido juvenil 90+90",
+        "Cama nido 2×90 extraíble con 4 cajones en total",
+        680.0,
+        4,
     ),
     (
-        "Silla comedor Eames replica",
-        "Réplica silla Eames en polipropileno blanco, patas madera de haya",
-        115.0,
-        17,
+        "Colchón HR Super 135",
+        "Espuma HR 30 kg/m³ bicara, 24 cm total, funda 3D",
+        370.0,
+        4,
     ),
     (
-        "Colgador de pared 6 ganchos",
-        "Perchero de pared en madera de roble con 6 ganchos metálicos",
-        58.0,
-        17,
+        "Mesita tocador Hollywood 100",
+        "Tocador 100 cm espejo guirnalda, 3 cajones, blanco",
+        390.0,
+        4,
     ),
     (
-        "Mesa noche flotante Oak",
-        "Mesita flotante 45×35 cm en chapa de roble con cajón",
-        140.0,
-        17,
+        "Cama tapizada Bruma 135 gris",
+        "135×190 cabecero bajo tapizado gris perla, patas acero",
+        780.0,
+        4,
+    ),
+    (
+        "Cama de madera maciza Pirineos 150",
+        "150×190 madera de pino macizo natural, estilo rústico",
+        650.0,
+        4,
+    ),
+    (
+        "Cabecero panel nórdico Helston 180",
+        "180 cm tablero tapizado 4 módulos, terciopelo azul",
+        420.0,
+        4,
+    ),
+    (
+        "Edredón nórdico 400g Polar 150",
+        "Plumón sintético 400 g/m², cama 150, reversible",
+        135.0,
+        4,
+    ),
+    (
+        "Colchón infantil Cool Kids 90",
+        "90×190 bienestar infantil, núcleo HR + viscoelástico top",
+        240.0,
+        4,
+    ),
+    (
+        "Cama abatible horizontal Zeus 90",
+        "Cama abatible pared 90 cm con escritorio integrado",
+        1100.0,
+        4,
+    ),
+    (
+        "Mesita noche industrial Quito",
+        "Mesita tubo negro + tablero roble natural, 1 cajón",
+        148.0,
+        4,
+    ),
+    (
+        "Somier tapizado Ronda 150",
+        "Somier tapizado clic 150×190, tejido gris grafito",
+        295.0,
+        4,
+    ),
+    (
+        "Cama con baúl Denver 150",
+        "150×190 con superficie acolchada y baúl 200 L",
+        920.0,
+        4,
+    ),
+    (
+        "Colchón Spring Luxury 150",
+        "150×190 muelles ensacados + látex + viscoelástico, 28 cm",
+        850.0,
+        4,
+    ),
+    (
+        "Cabecero madera flotante Goa 160",
+        "160 cm macizo roble oscuro montaje oculto",
+        295.0,
+        4,
+    ),
+    (
+        "Cama tapizada Oasis 90 junior",
+        "90 cm cabecero redondeado, tela antimanchas azul",
+        395.0,
+        4,
+    ),
+    (
+        "Almohada plumón natural 90 cm",
+        "Plumón natural 3 cámaras 90 cm, certificado Responsible Down",
+        88.0,
+        4,
+    ),
+    (
+        "Colchón HR Transpirable Brisa 150",
+        "150×190 fundas 3D muy transpirables, 18 cm, HR",
+        420.0,
+        4,
+    ),
+    (
+        "Cama madera Almería 135 cajones",
+        "135×190 roble con 6 cajones frontales, tablero MDF",
+        760.0,
+        4,
+    ),
+    (
+        "Somier nórdico Oslo 135 láminas",
+        "Somier 135×190 haya maciza 25 láminas Flex",
+        165.0,
+        4,
+    ),
+    (
+        "Cama de forja clásica Sevilla 150",
+        "Cama 150×190 forja pintada negro, diseño clásico",
+        590.0,
+        4,
+    ),
+    (
+        "Colchón cervical Ortopédica 150",
+        "Colchón premium ortopédico 150 cm, 5 zonas, firmeza alta",
+        760.0,
+        4,
+    ),
+    (
+        "Cama nórdica box spring Copenhague",
+        "Box spring 150×200 con sommier integrado, tapizado gris",
+        1380.0,
+        4,
     ),
 ]
 
 # ---------------------------------------------------------------------------
-# Clientes
+# Clientes – 150
 # ---------------------------------------------------------------------------
 _NOMBRES = [
     "María",
@@ -732,6 +1273,32 @@ _NOMBRES = [
     "Rebeca",
     "Iván",
     "Pilar",
+    "Enrique",
+    "Mónica",
+    "Ricardo",
+    "Lorena",
+    "Borja",
+    "Natalia",
+    "Emilio",
+    "Verónica",
+    "Ignacio",
+    "Rosa",
+    "Fernando",
+    "Amparo",
+    "Roberto",
+    "Mercedes",
+    "Alberto",
+    "Lola",
+    "Pere",
+    "Mireia",
+    "Jordi",
+    "Sandra",
+    "Xavi",
+    "Núria",
+    "Martí",
+    "Montserrat",
+    "Toni",
+    "Assumpta",
 ]
 _APELLIDOS = [
     "González",
@@ -789,11 +1356,23 @@ _APELLIDOS = [
     "Estévez",
     "Garrido",
     "Molina",
+    "Herrera",
+    "Jiménez",
+    "Muñoz",
+    "Giménez",
+    "Llorente",
+    "Casado",
+    "Gil",
+    "Fuentes",
+    "Cabrera",
+    "Pascual",
 ]
 _CIUDADES_CP = [
     ("Madrid", "28001"),
     ("Madrid", "28010"),
     ("Madrid", "28045"),
+    ("Madrid", "28020"),
+    ("Madrid", "28034"),
     ("Barcelona", "08001"),
     ("Barcelona", "08015"),
     ("Barcelona", "08030"),
@@ -802,9 +1381,7 @@ _CIUDADES_CP = [
     ("Sevilla", "41001"),
     ("Sevilla", "41013"),
     ("Zaragoza", "50001"),
-    ("Zaragoza", "50010"),
     ("Málaga", "29001"),
-    ("Málaga", "29013"),
     ("Murcia", "30001"),
     ("Bilbao", "48001"),
     ("Alicante", "03001"),
@@ -815,6 +1392,12 @@ _CIUDADES_CP = [
     ("Las Palmas", "35001"),
     ("Santander", "39001"),
     ("San Sebastián", "20001"),
+    ("Toledo", "45001"),
+    ("Salamanca", "37001"),
+    ("Burgos", "09001"),
+    ("Cáceres", "10001"),
+    ("Albacete", "02001"),
+    ("Logroño", "26001"),
 ]
 _CALLES = [
     "Gran Vía",
@@ -837,6 +1420,11 @@ _CALLES = [
     "Avenida del Mediterráneo",
     "Calle Toledo",
     "Calle San Fernando",
+    "Calle Larios",
+    "Avenida Alfonso XIII",
+    "Calle Real",
+    "Paseo del Parque",
+    "Avenida de Andalucía",
 ]
 _DESCRIPCIONES_ALBARAN = [
     "Renovación completa del salón",
@@ -848,7 +1436,7 @@ _DESCRIPCIONES_ALBARAN = [
     "Cambio de dormitorio principal",
     "Muebles terraza verano",
     "Reposición mobiliario tras mudanza",
-    "Regalo boda - equipo cocina/comedor",
+    "Regalo boda — equipo cocina/comedor",
     "Segunda vivienda vacacional",
     "Actualización muebles de cocina",
     "Mobiliario zona de trabajo",
@@ -856,6 +1444,14 @@ _DESCRIPCIONES_ALBARAN = [
     "Juego de dormitorio infantil",
     "Reforma integral dormitorio principal",
     "Compra puntual artículo único",
+    "Equipamiento sala de estar completo",
+    "Muebles dormitorio invitados",
+    "Renovación comedor y zona office",
+    "Terraza y jardín primavera",
+    "Dormitorio juvenil completo",
+    "Muebler oficina en casa",
+    "Complementos dormitorio principal",
+    "Salón y comedor integrado",
 ]
 
 
@@ -877,6 +1473,7 @@ def _wipe(db: Session):
     db.query(DeliveryNoteLineDB).delete()
     db.query(DeliveryNoteDB).delete()
     db.query(MovementDB).delete()
+    db.query(StripeCheckoutDB).delete()
     db.query(ProductDB).delete()
     db.query(CustomerDB).delete()
     db.query(SupplierDB).delete()
@@ -892,7 +1489,7 @@ def _insert_providers_and_products(db: Session):
         p = SupplierDB(name=nombre, contact=contacto)
         db.add(p)
         prov_objs.append(p)
-    db.flush()  # obtener IDs
+    db.flush()
 
     for nombre, desc, precio, prov_idx in PRODUCTOS:
         db.add(
@@ -909,44 +1506,60 @@ def _insert_providers_and_products(db: Session):
 # ---------------------------------------------------------------------------
 # Insertar clientes
 # ---------------------------------------------------------------------------
-def _insert_clients(db: Session, n: int = 100) -> list:
+def _insert_clients(db: Session, n: int = 150) -> list:
     used_emails: set = set()
     used_dnis: set = set()
     clients = []
 
     for i in range(n):
         nombre = _NOMBRES[i % len(_NOMBRES)]
-        apellido = _APELLIDOS[i % len(_APELLIDOS)]
-        # apellido compuesto para el 40% de los clientes
-        if random.random() < 0.4:
-            apellido2 = _APELLIDOS[(i + 7) % len(_APELLIDOS)]
-            apellidos = f"{apellido} {apellido2}"
-        else:
-            apellidos = apellido
+        apellido1 = _APELLIDOS[i % len(_APELLIDOS)]
+        apellido2 = _APELLIDOS[(i * 3 + 7) % len(_APELLIDOS)]
+        # apellido compuesto siempre para mayor realismo
+        apellidos = f"{apellido1} {apellido2}"
 
-        # email único
-        slug = f"{nombre.lower().replace(' ', '')}.{apellidos.split()[0].lower()}"
-        email = f"{slug}@gmail.com"
+        slug = (
+            nombre.lower()
+            .replace("á", "a")
+            .replace("é", "e")
+            .replace("í", "i")
+            .replace("ó", "o")
+            .replace("ú", "u")
+            .replace("ñ", "n")
+            .replace(" ", "")
+        )
+        slug2 = (
+            apellido1.lower()
+            .replace("á", "a")
+            .replace("é", "e")
+            .replace("í", "i")
+            .replace("ó", "o")
+            .replace("ú", "u")
+            .replace("ñ", "n")
+        )
+        email = f"{slug}.{slug2}@gmail.com"
         counter = 1
         while email in used_emails:
-            email = f"{slug}{counter}@gmail.com"
+            email = f"{slug}.{slug2}{counter}@gmail.com"
             counter += 1
         used_emails.add(email)
 
-        ciudad, cp = random.choice(_CIUDADES_CP)
+        ciudad, cp = _CIUDADES_CP[i % len(_CIUDADES_CP)]
         c = CustomerDB(
             name=nombre,
             surnames=apellidos,
             dni=_gen_dni(used_dnis),
             email=email,
             phone1=f"6{random.randint(10, 99)}{random.randint(100000, 999999)}",
-            phone2=f"9{random.randint(10, 99)}{random.randint(100000, 999999)}"
-            if random.random() < 0.35
-            else None,
-            street=random.choice(_CALLES),
-            house_number=str(random.randint(1, 150)),
+            phone2=(
+                f"9{random.randint(10, 99)}{random.randint(100000, 999999)}"
+                if random.random() < 0.35
+                else None
+            ),
+            street=_CALLES[i % len(_CALLES)],
+            house_number=str(random.randint(1, 180)),
             floor_entrance=random.choice(
-                ["1ºA", "1ºB", "2ºA", "2ºB", "3ºA", "3ºC", "Bajo", "Ático"]
+                ["1ºA", "1ºB", "2ºA", "2ºB", "3ºA", "3ºC", "Bajo", "Ático", "4ºD"]
             )
             if random.random() < 0.55
             else None,
@@ -961,50 +1574,217 @@ def _insert_clients(db: Session, n: int = 100) -> list:
 
 
 # ---------------------------------------------------------------------------
-# Insertar albaranes y movimientos asociados
+# Helpers para _insert_orders
+# ---------------------------------------------------------------------------
+def _pick_estado(dias_transcurridos: int) -> str:
+    """Devuelve un estado de albarán coherente con su antigüedad."""
+    r = random.random()
+    if dias_transcurridos > 180:
+        if r < 0.75:
+            return "ENTREGADO"
+        if r < 0.90:
+            return "ALMACEN"
+        return "RUTA"
+    if dias_transcurridos > 60:
+        if r < 0.50:
+            return "ENTREGADO"
+        if r < 0.70:
+            return "RUTA"
+        if r < 0.85:
+            return "ALMACEN"
+        return "FIANZA"
+    # Reciente → más en proceso
+    if r < 0.35:
+        return "FIANZA"
+    if r < 0.60:
+        return "ALMACEN"
+    if r < 0.80:
+        return "RUTA"
+    return "ENTREGADO"
+
+
+def _add_albaran_lines(db: Session, alb: DeliveryNoteDB, products: list) -> float:
+    """Añade líneas al albarán y devuelve el total redondeado."""
+    n_lineas = random.randint(1, 5)
+    prods_elegidos = random.sample(products, min(n_lineas, len(products)))
+    total = 0.0
+    for prod in prods_elegidos:
+        cant = random.randint(1, 3)
+        db.add(
+            DeliveryNoteLineDB(
+                delivery_note_id=alb.id,
+                product_id=prod.id,
+                quantity=cant,
+                unit_price=float(prod.price),
+            )
+        )
+        total += cant * float(prod.price)
+    return round(total, 2)
+
+
+def _albaran_movements(
+    alb: DeliveryNoteDB, cli, fecha: date, estado: str, today: date
+) -> list:
+    """Genera los movimientos (fianza, transporte, pendiente) para un albarán."""
+    fianza = round(alb.total * 0.30, 2)
+    pendiente = round(alb.total - fianza, 2)
+    movs = [
+        MovementDB(
+            date=fecha,
+            description=f"Fianza albarán #{alb.id} — {cli.name} {cli.surnames}",
+            amount=fianza,
+            type="INGRESO",
+        )
+    ]
+    if estado in ("RUTA", "ENTREGADO"):
+        fecha_ruta = min(fecha + timedelta(days=random.randint(3, 20)), today)
+        movs.append(
+            MovementDB(
+                date=fecha_ruta,
+                description=f"Cobro transporte albarán #{alb.id}",
+                amount=round(random.uniform(35.0, 120.0), 2),
+                type="INGRESO",
+            )
+        )
+    if estado == "ENTREGADO" and pendiente > 0:
+        fecha_entrega = min(fecha + timedelta(days=random.randint(5, 45)), today)
+        movs.append(
+            MovementDB(
+                date=fecha_entrega,
+                description=f"Cobro pendiente albarán #{alb.id} — {cli.name} {cli.surnames}",
+                amount=pendiente,
+                type="INGRESO",
+            )
+        )
+    return movs
+
+
+def _gastos_fijos_movements() -> list:
+    """Devuelve los movimientos de gastos operativos fijos del periodo."""
+    entries = [
+        # Proveedores (reposición stock)
+        (
+            "Factura Muebles Rivera S.L. — reposición stock jun 2025",
+            4200.0,
+            date(2025, 6, 5),
+        ),
+        (
+            "Factura Nordic Home Supplies — pedido trimestral Q3 2025",
+            3150.0,
+            date(2025, 7, 2),
+        ),
+        (
+            "Factura Dormitorios Premium S.L. — colección otoño",
+            2890.0,
+            date(2025, 9, 10),
+        ),
+        (
+            "Factura Madera Noble Ibérica — estructura armarios",
+            1740.0,
+            date(2025, 8, 15),
+        ),
+        ("Factura OfiComfort España — reposición sillas", 2100.0, date(2025, 10, 3)),
+        (
+            "Factura Muebles Rivera S.L. — reposición stock oct 2025",
+            5100.0,
+            date(2025, 10, 20),
+        ),
+        (
+            "Factura Nordic Home Supplies — pedido trimestral Q4 2025",
+            2800.0,
+            date(2025, 11, 5),
+        ),
+        (
+            "Factura Dormitorios Premium S.L. — colección invierno",
+            3400.0,
+            date(2025, 12, 1),
+        ),
+        (
+            "Factura Madera Noble Ibérica — madera maciza enero",
+            1950.0,
+            date(2026, 1, 10),
+        ),
+        (
+            "Factura OfiComfort España — sillas ergonómicas enero",
+            1800.0,
+            date(2026, 1, 22),
+        ),
+        (
+            "Factura Muebles Rivera S.L. — reposición stock feb 2026",
+            4600.0,
+            date(2026, 2, 8),
+        ),
+        ("Factura Nordic Home Supplies — pedido Q1 2026", 3200.0, date(2026, 3, 3)),
+        # Alquiler
+        ("Alquiler almacén — jun 2025", 850.0, date(2025, 6, 1)),
+        ("Alquiler almacén — jul 2025", 850.0, date(2025, 7, 1)),
+        ("Alquiler almacén — ago 2025", 850.0, date(2025, 8, 1)),
+        ("Alquiler almacén — sep 2025", 850.0, date(2025, 9, 1)),
+        ("Alquiler almacén — oct 2025", 850.0, date(2025, 10, 1)),
+        ("Alquiler almacén — nov 2025", 850.0, date(2025, 11, 1)),
+        ("Alquiler almacén — dic 2025", 850.0, date(2025, 12, 1)),
+        ("Alquiler almacén — ene 2026", 880.0, date(2026, 1, 1)),
+        ("Alquiler almacén — feb 2026", 880.0, date(2026, 2, 1)),
+        ("Alquiler almacén — mar 2026", 880.0, date(2026, 3, 1)),
+        # Transporte/flota
+        ("Gestión flota transporte — jun-ago 2025", 1200.0, date(2025, 8, 31)),
+        ("Gestión flota transporte — sep 2025", 420.0, date(2025, 9, 30)),
+        ("Gestión flota transporte — oct 2025", 390.0, date(2025, 10, 31)),
+        ("Gestión flota transporte — nov 2025", 410.0, date(2025, 11, 30)),
+        ("Gestión flota transporte — dic 2025", 380.0, date(2025, 12, 31)),
+        ("Gestión flota transporte — ene 2026", 430.0, date(2026, 1, 31)),
+        ("Gestión flota transporte — feb 2026", 415.0, date(2026, 2, 28)),
+        ("Gestión flota transporte — mar 2026", 400.0, date(2026, 3, 20)),
+        # Suministros
+        ("Suministro eléctrico almacén — Q3 2025", 890.0, date(2025, 9, 5)),
+        ("Suministro eléctrico almacén — Q4 2025", 950.0, date(2025, 12, 5)),
+        ("Suministro eléctrico almacén — ene 2026", 310.0, date(2026, 1, 7)),
+        ("Suministro eléctrico almacén — feb 2026", 295.0, date(2026, 2, 7)),
+        # Marketing y servicios
+        ("Publicidad online — Google Ads Q3 2025", 600.0, date(2025, 9, 30)),
+        ("Publicidad online — Google Ads Q4 2025", 750.0, date(2025, 12, 30)),
+        ("Publicidad online — Google Ads Q1 2026", 600.0, date(2026, 3, 15)),
+        ("Seguro responsabilidad civil anual 2025", 780.0, date(2025, 6, 15)),
+        ("Seguro responsabilidad civil anual 2026", 810.0, date(2026, 1, 15)),
+        ("Servicio mantenimiento web y ERP — Q3 2025", 480.0, date(2025, 9, 30)),
+        ("Servicio mantenimiento web y ERP — Q4 2025", 480.0, date(2025, 12, 31)),
+        ("Servicio mantenimiento web y ERP — Q1 2026", 500.0, date(2026, 3, 20)),
+        ("Materiales embalaje — compra Q3 2025", 220.0, date(2025, 7, 20)),
+        ("Materiales embalaje — compra Q4 2025", 240.0, date(2025, 10, 18)),
+        ("Materiales embalaje — compra Q1 2026", 230.0, date(2026, 2, 12)),
+        # Gestoría
+        ("Gestoría y asesoría fiscal — Q3 2025", 350.0, date(2025, 9, 15)),
+        ("Gestoría y asesoría fiscal — Q4 2025", 350.0, date(2025, 12, 15)),
+        ("Gestoría y asesoría fiscal — ene 2026", 350.0, date(2026, 1, 15)),
+        ("Gestoría y asesoría fiscal — feb 2026", 350.0, date(2026, 2, 15)),
+        ("Gestoría y asesoría fiscal — mar 2026", 350.0, date(2026, 3, 15)),
+    ]
+    return [
+        MovementDB(date=f, description=desc, amount=float(amt), type="EGRESO")
+        for desc, amt, f in entries
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Insertar albaranes, líneas y movimientos asociados
 # ---------------------------------------------------------------------------
 def _insert_orders(db: Session, clients: list):
     products = db.query(ProductDB).all()
+    today = date(2026, 3, 24)
+    start = date(2025, 6, 1)
+    delta_days = (today - start).days
 
-    # Distribución de albaranes por cliente (1, 2 o 3)
-    shuffled = clients[:]
-    random.shuffle(shuffled)
-    three_set = {c.id for c in shuffled[:10]}  # 10 clientes con 3 albaranes
-    two_set = {c.id for c in shuffled[10:40]}  # 30 clientes con 2 albaranes
-    # resto: 1 albarán
+    base = [1] * 150
+    for _ in range(400 - 150):
+        base[random.randint(0, 149)] += 1
 
-    today = date.today()
+    all_movements: list = []
 
-    for cli in clients:
-        n_alb = 3 if cli.id in three_set else (2 if cli.id in two_set else 1)
+    for cli, n_alb in zip(clients, base):
         for _ in range(n_alb):
-            dias = random.randint(0, 700)
-            fecha = today - timedelta(days=dias)
-
-            # Distribución realista de estados: predomina ENTREGADO para histórico
-            r = random.random()
-            if dias > 365:
-                estado = "ENTREGADO" if r < 0.85 else "ALMACEN"
-            elif dias > 90:
-                r2 = random.random()
-                if r2 < 0.40:
-                    estado = "ENTREGADO"
-                elif r2 < 0.65:
-                    estado = "ALMACEN"
-                elif r2 < 0.82:
-                    estado = "RUTA"
-                else:
-                    estado = "FIANZA"
-            else:
-                r3 = random.random()
-                if r3 < 0.30:
-                    estado = "FIANZA"
-                elif r3 < 0.55:
-                    estado = "ALMACEN"
-                elif r3 < 0.75:
-                    estado = "RUTA"
-                else:
-                    estado = "ENTREGADO"
+            dias_desde_inicio = random.randint(0, delta_days)
+            fecha = start + timedelta(days=dias_desde_inicio)
+            estado = _pick_estado((today - fecha).days)
 
             alb = DeliveryNoteDB(
                 date=fecha,
@@ -1016,84 +1796,134 @@ def _insert_orders(db: Session, clients: list):
             db.add(alb)
             db.flush()
 
-            n_lineas = random.randint(1, 5)
-            prods_elegidos = random.sample(products, min(n_lineas, len(products)))
-            total = 0.0
-            for prod in prods_elegidos:
-                cant = random.randint(1, 3)
-                db.add(
-                    DeliveryNoteLineDB(
-                        delivery_note_id=alb.id,
-                        product_id=prod.id,
-                        quantity=cant,
-                        unit_price=float(prod.price),
-                    )
-                )
-                total += cant * float(prod.price)
+            alb.total = _add_albaran_lines(db, alb, products)
+            all_movements.extend(_albaran_movements(alb, cli, fecha, estado, today))
 
-            alb.total = round(total, 2)
+    all_movements.extend(_gastos_fijos_movements())
 
-            # Movimiento de fianza (30%) siempre al crear
-            fianza = round(alb.total * 0.30, 2)
-            db.add(
-                MovementDB(
-                    date=fecha,
-                    description=f"Fianza albarán #{alb.id}",
-                    amount=fianza,
-                    type="INGRESO",
-                )
-            )
+    for mov in all_movements:
+        db.add(mov)
+    db.commit()
 
-            # Si entregado → movimiento del resto pendiente
-            if estado == "ENTREGADO":
-                pendiente = round(alb.total - fianza, 2)
-                if pendiente > 0:
-                    fecha_entrega = fecha + timedelta(days=random.randint(3, 45))
-                    if fecha_entrega > today:
-                        fecha_entrega = today
-                    db.add(
-                        MovementDB(
-                            date=fecha_entrega,
-                            description=f"Cobro albarán #{alb.id} (pendiente)",
-                            amount=pendiente,
-                            type="INGRESO",
-                        )
-                    )
 
-    # Gastos operativos verosímiles (proveedores, suministros, transporte)
-    gastos = [
-        ("Factura Muebles Rivera S.L. — reposición stock", 4200.0),
-        ("Factura Nordic Home Supplies — pedido trimestral", 3150.0),
-        ("Factura Dormitorios Premium S.L. — colecciones nuevas", 2890.0),
-        ("Factura Madera Noble Ibérica — madera estructura", 1740.0),
-        ("Factura Textil Decoración Hogar — tejidos temporada", 1100.0),
-        ("Factura Colchones Descanso Plus — reposición almacén", 2300.0),
-        ("Alquiler almacén — enero 2026", 850.0),
-        ("Alquiler almacén — febrero 2026", 850.0),
-        ("Gestión flota transporte — enero 2026", 1200.0),
-        ("Gestión flota transporte — febrero 2026", 1200.0),
-        ("Publicidad online — Google Ads Q1", 600.0),
-        ("Suministro eléctrico almacén — enero", 310.0),
-        ("Suministro eléctrico almacén — febrero", 295.0),
-        ("Seguro responsabilidad civil anual", 780.0),
-        ("Servicio mantenimiento web y ERP", 480.0),
-        ("Materiales embalaje — compra trimestral", 220.0),
-        ("Factura Europa Mueble Import — importación colección", 5400.0),
-        ("Factura DesignPro Contract — pedido corporativo", 3200.0),
-        ("Gestoría y asesoría fiscal — enero 2026", 350.0),
-        ("Gestoría y asesoría fiscal — febrero 2026", 350.0),
+# ---------------------------------------------------------------------------
+# Insertar pagos Stripe de demostración
+# ---------------------------------------------------------------------------
+def _insert_stripe(db: Session):
+    """Simula 12 sesiones Stripe completadas a lo largo del periodo."""
+    stripe_sessions = [
+        (
+            "cs_test_a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6",
+            "pi_3Qab1ABC001",
+            1890.00,
+            "Sofá rinconera Modena — pago online",
+        ),
+        (
+            "cs_test_b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7",
+            "pi_3Qab2ABC002",
+            920.00,
+            "Mesa comedor extensible Fjord — pago online",
+        ),
+        (
+            "cs_test_c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8",
+            "pi_3Qab3ABC003",
+            1100.00,
+            "Cama tapizada Élite 150 — pago online",
+        ),
+        (
+            "cs_test_d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8S9",
+            "pi_3Qab4ABC004",
+            490.00,
+            "Colchón viscoelástico Noche 150 — pago online",
+        ),
+        (
+            "cs_test_e5F6g7H8i9J0k1L2m3N4o5P6q7R8s9T0",
+            "pi_3Qab5ABC005",
+            780.00,
+            "Sofá orejero Chesterfield cognac — pago online",
+        ),
+        (
+            "cs_test_f6G7h8I9j0K1l2M3n4O5p6Q7r8S9t0U1",
+            "pi_3Qab6ABC006",
+            340.00,
+            "Escritorio Oslo Compact — pago online",
+        ),
+        (
+            "cs_test_g7H8i9J0k1L2m3N4o5P6q7R8s9T0u1V2",
+            "pi_3Qab7ABC007",
+            1350.00,
+            "Armario ropero Formentera 3P — pago online",
+        ),
+        (
+            "cs_test_h8I9j0K1l2M3n4O5p6Q7r8S9t0U1v2W3",
+            "pi_3Qab8ABC008",
+            680.00,
+            "Colchón muelles ensacados Sueño 150 — pago online",
+        ),
+        (
+            "cs_test_i9J0k1L2m3N4o5P6q7R8s9T0u1V2w3X4",
+            "pi_3Qab9ABC009",
+            590.00,
+            "Sofá cama Génova 140 — pago online",
+        ),
+        (
+            "cs_test_j0K1l2M3n4O5p6Q7r8S9t0U1v2W3x4Y5",
+            "pi_3Qab0ABC010",
+            2100.00,
+            "Recepción mostrador curvo — pago online",
+        ),
+        (
+            "cs_test_k1L2m3N4o5P6q7R8s9T0u1V2w3X4y5Z6",
+            "pi_3Qab1ABC011",
+            420.00,
+            "Silla ejecutiva TechPro 600 — pago online",
+        ),
+        (
+            "cs_test_l2M3n4O5p6Q7r8S9t0U1v2W3x4Y5z6A7",
+            "pi_3Qab2ABC012",
+            1750.00,
+            "Cama de diseño Venezia King 180 — pago online",
+        ),
     ]
-    for i, (concepto, cantidad) in enumerate(gastos):
-        dias_egreso = random.randint(5, 400)
+
+    stripe_dates = [
+        date(2025, 7, 14),
+        date(2025, 8, 22),
+        date(2025, 9, 5),
+        date(2025, 10, 11),
+        date(2025, 11, 3),
+        date(2025, 11, 28),
+        date(2025, 12, 15),
+        date(2026, 1, 9),
+        date(2026, 1, 23),
+        date(2026, 2, 7),
+        date(2026, 2, 28),
+        date(2026, 3, 10),
+    ]
+
+    from datetime import datetime as dt
+
+    for i, (session_id, payment_intent, amount, desc) in enumerate(stripe_sessions):
         db.add(
-            MovementDB(
-                date=today - timedelta(days=dias_egreso),
-                description=concepto,
-                amount=float(cantidad),
-                type="EGRESO",
+            StripeCheckoutDB(
+                session_id=session_id,
+                payment_intent_id=payment_intent,
+                amount=amount,
+                currency="eur",
+                description=desc,
+                status="paid",
+                created_at=dt.combine(stripe_dates[i], dt.min.time()),
             )
         )
-
+        # Movimiento de ingreso asociado al pago Stripe
+        db.add(
+            MovementDB(
+                date=stripe_dates[i],
+                description=f"Pago Stripe — {desc}",
+                amount=amount,
+                type="INGRESO",
+            )
+        )
     db.commit()
 
 
@@ -1120,12 +1950,13 @@ def seed(db: Session):
         return
 
     _insert_providers_and_products(db)
-    clients = _insert_clients(db, n=100)
+    clients = _insert_clients(db, n=150)
     db.flush()
     _insert_orders(db, clients)
+    _insert_stripe(db)
     log.info(
         "Seed completado: %d proveedores, %d productos, "
-        "100 clientes, albaranes y movimientos generados.",
+        "150 clientes, 400 albaranes, movimientos y pagos Stripe generados.",
         len(PROVEEDORES),
         len(PRODUCTOS),
     )
