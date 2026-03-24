@@ -251,33 +251,6 @@ Se ha aplicado una estrategia rigurosa de ingeniería del software: más de 540 
 \afterpage{\blankpage}
 
 % =============================================================================
-%                              ABSTRACT
-% =============================================================================
-\chapter*{Abstract}
-
-This Bachelor's Thesis presents the design, implementation and deployment of \textbf{FurniGest}, a Management Information System (MIS) for a furniture store. The application centralises customer, product, supplier, delivery note, financial movement, transport logistics and business analytics management on a web platform accessible from any browser.
-
-The backend was developed with \textbf{FastAPI} (Python 3.12), \textbf{SQLAlchemy 2} as ORM, and \textbf{PostgreSQL 16} as the database engine. The frontend is a single-page application built with \textbf{React 19}, \textbf{Vite 6} and \textbf{TailwindCSS 4}. Both layers communicate through an OpenAPI-documented REST API.
-
-Advanced features include an analytics engine with RFM customer segmentation and Market Basket Analysis; an AI assistant powered by Llama-3 via Groq; revenue forecasting using Holt's double exponential smoothing; Stripe Checkout payment integration; automatic PDF generation with ReportLab; email delivery with attachments; and full internationalisation (ES/EN).
-
-A rigorous software engineering strategy was applied throughout: over 540 automated tests (unit, integration and end-to-end), static analysis with Ruff and ESLint, a SonarCloud quality gate, a CI/CD pipeline with GitHub Actions for continuous integration and deployment, and Docker containerisation. The system is deployed in production on Railway (backend) and Vercel (frontend).
-
-\mbox{} \bigskip
-
-\noindent \textbf{Keywords}:
-\begin{compactitem}
-    \item Management Information System (MIS)
-    \item FastAPI, React, PostgreSQL
-    \item Continuous Integration / Continuous Deployment (CI/CD)
-    \item Automated testing
-    \item Artificial intelligence (LLM)
-    \item Data analytics (RFM, Market Basket)
-\end{compactitem}
-
-\afterpage{\blankpage}
-
-% =============================================================================
 %                              ÍNDICES
 % =============================================================================
 \setlength{\parskip}{1pt}
@@ -564,7 +537,7 @@ La tabla~\ref{tab:rf} recoge los dieciocho requisitos funcionales del sistema.
   RF-16 & Perfil y configuración: actualización de contraseña y nombre de usuario; almacén clave-valor para parámetros de la tienda. \\
   RF-17 & Internacionalización: interfaz completa en español e inglés, con cambio de idioma en tiempo de ejecución. \\
   RF-18 & Gestión de incidencias: registro de problemas de entrega vinculados a un albarán; al eliminar la incidencia, el albarán revierte a ENTREGADO. \\
-  RF-19 & Integración de pagos (Stripe): creación de sesiones de cobro mediante Stripe Checkout, confirmación de pagos y consulta del historial de cobros. \\
+  RF-19 & Integración bancaria (CaixaBank PSD2): enlace OAuth con Open Banking, consulta de cuentas y estado de conexión, como base para la futura conciliación automática de pagos. \\
   \bottomrule
 \end{longtable}
 
@@ -792,7 +765,7 @@ La tabla~\ref{tab:endpoints} resume los endpoints agrupados por recurso.
     Analíticas     & 4 & Resumen, comparativa, predicción, exportar PDF \\
     IA             & 2 & Pregunta puntual y conversación multi-turno \\
     Stripe         & 4 & Estado, crear sesión, confirmar pago, listar cobros \\
-    Banca (Stripe) & 4 & Estado, crear sesión de cobro, confirmar pago, listar cobros \\
+    Banca (CaixaBank) & 5 & Debug, estado, vincular, callback OAuth, cuentas \\
     Incidencias    & 4 & Listar, obtener, crear, eliminar \\
     Auth           & 3 & Login, obtener perfil, actualizar perfil \\
     Config         & 2 & Obtener y actualizar configuración \\
@@ -1676,7 +1649,7 @@ La tabla~\ref{tab:trabajos_futuros} propone líneas de evolución del sistema.
     Módulo de presupuestos        & Generar y enviar presupuestos previos al pedido formal. \\
     Soporte multi-tienda          & Gestionar varias sucursales desde una única instancia. \\
     Pruebas de carga (Locust)     & Validar el rendimiento del sistema bajo concurrencia elevada. \\
-    Conciliación bancaria automática & Ampliar la integración con Stripe para detectar automáticamente cobros recibidos y conciliarlos con albaranes pendientes de pago. \\
+    Conciliación bancaria automática & Madurar la integración con CaixaBank PSD2 para detectar automáticamente cobros recibidos y conciliarlos con albaranes pendientes de pago. \\
     \bottomrule
   \end{tabularx}
 \end{table}
@@ -1875,11 +1848,12 @@ Al arrancar por primera vez, \texttt{seed.py} genera: 18 proveedores, 99 product
   POST   & /api/incidencias/post & Crear incidencia \\
   DELETE & /api/incidencias/\{id\} & Eliminar (revierte albarán) \\
   \midrule
-  \multicolumn{3}{l}{\textbf{Banca (Stripe)}} \\
-  GET    & /api/stripe/status                    & Estado de configuración \\
-  POST   & /api/stripe/create-checkout-session   & Crear sesión de cobro \\
-  GET    & /api/stripe/confirm                   & Confirmar pago completado \\
-  GET    & /api/stripe/charges                   & Listar cobros \\
+  \multicolumn{3}{l}{\textbf{Banca (CaixaBank PSD2)}} \\
+  GET    & /api/bank/caixa/\_debug   & Info de depuración \\
+  GET    & /api/bank/caixa/status    & Estado de conexión \\
+  POST   & /api/bank/caixa/link      & Iniciar enlace con banco \\
+  GET    & /api/bank/caixa/callback  & Callback OAuth \\
+  GET    & /api/bank/caixa/accounts  & Listar cuentas \\
   \midrule
   \multicolumn{3}{l}{\textbf{Auth}} \\
   POST   & /api/auth/login & Obtener JWT \\
