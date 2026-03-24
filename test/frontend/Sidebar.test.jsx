@@ -76,10 +76,10 @@ describe('Sidebar', () => {
     expect(link.style.backgroundColor).toBeFalsy();
   });
 
-  it('tiene exactamente 10 enlaces de navegación', () => {
+  it('tiene exactamente 11 enlaces de navegación', () => {
     renderSidebar();
     const links = screen.getAllByRole('link');
-    expect(links).toHaveLength(10);
+    expect(links).toHaveLength(11);
   });
 
   it('muestra el botón de Cerrar sesión', () => {

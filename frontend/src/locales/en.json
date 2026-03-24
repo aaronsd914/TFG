@@ -12,7 +12,8 @@
     "products": "Products",
     "bank": "Bank",
     "trends": "Trends",
-    "settings": "Settings"
+    "settings": "Settings",
+    "incidents": "Incidents"
   },
   "login": {
     "subtitle": "Management panel",
@@ -107,6 +108,13 @@
     "stateAlmacen": "Warehouse",
     "stateRuta": "Route",
     "stateEntregado": "Delivered",
+    "stateIncidencia": "Incident",
+    "activeIncidents": "Active incidents",
+    "viewIncidents": "View incidents",
+    "incidenciasSection": "Recent incidents",
+    "incidenciasTotal": "Total: {{count}} incidents",
+    "noIncidencias": "No active incidents.",
+    "viewIncidentsFull": "View all incidents →",
     "months": ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
   },
   "clients": {
@@ -279,6 +287,7 @@
     "stateAlmacen": "Warehouse",
     "stateRuta": "Route",
     "stateEntregado": "Delivered",
+    "stateIncidencia": "Incident",
     "colID": "ID",
     "colDate": "Date",
     "colClient": "Client",
@@ -555,5 +564,33 @@
     "cannotDelete": "Cannot delete",
     "emptyTruckHint": "Empty the truck first.",
     "truckNote": "Trucks that appear in routes are also saved, so they don't disappear when empty."
+  },
+  "incidencias": {
+    "title": "Incidents",
+    "subtitle": "Delivered delivery notes with reported incidents.",
+    "searchPlaceholder": "Search by description, delivery note or client…",
+    "createBtn": "New incident",
+    "createTitle": "Register incident",
+    "createDesc": "Select a delivered delivery note and describe the problem.",
+    "createSubmit": "Register",
+    "createSuccess": "Incident registered successfully.",
+    "createError": "Could not register the incident.",
+    "deleteTitle": "Delete incident",
+    "deleteConfirm": "This will delete the incident and reset the delivery note status back to Delivered. Continue?",
+    "deleteSuccess": "Incident deleted.",
+    "deleteError": "Could not delete the incident.",
+    "fieldAlbaran": "Delivery note",
+    "fieldDesc": "Problem description",
+    "fieldDescPlaceholder": "Describe the problem in detail…",
+    "noEntregados": "No delivered delivery notes available.",
+    "errorNoAlbaran": "Select a delivery note.",
+    "errorNoDesc": "Description cannot be empty.",
+    "loadError": "Could not load incidents.",
+    "noResults": "No incidents registered.",
+    "colId": "ID",
+    "colDate": "Date",
+    "colAlbaran": "Delivery note",
+    "colClient": "Client",
+    "colDesc": "Description"
   }
 }

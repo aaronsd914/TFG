@@ -12,7 +12,8 @@
     "products": "Productos",
     "bank": "Banco",
     "trends": "Tendencias",
-    "settings": "Configuración"
+    "settings": "Configuración",
+    "incidents": "Incidencias"
   },
   "login": {
     "subtitle": "Panel de gestión",
@@ -107,6 +108,13 @@
     "stateAlmacen": "Almacén",
     "stateRuta": "Ruta",
     "stateEntregado": "Entregado",
+    "stateIncidencia": "Incidencia",
+    "activeIncidents": "Incidencias activas",
+    "viewIncidents": "Ver incidencias",
+    "incidenciasSection": "Incidencias recientes",
+    "incidenciasTotal": "Total: {{count}} incidencias",
+    "noIncidencias": "No hay incidencias activas.",
+    "viewIncidentsFull": "Ver todas las incidencias →",
     "months": ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"]
   },
   "clients": {
@@ -279,6 +287,7 @@
     "stateAlmacen": "Almacén",
     "stateRuta": "Ruta",
     "stateEntregado": "Entregado",
+    "stateIncidencia": "Incidencia",
     "colID": "ID",
     "colDate": "Fecha",
     "colClient": "Cliente",
@@ -555,5 +564,33 @@
     "cannotDelete": "No se puede eliminar",
     "emptyTruckHint": "Vacía el camión para poder eliminarlo.",
     "truckNote": "Los camiones que aparezcan en rutas también se guardan, para que no desaparezcan cuando queden vacíos."
+  },
+  "incidencias": {
+    "title": "Incidencias",
+    "subtitle": "Albaranes entregados con incidencias reportadas.",
+    "searchPlaceholder": "Buscar por descripción, albarán o cliente…",
+    "createBtn": "Nueva incidencia",
+    "createTitle": "Registrar incidencia",
+    "createDesc": "Selecciona un albarán entregado e indica la descripción del problema.",
+    "createSubmit": "Registrar",
+    "createSuccess": "Incidencia registrada correctamente.",
+    "createError": "No se pudo registrar la incidencia.",
+    "deleteTitle": "Eliminar incidencia",
+    "deleteConfirm": "Esta acción eliminará la incidencia y restaurará el estado del albarán a Entregado. ¿Continuar?",
+    "deleteSuccess": "Incidencia eliminada.",
+    "deleteError": "No se pudo eliminar la incidencia.",
+    "fieldAlbaran": "Albarán",
+    "fieldDesc": "Descripción del problema",
+    "fieldDescPlaceholder": "Describe el problema con detalle…",
+    "noEntregados": "No hay albaranes en estado Entregado.",
+    "errorNoAlbaran": "Selecciona un albarán.",
+    "errorNoDesc": "La descripción no puede estar vacía.",
+    "loadError": "No se pudieron cargar las incidencias.",
+    "noResults": "No hay incidencias registradas.",
+    "colId": "ID",
+    "colDate": "Fecha",
+    "colAlbaran": "Albarán",
+    "colClient": "Cliente",
+    "colDesc": "Descripción"
   }
 }

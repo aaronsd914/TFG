@@ -12,6 +12,7 @@ from backend.app.api import (
     bank,
     transportes,
     stripe_payments,
+    incidencias,
 )
 from backend.app.api import configuracion
 from backend.app.utils.resumen_semanal import job_resumen_semanal
@@ -72,6 +73,7 @@ app.include_router(transportes.router, prefix="/api")
 app.include_router(bank.router)
 app.include_router(stripe_payments.router)
 app.include_router(configuracion.router, prefix="/api")
+app.include_router(incidencias.router, prefix="/api")
 
 
 @app.get("/health")

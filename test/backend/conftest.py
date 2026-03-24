@@ -43,6 +43,7 @@ from backend.app.main import app  # noqa: E402
 import backend.app.entidades.albaran        # noqa: F401
 import backend.app.entidades.albaran_ruta   # noqa: F401
 import backend.app.entidades.cliente        # noqa: F401
+import backend.app.entidades.incidencia     # noqa: F401
 import backend.app.entidades.linea_albaran  # noqa: F401
 import backend.app.entidades.movimiento     # noqa: F401
 import backend.app.entidades.producto       # noqa: F401

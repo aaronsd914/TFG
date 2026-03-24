@@ -115,7 +115,7 @@
 |---|---------|-------------|
 | 1 | **Customer management** | Full CRUD for customers: name, DNI, contact details, full address. |
 | 2 | **Product & supplier management** | Manage the product catalogue with prices and link each product to a supplier. Full CRUD for both entities from a single screen. |
-| 3 | **Delivery note (albarán) lifecycle** | Create orders with one or more line items, assign them to new or existing customers and track their progress through a four-step state machine: `FIANZA → ALMACEN → RUTA → ENTREGADO`. |
+| 3 | **Delivery note (albarán) lifecycle** | Create orders with one or more line items, assign them to new or existing customers and track their progress through a five-step state machine: `FIANZA → ALMACEN → RUTA → ENTREGADO → INCIDENCIA`. |
 | 4 | **Financial movements ledger** | Record and list income and expense movements. Movements are generated automatically when a deposit is collected and when an order is delivered. |
 | 5 | **Dashboard** | Overview page with key business KPIs and an interactive revenue and orders chart. |
 | 6 | **Email notification** | An HTML email with a PDF attachment of the delivery note is sent to the customer automatically in the background when an order is created. |
@@ -135,6 +135,7 @@
 | 15 | **Weekly AI business summary** | APScheduler `BackgroundScheduler` fires every minute; each tick compares the current time (Europe/Madrid) against the configurable `resumen_hora_envio` setting. When the time matches and the configured interval has elapsed, it calls Groq/Llama-3 with a live snapshot of the business metrics and emails the summary to a configurable address. |
 | 16 | **User profile & store settings** | `GET/PUT /api/auth/me` — update own password. `GET/PUT /api/config` — read and write the key-value `configuracion` table (store name, logo URL, email signature, weekly summary recipient and interval). |
 | 17 | **Internationalisation (i18n) & ARIA accessibility** | Full ES/EN interface translation via **i18next** + `react-i18next`; language detected from `localStorage` (`fg-lang` key) with Spanish fallback. All primary components (`Sidebar`, `LoginPage`, `PersonalizacionPage`) use `useTranslation()`. WCAG 2.1 AA ARIA improvements: `aria-current="page"` on active nav links, `aria-hidden` on decorative icons, `htmlFor`/`id` pairing on form inputs, `role="switch"` + `aria-checked` on the dark-mode toggle, `role="radiogroup"`/`role="radio"` on palette and language selectors. Language can be changed at runtime from the Personalisation page. |
+| 18 | **Incidents (incidencias)** | Track delivery issues by promoting a delivered albaran from `ENTREGADO` to `INCIDENCIA`. Each incident stores a free-text problem description and references the original delivery note. Incidents are visible on the Dashboard (stat card + recent table) and managed from a dedicated `/incidencias` page with list, search, create modal and delete. Deleting an incident automatically reverts the albaran back to `ENTREGADO`. |
 
 ---
 
@@ -145,7 +146,8 @@ FurniGest manages **8 entities** stored in a PostgreSQL database:
 ```
 CustomerDB ──< DeliveryNoteDB ──< DeliveryNoteLineDB >── ProductDB >── SupplierDB
                         │
-                        └──< DeliveryNoteRouteDB (truck_id)
+                        ├──< DeliveryNoteRouteDB (truck_id)
+                        └──< IncidenciaDB
 MovementDB   (standalone — created automatically by business rules)
 StripeCheckoutDB (idempotency record for Stripe sessions)
 ```
@@ -162,6 +164,7 @@ StripeCheckoutDB (idempotency record for Stripe sessions)
 | `MovementDB` | `movimientos` | Standalone income/expense record; auto-created by business logic |
 | `DeliveryNoteRouteDB` | `albaran_rutas` | Maps one `DeliveryNoteDB` to a truck (`truck_id`) |
 | `StripeCheckoutDB` | `stripe_checkouts` | Audit record per Stripe Checkout Session (prevents duplicate payments) |
+| `IncidenciaDB` | `incidencias` | Incident report referencing one `DeliveryNoteDB`; triggers the `INCIDENCIA` status transition |
 | `UserDB` | `usuarios` | Staff account with hashed password for JWT authentication |
 | `ConfigDB` | `configuracion` | Key-value store for application settings (store name, logo, email signature, scheduler config) |
 
@@ -555,6 +558,15 @@ The API is served at `http://localhost:8000`. All domain endpoints are prefixed 
 | `POST` | `/api/stripe/confirm` | Verifies payment and records income movement |
 | `GET` | `/api/stripe/checkouts` | Lists confirmed payment records |
 
+#### Incidents — `/api/incidencias`
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/incidencias/get` | List all incidents (newest first) |
+| `GET` | `/api/incidencias/get/{id}` | Get one incident by ID |
+| `POST` | `/api/incidencias/post` | Create incident — requires albaran in `ENTREGADO` state; sets it to `INCIDENCIA` |
+| `DELETE` | `/api/incidencias/{id}` | Delete incident and restore albaran to `ENTREGADO` |
+
 #### Health — `/health`
 
 | Method | Path | Description |
@@ -646,6 +658,17 @@ POST /api/albaranes/post
                                                Movimiento tipo=INGRESO
                                                concepto="Pendiente albaran #{id}"
                                                cantidad = total - fianza
+                                                         │
+                                               POST /api/incidencias/post
+                                               (staff reports delivery issue)
+                                                         ▼
+                                               ┌──────────────────────┐
+                                               │   INCIDENCIA         │
+                                               └──────────────────────┘
+                                               Creates IncidenciaDB record
+                                               with free-text descripcion.
+                                               DELETE /api/incidencias/{id}
+                                               reverts albaran → ENTREGADO
 ```
 
 The `POST /api/albaranes/post` handler also enqueues a `BackgroundTask` that:
