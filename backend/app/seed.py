@@ -1574,136 +1574,95 @@ def _insert_clients(db: Session, n: int = 150) -> list:
 
 
 # ---------------------------------------------------------------------------
-# Insertar albaranes, líneas y movimientos asociados
+# Helpers para _insert_orders
 # ---------------------------------------------------------------------------
-def _insert_orders(db: Session, clients: list):
-    products = db.query(ProductDB).all()
-    today = date(2026, 3, 24)
-    start = date(2025, 6, 1)
-    delta_days = (today - start).days  # 296 días
+def _pick_estado(dias_transcurridos: int) -> str:
+    """Devuelve un estado de albarán coherente con su antigüedad."""
+    r = random.random()
+    if dias_transcurridos > 180:
+        if r < 0.75:
+            return "ENTREGADO"
+        if r < 0.90:
+            return "ALMACEN"
+        return "RUTA"
+    if dias_transcurridos > 60:
+        if r < 0.50:
+            return "ENTREGADO"
+        if r < 0.70:
+            return "RUTA"
+        if r < 0.85:
+            return "ALMACEN"
+        return "FIANZA"
+    # Reciente → más en proceso
+    if r < 0.35:
+        return "FIANZA"
+    if r < 0.60:
+        return "ALMACEN"
+    if r < 0.80:
+        return "RUTA"
+    return "ENTREGADO"
 
-    # Distribuir 400 albaranes entre 150 clientes
-    # Garantía: cada cliente tiene al menos 1 albarán
-    # El resto (400-150=250) se reparte aleatoriamente
-    base = [1] * 150  # 1 por cliente garantizado
-    extra = 400 - 150  # 250 extras
-    for _ in range(extra):
-        base[random.randint(0, 149)] += 1
 
-    all_movements = []
-
-    for cli, n_alb in zip(clients, base):
-        for _ in range(n_alb):
-            dias_desde_inicio = random.randint(0, delta_days)
-            fecha = start + timedelta(days=dias_desde_inicio)
-            dias_transcurridos = (today - fecha).days
-
-            # Estado coherente con la antigüedad
-            r = random.random()
-            if dias_transcurridos > 180:
-                # Albarán antiguo → mayoritariamente entregados
-                if r < 0.75:
-                    estado = "ENTREGADO"
-                elif r < 0.90:
-                    estado = "ALMACEN"
-                else:
-                    estado = "RUTA"
-            elif dias_transcurridos > 60:
-                if r < 0.50:
-                    estado = "ENTREGADO"
-                elif r < 0.70:
-                    estado = "RUTA"
-                elif r < 0.85:
-                    estado = "ALMACEN"
-                else:
-                    estado = "FIANZA"
-            else:
-                # Reciente → más en proceso
-                if r < 0.35:
-                    estado = "FIANZA"
-                elif r < 0.60:
-                    estado = "ALMACEN"
-                elif r < 0.80:
-                    estado = "RUTA"
-                else:
-                    estado = "ENTREGADO"
-
-            alb = DeliveryNoteDB(
-                date=fecha,
-                description=random.choice(_DESCRIPCIONES_ALBARAN),
-                customer_id=cli.id,
-                total=0.0,
-                status=estado,
+def _add_albaran_lines(db: Session, alb: DeliveryNoteDB, products: list) -> float:
+    """Añade líneas al albarán y devuelve el total redondeado."""
+    n_lineas = random.randint(1, 5)
+    prods_elegidos = random.sample(products, min(n_lineas, len(products)))
+    total = 0.0
+    for prod in prods_elegidos:
+        cant = random.randint(1, 3)
+        db.add(
+            DeliveryNoteLineDB(
+                delivery_note_id=alb.id,
+                product_id=prod.id,
+                quantity=cant,
+                unit_price=float(prod.price),
             )
-            db.add(alb)
-            db.flush()
+        )
+        total += cant * float(prod.price)
+    return round(total, 2)
 
-            n_lineas = random.randint(1, 5)
-            prods_elegidos = random.sample(products, min(n_lineas, len(products)))
-            total = 0.0
-            for prod in prods_elegidos:
-                cant = random.randint(1, 3)
-                db.add(
-                    DeliveryNoteLineDB(
-                        delivery_note_id=alb.id,
-                        product_id=prod.id,
-                        quantity=cant,
-                        unit_price=float(prod.price),
-                    )
-                )
-                total += cant * float(prod.price)
 
-            alb.total = round(total, 2)
-
-            # ── Movimientos basados en el albarán ─────────────────────────
-            fianza = round(alb.total * 0.30, 2)
-            pendiente = round(alb.total - fianza, 2)
-
-            # La fianza se cobra siempre (en la fecha del albarán)
-            all_movements.append(
-                MovementDB(
-                    date=fecha,
-                    description=f"Fianza albarán #{alb.id} — {cli.name} {cli.surnames}",
-                    amount=fianza,
-                    type="INGRESO",
-                )
+def _albaran_movements(
+    alb: DeliveryNoteDB, cli, fecha: date, estado: str, today: date
+) -> list:
+    """Genera los movimientos (fianza, transporte, pendiente) para un albarán."""
+    fianza = round(alb.total * 0.30, 2)
+    pendiente = round(alb.total - fianza, 2)
+    movs = [
+        MovementDB(
+            date=fecha,
+            description=f"Fianza albarán #{alb.id} — {cli.name} {cli.surnames}",
+            amount=fianza,
+            type="INGRESO",
+        )
+    ]
+    if estado in ("RUTA", "ENTREGADO"):
+        fecha_ruta = min(fecha + timedelta(days=random.randint(3, 20)), today)
+        movs.append(
+            MovementDB(
+                date=fecha_ruta,
+                description=f"Cobro transporte albarán #{alb.id}",
+                amount=round(random.uniform(35.0, 120.0), 2),
+                type="INGRESO",
             )
+        )
+    if estado == "ENTREGADO" and pendiente > 0:
+        fecha_entrega = min(fecha + timedelta(days=random.randint(5, 45)), today)
+        movs.append(
+            MovementDB(
+                date=fecha_entrega,
+                description=f"Cobro pendiente albarán #{alb.id} — {cli.name} {cli.surnames}",
+                amount=pendiente,
+                type="INGRESO",
+            )
+        )
+    return movs
 
-            if estado in ("RUTA", "ENTREGADO"):
-                # Cobro de transporte cuando sale a ruta
-                dias_ruta = random.randint(3, 20)
-                fecha_ruta = fecha + timedelta(days=dias_ruta)
-                if fecha_ruta > today:
-                    fecha_ruta = today
-                coste_transporte = round(random.uniform(35.0, 120.0), 2)
-                all_movements.append(
-                    MovementDB(
-                        date=fecha_ruta,
-                        description=f"Cobro transporte albarán #{alb.id}",
-                        amount=coste_transporte,
-                        type="INGRESO",
-                    )
-                )
 
-            if estado == "ENTREGADO":
-                # Cobro del importe pendiente en la entrega
-                dias_entrega = random.randint(5, 45)
-                fecha_entrega = fecha + timedelta(days=dias_entrega)
-                if fecha_entrega > today:
-                    fecha_entrega = today
-                if pendiente > 0:
-                    all_movements.append(
-                        MovementDB(
-                            date=fecha_entrega,
-                            description=f"Cobro pendiente albarán #{alb.id} — {cli.name} {cli.surnames}",
-                            amount=pendiente,
-                            type="INGRESO",
-                        )
-                    )
-
-    # ── Gastos operativos realistas ────────────────────────────────────────
-    gastos_fijos = [
-        # Proveedores (reposición stock mensual/trimestral)
+def _gastos_fijos_movements() -> list:
+    """Devuelve los movimientos de gastos operativos fijos del periodo."""
+    entries = [
+        # Proveedores (reposición stock)
         (
             "Factura Muebles Rivera S.L. — reposición stock jun 2025",
             4200.0,
@@ -1800,15 +1759,47 @@ def _insert_orders(db: Session, clients: list):
         ("Gestoría y asesoría fiscal — feb 2026", 350.0, date(2026, 2, 15)),
         ("Gestoría y asesoría fiscal — mar 2026", 350.0, date(2026, 3, 15)),
     ]
-    for concepto, cantidad, fecha_gasto in gastos_fijos:
-        all_movements.append(
-            MovementDB(
-                date=fecha_gasto,
-                description=concepto,
-                amount=float(cantidad),
-                type="EGRESO",
+    return [
+        MovementDB(date=f, description=desc, amount=float(amt), type="EGRESO")
+        for desc, amt, f in entries
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Insertar albaranes, líneas y movimientos asociados
+# ---------------------------------------------------------------------------
+def _insert_orders(db: Session, clients: list):
+    products = db.query(ProductDB).all()
+    today = date(2026, 3, 24)
+    start = date(2025, 6, 1)
+    delta_days = (today - start).days
+
+    base = [1] * 150
+    for _ in range(400 - 150):
+        base[random.randint(0, 149)] += 1
+
+    all_movements: list = []
+
+    for cli, n_alb in zip(clients, base):
+        for _ in range(n_alb):
+            dias_desde_inicio = random.randint(0, delta_days)
+            fecha = start + timedelta(days=dias_desde_inicio)
+            estado = _pick_estado((today - fecha).days)
+
+            alb = DeliveryNoteDB(
+                date=fecha,
+                description=random.choice(_DESCRIPCIONES_ALBARAN),
+                customer_id=cli.id,
+                total=0.0,
+                status=estado,
             )
-        )
+            db.add(alb)
+            db.flush()
+
+            alb.total = _add_albaran_lines(db, alb, products)
+            all_movements.extend(_albaran_movements(alb, cli, fecha, estado, today))
+
+    all_movements.extend(_gastos_fijos_movements())
 
     for mov in all_movements:
         db.add(mov)
