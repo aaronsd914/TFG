@@ -27,11 +27,12 @@
 \usepackage{rotating}
 \usepackage{multirow}
 \usepackage{booktabs}
+\usepackage{eurosym}
 \usepackage{tabularx}
 \usepackage{longtable}
 \usepackage{quotchap}
 \usepackage{tikz}
-\usetikzlibrary{shapes.geometric,arrows.meta,positioning,fit,calc,backgrounds,automata}
+\usetikzlibrary{shapes.geometric,arrows.meta,positioning,fit,calc,backgrounds,automata,babel}
 \usepackage{subcaption}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
@@ -1373,16 +1374,16 @@ El fichero principal (\texttt{ci.yml}) implementa el pipeline completo de CI/CD 
 \begin{figure}[H]
   \centering
   \begin{tikzpicture}[
-    step/.style={rectangle, draw, rounded corners, minimum width=2.2cm, minimum height=0.8cm, align=center, font=\small},
+    pstep/.style={rectangle, draw, rounded corners, minimum width=2.2cm, minimum height=0.8cm, align=center, font=\small},
     >=Stealth
   ]
-    \node[step, fill=gray!15]    (lint)    {Lint\\(Ruff + ESLint)};
-    \node[step, fill=green!15, right=0.8cm of lint, yshift=0.6cm]   (tfe)     {Frontend\\tests};
-    \node[step, fill=green!15, right=0.8cm of lint, yshift=-0.6cm]  (tbe)     {Backend\\tests};
-    \node[step, fill=yellow!15, right=0.8cm of tfe, yshift=-0.6cm]  (sonar)   {SonarCloud\\gate};
-    \node[step, fill=orange!15, right=0.8cm of sonar]  (e2e)     {E2E\\Selenium};
-    \node[step, fill=purple!15, right=0.8cm of e2e]    (docker)  {Docker\\build};
-    \node[step, fill=blue!15, right=0.8cm of docker]   (deploy)  {Deploy\\Railway+Vercel};
+    \node[pstep, fill=gray!15]    (lint)    {Lint\\(Ruff + ESLint)};
+    \node[pstep, fill=green!15, right=0.8cm of lint, yshift=0.6cm]   (tfe)     {Frontend\\tests};
+    \node[pstep, fill=green!15, right=0.8cm of lint, yshift=-0.6cm]  (tbe)     {Backend\\tests};
+    \node[pstep, fill=yellow!15, right=0.8cm of tfe, yshift=-0.6cm]  (sonar)   {SonarCloud\\gate};
+    \node[pstep, fill=orange!15, right=0.8cm of sonar]  (e2e)     {E2E\\Selenium};
+    \node[pstep, fill=purple!15, right=0.8cm of e2e]    (docker)  {Docker\\build};
+    \node[pstep, fill=blue!15, right=0.8cm of docker]   (deploy)  {Deploy\\Railway+Vercel};
 
     \draw[->] (lint) |- (tfe);
     \draw[->] (lint) |- (tbe);

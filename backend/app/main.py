@@ -54,6 +54,8 @@ app.add_middleware(
         "http://127.0.0.1",
         "https://tfg-five-drab.vercel.app",  # Vercel producción
         "https://tfg-i35kymnah-aaronsd914s-projects.vercel.app",  # Vercel preview
+        "https://furnigest.com",  # Dominio personalizado
+        "https://www.furnigest.com",  # Dominio personalizado (www)
     ],
     allow_credentials=True,
     allow_methods=["*"],
