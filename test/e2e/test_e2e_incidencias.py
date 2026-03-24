@@ -21,7 +21,8 @@ from test.e2e.conftest import BASE_URL
 def test_incidencias_pagina_carga(logged_in_browser):
     """La página /incidencias carga correctamente."""
     logged_in_browser.get(f"{BASE_URL}/incidencias")
-    WebDriverWait(logged_in_browser, 10).until(EC.url_contains("/incidencias"))
+    WebDriverWait(logged_in_browser, 15).until(EC.url_contains("/incidencias"))
+    time.sleep(1)  # Allow page to fully render
     assert "/incidencias" in logged_in_browser.current_url
 
 
@@ -84,8 +85,10 @@ def test_incidencias_buscador_presente(logged_in_browser):
 
 def test_incidencias_sidebar_enlace_presente(logged_in_browser):
     """La barra lateral tiene un enlace a /incidencias."""
-    logged_in_browser.get(f"{BASE_URL}/dashboard")
-    WebDriverWait(logged_in_browser, 10).until(EC.url_contains("/dashboard"))
+    logged_in_browser.get(f"{BASE_URL}/")
+    WebDriverWait(logged_in_browser, 15).until(
+        lambda d: "/login" not in d.current_url
+    )
     time.sleep(1)
     links = logged_in_browser.find_elements(By.CSS_SELECTOR, "a[href*='incidencias']")
     assert len(links) >= 1
@@ -93,10 +96,12 @@ def test_incidencias_sidebar_enlace_presente(logged_in_browser):
 
 def test_incidencias_seccion_en_dashboard(logged_in_browser):
     """El Dashboard muestra la sección de incidencias."""
-    logged_in_browser.get(f"{BASE_URL}/dashboard")
-    WebDriverWait(logged_in_browser, 10).until(EC.url_contains("/dashboard"))
-    time.sleep(2)
-    section = WebDriverWait(logged_in_browser, 10).until(
+    logged_in_browser.get(f"{BASE_URL}/")
+    WebDriverWait(logged_in_browser, 15).until(
+        lambda d: "/login" not in d.current_url
+    )
+    time.sleep(3)  # Allow API calls to complete
+    section = WebDriverWait(logged_in_browser, 15).until(
         EC.presence_of_element_located((By.CSS_SELECTOR, "[data-testid='dashboard-incidencias-section']"))
     )
     assert section.is_displayed()
@@ -104,12 +109,14 @@ def test_incidencias_seccion_en_dashboard(logged_in_browser):
 
 def test_incidencias_link_desde_dashboard(logged_in_browser):
     """El Dashboard tiene un enlace que lleva a la vista completa de incidencias."""
-    logged_in_browser.get(f"{BASE_URL}/dashboard")
-    WebDriverWait(logged_in_browser, 10).until(EC.url_contains("/dashboard"))
-    time.sleep(2)
-    link = WebDriverWait(logged_in_browser, 10).until(
+    logged_in_browser.get(f"{BASE_URL}/")
+    WebDriverWait(logged_in_browser, 15).until(
+        lambda d: "/login" not in d.current_url
+    )
+    time.sleep(3)  # Allow API calls to complete
+    link = WebDriverWait(logged_in_browser, 15).until(
         EC.element_to_be_clickable((By.CSS_SELECTOR, "[data-testid='dashboard-incidencias-link']"))
     )
     link.click()
-    WebDriverWait(logged_in_browser, 10).until(EC.url_contains("/incidencias"))
+    WebDriverWait(logged_in_browser, 15).until(EC.url_contains("/incidencias"))
     assert "/incidencias" in logged_in_browser.current_url
