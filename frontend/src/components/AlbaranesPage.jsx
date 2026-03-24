@@ -439,7 +439,8 @@ export default function AlbaranesPage() {
   function openLinesEdit() {
     if (!selected) return;
     setLinesForm(
-      (selected.items || []).map((item) => ({
+      (selected.items || []).map((item, i) => ({
+        _key: `line-${item.product_id ?? i}-${Date.now()}-${i}`,
         product_id: item.product_id,
         quantity: item.quantity,
         unit_price: item.unit_price,
@@ -468,7 +469,7 @@ export default function AlbaranesPage() {
   function addLine() {
     setLinesForm((prev) => [
       ...prev,
-      { product_id: products[0]?.id ?? '', quantity: 1, unit_price: 0 },
+      { _key: `line-new-${Date.now()}-${prev.length}`, product_id: products[0]?.id ?? '', quantity: 1, unit_price: 0 },
     ]);
   }
 
@@ -951,7 +952,7 @@ export default function AlbaranesPage() {
                       )}
                       {linesEditing &&
                         linesForm.map((row, idx) => (
-                          <tr key={idx} className="border-b">
+                          <tr key={row._key ?? idx} className="border-b">
                             <td className="p-1">
                               <select
                                 value={row.product_id}
