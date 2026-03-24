@@ -40,18 +40,6 @@ STRIPE_CANCEL_URL = "${STRIPE_CANCEL_URL}"
 STRIPE_CURRENCY = "${STRIPE_CURRENCY:-eur}"
 EOF
 
-cat > backend/app/bank_settings.py << EOF
-CAIXA_ENV = "${CAIXA_ENV:-sandbox}"
-CAIXA_CLIENT_ID = "${CAIXA_CLIENT_ID}"
-CAIXA_CLIENT_SECRET = "${CAIXA_CLIENT_SECRET}"
-CAIXA_REDIRECT_URI = "${CAIXA_REDIRECT_URI:-}"
-HUB_OAUTH_BASE = "${HUB_OAUTH_BASE:-https://apis-i.redsys.es:20443/psd2/xs2a/api-oauth-xs2a/services/rest/hub}"
-HUB_API_BASE = "${HUB_API_BASE:-https://apis-i.redsys.es:20443/psd2/xs2a/api-entrada-xs2a/services/hub/v1.1}"
-ASPSP_CODE = "${ASPSP_CODE:-2100}"
-REQUEST_TIMEOUT = ${BANK_REQUEST_TIMEOUT:-30}
-DEMO = not bool("${CAIXA_CLIENT_ID}")
-EOF
-
 echo ">>> Config files generated. Running database migrations..."
 
 # If the DB already has tables (created before Alembic was added) but has no

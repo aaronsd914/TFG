@@ -9,7 +9,6 @@ from backend.app.api import (
     analytics,
     ai,
     auth,
-    bank,
     transportes,
     stripe_payments,
     incidencias,
@@ -70,7 +69,6 @@ app.include_router(movimientos.router, prefix="/api")
 app.include_router(analytics.router, prefix="/api")
 app.include_router(ai.router, prefix="/api")
 app.include_router(transportes.router, prefix="/api")
-app.include_router(bank.router)
 app.include_router(stripe_payments.router)
 app.include_router(configuracion.router, prefix="/api")
 app.include_router(incidencias.router, prefix="/api")
