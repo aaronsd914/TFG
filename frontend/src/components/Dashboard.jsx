@@ -437,7 +437,7 @@ export default function Dashboard() {
           <h3 className="text-base font-semibold">{t('dashboard.recentMovements')}</h3>
           <a
             href="/movimientos"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black text-white text-sm font-medium hover:bg-gray-800 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg btn-accent text-sm font-medium transition-colors"
           >
             {t('dashboard.viewAllMovements')}
           </a>
@@ -489,7 +489,7 @@ export default function Dashboard() {
         <div className="mt-4 flex">
           <a
             href="/transporte"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-black hover:bg-gray-800 shadow-sm transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold btn-accent shadow-sm transition-colors"
           >
             {t('dashboard.organizeTransport')}
           </a>
@@ -536,7 +536,7 @@ export default function Dashboard() {
         <div className="mt-4 flex">
           <a
             href="/incidencias"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-black hover:bg-gray-800 shadow-sm transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold btn-accent shadow-sm transition-colors"
             data-testid="dashboard-incidencias-link"
           >
             {t('dashboard.viewIncidentsFull')}

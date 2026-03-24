@@ -171,7 +171,7 @@ export default function IncidenciasPage() {
         <button
           type="button"
           onClick={openCreate}
-          className="px-4 py-2 rounded-xl bg-black text-white text-sm font-medium hover:opacity-90 transition self-start"
+          className="px-4 py-2 rounded-xl btn-accent text-sm font-medium transition self-start"
           data-testid="create-incidencia-btn"
         >
           + {t('incidencias.createBtn')}
@@ -331,7 +331,7 @@ export default function IncidenciasPage() {
                 <button
                   type="submit"
                   disabled={createSaving || entregados.length === 0}
-                  className="px-4 py-2 rounded-xl bg-black text-white text-sm hover:opacity-90 disabled:opacity-50"
+                  className="px-4 py-2 rounded-xl btn-accent text-sm disabled:opacity-50"
                   data-testid="create-submit-btn"
                 >
                   {createSaving ? t('common.saving') : t('incidencias.createSubmit')}

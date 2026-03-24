@@ -154,7 +154,7 @@ export default function BancoPage() {
         <button
           data-testid="nuevo-cobro-btn"
           onClick={openModal}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-black hover:bg-gray-800 shadow-sm transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold btn-accent shadow-sm transition-colors"
         >
           + {t('bank.newChargeBtn')}
         </button>
@@ -254,7 +254,7 @@ export default function BancoPage() {
                 data-testid="cobro-submit-btn"
                 disabled={!stripeCanCreate || stripeBusy}
                 onClick={createStripeCheckout}
-                className={`px-4 py-2 rounded-xl text-sm font-semibold text-white ${!stripeCanCreate || stripeBusy ? 'bg-gray-400 cursor-not-allowed' : 'bg-black hover:bg-gray-800'}`}
+                className={`px-4 py-2 rounded-xl text-sm font-semibold text-white ${!stripeCanCreate || stripeBusy ? 'bg-gray-400 cursor-not-allowed' : 'btn-accent'}`}
               >
                 {stripeBusy ? t('bank.toastCreating') : t('bank.btnCreateCharge')}
               </button>

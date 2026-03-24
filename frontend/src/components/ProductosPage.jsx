@@ -32,7 +32,7 @@ function Button({ variant = 'primary', className = '', ...props }) {
   const base =
     'inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed active:translate-y-[1px]';
   const variants = {
-    primary: 'bg-black text-white hover:bg-black/90',
+    primary: 'btn-accent',
     secondary: 'bg-white text-gray-800 border border-gray-300 hover:bg-gray-50',
     ghost: 'bg-transparent text-gray-800 hover:bg-gray-100',
     danger: 'bg-red-600 text-white hover:bg-red-700',
@@ -645,7 +645,7 @@ export default function ProductosPage() {
         <div className="flex flex-wrap items-center gap-2">
           <div className="inline-flex rounded-xl border border-gray-300 overflow-hidden">
             <button
-              className={`px-4 py-2 text-sm ${tab === 'listado' ? 'bg-black text-white' : 'bg-white text-gray-700'}`}
+              className={`px-4 py-2 text-sm ${tab === 'listado' ? 'btn-accent' : 'bg-white text-gray-700'}`}
               onClick={() => setTab('listado')}
               type="button"
             >
@@ -653,7 +653,7 @@ export default function ProductosPage() {
             </button>
             <button
               className={`px-4 py-2 text-sm border-l border-gray-300 ${
-                tab === 'gestion' ? 'bg-black text-white' : 'bg-white text-gray-700'
+                tab === 'gestion' ? 'btn-accent' : 'bg-white text-gray-700'
               }`}
               onClick={() => setTab('gestion')}
               type="button"
@@ -701,7 +701,7 @@ export default function ProductosPage() {
                   <button
                     type="button"
                     onClick={() => setGroupMode('all')}
-                    className={`px-3 py-2 text-sm ${groupMode === 'all' ? 'bg-black text-white' : 'bg-white text-gray-700'}`}
+                    className={`px-3 py-2 text-sm ${groupMode === 'all' ? 'btn-accent' : 'bg-white text-gray-700'}`}
                     title={t('products.viewAll')}
                   >
                     {t('products.viewAllBtn')}
@@ -710,7 +710,7 @@ export default function ProductosPage() {
                     type="button"
                     onClick={() => setGroupMode('proveedor')}
                     className={`px-3 py-2 text-sm border-l border-gray-300 ${
-                      groupMode === 'proveedor' ? 'bg-black text-white' : 'bg-white text-gray-700'
+                      groupMode === 'proveedor' ? 'btn-accent' : 'bg-white text-gray-700'
                     }`}
                     title={t('products.groupBySupplier')}
                   >
@@ -1024,7 +1024,7 @@ export default function ProductosPage() {
                       {gestionList.map((p) => {
                         const active = p.id === selectedId;
                         const btnClass = active
-                          ? 'w-full text-left px-3 py-3 transition !bg-black !text-white hover:!bg-black/90 focus:outline-none'
+                          ? 'w-full text-left px-3 py-3 transition !bg-[var(--fg-accent)] !text-white hover:opacity-85 focus:outline-none'
                           : 'w-full text-left px-3 py-3 transition bg-white text-gray-900 hover:bg-gray-50 focus:outline-none';
 
                         return (

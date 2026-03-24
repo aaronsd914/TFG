@@ -112,7 +112,7 @@ export default function PerfilPage() {
           <button
             type="submit"
             disabled={uLoading}
-            className="self-start px-4 py-2 bg-gray-900 text-white rounded-lg text-sm hover:bg-gray-700 disabled:opacity-50 transition-colors"
+            className="self-start px-4 py-2 btn-accent rounded-lg text-sm disabled:opacity-50 transition-colors"
           >
             {uLoading ? t('common.saving') : t('profile.btnChangeUser')}
           </button>
@@ -150,7 +150,7 @@ export default function PerfilPage() {
           <button
             type="submit"
             disabled={pLoading}
-            className="self-start px-4 py-2 bg-gray-900 text-white rounded-lg text-sm hover:bg-gray-700 disabled:opacity-50 transition-colors"
+            className="self-start px-4 py-2 btn-accent rounded-lg text-sm disabled:opacity-50 transition-colors"
           >
             {pLoading ? t('common.saving') : t('profile.btnChangePassword')}
           </button>

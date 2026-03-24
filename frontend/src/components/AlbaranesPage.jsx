@@ -744,7 +744,7 @@ export default function AlbaranesPage() {
                         setSelectedDomains((prev) => (prev.includes(dom) ? prev.filter((d) => d !== dom) : [...prev, dom]))
                       }
                       className={`px-3 py-1 rounded-full border ${
-                        active ? 'bg-black text-white border-black' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                        active ? 'btn-accent-tab' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                       }`}
                       type="button"
                     >
@@ -767,7 +767,7 @@ export default function AlbaranesPage() {
                         setSelectedEstados((prev) => (prev.includes(es) ? prev.filter((x) => x !== es) : [...prev, es]))
                       }
                       className={`px-3 py-1 rounded-full border ${
-                        active ? 'bg-black text-white border-black' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                        active ? 'btn-accent-tab' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                       }`}
                       type="button"
                     >
@@ -789,7 +789,7 @@ export default function AlbaranesPage() {
             </button>
             <button
               onClick={() => setFiltersOpen(false)}
-              className="px-4 py-2 rounded-xl bg-black text-white hover:opacity-90"
+              className="px-4 py-2 rounded-xl btn-accent"
               type="button"
             >
               {t('albaranes.apply')}
@@ -828,7 +828,7 @@ export default function AlbaranesPage() {
                   type="button"
                   onClick={() => setDetailTab('albaran')}
                   className={`px-4 py-2 rounded-xl border ${
-                    detailTab === 'albaran' ? 'bg-black text-white border-black' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    detailTab === 'albaran' ? 'btn-accent-tab' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                   }`}
                 >
                   {t('albaranes.tabAlbaran')}
@@ -837,7 +837,7 @@ export default function AlbaranesPage() {
                   type="button"
                   onClick={() => setDetailTab('cliente')}
                   className={`px-4 py-2 rounded-xl border ${
-                    detailTab === 'cliente' ? 'bg-black text-white border-black' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    detailTab === 'cliente' ? 'btn-accent-tab' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                   }`}
                 >
                   {t('albaranes.tabClient')}
@@ -909,7 +909,7 @@ export default function AlbaranesPage() {
                         type="button"
                         onClick={saveLinesEdit}
                         disabled={linesSaving}
-                        className="px-3 py-1.5 rounded-lg bg-black text-white hover:opacity-90 text-sm disabled:opacity-50"
+                        className="px-3 py-1.5 rounded-lg btn-accent text-sm disabled:opacity-50"
                         data-testid="lines-save-btn"
                       >
                         {linesSaving ? t('common.saving') : t('albaranes.linesEditSave')}
@@ -1141,7 +1141,7 @@ export default function AlbaranesPage() {
             </button>
             <button
               onClick={saveEdit}
-              className="px-4 py-2 rounded-xl bg-black text-white hover:opacity-90 disabled:opacity-50"
+              className="px-4 py-2 rounded-xl btn-accent disabled:opacity-50"
               type="button"
               disabled={editSaving}
               data-testid="albaran-edit-save-btn"

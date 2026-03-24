@@ -533,7 +533,7 @@ export default function ClientesPage() {
                       setSelectedDomains((prev) => (prev.includes(dom) ? prev.filter((d) => d !== dom) : [...prev, dom]))
                     }
                     className={`px-3 py-1 rounded-full border ${
-                      active ? 'bg-black text-white border-black' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                      active ? 'btn-accent-tab' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                     }`}
                     type="button"
                   >
@@ -549,7 +549,7 @@ export default function ClientesPage() {
           <button onClick={clearAll} className="px-4 py-2 rounded-xl bg-gray-200 text-gray-900 hover:bg-gray-300" type="button">
             {t('clients.clearFilters')}
           </button>
-          <button onClick={() => setFiltersOpen(false)} className="px-4 py-2 rounded-xl bg-black text-white" type="button">
+          <button onClick={() => setFiltersOpen(false)} className="px-4 py-2 rounded-xl btn-accent" type="button">
             {t('clients.apply')}
           </button>
         </div>
@@ -586,7 +586,7 @@ export default function ClientesPage() {
                 type="button"
                 onClick={() => setDetailTab('info')}
                 className={`px-4 py-2 rounded-xl border ${
-                  detailTab === 'info' ? 'bg-black text-white border-black' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  detailTab === 'info' ? 'btn-accent-tab' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                 }`}
               >
                 {t('clients.tabInfo')}
@@ -596,7 +596,7 @@ export default function ClientesPage() {
                 onClick={() => setDetailTab('albaranes')}
                 className={`px-4 py-2 rounded-xl border ${
                   detailTab === 'albaranes'
-                    ? 'bg-black text-white border-black'
+                    ? 'btn-accent-tab'
                     : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                 }`}
               >
@@ -903,7 +903,7 @@ export default function ClientesPage() {
           </button>
           <button
             onClick={saveEdit}
-            className="px-4 py-2 rounded-xl bg-black text-white hover:opacity-90 disabled:opacity-50"
+            className="px-4 py-2 rounded-xl btn-accent disabled:opacity-50"
             type="button"
             disabled={editSaving}
             data-testid="cliente-edit-save-btn"

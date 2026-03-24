@@ -662,7 +662,7 @@ export default function TransportePage() {
               >
                 <div className="flex gap-2">
                   <button
-                    className="flex-1 px-3 py-2 rounded-lg border bg-black text-white hover:opacity-90 disabled:opacity-50 text-sm"
+                    className="flex-1 px-3 py-2 rounded-lg border btn-accent disabled:opacity-50 text-sm"
                     onClick={() => ponerPendiente(a.id)}
                     disabled={processing}
                     title={t('transport.moveToRoute')}
@@ -704,7 +704,7 @@ export default function TransportePage() {
               >
                 <div className="flex gap-2">
                   <button
-                    className="flex-1 px-3 py-2 rounded-lg border bg-black text-white hover:opacity-90 disabled:opacity-50 text-sm"
+                    className="flex-1 px-3 py-2 rounded-lg border btn-accent disabled:opacity-50 text-sm"
                     onClick={() => marcarEntregado(a.id)}
                     disabled={processing}
                   >
@@ -760,7 +760,7 @@ export default function TransportePage() {
                   <div className="flex items-center gap-2">
                     <button
                       className={`text-xs px-2 py-1 rounded-lg border ${
-                        albs.length > 0 ? 'bg-black text-white hover:opacity-90' : 'opacity-40 cursor-not-allowed'
+                        albs.length > 0 ? 'btn-accent' : 'opacity-40 cursor-not-allowed'
                       }`}
                       onClick={() => aceptarRuta(cid)}
                       disabled={processing || albs.length === 0}
@@ -804,7 +804,7 @@ export default function TransportePage() {
                   >
                     <div className="flex gap-2">
                       <button
-                        className="flex-1 px-3 py-2 rounded-lg border bg-black text-white hover:opacity-90 disabled:opacity-50 text-sm"
+                        className="flex-1 px-3 py-2 rounded-lg border btn-accent disabled:opacity-50 text-sm"
                         onClick={() => marcarEntregado(a.id)}
                         disabled={processing}
                       >
@@ -854,7 +854,7 @@ export default function TransportePage() {
                 />
                 <button
                   onClick={addCamionExtra}
-                  className="px-3 py-2 rounded-xl bg-black text-white hover:opacity-90 disabled:opacity-50"
+                  className="px-3 py-2 rounded-xl btn-accent disabled:opacity-50"
                   disabled={processing}
                   type="button"
                 >
