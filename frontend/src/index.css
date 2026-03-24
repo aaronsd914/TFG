@@ -51,8 +51,6 @@ html.dark {
   --fg-accent:  #7c9bc0;
 }
 
-/* Ensure dark mode variables beat palette-specific rules
-   (html.dark[data-palette] specificity (0,2,1) > :root[data-palette] (0,2,0)) */
 html.dark[data-palette="warm"] {
   --fg-bg:      #0f172a;
   --fg-sidebar: #1e293b;
@@ -176,6 +174,20 @@ html.dark .login-card {
 .login-input:focus {
   outline: 2px solid var(--fg-accent);
   outline-offset: 0px;
+}
+
+/* ── Palette-aware primary action button ────────────────────────────────── */
+.btn-accent {
+  background-color: var(--fg-accent);
+  color: #ffffff;
+}
+.btn-accent:hover:not(:disabled) {
+  opacity: 0.85;
+}
+.btn-accent-tab {
+  background-color: var(--fg-accent);
+  color: #ffffff;
+  border-color: var(--fg-accent);
 }
 
 /* ── Fonts ──────────────────────────────────────────────────────────────── */

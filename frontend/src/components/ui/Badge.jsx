@@ -1,7 +1,7 @@
 import React from 'react';
 
 const variants = {
-  default:     'bg-gray-900 text-white',
+  default:     'btn-accent',
   secondary:   'bg-gray-100 text-gray-700 border border-gray-200',
   destructive: 'bg-red-100 text-red-800 border border-red-300',
   outline:     'border border-gray-300 text-gray-700 bg-transparent',

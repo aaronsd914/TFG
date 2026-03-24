@@ -23,7 +23,7 @@ export function Pagination({ page, total, pageSize = 20, onChange }) {
 
   const btn =
     'px-3 py-1.5 rounded-lg border text-sm transition-colors duration-150 focus:outline-none';
-  const btnActive = 'bg-gray-900 text-white border-gray-900 font-semibold';
+  const btnActive = 'btn-accent border-[var(--fg-accent)] font-semibold';
   const btnNormal = 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50';
   const btnDisabled = 'opacity-40 cursor-not-allowed bg-white border-gray-200 text-gray-400';
 

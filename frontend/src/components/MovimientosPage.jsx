@@ -186,7 +186,7 @@ export default function MovimientosPage() {
         <h1 className="text-2xl font-semibold">{t('movements.title')}</h1>
         <button
           onClick={() => setFormModalOpen(true)}
-          className="px-4 py-2 rounded-xl bg-black text-white hover:opacity-90"
+          className="px-4 py-2 rounded-xl btn-accent"
           type="button"
         >
           {t('movements.addMovement')}
@@ -235,7 +235,7 @@ export default function MovimientosPage() {
               <button
                 type="button"
                 onClick={() => setFiltersModalOpen(true)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl border text-sm font-medium transition-colors ${activeCount > 0 ? 'bg-black text-white border-black' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl border text-sm font-medium transition-colors ${activeCount > 0 ? 'btn-accent-tab' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 8h10M11 12h2M13 16h-2" />
@@ -282,7 +282,7 @@ export default function MovimientosPage() {
                         key={val}
                         type="button"
                         onClick={() => setTipoFiltro(val)}
-                        className={`px-4 py-2 rounded-xl border text-sm font-medium transition-colors ${typeFilter === val ? 'bg-black text-white border-black' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                        className={`px-4 py-2 rounded-xl border text-sm font-medium transition-colors ${typeFilter === val ? 'btn-accent-tab' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
                       >
                         {lbl}
                       </button>
@@ -312,7 +312,7 @@ export default function MovimientosPage() {
                 </button>
                 <button
                   type="button"
-                  className="px-4 py-2 rounded-xl bg-black text-white hover:opacity-90"
+                  className="px-4 py-2 rounded-xl btn-accent"
                   onClick={() => setFiltersModalOpen(false)}
                 >
                   {t('common.save')}
@@ -401,7 +401,7 @@ export default function MovimientosPage() {
             <button
               type="submit"
               disabled={posting}
-              className={`px-4 py-2 rounded-xl text-white ${posting ? 'bg-gray-400' : 'bg-black hover:opacity-90'}`}
+              className={`px-4 py-2 rounded-xl text-white ${posting ? 'bg-gray-400' : 'btn-accent'}`}
             >
               {posting ? t('common.saving') : t('common.save')}
             </button>

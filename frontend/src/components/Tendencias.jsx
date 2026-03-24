@@ -474,7 +474,7 @@ export default function TendenciasPage() {
             <button
               onClick={() => exportPdf(false)}
               title={t('trends.exportCompTitle')}
-              className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-2xl bg-black text-white hover:opacity-90"
+              className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-2xl btn-accent"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
@@ -663,7 +663,7 @@ export default function TendenciasPage() {
                 />
                 <button
                   disabled={sending || !input.trim()}
-                  className="px-3 py-2 rounded-2xl bg-black text-white disabled:opacity-50 text-sm"
+                  className="px-3 py-2 rounded-2xl btn-accent disabled:opacity-50 text-sm"
                 >
                   {t('trends.send')}
                 </button>
@@ -676,7 +676,7 @@ export default function TendenciasPage() {
           onClick={() => setChatOpen((o) => !o)}
           className={
             "flex items-center gap-2 px-4 py-3 rounded-full shadow-lg transition-all duration-200 active:scale-95 " +
-            (chatOpen ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-black text-white hover:opacity-90")
+            (chatOpen ? "bg-gray-700 text-white hover:bg-gray-600" : "btn-accent")
           }
         >
           {chatOpen ? (
@@ -1090,7 +1090,7 @@ function Pill({ active, onClick, children }) {
       onClick={onClick}
       className={
         "text-sm px-3 py-1.5 rounded-full border " +
-        (active ? "bg-black text-white border-black" : "bg-white hover:bg-gray-50")
+        (active ? "btn-accent-tab" : "bg-white hover:bg-gray-50")
       }
     >
       {children}

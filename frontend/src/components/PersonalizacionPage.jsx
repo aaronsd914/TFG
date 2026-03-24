@@ -99,7 +99,7 @@ function SaveBtn({ loading, label = 'Guardar' }) {
     <button
       type="submit"
       disabled={loading}
-      className="self-start px-4 py-2 bg-gray-900 text-white rounded-lg text-sm hover:bg-gray-700 disabled:opacity-50 transition-colors"
+      className="self-start px-4 py-2 btn-accent rounded-lg text-sm disabled:opacity-50 transition-colors"
     >
       {loading ? 'Guardando…' : label}
     </button>

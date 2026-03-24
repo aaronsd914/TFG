@@ -10,7 +10,7 @@
 
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=aaronsd914_TFG&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=aaronsd914_TFG)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=aaronsd914_TFG&metric=coverage)](https://sonarcloud.io/summary/new_code?id=aaronsd914_TFG)
-[![Tests](https://github.com/aaronsd914/TFG/actions/workflows/tests.yml/badge.svg)](https://github.com/aaronsd914/TFG/actions/workflows/tests.yml)
+[![Tests](https://github.com/aaronsd914/TFG/actions/workflows/ci.yml/badge.svg)](https://github.com/aaronsd914/TFG/actions/workflows/ci.yml)
 
 ---
 
@@ -80,13 +80,11 @@
       - [Backend tests — pytest](#backend-tests--pytest)
       - [Frontend tests — Vitest](#frontend-tests--vitest)
       - [Continuous Integration — GitHub Actions](#continuous-integration--github-actions)
-        - [tests.yml — test suite](#testsyml--test-suite)
+        - [ci.yml — test, build & deploy](#ciyml--test-build--deploy)
           - [CI pipeline steps (backend job)](#ci-pipeline-steps-backend-job)
           - [Why dummy config files are needed in CI](#why-dummy-config-files-are-needed-in-ci)
           - [Stripe secret key mock](#stripe-secret-key-mock)
         - [lint.yml — code quality](#lintyml--code-quality)
-        - [docker.yml — image publishing](#dockeryml--image-publishing)
-        - [deploy.yml — continuous deployment](#deployyml--continuous-deployment)
         - [Summary — all workflows](#summary--all-workflows)
       - [Git branching model \& commit conventions](#git-branching-model--commit-conventions)
       - [Test isolation notes](#test-isolation-notes)
@@ -141,7 +139,7 @@
 
 ### Entities
 
-FurniGest manages **8 entities** stored in a PostgreSQL database:
+FurniGest manages **11 entities** stored in a PostgreSQL database:
 
 ```
 CustomerDB ──< DeliveryNoteDB ──< DeliveryNoteLineDB >── ProductDB >── SupplierDB
@@ -344,12 +342,17 @@ TFG/
 │       │   ├── linea_albaran.py # DeliveryNoteLineDB + DeliveryNoteLine
 │       │   ├── movimiento.py    # MovementDB  + Movement / MovementCreate
 │       │   ├── albaran_ruta.py  # DeliveryNoteRouteDB
-│       │   └── stripe_checkout.py # StripeCheckoutDB
+│       │   ├── stripe_checkout.py # StripeCheckoutDB
+│       │   ├── incidencia.py    # IncidenciaDB + Incidencia schema
+│       │   ├── usuario.py       # UserDB (staff accounts, hashed passwords)
+│       │   └── configuracion.py # ConfigDB (key-value store)
 │       └── utils/
 │           ├── albaran_pdf.py   # generate_delivery_note_pdf()
 │           ├── tendencias_pdf.py# Analytics PDF builder
 │           ├── emailer.py       # SMTP mail sender
 │           ├── groq_llm.py      # Groq API wrapper (groq_chat)
+│           ├── jwt_utils.py     # JWT token creation helper
+│           ├── resumen_semanal.py# Weekly AI summary scheduler
 │           └── templates.py     # Jinja2 HTML template renderer
 └── frontend/
     └── src/
@@ -490,6 +493,8 @@ The API is served at `http://localhost:8000`. All domain endpoints are prefixed 
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/api/productos/get` | List all products (with supplier) |
+| `GET` | `/api/productos/get/{id}` | Get one product |
+| `GET` | `/api/productos/search` | Search products by name |
 | `POST` | `/api/productos/post` | Create product |
 | `PUT` | `/api/productos/put/{id}` | Update product |
 | `DELETE` | `/api/productos/delete/{id}` | Delete product |
@@ -499,6 +504,7 @@ The API is served at `http://localhost:8000`. All domain endpoints are prefixed 
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/api/proveedores/get` | List all suppliers |
+| `GET` | `/api/proveedores/get/{id}` | Get one supplier |
 | `POST` | `/api/proveedores/post` | Create supplier |
 | `PUT` | `/api/proveedores/put/{id}` | Update supplier |
 | `DELETE` | `/api/proveedores/delete/{id}` | Delete supplier |
@@ -512,14 +518,19 @@ The API is served at `http://localhost:8000`. All domain endpoints are prefixed 
 | `GET` | `/api/albaranes/get/{id}` | Get one delivery note |
 | `GET` | `/api/albaranes/by-cliente/{id}` | All orders for a customer |
 | `PUT` | `/api/albaranes/put/{id}` | Update editable fields (date, description, status) |
+| `PUT` | `/api/albaranes/{id}/items` | Update delivery note line items |
 | `PATCH` | `/api/albaranes/{id}/estado` | Advance state to `ENTREGADO` (auto-registers pending payment) |
+| `GET` | `/api/albaranes/{id}/pdf` | Download delivery note as PDF |
 
 #### Financial movements — `/api/movimientos`
 
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/api/movimientos/get` | List movements (optional `tipo` filter) |
+| `GET` | `/api/movimientos/get/{id}` | Get one movement |
 | `POST` | `/api/movimientos/post` | Manually register a movement |
+| `PUT` | `/api/movimientos/put/{id}` | Update a movement |
+| `DELETE` | `/api/movimientos/delete/{id}` | Delete a movement |
 
 #### Transport — `/api/transporte`
 
@@ -531,8 +542,7 @@ The API is served at `http://localhost:8000`. All domain endpoints are prefixed 
 | `POST` | `/api/transporte/ruta/asignar` | Assign orders to a truck |
 | `POST` | `/api/transporte/ruta/quitar` | Remove orders from a truck (back to ALMACEN) |
 | `POST` | `/api/transporte/ruta/pendiente` | Mark orders as RUTA without truck assignment |
-| `POST` | `/api/transporte/ruta/{id}/liquidar` | Liquidate truck route (records 7 % transport cost) |
-| `GET` | `/api/transporte/ruta/{id}/factura` | Download route invoice PDF |
+| `POST` | `/api/transporte/ruta/{id}/liquidar` | Liquidate truck route (records 7 % transport cost, generates PDF invoice) |
 
 #### Analytics — `/api/analytics`
 
@@ -540,6 +550,7 @@ The API is served at `http://localhost:8000`. All domain endpoints are prefixed 
 |--------|------|-------------|
 | `GET` | `/api/analytics/summary` | Full metrics bundle (sales, top products, RFM, basket pairs) |
 | `GET` | `/api/analytics/compare` | Period-over-period comparison |
+| `GET` | `/api/analytics/predict` | Revenue forecast with Holt's exponential smoothing |
 | `GET` | `/api/analytics/export/pdf` | Download analytics PDF report |
 
 #### AI assistant — `/api/ai`
@@ -566,6 +577,15 @@ The API is served at `http://localhost:8000`. All domain endpoints are prefixed 
 | `GET` | `/api/incidencias/get/{id}` | Get one incident by ID |
 | `POST` | `/api/incidencias/post` | Create incident — requires albaran in `ENTREGADO` state; sets it to `INCIDENCIA` |
 | `DELETE` | `/api/incidencias/{id}` | Delete incident and restore albaran to `ENTREGADO` |
+
+#### Bank (Stripe) — `/api/stripe`
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/stripe/status` | Stripe configuration status |
+| `POST` | `/api/stripe/create-checkout-session` | Create a Stripe Checkout session |
+| `GET` | `/api/stripe/confirm` | Confirm a completed payment session |
+| `GET` | `/api/stripe/charges` | List all Stripe charges |
 
 #### Health — `/health`
 
@@ -950,12 +970,12 @@ monetary   = SUM(total)                         # total lifetime spend (€)
 
 **Step 2 — Quartile scoring with numpy**
 
-Each dimension is converted to a score 1–4 using `numpy.percentile` over the full customer population:
+Each dimension is converted to a score 1–4 using `numpy.quantile` over the full customer population:
 
 ```python
 import numpy as np
 
-Q1, Q2, Q3 = np.percentile(values, [25, 50, 75])
+Q1, Q2, Q3 = np.quantile(values, [0.25, 0.50, 0.75])
 
 # Frequency and Monetary: higher = better
 def score_asc(val):
@@ -1091,7 +1111,6 @@ The `_json_compact` function serialises the object with no whitespace (`separato
 | Parameter | Value | Rationale |
 |-----------|-------|-----------|
 | `temperature` | `0.2` | Low temperature produces consistent, factual outputs. The model reasons over numbers, not creative text. Higher temperature (> 0.7) would introduce numerical hallucinations. |
-| `max_tokens` | `1024` | Sufficient for a paragraph of analysis plus a chart JSON object. |
 | `model` | `llama-3.1-8b-instant` | 8B parameters is enough for structured reasoning over injected JSON. The "instant" variant minimises latency on Groq's LPU hardware. |
 
 #### Chart JSON extraction
@@ -1310,26 +1329,27 @@ pytest test/backend/ --cov=backend/app --cov-report=term-missing
 
 | File | Tests | Coverage area |
 |------|-------|---------------|
-| `test_clientes.py` | 8 | Full CRUD + upsert by DNI/email |
-| `test_proveedores.py` | 8 | Full CRUD |
-| `test_productos.py` | 8 | Full CRUD + FK-violation 409 |
-| `test_movimientos.py` | 9 | Full CRUD + date ordering + invalid tipo 422 |
-| `test_albaranes.py` | 16 | Create/list/get, fianza auto-calc, custom fianza, state transitions, pending-payment movement |
-| `test_analytics.py` | 9 | `/summary`, `/compare`, `/export/pdf` with mocked Groq |
-| `test_transportes.py` | 13 | Almacén listing, route CRUD, assign/unassign, liquidate |
+| `test_clientes.py` | 12 | Full CRUD + upsert by DNI/email |
+| `test_proveedores.py` | 9 | Full CRUD |
+| `test_productos.py` | 11 | Full CRUD + FK-violation 409 + search |
+| `test_movimientos.py` | 12 | Full CRUD + date ordering + invalid tipo 422 |
+| `test_albaranes.py` | 26 | Create/list/get, fianza auto-calc, custom fianza, state transitions, pending-payment movement, PDF, line items |
+| `test_analytics.py` | 27 | `/summary`, `/compare`, `/predict`, `/export/pdf` with mocked Groq, RFM, basket |
+| `test_transportes.py` | 14 | Almacén listing, route CRUD, assign/unassign, pendiente, liquidate |
 | `test_stripe.py` | 10 | Checkout, confirm, list — all Stripe calls mocked |
 | `test_bank.py` | 3 | Debug info, status (no token), link (mocked HTTP) |
-| `test_auth.py` | 13 | Login OK/fail, `/api/auth/me` GET, all PUT /me branches (password OK, wrong password, username OK, conflict 409, too-short 422), protected endpoint, expired/tampered token |
+| `test_auth.py` | 16 | Login OK/fail, `/api/auth/me` GET, all PUT /me branches (password OK, wrong password, username OK, conflict 409, too-short 422), protected endpoint, expired/tampered token |
 | `test_configuracion.py` | 12 | GET defaults, GET/PUT round-trip, unknown key 400, overwrite, `ultima_vez` timestamp |
 | `test_emailer.py` | 7 | `_html_to_text` (empty, strip tags, strip script, entities), `send_email_simple` (SMTP path, Resend path, captures recipient) |
-| `test_resumen_semanal.py` | 22 | `_get`/`_set` round-trips, `_eur` formatting, `_build_html` with/without insight + red balance, `_run` skip conditions + execution + Groq error handling + `ultima_vez` update, `job_resumen_semanal` exception capture |
-| **Total** | **150** | |
+| `test_resumen_semanal.py` | 39 | `_get`/`_set` round-trips, `_eur` formatting, `_build_html` with/without insight + red balance, `_run` skip conditions + execution + Groq error handling + `ultima_vez` update, `job_resumen_semanal` exception capture |
+| `test_incidencias.py` | 12 | Create, list, get, delete, automatic status revert |
+| **Total** | **210** | |
 
 > Tests exercise both the original router layer and the new `services/` layer — the service functions are called through the same HTTP endpoints, so the existing test suite validates both layers without requiring new test files.
 
 **Key isolation strategies:**
 
-- **Database:** SQLite `:memory:` with `StaticPool` (single shared connection). All tables are created fresh for each test session via `Base.metadata.create_all()`, then dropped afterwards.
+- **Database:** SQLite `:memory:` with `StaticPool` (single shared connection). All tables are created fresh for each test via an `autouse` fixture with function scope (`Base.metadata.create_all()` / `drop_all()`), then dropped afterwards.
 - **Seed data:** The `seed()` startup hook is patched to a no-op so it never populates the test DB, keeping tests starting from a clean empty state.
 - **Foreign keys:** `PRAGMA foreign_keys=ON` is applied via an SQLAlchemy event listener so SQLite enforces referential integrity the same way PostgreSQL does in production.
 - **Email (albaranes):** `send_email_with_pdf`, `generar_pdf_albaran` and `render` are all patched to no-ops via an `autouse` fixture. This prevents any SMTP connection attempt during tests — important because `BackgroundTasks` inside `TestClient` run synchronously.
@@ -1352,22 +1372,24 @@ npm run test:watch  # watch mode
 |------|-------|---------------|
 | `Sidebar.test.jsx` | 9 | App name, all nav links present, correct `href` values, active/inactive CSS class tokens, logout button, logout calls `removeToken` and redirects |
 | `App.test.jsx` | 5 | Root renders, title present, layout classes, `<main>` and `<aside>` in DOM |
-| `Dashboard.test.jsx` | 4 | Mounts without error, `fetch` called on mount, empty-data grace, network-error resilience |
-| `AlbaranesPage.test.jsx` | 5 | Mounts without error, API called on mount, page heading, no visible errors, network-error resilience |
+| `Dashboard.test.jsx` | 7 | Mounts without error, `fetch` called on mount, empty-data grace, network-error resilience, KPI cards |
+| `AlbaranesPage.test.jsx` | 11 | Mounts without error, API called on mount, page heading, state filters, no visible errors, network-error resilience |
 | `BancoPage.test.jsx` | 5 | Mounts without error, calls Stripe status and checkouts endpoints, no visible errors, network-error resilience |
-| `ClientesPage.test.jsx` | 6 | Mounts without error, API called on mount, `<h1>` heading, search input present, empty-list grace, network-error resilience |
+| `ClientesPage.test.jsx` | 9 | Mounts without error, API called on mount, `<h1>` heading, search input present, empty-list grace, network-error resilience |
 | `MovimientosPage.test.jsx` | 6 | Mounts without error, API called on mount, page heading, monthly summary cards (ingresos/egresos/balance), quick-add form, network-error resilience |
 | `NuevaVenta.test.jsx` | 5 | Mounts without error, "Nueva venta" heading, customer search mode present, checkbox controls, network-error resilience |
-| `ProductosPage.test.jsx` | 6 | Mounts without error, both API calls (productos + proveedores) on mount, `<h1>` heading, "Nuevo producto" button in header, no visible errors, network-error resilience |
-| `Tendencias.test.jsx` | 6 | Mounts without error, API called on mount, page heading, "Asistente IA" section present, chat welcome message, network-error resilience |
+| `ProductosPage.test.jsx` | 13 | Mounts without error, both API calls (productos + proveedores) on mount, `<h1>` heading, "Nuevo producto" button in header, tabs, no visible errors, network-error resilience |
+| `Tendencias.test.jsx` | 8 | Mounts without error, API called on mount, page heading, "Asistente IA" section present, chat welcome message, network-error resilience |
 | `TransportePage.test.jsx` | 6 | Mounts without error, all three initial API calls (almacén/rutas/clientes), page heading, trucks column, network-error resilience |
-| `LoginPage.test.jsx` | 12 | Form renders, type in fields, toggle password visibility, login OK/fail, redirect, error message |
+| `LoginPage.test.jsx` | 18 | Form renders, type in fields, toggle password visibility, login OK/fail, redirect, error message |
 | `auth.test.js` | 13 | `saveToken`, `getToken`, `removeToken`, `isTokenValid` (expired/tampered/valid/Base64url), `login` fetch call |
 | `fetchInterceptor.test.js` | 9 | Auth header injection, skips external URLs, 401 → `removeToken` + redirect, preserves existing headers |
-| `PersonalizacionPage.test.jsx` | 19 | Renders sections, dark mode toggle, palettes, username/password fields, save buttons, email signature, form submissions (password, username, email config), mismatch validation, API error handling |
+| `PersonalizacionPage.test.jsx` | 48 | Renders sections, dark mode toggle, palettes, username/password fields, save buttons, email signature, form submissions, weekly summary config, i18n settings |
 | `PerfilPage.test.jsx` | 17 | Renders sections, JWT username decode, password fields, submit buttons, mismatched-password validation, form submissions (username, password), API error handling |
 | `ThemeContext.test.jsx` | 11 | Default values (isDark, palette), `localStorage` read on init, `setIsDark` updates value + DOM class + persists, `setPalette` updates value + `dataset.palette` + persists |
-| **Total** | **144** | |
+| `IncidenciasPage.test.jsx` | 15 | Mounts without error, API called, list incidents, create modal, delete confirmation |
+| `i18n.test.jsx` | 14 | Language detection, fallback, translation keys, language switching |
+| **Total** | **229** | |
 
 **Key isolation strategies:**
 
@@ -1380,22 +1402,39 @@ npm run test:watch  # watch mode
 
 #### Continuous Integration — GitHub Actions
 
-The project uses **five separate GitHub Actions workflows**, each with a focused responsibility. All workflows trigger on every push and pull-request to `main` / `master` (except where noted). Markdown-only changes are ignored via `paths-ignore: '**.md'`.
+The project uses **two GitHub Actions workflow files** that together define nine jobs. All workflows ignore Markdown-only changes via `paths-ignore: '**.md'`.
 
 ---
 
-##### tests.yml — test suite
+##### ci.yml — full CI/CD pipeline
 
-**File:** `.github/workflows/tests.yml`
+**File:** `.github/workflows/ci.yml`
 
-Runs on every push / PR, daily at **06:00 UTC**, and on manual dispatch. The two jobs run **in parallel**:
+Runs on every **pull request to `main`/`master`** and on manual dispatch (`workflow_dispatch`). Contains seven sequential jobs:
 
 ```
-backend-tests  ──► ubuntu-latest | Python 3.12 | pip install -r requirements.txt | pytest --cov
-frontend-tests ──► ubuntu-latest | Node 20     | npm ci                          | npm test
+PR to main
+    │
+    ▼
+  lint (Ruff + ESLint)
+    │
+    ├──► backend-tests (pytest --cov)
+    └──► frontend-tests (Vitest --coverage)
+              │
+              ▼
+        sonarcloud (quality gate)
+              │
+              ▼
+          e2e (Selenium — full stack)
+              │
+              ▼
+        docker (build & push to ghcr.io)
+              │
+              ▼
+        deploy (Railway + Vercel)
 ```
 
-A coverage XML report is uploaded as a build artifact after every backend run.
+The backend-tests and frontend-tests jobs run **in parallel** after lint passes. All subsequent jobs are sequential — each depends on the previous one passing.
 
 ###### CI pipeline steps (backend job)
 
@@ -1405,7 +1444,7 @@ A coverage XML report is uploaded as a build artifact after every backend run.
 | `actions/setup-python@v5` | Installs Python 3.12 with pip cache |
 | `pip install -r requirements.txt` | Installs all backend dependencies |
 | **Create dummy config files** | Generates placeholder `.py` config files (see below) |
-| `pytest --cov` | Runs the 150-test suite and produces a coverage XML report |
+| `pytest --cov` | Runs the 210-test backend suite and produces a coverage XML report |
 | `actions/upload-artifact@v4` | Saves `coverage-backend.xml` as a downloadable artifact |
 
 ###### Why dummy config files are needed in CI
@@ -1443,7 +1482,7 @@ Without this, the production guard `if not STRIPE_SECRET_KEY: raise HTTPExceptio
 
 **File:** `.github/workflows/lint.yml`
 
-Runs on every push / PR. Fails the pipeline if any linting or formatting violation is found, preventing low-quality code from being merged.
+Runs on every **push** to any branch and on manual dispatch. Fails the pipeline if any linting or formatting violation is found, preventing low-quality code from being merged.
 
 Two jobs run in parallel:
 
@@ -1462,77 +1501,16 @@ Two jobs run in parallel:
 
 ---
 
-##### docker.yml — image publishing
-
-**File:** `.github/workflows/docker.yml`
-
-Runs on every push to `main` / `master`. Builds and pushes both Docker images to the GitHub Container Registry (`ghcr.io`) using the built-in `GITHUB_TOKEN` — no additional secrets are required.
-
-```
-push to main
-    │
-    ├── Build backend image   → ghcr.io/{owner}/furnigest-backend:latest
-    └── Build frontend image  → ghcr.io/{owner}/furnigest-frontend:latest
-```
-
-The published images can be pulled directly on any machine:
-
-```bash
-docker pull ghcr.io/aarons/furnigest-backend:latest
-docker pull ghcr.io/aarons/furnigest-frontend:latest
-```
-
-The workflow uses `docker/login-action`, `docker/build-push-action` and `docker/metadata-action` from the Docker official action suite. Images are always tagged `latest`; adding SHA tags for pinned deployments is straightforward by extending the `metadata-action` tags list.
-
----
-
-##### deploy.yml — continuous deployment
-
-**File:** `.github/workflows/deploy.yml`
-
-Runs on **every push to any branch** (and on pull requests to `main`/`master`). Unlike the other workflows, it runs backend and frontend tests **inline** first, then a SonarCloud quality gate, and only proceeds to deploy when all three pass. This prevents a broken commit from reaching production even if the standalone `tests.yml` run is still pending.
-
-```
-push to any branch
-    ├── backend-tests  ─► Pass?
-    └── frontend-tests ─► Pass?
-                              │
-                    ┌─────────┴─────────┐
-                    │  sonarcloud gate  │
-                    └─────────┬─────────┘
-                               │
-                   ┌───────────┴───────────┐
-                   ├ deploy-backend  (Railway CLI → railway up --detach)
-                   └ deploy-frontend (Vercel CLI  → vercel --prod)
-```
-
-**Required repository secrets** (set in *Settings → Secrets and variables → Actions*):
-
-| Secret | Value / How to obtain |
-|--------|----------------------|
-| `RAILWAY_TOKEN` | Railway Dashboard → Project → Settings → Tokens → **Create project token** (project context is embedded — no separate project ID needed) |
-| `VERCEL_TOKEN` | Vercel Dashboard → avatar → Settings → Tokens → Create |
-| `VERCEL_ORG_ID` | `KlEHSpF4ICDw6eolz3GF3KEm` (Vercel → avatar → Settings → User ID) |
-| `VERCEL_PROJECT_ID` | `prj_qPKtCiAl2F22men8MfoIeEo3xpMw` (Vercel → Project → Settings → General) |
-
-Until these secrets are added, the deploy jobs are skipped but tests still run normally on every push.
-
----
-
 ##### Summary — all workflows
 
-| Workflow | Trigger | Purpose | Secrets needed |
-|----------|---------|---------|----------------|
-| `tests.yml` | PR / manual | Run 104 backend + 111 frontend tests + upload coverage artifacts | None |
-| `e2e.yml` | PR / manual | Selenium E2E tests (~62 tests) against real backend + frontend in CI | None |
-| `lint.yml` | PR / manual | Ruff + ESLint code quality | None |
-| `docker.yml` | PR / manual | Build & push images to ghcr.io | None (GITHUB_TOKEN) |
-| `sonarcloud.yml` | PR / manual | Generate coverage + SonarCloud quality gate | `SONAR_TOKEN` |
-| `deploy.yml` | **any push** / PR / manual | Tests + SonarCloud gate + deploy to Railway + Vercel | 5 secrets |
+| Workflow | Trigger | Jobs | Secrets needed |
+|----------|---------|------|----------------|
+| `ci.yml` | PR to `main` / manual | 7: lint → backend-tests & frontend-tests → SonarCloud → E2E → Docker build & push → deploy (Railway + Vercel) | `SONAR_TOKEN`, `RAILWAY_TOKEN`, `RAILWAY_PROJECT_ID`, `RAILWAY_SERVICE_ID`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` |
+| `lint.yml` | push to any branch / manual | 2: Ruff (Python) + ESLint (JavaScript) | None |
 
 #### SonarCloud quality gate
 
-FurniGest integrates **SonarCloud** (the cloud-hosted version of SonarQube) as a quality gate in the `deploy.yml` pipeline. The dedicated `sonarcloud.yml` workflow runs on every Pull Request and can also be triggered manually (`workflow_dispatch`) so coverage feedback is available before merging. The `sonarcloud` job in `deploy.yml` additionally blocks the deploy if the quality gate fails.
+FurniGest integrates **SonarCloud** (the cloud-hosted version of SonarQube) as a quality gate in the `ci.yml` pipeline. The `sonarcloud` job runs after backend and frontend tests pass, blocking the E2E and deploy jobs if the quality gate fails.
 
 > **Prerequisite — disable Automatic Analysis:** In SonarCloud → Administration → Analysis Method, **uncheck "SonarCloud Automatic Analysis"**. Automatic Analysis does not support external coverage import. CI-based analysis (GitHub Actions) must be used instead.
 
@@ -1557,7 +1535,7 @@ sonar.javascript.lcov.reportPaths=frontend/coverage/lcov.info
 
 #### Git branching model & commit conventions
 
-FurniGest follows **Trunk-Based Development (TBD)**: `main` is the only long-lived branch. Every feature is developed on a short-lived `feature/*` or `fix/*` branch and merged to `main` via a Pull Request. This suits continuous deployment — every push to any branch triggers `deploy.yml` automatically (tests + deploy gate).
+FurniGest follows **Trunk-Based Development (TBD)**: `main` is the only long-lived branch. Every feature is developed on a short-lived `feature/*` or `fix/*` branch and merged to `main` via a Pull Request. This suits continuous deployment — every push triggers linting via `lint.yml`, and every Pull Request to `main` triggers the full `ci.yml` pipeline (tests + quality gate + deploy).
 
 **Why not Gitflow?** Gitflow adds `develop`, `release/*` and `hotfix/*` branches, which make sense for projects with periodic release cycles. FurniGest deploys on every merge, so the extra branches would only add merge overhead without benefit.
 
@@ -1906,7 +1884,7 @@ Without `RESEND_API_KEY`, the emailer falls back to SMTP — which works in loca
 
 #### Continuous deployment
 
-Both Railway and Vercel are connected directly to the GitHub repository and deploy automatically on every push to `main`. The `deploy.yml` workflow provides an additional CI-gated deploy path: it runs the full test suite before calling `railway up` and `vercel --prod`, preventing a broken commit from reaching production.
+Both Railway and Vercel are connected directly to the GitHub repository and deploy automatically on every push to `main`. The `ci.yml` workflow provides an additional CI-gated deploy path: its `deploy-railway` and `deploy-vercel` jobs run the full test suite before deploying, preventing a broken commit from reaching production.
 
 > **Vercel deploy note:** the Vercel CLI is invoked from the repository root (not `frontend/`) so that `VERCEL_PROJECT_ID` / `VERCEL_ORG_ID` secrets resolve without path duplication. The project's root directory is already set to `frontend` in the Vercel dashboard.
 
