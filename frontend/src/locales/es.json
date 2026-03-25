@@ -116,6 +116,7 @@
     "incidenciasTotal": "Total: {{count}} incidencias",
     "noIncidencias": "No hay incidencias activas.",
     "viewIncidentsFull": "Ver todas las incidencias →",
+    "topClients": "Top clientes",
     "months": ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"]
   },
   "clients": {

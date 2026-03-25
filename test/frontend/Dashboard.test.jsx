@@ -86,4 +86,5 @@ describe('Dashboard', () => {
       expect(screen.getByText('Rotura en pata')).toBeInTheDocument();
     });
   });
+
 });
