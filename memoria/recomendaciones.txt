@@ -86,14 +86,5 @@ ALTO ESFUERZO (> 2 días, máximo impacto):
   #31 Twelve-Factor App — tabla 12 factores (1-2h)            [SD / AIS / SO / IS]
   #32 BackgroundTasks para email asíncrono (1-2h)             [SO T2/T3 / SD T3]
   #33 Pruebas de carga con Locust (2-3h)                      [IS T2 / AIS T1]
-  #34 Módulo de incidencias — implementado (2026-03-23):      [IS T3 / BD T4]
-      - Nueva entidad IncidenciaDB (tabla incidencias)
-      - Estado INCIDENCIA en la máquina de estados del albarán
-      - API REST: GET list, GET by id, POST (valida ENTREGADO),
-        DELETE (restaura a ENTREGADO)
-      - Frontend: IncidenciasPage con lista, buscador, modal crear,
-        confirmación de borrado
-      - Dashboard: 5ª tarjeta estadística + tabla de recientes
-      - i18n ES/EN completo; tests backend (12) + frontend (10) + E2E (8)
 
 ===========================================================================
