@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Enable class-based dark: variant (html.dark) */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ── CSS custom properties (palette + dark mode) ─────────────────────────── */
 :root {
   --fg-bg:      #fdf7ed;

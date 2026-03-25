@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Line, Pie } from 'react-chartjs-2';
@@ -14,6 +14,7 @@ import {
   Legend,
 } from 'chart.js';
 import { apiFetch } from '../api/http.js';
+import { useTheme } from '../context/ThemeContext.jsx';
 import PropTypes from 'prop-types';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Title, Tooltip, Legend);
@@ -31,19 +32,20 @@ function monthLabelShort(index0, months) {
 }
 function fmtDate(d) {
   const dt = new Date(d);
-  if (Number.isNaN(dt.getTime())) return '—';
+  if (Number.isNaN(dt.getTime())) return 'â€”';
   return dt.toLocaleDateString('es-ES');
 }
 
 export default function Dashboard() {
   const { t, i18n } = useTranslation();
+  const { isDark } = useTheme();
   const months = t('dashboard.months', { returnObjects: true });
   // UI-only state
   const [monthsWindowMovs, setMonthsWindowMovs] = useState(6);
   const [monthsWindowVentas, setMonthsWindowVentas] = useState(6);
   const [chartMode, setChartMode] = useState('ALL');
 
-  // Data queries — stale-while-revalidate, shared cache across navegación
+  // Data queries â€” stale-while-revalidate, shared cache across navegaciÃ³n
   const movsQuery = useQuery({ queryKey: ['movimientos'], queryFn: () => apiFetch('movimientos/get'), staleTime: 30_000 });
   const albQuery  = useQuery({ queryKey: ['albaranes'],   queryFn: () => apiFetch('albaranes/get'),   staleTime: 30_000 });
   const cliQuery  = useQuery({ queryKey: ['clientes'],    queryFn: () => apiFetch('clientes/get'),    staleTime: 30_000 });
@@ -72,15 +74,13 @@ export default function Dashboard() {
   const loading    = movsQuery.isLoading || albQuery.isLoading || cliQuery.isLoading;
   const refreshing = (movsQuery.isFetching || albQuery.isFetching || cliQuery.isFetching) && !loading;
   const err        = movsQuery.error?.message || albQuery.error?.message || cliQuery.error?.message || null;
-  const lastUpdated = movsQuery.dataUpdatedAt ? new Date(movsQuery.dataUpdatedAt) : null;
-
   const clientesMap = useMemo(() => {
     const m = new Map();
     (clientes || []).forEach(c => m.set(c.id, c));
     return m;
   }, [clientes]);
 
-  // Métricas del mes actual
+  // MÃ©tricas del mes actual
   const now = new Date();
   const currY = now.getFullYear();
   const currM = now.getMonth();
@@ -173,7 +173,7 @@ export default function Dashboard() {
     return { labels, datasets };
   }, [movs, currY, currM, monthsWindowMovs, chartMode, i18n.language]);
 
-  // Nueva gráfica: ventas por mes (número de albaranes)
+  // Nueva grÃ¡fica: ventas por mes (nÃºmero de albaranes)
   const ventasSeries = useMemo(() => {
     const keys = [];
     for (let i = monthsWindowVentas - 1; i >= 0; i--) {
@@ -208,11 +208,13 @@ export default function Dashboard() {
     }
     const labels = [t('dashboard.stateFianza'), t('dashboard.stateAlmacen'), t('dashboard.stateRuta'), t('dashboard.stateEntregado')];
     const data = [counts.FIANZA || 0, counts.ALMACEN || 0, counts.RUTA || 0, counts.ENTREGADO || 0];
-    const backgroundColor = ['#d7e8cf', '#f3e3c8', '#cbd5e1', '#e2e8f0'];
+    const backgroundColor = isDark
+      ? ['#4ade80', '#fb923c', '#60a5fa', '#94a3b8']
+      : ['#d7e8cf', '#f3e3c8', '#cbd5e1', '#e2e8f0'];
     return { labels, datasets: [{ data, backgroundColor }] };
-  }, [albaranes, i18n.language]);
+  }, [albaranes, i18n.language, isDark]);
 
-  // Últimos 8 movimientos
+  // Ãšltimos 8 movimientos
   const ultimosMovs = useMemo(() => {
     const sorted = [...movs].sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
     return sorted.slice(0, 8);
@@ -223,6 +225,17 @@ export default function Dashboard() {
     list.sort((a, b) => new Date(a.date) - new Date(b.date) || a.id - b.id);
     return list.slice(0, 8);
   }, [almacen]);
+
+  const topClientes = useMemo(() => {
+    const totals = new Map();
+    for (const a of albaranes) {
+      totals.set(a.customer_id, (totals.get(a.customer_id) || 0) + Number(a.total || 0));
+    }
+    return [...totals.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([id, total]) => ({ client: clientesMap.get(id), total }));
+  }, [albaranes, clientesMap]);
 
   const chartOptionsMoney = {
     responsive: true,
@@ -304,23 +317,23 @@ export default function Dashboard() {
 
 
 
-      {/* Gráficas */}
+      {/* GrÃ¡ficas */}
       {!err && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-          <div className="bg-white p-4 rounded-xl shadow-sm self-start">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white p-4 rounded-xl shadow-sm">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-3">
               <h3 className="text-base font-semibold">{t('dashboard.incomeExpenseChart', { months: monthsWindowMovs })}</h3>
 
               <div className="flex flex-wrap items-center gap-2">
                 <button
-                  className={`px-2.5 py-1 rounded-lg border text-sm ${monthsWindowMovs === 6 ? 'bg-gray-100' : 'bg-white hover:bg-gray-50'}`}
+                  className={`px-2.5 py-1 rounded-lg border text-sm ${monthsWindowMovs === 6 ? 'bg-gray-100 dark:bg-slate-600 dark:border-slate-400 dark:text-white' : 'bg-white hover:bg-gray-50 dark:bg-transparent dark:border-slate-600 dark:text-slate-400'}`}
                   onClick={() => setMonthsWindowMovs(6)}
                   disabled={loading}
                 >
                   6M
                 </button>
                 <button
-                  className={`px-2.5 py-1 rounded-lg border text-sm ${monthsWindowMovs === 12 ? 'bg-gray-100' : 'bg-white hover:bg-gray-50'}`}
+                  className={`px-2.5 py-1 rounded-lg border text-sm ${monthsWindowMovs === 12 ? 'bg-gray-100 dark:bg-slate-600 dark:border-slate-400 dark:text-white' : 'bg-white hover:bg-gray-50 dark:bg-transparent dark:border-slate-600 dark:text-slate-400'}`}
                   onClick={() => setMonthsWindowMovs(12)}
                   disabled={loading}
                 >
@@ -355,14 +368,9 @@ export default function Dashboard() {
               <div className="h-56 md:h-64 rounded-lg bg-gray-100 animate-pulse" />
             ) : (
               <>
-                <div className="flex items-center justify-between mb-2 text-sm text-gray-600">
-                  <div>
-                    {t('dashboard.currentMonth')} <span className="font-semibold text-gray-900">{eur(ingresosMes)}</span> {t('dashboard.incomeUnit')} ·{' '}
-                    <span className="font-semibold text-gray-900">{eur(egresosMes)}</span> {t('dashboard.expensesUnit')}
-                  </div>
-                  <div className="text-xs">
-                    {lastUpdated ? t('dashboard.dataUpTo', { date: lastUpdated.toLocaleDateString('es-ES') }) : ''}
-                  </div>
+                <div className="mb-2 text-sm text-gray-600">
+                  {t('dashboard.currentMonth')} <span className="font-semibold text-gray-900">{eur(ingresosMes)}</span> {t('dashboard.incomeUnit')} Â·{' '}
+                  <span className="font-semibold text-gray-900">{eur(egresosMes)}</span> {t('dashboard.expensesUnit')}
                 </div>
                 <div className="h-56 md:h-64">
                   <Line data={lineSeries} options={chartOptionsMoney} />
@@ -371,7 +379,7 @@ export default function Dashboard() {
             )}
           </div>
 
-          <div className="bg-white p-4 rounded-xl shadow-sm self-start">
+          <div className="bg-white p-4 rounded-xl shadow-sm">
             <h3 className="mb-3 text-base font-semibold">{t('dashboard.orderStatus')}</h3>
             {loading ? (
               <div className="h-56 md:h-64 rounded-lg bg-gray-100 animate-pulse" />
@@ -384,40 +392,60 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Nueva gráfica: Ventas por mes */}
+      {/* Ventas por mes + Top clientes */}
       {!err && (
-        <div className="bg-white p-4 rounded-xl shadow-sm">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-3">
-            <h3 className="text-base font-semibold">{t('dashboard.salesChart', { months: monthsWindowVentas })}</h3>
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                className={`px-2.5 py-1 rounded-lg border text-sm ${monthsWindowVentas === 6 ? 'bg-gray-100' : 'bg-white hover:bg-gray-50'}`}
-                onClick={() => setMonthsWindowVentas(6)}
-                disabled={loading}
-              >
-                6M
-              </button>
-              <button
-                className={`px-2.5 py-1 rounded-lg border text-sm ${monthsWindowVentas === 12 ? 'bg-gray-100' : 'bg-white hover:bg-gray-50'}`}
-                onClick={() => setMonthsWindowVentas(12)}
-                disabled={loading}
-              >
-                12M
-              </button>
-              <div className="text-sm text-gray-600">{loading ? '…' : t('dashboard.totalDeliveries', { count: albaranes.length })}</div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white p-4 rounded-xl shadow-sm">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-3">
+              <h3 className="text-base font-semibold">{t('dashboard.salesChart', { months: monthsWindowVentas })}</h3>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  className={`px-2.5 py-1 rounded-lg border text-sm ${monthsWindowVentas === 6 ? 'bg-gray-100 dark:bg-slate-600 dark:border-slate-400 dark:text-white' : 'bg-white hover:bg-gray-50 dark:bg-transparent dark:border-slate-600 dark:text-slate-400'}`}
+                  onClick={() => setMonthsWindowVentas(6)}
+                  disabled={loading}
+                >
+                  6M
+                </button>
+                <button
+                  className={`px-2.5 py-1 rounded-lg border text-sm ${monthsWindowVentas === 12 ? 'bg-gray-100 dark:bg-slate-600 dark:border-slate-400 dark:text-white' : 'bg-white hover:bg-gray-50 dark:bg-transparent dark:border-slate-600 dark:text-slate-400'}`}
+                  onClick={() => setMonthsWindowVentas(12)}
+                  disabled={loading}
+                >
+                  12M
+                </button>
+                <div className="text-sm text-gray-600">{loading ? 'â€¦' : t('dashboard.totalDeliveries', { count: albaranes.length })}</div>
+              </div>
             </div>
+            {loading ? (
+              <div className="h-44 rounded-lg bg-gray-100 animate-pulse" />
+            ) : (
+              <div className="h-44">
+                <Line data={ventasSeries} options={chartOptionsCount} />
+              </div>
+            )}
           </div>
-          {loading ? (
-            <div className="h-56 md:h-64 rounded-lg bg-gray-100 animate-pulse" />
-          ) : (
-            <div className="h-56 md:h-64">
-              <Line data={ventasSeries} options={chartOptionsCount} />
-            </div>
-          )}
+          <div className="bg-white p-4 rounded-xl shadow-sm">
+            <h3 className="mb-3 text-base font-semibold">{t('dashboard.topClients')}</h3>
+            {loading ? (
+              <div className="h-44 rounded-lg bg-gray-100 animate-pulse" />
+            ) : topClientes.length === 0 ? (
+              <p className="text-sm text-gray-500 py-2">{t('common.noResults')}</p>
+            ) : (
+              <ol className="flex flex-col gap-3 mt-2">
+                {topClientes.map(({ client, total }, i) => (
+                  <li key={i} className="flex items-center gap-3">
+                    <span className="w-6 h-6 rounded-full bg-gray-100 text-xs font-bold flex items-center justify-center text-gray-600 shrink-0">{i + 1}</span>
+                    <span className="text-sm text-gray-700 truncate flex-1">{client ? `${client.name} ${client.surnames}` : `Cliente #${i + 1}`}</span>
+                    <span className="text-sm font-semibold tabular-nums shrink-0 text-gray-900">{eur(total)}</span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
         </div>
       )}
 
-      {/* Últimos movimientos */}
+      {/* Ãšltimos movimientos */}
       <div className="bg-white p-4 rounded-xl shadow-sm">
         <div className="flex items-center justify-between gap-3 mb-3">
           <h3 className="text-base font-semibold">{t('dashboard.recentMovements')}</h3>
@@ -460,11 +488,11 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Almacén (ALMACEN) */}
+      {/* AlmacÃ©n (ALMACEN) */}
       <div className="bg-white p-4 rounded-xl shadow-sm">
         <div className="flex items-center justify-between gap-3 mb-3">
           <h3 className="text-base font-semibold">{t('dashboard.warehouseSection')}</h3>
-          <div className="text-sm text-gray-600">{loading ? '…' : `${almacen.length} total`}</div>
+          <div className="text-sm text-gray-600">{loading ? 'â€¦' : `${almacen.length} total`}</div>
         </div>
 
         <TablaPedidos
@@ -481,30 +509,9 @@ export default function Dashboard() {
           </a>
         </div>
       </div>
-
-      {/* NOTA: Se ha eliminado la sección visual de “En ruta” */}
-      {/* Incidencias activas */}
-      <div className="bg-white p-4 rounded-xl shadow-sm" data-testid="dashboard-incidencias-section">
-        <div className="flex items-center justify-between gap-3 mb-3">
-          <h3 className="text-base font-semibold">{t('dashboard.incidenciasSection')}</h3>
-          <div className="text-sm text-gray-600">
-            {loading ? '…' : t('dashboard.incidenciasTotal', { count: incidencias.length })}
-          </div>
-        </div>
-        <IncidenciasBody loading={loading} incidencias={incidencias} />
-        <div className="mt-4 flex">
-          <a
-            href="/incidencias"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold btn-accent shadow-sm transition-colors"
-            data-testid="dashboard-incidencias-link"
-          >
-            {t('dashboard.viewIncidentsFull')}
-          </a>
-        </div>
-      </div>    </div>
+    </div>
   );
 }
-
 function TablaPedidos({ rows, clientesMap }) {
   const { t } = useTranslation();
   return (
@@ -530,12 +537,12 @@ function TablaPedidos({ rows, clientesMap }) {
                 key={a.id}
                 className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
                 onClick={() => { try { localStorage.setItem('albaran_open_id', String(a.id)); } catch {} window.location.href = '/albaranes'; }}
-                title={`Ir al albarán #${a.id}`}
+                title={`Ir al albarÃ¡n #${a.id}`}
               >
                 <td className="p-2">#{a.id}</td>
                 <td className="p-2">{fmtDate(a.date)}</td>
                 <td className="p-2">{c ? `${c.name} ${c.surnames}` : `Cliente #${a.customer_id}`}</td>
-                <td className="p-2">{c?.dni || '—'}</td>
+                <td className="p-2">{c?.dni || 'â€”'}</td>
                 <td className="p-2">{eur(a.total)}</td>
               </tr>
             );
@@ -569,7 +576,7 @@ function getDeltaInfo(delta, invertColors) {
 }
 
 function StatCard({ title, value, delta, deltaLabel, hint, invertColors = false, link = null }) {
-  const [displayed, setDisplayed] = useState('…');
+  const [displayed, setDisplayed] = useState('â€¦');
 
   useEffect(() => {
     const numMatch = value.replace(/\./g, '').replace(',', '.').match(/-?[\d.]+/);
@@ -610,7 +617,7 @@ function StatCard({ title, value, delta, deltaLabel, hint, invertColors = false,
           href={link}
           className="mt-2 inline-block text-xs text-blue-600 hover:underline"
         >
-          {hint} →
+          {hint} â†’
         </a>
       )}
     </div>
@@ -652,41 +659,4 @@ function pctDelta(curr, prev) {
   return ((c - p) / p) * 100;
 }
 
-function IncidenciasBody({ loading, incidencias }) {
-  const { t } = useTranslation();
-  if (loading) {
-    return <div className="h-16 bg-gray-100 rounded-xl animate-pulse" />;
-  }
-  if (incidencias.length === 0) {
-    return <p className="text-sm text-gray-500 py-2">{t('dashboard.noIncidencias')}</p>;
-  }
-  return (
-    <div className="overflow-x-auto">
-      <table className="min-w-[500px] w-full border-collapse">
-        <thead>
-          <tr className="text-left border-b border-gray-200">
-            <th className="p-2 w-16">{t('dashboard.colID')}</th>
-            <th className="p-2 w-32">{t('dashboard.colDate')}</th>
-            <th className="p-2 w-20">{t('incidencias.colAlbaran')}</th>
-            <th className="p-2">{t('incidencias.colDesc')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {incidencias.slice(0, 5).map((inc) => (
-            <tr key={inc.id} className="border-b border-gray-100 hover:bg-gray-50">
-              <td className="p-2 text-sm">#{inc.id}</td>
-              <td className="p-2 text-sm">{fmtDate(inc.fecha_creacion)}</td>
-              <td className="p-2 text-sm">#{inc.albaran_id}</td>
-              <td className="p-2 text-sm truncate max-w-xs" title={inc.descripcion}>{inc.descripcion}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
 
-IncidenciasBody.propTypes = {
-  loading: PropTypes.bool.isRequired,
-  incidencias: PropTypes.array.isRequired,
-};
