@@ -352,10 +352,10 @@ export default function NuevaVenta() {
       if (clienteDni.trim() && !(/^([XYZxyz]\d{7}[A-Za-z]|\d{8}[A-Za-z])$/).test(clienteDni.trim())) {
         markFormat('clienteDni', t('newSale.errDniFormat'));
       }
-      if (telefono1.trim() && !(/^[0-9+\-.\s()]+$/).test(telefono1.trim())) {
+      if (telefono1.trim() && !(/^\d+$/).test(telefono1.trim())) {
         markFormat('telefono1', t('newSale.errPhoneFormat'));
       }
-      if (telefono2.trim() && !(/^[0-9+\-.\s()]+$/).test(telefono2.trim())) {
+      if (telefono2.trim() && !(/^\d+$/).test(telefono2.trim())) {
         markFormat('telefono2', t('newSale.errPhoneFormat'));
       }
       if (codigoPostal.trim() && !(/^\d+$/).test(codigoPostal.trim())) {

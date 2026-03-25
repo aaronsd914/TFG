@@ -216,7 +216,6 @@ def generate_delivery_note_pdf(
 
     # Cabecera principal
     story.append(Paragraph(f"Albarán #{albaran_id}", styles["H1"]))
-    story.append(Paragraph(f"Fecha: {fecha}", styles["Muted"]))
     story.append(Spacer(1, 12))
 
     # Bloques superiores (cliente + resumen)
