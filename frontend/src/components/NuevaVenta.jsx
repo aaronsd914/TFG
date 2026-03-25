@@ -361,8 +361,10 @@ export default function NuevaVenta() {
       if (codigoPostal.trim() && !(/^\d+$/).test(codigoPostal.trim())) {
         markFormat('codigoPostal', t('newSale.errPostalFormat'));
       }
-      if (clienteEmail.trim() && !(/^[^\s@]+@[^\s@]+\.[^\s@]+$/).test(clienteEmail.trim())) {
-        markFormat('clienteEmail', t('newSale.errEmailFormat'));
+      if (clienteEmail.trim()) {
+        const emailParts = clienteEmail.trim().split('@');
+        const validEmail = emailParts.length === 2 && emailParts[0].length > 0 && emailParts[1].includes('.') && !clienteEmail.includes(' ');
+        if (!validEmail) markFormat('clienteEmail', t('newSale.errEmailFormat'));
       }
     }
 
