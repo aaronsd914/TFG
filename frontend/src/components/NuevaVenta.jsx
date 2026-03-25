@@ -137,7 +137,6 @@ export default function NuevaVenta() {
 
   // ---- Validación UI (errores) ----
   const [errors, setErrors] = useState({});
-  const [formError, setFormError] = useState('');
 
   function clearError(key) {
     setErrors((prev) => {
@@ -146,7 +145,6 @@ export default function NuevaVenta() {
       delete copy[key];
       return copy;
     });
-    setFormError((prev) => (prev ? '' : prev));
   }
 
   // ====== Helpers ======
@@ -328,7 +326,6 @@ export default function NuevaVenta() {
     e.preventDefault();
 
     setErrors({});
-    setFormError('');
 
     const nextErrors = {};
     const missingFields = [];
@@ -434,8 +431,6 @@ export default function NuevaVenta() {
       const body = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        const msg = `Error al crear albarán: ${body?.detail || res.statusText}`;
-        setFormError(msg);
         try {
           sileo.error({
             title: t('newSale.toastCreateError'),
@@ -452,7 +447,6 @@ export default function NuevaVenta() {
       setRegistrarFianza(false);
       setFianzaCantidad('');
       setErrors({});
-      setFormError('');
 
       if (useExisting) {
         clearSelectedClient();
@@ -501,8 +495,6 @@ export default function NuevaVenta() {
         } catch {}
       }
     } catch (e) {
-      const msg = `${t('newSale.toastNetworkError')}: ${e?.message || 'desconocido'}`;
-      setFormError(msg);
       try {
         sileo.error({
           title: t('newSale.toastNetworkError'),
@@ -545,7 +537,6 @@ export default function NuevaVenta() {
                     const next = !useExisting;
                     setUseExisting(next);
                     setErrors({});
-                    setFormError('');
                     if (!next) clearSelectedClient();
                   }}
                   className={[
