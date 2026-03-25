@@ -142,9 +142,7 @@ def _send_delivery_note_email_task(delivery_note_id: int):
             logo_base64=logo_base64,
         )
         customer_name = f"{getattr(customer, 'name', '')} {getattr(customer, 'surnames', '')}".strip()
-        subject = (
-            f"Albarán #{delivery_note.id} - {customer_name}"
-        )
+        subject = f"Albarán #{delivery_note.id} - {customer_name}"
         filename = f"albaran_{delivery_note.id}.pdf"
 
         send_email_with_pdf(
