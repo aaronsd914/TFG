@@ -1,9 +1,22 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Line, Pie } from 'react-chartjs-2';
-import 'chart.js/auto';
-import { API_URL } from '../config.js';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { apiFetch } from '../api/http.js';
 import PropTypes from 'prop-types';
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Title, Tooltip, Legend);
 
 function eur(n) {
   const v = Number(n || 0);
@@ -25,68 +38,41 @@ function fmtDate(d) {
 export default function Dashboard() {
   const { t, i18n } = useTranslation();
   const months = t('dashboard.months', { returnObjects: true });
-  const [movs, setMovs] = useState([]);
-  const [albaranes, setAlbaranes] = useState([]);
-  const [almacen, setAlmacen] = useState([]);
-  const [_ruta, setRuta] = useState([]); // se mantiene para métricas/estados, aunque no se muestre sección
-  const [clientes, setClientes] = useState([]);
-  const [incidencias, setIncidencias] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState(null);
-  // UI
+  // UI-only state
   const [monthsWindowMovs, setMonthsWindowMovs] = useState(6);
   const [monthsWindowVentas, setMonthsWindowVentas] = useState(6);
-  const [refreshing, setRefreshing] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState(null);
-
-  // Gráfica principal: ALL | ING | EGR
   const [chartMode, setChartMode] = useState('ALL');
 
-  const firstLoadRef = useRef(true);
+  // Data queries — stale-while-revalidate, shared cache across navegación
+  const movsQuery = useQuery({ queryKey: ['movimientos'], queryFn: () => apiFetch('movimientos/get'), staleTime: 30_000 });
+  const albQuery  = useQuery({ queryKey: ['albaranes'],   queryFn: () => apiFetch('albaranes/get'),   staleTime: 30_000 });
+  const cliQuery  = useQuery({ queryKey: ['clientes'],    queryFn: () => apiFetch('clientes/get'),    staleTime: 30_000 });
+  const almQuery  = useQuery({
+    queryKey: ['almacen'],
+    queryFn: async () => { try { return await apiFetch('transporte/almacen'); } catch { return []; } },
+    staleTime: 30_000,
+  });
+  useQuery({
+    queryKey: ['rutas'],
+    queryFn: async () => { try { return await apiFetch('transporte/ruta'); } catch { return []; } },
+    staleTime: 30_000,
+  });
+  const incQuery  = useQuery({
+    queryKey: ['incidencias'],
+    queryFn: async () => { try { return await apiFetch('incidencias/get'); } catch { return []; } },
+    staleTime: 30_000,
+  });
 
-  async function reloadAll() {
-    try {
-      if (firstLoadRef.current) setLoading(true);
-      else setRefreshing(true);
+  const movs        = movsQuery.data  ?? [];
+  const albaranes   = albQuery.data   ?? [];
+  const almacen     = almQuery.data   ?? [];
+  const clientes    = cliQuery.data   ?? [];
+  const incidencias = incQuery.data   ?? [];
 
-      setErr(null);
-
-      const [rMovs, rAlbs, rAlmacen, rRuta, rClientes, rInc] = await Promise.all([
-        fetch(`${API_URL}movimientos/get`),
-        fetch(`${API_URL}albaranes/get`),
-        fetch(`${API_URL}transporte/almacen`),
-        fetch(`${API_URL}transporte/ruta`),
-        fetch(`${API_URL}clientes/get`),
-        fetch(`${API_URL}incidencias/get`),
-      ]);
-
-      if (!rMovs.ok) throw new Error(`Movimientos HTTP ${rMovs.status}`);
-      if (!rAlbs.ok) throw new Error(`Albaranes HTTP ${rAlbs.status}`);
-      if (!rClientes.ok) throw new Error(`Clientes HTTP ${rClientes.status}`);
-
-      const almacenData = rAlmacen.ok ? await rAlmacen.json() : [];
-      const rutaData = rRuta.ok ? await rRuta.json() : [];
-
-      setMovs(await rMovs.json());
-      setAlbaranes(await rAlbs.json());
-      setAlmacen(Array.isArray(almacenData) ? almacenData : []);
-      setRuta(Array.isArray(rutaData) ? rutaData : []);
-      setClientes(await rClientes.json());
-      setIncidencias(rInc.ok ? ((await rInc.json()) || []) : []);
-      setLastUpdated(new Date());
-    } catch (e) {
-      setErr(e?.message || 'Error desconocido');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-      firstLoadRef.current = false;
-    }
-  }
-
-  useEffect(() => {
-    reloadAll();
-     
-  }, []);
+  const loading    = movsQuery.isLoading || albQuery.isLoading || cliQuery.isLoading;
+  const refreshing = (movsQuery.isFetching || albQuery.isFetching || cliQuery.isFetching) && !loading;
+  const err        = movsQuery.error?.message || albQuery.error?.message || cliQuery.error?.message || null;
+  const lastUpdated = movsQuery.dataUpdatedAt ? new Date(movsQuery.dataUpdatedAt) : null;
 
   const clientesMap = useMemo(() => {
     const m = new Map();

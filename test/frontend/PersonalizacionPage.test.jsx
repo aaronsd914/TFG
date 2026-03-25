@@ -32,6 +32,7 @@ vi.mock('../../frontend/src/api/http.js', () => ({
 // Mock i18n instance used by PersonalizacionPage
 vi.mock('../../frontend/src/i18n.js', () => ({
   default: { language: 'es', changeLanguage: vi.fn() },
+  loadLocale: vi.fn(),
 }));
 import { apiFetch } from '../../frontend/src/api/http.js';
 

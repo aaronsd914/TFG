@@ -1,24 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { getCustomers } from '../api/clientes.js';
 
 export function useCustomers() {
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const reload = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      setData(await getCustomers());
-    } catch (e) {
-      setError(e?.message || String(e));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { reload(); }, []);
-
-  return { data, loading, error, reload };
+  const { data = [], isLoading: loading, error, refetch: reload } = useQuery({
+    queryKey: ['clientes'],
+    queryFn: getCustomers,
+    staleTime: 30_000,
+  });
+  return { data, loading, error: error?.message ?? null, reload };
 }
