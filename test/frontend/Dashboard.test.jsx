@@ -59,4 +59,32 @@ describe('Dashboard', () => {
     expect(document.body).toBeTruthy();
   });
 
+  it('muestra la sección de incidencias en el Dashboard', async () => {
+    renderDashboard();
+    await waitFor(() => {
+      expect(screen.getByTestId('dashboard-incidencias-section')).toBeInTheDocument();
+    });
+  });
+
+  it('muestra el enlace a incidencias', async () => {
+    renderDashboard();
+    await waitFor(() => {
+      expect(screen.getByTestId('dashboard-incidencias-link')).toBeInTheDocument();
+    });
+  });
+
+  it('muestra incidencias cuando la API devuelve datos', async () => {
+    const mockIncidencia = { id: 3, albaran_id: 7, descripcion: 'Rotura en pata', fecha_creacion: '2026-03-01' };
+    fetch.mockImplementation((url) => {
+      if (/incidencias\/get$/.test(url)) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([mockIncidencia]) });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+    });
+    renderDashboard();
+    await waitFor(() => {
+      expect(screen.getByText('Rotura en pata')).toBeInTheDocument();
+    });
+  });
+
 });
