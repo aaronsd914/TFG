@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from typing import Annotated, List, Dict, Any
 from io import BytesIO
@@ -425,4 +426,48 @@ def settle_truck(truck_id: int, db: Annotated[Session, Depends(get_db)]):
         porcentaje=7.0,
         importe=float(amount),
         movimiento_id=int(mov.id),
+    )
+
+
+@router.get(
+    "/ruta/{truck_id}/factura",
+    responses={404: {"description": "Not found"}},
+)
+def get_route_invoice(truck_id: int, db: Annotated[Session, Depends(get_db)]):
+    """
+    Generates a PDF invoice for a truck's route with its delivery notes.
+    """
+    if truck_id <= 0:
+        raise HTTPException(status_code=400, detail="truck_id invalido")
+
+    delivery_notes = (
+        db.query(DeliveryNoteDB)
+        .join(
+            DeliveryNoteRouteDB,
+            DeliveryNoteRouteDB.delivery_note_id == DeliveryNoteDB.id,
+        )
+        .filter(DeliveryNoteRouteDB.truck_id == truck_id)
+        .order_by(DeliveryNoteDB.id.asc())
+        .all()
+    )
+
+    if not delivery_notes:
+        raise HTTPException(status_code=404, detail="No hay albaranes en ese camion.")
+
+    customer_ids = {a.customer_id for a in delivery_notes if a.customer_id}
+    customers = (
+        db.query(CustomerDB).filter(CustomerDB.id.in_(customer_ids)).all()
+        if customer_ids
+        else []
+    )
+    customers_map = {c.id: c for c in customers}
+
+    pdf_bytes = generate_route_invoice_pdf(truck_id, delivery_notes, customers_map)
+
+    return StreamingResponse(
+        BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"attachment; filename=factura_camion_{truck_id}.pdf"
+        },
     )

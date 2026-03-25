@@ -25,6 +25,7 @@ export default function Sidebar({ open, setOpen }) {
     { icon: '🧰', labelKey: 'sidebar.products',       to: '/productos' },
     { icon: '🏦', labelKey: 'sidebar.bank',           to: '/banco' },
     { icon: '📊', labelKey: 'sidebar.trends',         to: '/tendencias' },
+    { icon: '👤', labelKey: 'sidebar.profile',        to: '/perfil' },
     { icon: '⚙️', labelKey: 'sidebar.settings',       to: '/personalizacion' },
   ];
 

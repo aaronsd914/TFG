@@ -216,7 +216,7 @@ def _build_delivery_note_lines(
             )
         )
         total += unit_price * it.quantity
-    return total
+    return round(total, 2)
 
 
 @router.post(

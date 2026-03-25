@@ -129,7 +129,7 @@ export default function NuevaVenta() {
   // ---- Fianza ----
   const [registrarFianza, setRegistrarFianza] = useState(false);
   const total = useMemo(
-    () => items.reduce((acc, it) => acc + it.quantity * (it.unit_price ?? it.producto.price), 0),
+    () => Math.round(items.reduce((acc, it) => acc + it.quantity * (it.unit_price ?? it.producto.price), 0) * 100) / 100,
     [items]
   );
   const fianzaPorDefecto = useMemo(() => Number((total * 0.30).toFixed(2)), [total]);
@@ -202,7 +202,6 @@ export default function NuevaVenta() {
         setClientSugs(data.slice(0, 8));
         setClientActiveIdx(data.length ? 0 : -1);
       } catch (e) {
-        console.error('Error buscando clientes:', e);
         setClientSugs([]);
         setClientActiveIdx(-1);
       }
@@ -271,7 +270,6 @@ export default function NuevaVenta() {
         setSugerencias(scored);
         setActiveIdx(scored.length ? 0 : -1);
       } catch (err) {
-        console.error('Error buscando productos:', err);
         setSugerencias([]);
         setActiveIdx(-1);
       }
@@ -392,7 +390,7 @@ export default function NuevaVenta() {
 
     if (registrarFianza) {
       payloadBase.register_deposit = true;
-      payloadBase.deposit_amount = fianzaCantidad === '' ? null : Number(fianzaCantidad);
+      payloadBase.deposit_amount = fianzaCantidad === '' ? null : Math.round(Number(fianzaCantidad) * 100) / 100;
     } else {
       payloadBase.register_deposit = false;
     }

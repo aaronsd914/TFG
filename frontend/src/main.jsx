@@ -18,6 +18,7 @@ import MovimientosPage from './components/MovimientosPage.jsx';
 import PerfilPage from './components/PerfilPage.jsx';
 import PersonalizacionPage from './components/PersonalizacionPage.jsx';
 import IncidenciasPage from './components/IncidenciasPage.jsx';
+import NotFoundPage from './components/NotFoundPage.jsx';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import './api/fetchInterceptor.js';
 import './i18n.js';
@@ -31,6 +32,7 @@ const router = createBrowserRouter([
   {
     path: '/',
     element: <ProtectedRoute element={<App />} />,
+    errorElement: <NotFoundPage />,
     children: [
       { index: true, element: <Dashboard /> },
       { path: 'ventas/nueva', element: <NuevaVenta /> },
@@ -45,6 +47,10 @@ const router = createBrowserRouter([
       { path: 'personalizacion', element: <PersonalizacionPage /> },
       { path: 'incidencias', element: <IncidenciasPage /> },
     ],
+  },
+  {
+    path: '*',
+    element: <NotFoundPage />,
   },
 ]);
 

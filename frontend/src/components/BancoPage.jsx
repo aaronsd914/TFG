@@ -123,7 +123,7 @@ export default function BancoPage() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              amount: Number(stripeAmount),
+              amount: Math.round(Number(stripeAmount) * 100) / 100,
               description: stripeDesc || t('bank.descPlaceholder'),
             }),
           });

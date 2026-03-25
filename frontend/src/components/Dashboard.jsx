@@ -112,7 +112,7 @@ export default function Dashboard() {
         else if (m.type === 'EGRESO') egresos += Number(m.amount || 0);
       }
     }
-    return { ingresosMes: ingresos, egresosMes: egresos };
+    return { ingresosMes: Math.round(ingresos * 100) / 100, egresosMes: Math.round(egresos * 100) / 100 };
   }, [movs, currY, currM]);
 
   const { ingresosPrev, egresosPrev } = useMemo(() => {
@@ -124,7 +124,7 @@ export default function Dashboard() {
         else if (m.type === 'EGRESO') egresos += Number(m.amount || 0);
       }
     }
-    return { ingresosPrev: ingresos, egresosPrev: egresos };
+    return { ingresosPrev: Math.round(ingresos * 100) / 100, egresosPrev: Math.round(egresos * 100) / 100 };
   }, [movs, prevYM]);
 
   const ventasMes = useMemo(() => {
