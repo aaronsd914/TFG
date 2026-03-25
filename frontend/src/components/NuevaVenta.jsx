@@ -201,7 +201,7 @@ export default function NuevaVenta() {
         }
         setClientSugs(data.slice(0, 8));
         setClientActiveIdx(data.length ? 0 : -1);
-      } catch (e) {
+      } catch (_e) {
         setClientSugs([]);
         setClientActiveIdx(-1);
       }
@@ -269,7 +269,7 @@ export default function NuevaVenta() {
 
         setSugerencias(scored);
         setActiveIdx(scored.length ? 0 : -1);
-      } catch (err) {
+      } catch (_err) {
         setSugerencias([]);
         setActiveIdx(-1);
       }
