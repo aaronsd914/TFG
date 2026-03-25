@@ -1,51 +1,64 @@
-import { StrictMode } from 'react';
+import { StrictMode, lazy, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sileo';
 import { ThemeProvider } from './context/ThemeContext.jsx';
 import App from './components/App.jsx';
-import LoginPage from './components/LoginPage.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
-import Dashboard from './components/Dashboard.jsx';
-import NuevaVenta from './components/NuevaVenta.jsx';
-import ClientesPage from './components/ClientesPage.jsx';
-import AlbaranesPage from './components/AlbaranesPage.jsx';
-import Tendencias from './components/Tendencias.jsx';
-import ProductosPage from './components/ProductosPage.jsx';
-import BancoPage from './components/BancoPage.jsx';
-import TransportePage from './components/TransportePage.jsx';
-import MovimientosPage from './components/MovimientosPage.jsx';
-import PerfilPage from './components/PerfilPage.jsx';
-import PersonalizacionPage from './components/PersonalizacionPage.jsx';
-import IncidenciasPage from './components/IncidenciasPage.jsx';
 import NotFoundPage from './components/NotFoundPage.jsx';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import './api/fetchInterceptor.js';
 import './i18n.js';
 import './index.css';
 
+const LoginPage          = lazy(() => import('./components/LoginPage.jsx'));
+const Dashboard          = lazy(() => import('./components/Dashboard.jsx'));
+const NuevaVenta         = lazy(() => import('./components/NuevaVenta.jsx'));
+const ClientesPage       = lazy(() => import('./components/ClientesPage.jsx'));
+const AlbaranesPage      = lazy(() => import('./components/AlbaranesPage.jsx'));
+const Tendencias         = lazy(() => import('./components/Tendencias.jsx'));
+const ProductosPage      = lazy(() => import('./components/ProductosPage.jsx'));
+const BancoPage          = lazy(() => import('./components/BancoPage.jsx'));
+const TransportePage     = lazy(() => import('./components/TransportePage.jsx'));
+const MovimientosPage    = lazy(() => import('./components/MovimientosPage.jsx'));
+const PerfilPage         = lazy(() => import('./components/PerfilPage.jsx'));
+const PersonalizacionPage = lazy(() => import('./components/PersonalizacionPage.jsx'));
+const IncidenciasPage    = lazy(() => import('./components/IncidenciasPage.jsx'));
+
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
+});
+
+const PageFallback = (
+  <div className="flex items-center justify-center h-40 text-gray-300">
+    <div className="w-5 h-5 border-2 border-gray-200 border-t-gray-400 rounded-full animate-spin" />
+  </div>
+);
+const S = (C) => <Suspense fallback={PageFallback}>{C}</Suspense>;
+
 const router = createBrowserRouter([
   {
     path: '/login',
-    element: <LoginPage />,
+    element: S(<LoginPage />),
   },
   {
     path: '/',
     element: <ProtectedRoute element={<App />} />,
     errorElement: <NotFoundPage />,
     children: [
-      { index: true, element: <Dashboard /> },
-      { path: 'ventas/nueva', element: <NuevaVenta /> },
-      { path: 'clientes', element: <ClientesPage /> },
-      { path: 'albaranes', element: <AlbaranesPage /> },
-      { path: 'transporte', element: <TransportePage /> },
-      { path: 'movimientos', element: <MovimientosPage /> },
-      { path: 'tendencias', element: <Tendencias /> },
-      { path: 'productos', element: <ProductosPage /> },
-      { path: 'banco', element: <BancoPage /> },
-      { path: 'perfil', element: <PerfilPage /> },
-      { path: 'personalizacion', element: <PersonalizacionPage /> },
-      { path: 'incidencias', element: <IncidenciasPage /> },
+      { index: true, element: S(<Dashboard />) },
+      { path: 'ventas/nueva', element: S(<NuevaVenta />) },
+      { path: 'clientes', element: S(<ClientesPage />) },
+      { path: 'albaranes', element: S(<AlbaranesPage />) },
+      { path: 'transporte', element: S(<TransportePage />) },
+      { path: 'movimientos', element: S(<MovimientosPage />) },
+      { path: 'tendencias', element: S(<Tendencias />) },
+      { path: 'productos', element: S(<ProductosPage />) },
+      { path: 'banco', element: S(<BancoPage />) },
+      { path: 'perfil', element: S(<PerfilPage />) },
+      { path: 'personalizacion', element: S(<PersonalizacionPage />) },
+      { path: 'incidencias', element: S(<IncidenciasPage />) },
     ],
   },
   {
@@ -56,8 +69,9 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <ThemeProvider>
-      <Toaster position="top-right"
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <Toaster position="top-right"
         options={{
           fill: '#171717',
           autopilot: {
@@ -72,8 +86,9 @@ createRoot(document.getElementById('root')).render(
           },
         }}
       />
-        <RouterProvider router={router} />
-        <SpeedInsights />
-    </ThemeProvider>
+          <RouterProvider router={router} />
+          <SpeedInsights />
+      </ThemeProvider>
+    </QueryClientProvider>
   </StrictMode>
 );

@@ -10,7 +10,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
-    dedupe: ['react', 'react-dom', 'sileo'],
+    dedupe: ['react', 'react-dom', 'sileo', '@tanstack/react-query'],
     alias: [
       {
         find: '@testing-library/react',
@@ -19,6 +19,10 @@ export default defineConfig({
       {
         find: 'react-router-dom',
         replacement: resolve(__dirname, 'node_modules/react-router-dom'),
+      },
+      {
+        find: '@tanstack/react-query',
+        replacement: resolve(__dirname, 'node_modules/@tanstack/react-query'),
       },
     ],
   },

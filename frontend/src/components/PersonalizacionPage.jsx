@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import i18n from '../i18n.js';
+import { loadLocale } from '../i18n.js';
 import { apiFetch } from '../api/http.js';
 import { getToken, removeToken } from '../api/auth.js';
 import { useNavigate } from 'react-router-dom';
@@ -125,7 +125,7 @@ export default function PersonalizacionPage() {
   const navigate = useNavigate();
   const { isDark, setIsDark, palette, setPalette } = useTheme();
   const { config, updateConfig } = useAppConfig();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const currentLang = i18n.language?.slice(0, 2) === 'en' ? 'en' : 'es';
 
   // Decode current username from JWT
@@ -356,7 +356,7 @@ export default function PersonalizacionPage() {
                 role="radio"
                 aria-checked={currentLang === lang}
                 aria-label={t('appearance.selectLanguage', { lang: lang.toUpperCase() })}
-                onClick={() => i18n.changeLanguage(lang)}
+                onClick={() => loadLocale(lang)}
                 data-testid={`lang-${lang}`}
                 className={`px-4 py-1.5 rounded-lg text-sm font-medium border-2 transition-all ${
                   currentLang === lang

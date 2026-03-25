@@ -48,6 +48,7 @@ vi.mock('../../frontend/src/context/ConfigContext.jsx', () => ({
 const mockChangeLanguage = vi.hoisted(() => vi.fn());
 vi.mock('../../frontend/src/i18n.js', () => ({
   default: { language: 'es', changeLanguage: mockChangeLanguage },
+  loadLocale: mockChangeLanguage,
 }));
 
 import Sidebar from '../../frontend/src/components/Sidebar.jsx';
