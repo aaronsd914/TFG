@@ -331,51 +331,56 @@ export default function NuevaVenta() {
     setFormError('');
 
     const nextErrors = {};
-    const requiredLabels = {
-      clienteNombre: t('newSale.fieldName'),
-      clienteApellidos: t('newSale.fieldSurnames'),
-      clienteDni: t('newSale.fieldDNI'),
-      clienteEmail: t('newSale.fieldEmail'),
-      telefono1: t('newSale.fieldPhone1'),
-      calle: t('newSale.fieldStreet'),
-      numeroVivienda: t('newSale.fieldNumber'),
-      ciudad: t('newSale.fieldCity'),
-      codigoPostal: t('newSale.fieldPostCode'),
-      cliente: t('newSale.fieldClient'),
-      items: t('newSale.colProduct'),
-    };
-
-    const mark = (key) => {
-      if (!nextErrors[key]) nextErrors[key] = true;
-    };
+    const missingFields = [];
+    const formatIssues = [];
+    const mark = (key) => { if (!nextErrors[key]) nextErrors[key] = true; };
+    const markFormat = (key, msg) => { if (!nextErrors[key]) nextErrors[key] = true; formatIssues.push(msg); };
 
     if (items.length === 0) mark('items');
 
     if (useExisting) {
-      if (!selectedClient) mark('cliente');
+      if (!selectedClient) { mark('cliente'); missingFields.push(t('newSale.fieldClient')); }
     } else {
-      if (!clienteNombre.trim()) mark('clienteNombre');
-      if (!clienteApellidos.trim()) mark('clienteApellidos');
-      if (!clienteDni.trim()) mark('clienteDni');
-      if (!clienteEmail.trim()) mark('clienteEmail');
-      if (!telefono1.trim()) mark('telefono1');
-      if (!calle.trim()) mark('calle');
-      if (!numeroVivienda.trim()) mark('numeroVivienda');
-      if (!ciudad.trim()) mark('ciudad');
-      if (!codigoPostal.trim()) mark('codigoPostal');
+      if (!clienteNombre.trim()) { mark('clienteNombre'); missingFields.push(t('newSale.fieldName')); }
+      if (!clienteApellidos.trim()) { mark('clienteApellidos'); missingFields.push(t('newSale.fieldSurnames')); }
+      if (!clienteDni.trim()) { mark('clienteDni'); missingFields.push(t('newSale.fieldDNI')); }
+      if (!clienteEmail.trim()) { mark('clienteEmail'); missingFields.push(t('newSale.fieldEmail')); }
+      if (!telefono1.trim()) { mark('telefono1'); missingFields.push(t('newSale.fieldPhone1')); }
+      if (!calle.trim()) { mark('calle'); missingFields.push(t('newSale.fieldStreet')); }
+      if (!numeroVivienda.trim()) { mark('numeroVivienda'); missingFields.push(t('newSale.fieldNumber')); }
+      if (!ciudad.trim()) { mark('ciudad'); missingFields.push(t('newSale.fieldCity')); }
+      if (!codigoPostal.trim()) { mark('codigoPostal'); missingFields.push(t('newSale.fieldPostCode')); }
+
+      // Format validations (only when the field has a value)
+      if (clienteDni.trim() && !(/^([XYZxyz]\d{7}[A-Za-z]|\d{8}[A-Za-z])$/).test(clienteDni.trim())) {
+        markFormat('clienteDni', t('newSale.errDniFormat'));
+      }
+      if (telefono1.trim() && !(/^[0-9+\-.\s()]+$/).test(telefono1.trim())) {
+        markFormat('telefono1', t('newSale.errPhoneFormat'));
+      }
+      if (telefono2.trim() && !(/^[0-9+\-.\s()]+$/).test(telefono2.trim())) {
+        markFormat('telefono2', t('newSale.errPhoneFormat'));
+      }
+      if (codigoPostal.trim() && !(/^\d+$/).test(codigoPostal.trim())) {
+        markFormat('codigoPostal', t('newSale.errPostalFormat'));
+      }
+      if (clienteEmail.trim() && !(/^[^\s@]+@[^\s@]+\.[^\s@]+$/).test(clienteEmail.trim())) {
+        markFormat('clienteEmail', t('newSale.errEmailFormat'));
+      }
     }
 
-    const firstErrorKey = Object.keys(nextErrors)[0];
-    if (firstErrorKey) {
-      const msg = t('newSale.isRequired', { field: requiredLabels[firstErrorKey] });
+    if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
-      setFormError(msg);
+      let description = '';
+      if (missingFields.length > 0) description += `${t('newSale.errMissingFields')}: ${missingFields.join(', ')}.`;
+      if (formatIssues.length > 0) {
+        if (description) description += ' ';
+        description += formatIssues.join(' ');
+      }
+      if (!description) description = t('newSale.errNoProducts');
 
       try {
-        sileo.warning({
-          title: t('newSale.toastFormError'),
-          description: msg,
-        });
+        sileo.warning({ title: t('newSale.toastFormError'), description });
       } catch {}
       return;
     }
@@ -530,24 +535,39 @@ export default function NuevaVenta() {
             subtitle={t('newSale.clientSubtitle')}
             error={Boolean(errors.cliente)}
             right={
-              <label className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={useExisting}
-                  onChange={(e) => {
-                    setUseExisting(e.target.checked);
+              <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-gray-700">
+                <span>{t('newSale.useExisting')}</span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={useExisting}
+                  onClick={() => {
+                    const next = !useExisting;
+                    setUseExisting(next);
                     setErrors({});
                     setFormError('');
-                    if (!e.target.checked) clearSelectedClient();
+                    if (!next) clearSelectedClient();
                   }}
-                  className="h-4 w-4"
-                />
-                <span className="text-gray-700">{t('newSale.useExisting')}</span>
+                  className={[
+                    'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none',
+                    useExisting ? 'bg-blue-600' : 'bg-gray-300',
+                  ].join(' ')}
+                >
+                  <span
+                    className={[
+                      'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow ring-0 transition-transform',
+                      useExisting ? 'translate-x-5' : 'translate-x-0',
+                    ].join(' ')}
+                  />
+                </button>
               </label>
             }
           >
             {useExisting ? (
               <>
+                <div className="mb-1">
+                  <Label required>{t('newSale.fieldClient')}</Label>
+                </div>
                 <div className="relative">
                   <Field
                     value={clientQuery}
@@ -683,7 +703,6 @@ export default function NuevaVenta() {
                       clearError('clienteEmail');
                     }}
                     placeholder={t('newSale.placeholderEmail')}
-                    type="email"
                     error={Boolean(errors.clienteEmail)}
                   />
                 </div>
@@ -938,7 +957,7 @@ export default function NuevaVenta() {
 
                   <button
                     type="submit"
-                    className="rounded-2xl bg-green-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-200"
+                    className="rounded-2xl px-6 py-3 text-sm font-semibold shadow-sm btn-accent transition"
                   >
                     {t('newSale.submitBtn')}
                   </button>
@@ -948,9 +967,7 @@ export default function NuevaVenta() {
           </Section>
         </div>
 
-        <div className="lg:col-span-12">
-          {formError ? <div className="text-sm font-semibold text-red-600">{formError}</div> : null}
-        </div>
+
       </form>
     </div>
   );

@@ -387,7 +387,13 @@
     "toastNetworkDesc": "No se pudo conectar con el servidor.",
     "linesSummary": "{{lines}} línea(s) · {{items}} unidad(es)",
     "totalLabel": "Total:",
-    "removeTitle": "Quitar"
+    "removeTitle": "Quitar",
+    "errMissingFields": "Faltan campos obligatorios",
+    "errNoProducts": "Añade al menos un producto a la venta.",
+    "errDniFormat": "El DNI no tiene un formato válido (ej: 12345678A o X1234567A).",
+    "errPhoneFormat": "El teléfono solo puede contener números, espacios y los símbolos +, -, y ().",
+    "errPostalFormat": "El código postal solo puede contener números.",
+    "errEmailFormat": "El email no tiene un formato válido."
   },
   "bank": {
     "title": "Banco",

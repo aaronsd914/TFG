@@ -387,7 +387,13 @@
     "toastNetworkDesc": "Could not connect to the server.",
     "linesSummary": "{{lines}} line(s) · {{items}} unit(s)",
     "totalLabel": "Total:",
-    "removeTitle": "Remove"
+    "removeTitle": "Remove",
+    "errMissingFields": "Missing required fields",
+    "errNoProducts": "Add at least one product to the sale.",
+    "errDniFormat": "ID number format is invalid (e.g. 12345678A or X1234567A).",
+    "errPhoneFormat": "Phone number can only contain digits, spaces and the symbols +, -, and ().",
+    "errPostalFormat": "Post code can only contain numbers.",
+    "errEmailFormat": "Email address format is invalid."
   },
   "bank": {
     "title": "Bank",
