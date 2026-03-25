@@ -216,7 +216,7 @@ def _build_delivery_note_lines(
             )
         )
         total += unit_price * it.quantity
-    return total
+    return round(total, 2)
 
 
 @router.post(
@@ -417,7 +417,7 @@ def replace_items(
     )
     if not albaran:
         raise HTTPException(404, "Albaran no encontrado")
-    for item in list(albaran.items):
+    for item in albaran.items:
         db.delete(item)
     db.flush()
     albaran.total = _build_delivery_note_lines(db, albaran, payload.items)

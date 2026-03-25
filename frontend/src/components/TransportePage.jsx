@@ -18,7 +18,7 @@ function fmtDate(d) {
   return dt.toLocaleDateString('es-ES');
 }
 function sumTotal(albaranes) {
-  return (albaranes || []).reduce((acc, a) => acc + Number(a.total || 0), 0);
+  return Math.round((albaranes || []).reduce((acc, a) => acc + Number(a.total || 0), 0) * 100) / 100;
 }
 function clienteLabel(clientesMap, clienteId) {
   const c = clientesMap.get(clienteId);
@@ -348,7 +348,7 @@ export default function TransportePage() {
       const res = await fetch(`${API_URL}albaranes/${id}/estado`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estado: 'ENTREGADO' }),
+        body: JSON.stringify({ status: 'ENTREGADO' }),
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {

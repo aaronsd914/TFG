@@ -13,7 +13,8 @@
     "bank": "Bank",
     "trends": "Trends",
     "settings": "Settings",
-    "incidents": "Incidents"
+    "incidents": "Incidents",
+    "profile": "Profile"
   },
   "login": {
     "subtitle": "Management panel",

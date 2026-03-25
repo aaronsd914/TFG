@@ -1,7 +1,7 @@
 """
 seed.py — Pobla la base de datos con datos de demostración realistas.
-La función seed() borra todos los datos existentes antes de insertar los nuevos,
-garantizando un estado limpio y reproducible en cada arranque.
+La función seed() solo inserta datos si la base de datos está vacía
+(comprueba si existen proveedores antes de insertar).
 """
 
 import logging

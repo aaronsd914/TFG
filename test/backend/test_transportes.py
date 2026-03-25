@@ -115,3 +115,21 @@ class TestLiquidarCamion:
         movs = client.get("/api/movimientos/get").json()
         egresos = [m for m in movs if m["type"] == "EGRESO" and "camion 3" in m["description"]]
         assert len(egresos) == 1
+
+
+class TestFacturaRuta:
+    def test_factura_ok(self, client, cliente_fixture, producto):
+        alb = crear_albaran_almacen(client, cliente_fixture["id"], producto["id"])
+        client.post("/api/transporte/ruta/asignar", json={"albaran_ids": [alb["id"]], "camion_id": 5})
+        r = client.get("/api/transporte/ruta/5/factura")
+        assert r.status_code == 200
+        assert r.headers["content-type"] == "application/pdf"
+        assert len(r.content) > 100
+
+    def test_factura_camion_sin_albaranes_devuelve_404(self, client):
+        r = client.get("/api/transporte/ruta/99/factura")
+        assert r.status_code == 404
+
+    def test_factura_camion_invalido_devuelve_400(self, client):
+        r = client.get("/api/transporte/ruta/0/factura")
+        assert r.status_code == 400

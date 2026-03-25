@@ -1,5 +1,12 @@
+import os
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
+
 from backend.app.api import (
     clientes,
     productos,
@@ -15,22 +22,17 @@ from backend.app.api import (
 )
 from backend.app.api import configuracion
 from backend.app.utils.resumen_semanal import job_resumen_semanal
-from contextlib import asynccontextmanager
-import logging
-
 from backend.app.database import Base, engine, SessionLocal
 from backend.app.seed import seed
-
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.cron import CronTrigger
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
 
-    with SessionLocal() as db:
-        seed(db)
+    if os.getenv("ENVIRONMENT", "development") != "production":
+        with SessionLocal() as db:
+            seed(db)
 
     scheduler = BackgroundScheduler(timezone="Europe/Madrid")
     scheduler.add_job(job_resumen_semanal, CronTrigger(minute="*"))
@@ -47,15 +49,18 @@ app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",  # Vite dev server
-        "http://127.0.0.1:5173",
-        "http://localhost",  # Docker / Nginx (puerto 80)
-        "http://localhost:80",
-        "http://127.0.0.1",
-        "https://tfg-five-drab.vercel.app",  # Vercel producción
-        "https://tfg-i35kymnah-aaronsd914s-projects.vercel.app",  # Vercel preview
-        "https://furnigest.com",  # Dominio personalizado
-        "https://www.furnigest.com",  # Dominio personalizado (www)
+        o.strip()
+        for o in os.getenv(
+            "CORS_ORIGINS",
+            "http://localhost:5173,http://127.0.0.1:5173,http://localhost,http://localhost:80,http://127.0.0.1",  # NOSONAR - localhost origins are safe for local development only
+        ).split(",")
+        if o.strip()
+    ]
+    + [
+        "https://tfg-five-drab.vercel.app",
+        "https://tfg-i35kymnah-aaronsd914s-projects.vercel.app",
+        "https://furnigest.com",
+        "https://www.furnigest.com",
     ],
     allow_credentials=True,
     allow_methods=["*"],

@@ -70,13 +70,14 @@ def create_checkout(payload: CheckoutIn):
         raise HTTPException(500, "Stripe no estÃ¡ configurado (STRIPE_SECRET_KEY)")
 
     amount = float(payload.amount or 0)
+    amount = round(amount, 2)
     if amount <= 0:
         raise HTTPException(400, "El importe debe ser mayor que 0")
 
     stripe.api_key = STRIPE_SECRET_KEY
 
-    # Stripe trabaja en cÃ©ntimos
-    unit_amount = int(round(amount * 100))
+    # Stripe trabaja en céntimos
+    unit_amount = round(amount * 100)
     meta = {
         "description": (payload.description or "Cobro")[:200],
     }

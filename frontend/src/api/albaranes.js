@@ -12,14 +12,11 @@ export const createDeliveryNote = (payload) =>
   });
 
 export const updateDeliveryNoteStatus = (id, status) =>
-  apiFetch(`albaranes/estado/${id}`, {
-    method: 'PUT',
+  apiFetch(`albaranes/${id}/estado`, {
+    method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ status }),
   });
-
-export const deleteDeliveryNote = (id) =>
-  apiFetch(`albaranes/delete/${id}`, { method: 'DELETE' });
 
 export const exportDeliveryNotePdf = (id) =>
   apiFetchBlob(`albaranes/pdf/${id}`);

@@ -176,7 +176,9 @@ export default function MovimientosPage() {
         else egresos += Number(mv.amount || 0);
       }
     }
-    const balance = ingresos - egresos;
+    ingresos = Math.round(ingresos * 100) / 100;
+    egresos = Math.round(egresos * 100) / 100;
+    const balance = Math.round((ingresos - egresos) * 100) / 100;
     return { ingresos, egresos, balance, y, m: m + 1 };
   }, [movs]);
 

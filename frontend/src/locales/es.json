@@ -13,7 +13,8 @@
     "bank": "Banco",
     "trends": "Tendencias",
     "settings": "Configuración",
-    "incidents": "Incidencias"
+    "incidents": "Incidencias",
+    "profile": "Perfil"
   },
   "login": {
     "subtitle": "Panel de gestión",
