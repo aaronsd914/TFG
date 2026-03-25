@@ -341,7 +341,7 @@ export default function NuevaVenta() {
       if (!clienteNombre.trim()) { mark('clienteNombre'); missingFields.push(t('newSale.fieldName')); }
       if (!clienteApellidos.trim()) { mark('clienteApellidos'); missingFields.push(t('newSale.fieldSurnames')); }
       if (!clienteDni.trim()) { mark('clienteDni'); missingFields.push(t('newSale.fieldDNI')); }
-      if (!clienteEmail.trim()) { mark('clienteEmail'); missingFields.push(t('newSale.fieldEmail')); }
+      // email is optional – only validate format when provided
       if (!telefono1.trim()) { mark('telefono1'); missingFields.push(t('newSale.fieldPhone1')); }
       if (!calle.trim()) { mark('calle'); missingFields.push(t('newSale.fieldStreet')); }
       if (!numeroVivienda.trim()) { mark('numeroVivienda'); missingFields.push(t('newSale.fieldNumber')); }
@@ -411,7 +411,7 @@ export default function NuevaVenta() {
           name: clienteNombre.trim(),
           surnames: clienteApellidos.trim(),
           dni: clienteDni.trim(),
-          email: clienteEmail.trim(),
+          email: clienteEmail.trim() || null,
           phone1: telefono1.trim(),
           phone2: telefono2.trim() || null,
           street: calle.trim(),
@@ -493,8 +493,16 @@ export default function NuevaVenta() {
             link.click();
             link.remove();
             URL.revokeObjectURL(url);
+          } else {
+            try {
+              sileo.error({ title: t('newSale.toastPdfError'), description: t('newSale.toastPdfErrorDesc') });
+            } catch {}
           }
-        } catch {}
+        } catch {
+          try {
+            sileo.error({ title: t('newSale.toastPdfError'), description: t('newSale.toastPdfErrorDesc') });
+          } catch {}
+        }
       }
     } catch (e) {
       try {
@@ -689,7 +697,6 @@ export default function NuevaVenta() {
 
                   <Field
                     label={t('newSale.fieldEmail')}
-                    required
                     value={clienteEmail}
                     onChange={(e) => {
                       setClienteEmail(e.target.value);
