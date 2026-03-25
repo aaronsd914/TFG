@@ -201,7 +201,8 @@ export default function NuevaVenta() {
         }
         setClientSugs(data.slice(0, 8));
         setClientActiveIdx(data.length ? 0 : -1);
-      } catch (_e) {
+      } catch (e) {
+        console.warn('Client search error:', e);
         setClientSugs([]);
         setClientActiveIdx(-1);
       }
@@ -269,7 +270,8 @@ export default function NuevaVenta() {
 
         setSugerencias(scored);
         setActiveIdx(scored.length ? 0 : -1);
-      } catch (_err) {
+      } catch (err) {
+        console.warn('Product search error:', err);
         setSugerencias([]);
         setActiveIdx(-1);
       }

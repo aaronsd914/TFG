@@ -431,7 +431,10 @@ def settle_truck(truck_id: int, db: Annotated[Session, Depends(get_db)]):
 
 @router.get(
     "/ruta/{truck_id}/factura",
-    responses={404: {"description": "Not found"}},
+    responses={
+        404: {"description": "Not found"},
+        400: {"description": "Invalid truck_id"},
+    },
 )
 def get_route_invoice(truck_id: int, db: Annotated[Session, Depends(get_db)]):
     """

@@ -505,34 +505,7 @@ export default function Dashboard() {
             {loading ? '…' : t('dashboard.incidenciasTotal', { count: incidencias.length })}
           </div>
         </div>
-        {loading ? (
-          <div className="h-16 bg-gray-100 rounded-xl animate-pulse" />
-        ) : incidencias.length === 0 ? (
-          <p className="text-sm text-gray-500 py-2">{t('dashboard.noIncidencias')}</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-[500px] w-full border-collapse">
-              <thead>
-                <tr className="text-left border-b border-gray-200">
-                  <th className="p-2 w-16">{t('dashboard.colID')}</th>
-                  <th className="p-2 w-32">{t('dashboard.colDate')}</th>
-                  <th className="p-2 w-20">{t('incidencias.colAlbaran')}</th>
-                  <th className="p-2">{t('incidencias.colDesc')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {incidencias.slice(0, 5).map((inc) => (
-                  <tr key={inc.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="p-2 text-sm">#{inc.id}</td>
-                    <td className="p-2 text-sm">{fmtDate(inc.fecha_creacion)}</td>
-                    <td className="p-2 text-sm">#{inc.albaran_id}</td>
-                    <td className="p-2 text-sm truncate max-w-xs" title={inc.descripcion}>{inc.descripcion}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <IncidenciasBody loading={loading} incidencias={incidencias} />
         <div className="mt-4 flex">
           <a
             href="/incidencias"
@@ -692,3 +665,42 @@ function pctDelta(curr, prev) {
   if (p === 0) return c === 0 ? 0 : null;
   return ((c - p) / p) * 100;
 }
+
+function IncidenciasBody({ loading, incidencias }) {
+  const { t } = useTranslation();
+  if (loading) {
+    return <div className="h-16 bg-gray-100 rounded-xl animate-pulse" />;
+  }
+  if (incidencias.length === 0) {
+    return <p className="text-sm text-gray-500 py-2">{t('dashboard.noIncidencias')}</p>;
+  }
+  return (
+    <div className="overflow-x-auto">
+      <table className="min-w-[500px] w-full border-collapse">
+        <thead>
+          <tr className="text-left border-b border-gray-200">
+            <th className="p-2 w-16">{t('dashboard.colID')}</th>
+            <th className="p-2 w-32">{t('dashboard.colDate')}</th>
+            <th className="p-2 w-20">{t('incidencias.colAlbaran')}</th>
+            <th className="p-2">{t('incidencias.colDesc')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {incidencias.slice(0, 5).map((inc) => (
+            <tr key={inc.id} className="border-b border-gray-100 hover:bg-gray-50">
+              <td className="p-2 text-sm">#{inc.id}</td>
+              <td className="p-2 text-sm">{fmtDate(inc.fecha_creacion)}</td>
+              <td className="p-2 text-sm">#{inc.albaran_id}</td>
+              <td className="p-2 text-sm truncate max-w-xs" title={inc.descripcion}>{inc.descripcion}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+IncidenciasBody.propTypes = {
+  loading: PropTypes.bool.isRequired,
+  incidencias: PropTypes.array.isRequired,
+};

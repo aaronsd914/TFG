@@ -52,7 +52,7 @@ app.add_middleware(
         o.strip()
         for o in os.getenv(
             "CORS_ORIGINS",
-            "http://localhost:5173,http://127.0.0.1:5173,http://localhost,http://localhost:80,http://127.0.0.1",
+            "http://localhost:5173,http://127.0.0.1:5173,http://localhost,http://localhost:80,http://127.0.0.1",  # NOSONAR - localhost origins are safe for local development only
         ).split(",")
         if o.strip()
     ]
