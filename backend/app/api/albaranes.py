@@ -553,9 +553,7 @@ def delete_delivery_note(
 ):
     """Deletes a delivery note and all its line items (cascade)."""
     albaran = (
-        db.query(DeliveryNoteDB)
-        .filter(DeliveryNoteDB.id == delivery_note_id)
-        .first()
+        db.query(DeliveryNoteDB).filter(DeliveryNoteDB.id == delivery_note_id).first()
     )
     if not albaran:
         raise HTTPException(404, "Albaran no encontrado")
