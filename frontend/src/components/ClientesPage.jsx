@@ -4,6 +4,8 @@ import { sileo } from 'sileo';
 import { useTranslation } from 'react-i18next';
 
 import { API_URL } from '../config.js';
+import ConfirmDeleteModal from './ConfirmDeleteModal.jsx';
+import ModalCenter from './ModalCenter.jsx';
 
 // ===== Helpers =====
 function useDebouncedValue(value, delay = 200) {
@@ -13,20 +15,6 @@ function useDebouncedValue(value, delay = 200) {
     return () => clearTimeout(id);
   }, [value, delay]);
   return debounced;
-}
-
-function ModalCenter({ isOpen, onClose, children, maxWidth = 'max-w-3xl' }) {
-  if (!isOpen) return null;
-  return (
-    <div className="fixed inset-0 z-40">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="absolute inset-0 flex items-center justify-center p-4">
-        <div className={`w-full ${maxWidth} bg-white rounded-2xl shadow-2xl p-6 overflow-y-auto max-h-[90vh]`}>
-          {children}
-        </div>
-      </div>
-    </div>
-  );
 }
 
 function Chip({ label, onRemove }) {
@@ -71,6 +59,21 @@ function Chevron({ open }) {
       {open ? '▲' : '▼'}
     </span>
   );
+}
+
+function validateClienteForm(form) {
+  const errs = {};
+  const REQUIRED = ['name', 'surnames', 'dni', 'phone1', 'street', 'house_number', 'city', 'postal_code', 'email'];
+  REQUIRED.forEach((k) => { if (!form[k]?.trim()) errs[k] = true; });
+  if (form.dni?.trim() && !(/^([XYZxyz]\d{7}[A-Za-z]|\d{8}[A-Za-z])$/).test(form.dni.trim())) errs.dni = true;
+  if (form.email?.trim()) {
+    const parts = form.email.trim().split('@');
+    if (!(parts.length === 2 && parts[0].length > 0 && parts[1].includes('.') && !form.email.includes(' '))) errs.email = true;
+  }
+  if (form.phone1?.trim() && !(/^\d+$/).test(form.phone1.trim())) errs.phone1 = true;
+  if (form.phone2?.trim() && !(/^\d+$/).test(form.phone2.trim())) errs.phone2 = true;
+  if (form.postal_code?.trim() && !(/^\d+$/).test(form.postal_code.trim())) errs.postal_code = true;
+  return errs;
 }
 
 // ===== Página =====
@@ -120,6 +123,10 @@ export default function ClientesPage() {
   // paginación
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
+
+  // eliminar cliente
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // validación edición
   const [editErrors, setEditErrors] = useState({});
@@ -354,6 +361,23 @@ export default function ClientesPage() {
     setExpanded({});
   }
 
+  async function deleteCliente() {
+    if (!selected) return;
+    setDeleteLoading(true);
+    try {
+      const res = await fetch(`${API_URL}clientes/delete/${selected.id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setData((prev) => prev.filter((c) => c.id !== selected.id));
+      setDeleteConfirmOpen(false);
+      closeDetail();
+      sileo.success({ title: t('clients.deleteSuccess') });
+    } catch (e) {
+      sileo.error({ title: t('clients.deleteError'), description: e?.message });
+    } finally {
+      setDeleteLoading(false);
+    }
+  }
+
   function openEdit() {
     if (!selected) return;
     setEditForm({
@@ -384,23 +408,7 @@ export default function ClientesPage() {
   async function saveEdit() {
     if (!selected) return;
 
-    // Validación campos obligatorios
-    const errs = {};
-    const REQUIRED = ['name', 'surnames', 'dni', 'phone1', 'street', 'house_number', 'city', 'postal_code', 'email'];
-    REQUIRED.forEach((k) => { if (!editForm[k]?.trim()) errs[k] = true; });
-    // Validar formato DNI
-    if (editForm.dni?.trim() && !(/^([XYZxyz]\d{7}[A-Za-z]|\d{8}[A-Za-z])$/).test(editForm.dni.trim())) errs.dni = true;
-    // Validar email si se rellena
-    if (editForm.email?.trim()) {
-      const parts = editForm.email.trim().split('@');
-      if (!(parts.length === 2 && parts[0].length > 0 && parts[1].includes('.') && !editForm.email.includes(' '))) errs.email = true;
-    }
-    // Validar teléfonos
-    if (editForm.phone1?.trim() && !(/^\d+$/).test(editForm.phone1.trim())) errs.phone1 = true;
-    if (editForm.phone2?.trim() && !(/^\d+$/).test(editForm.phone2.trim())) errs.phone2 = true;
-    // Validar código postal
-    if (editForm.postal_code?.trim() && !(/^\d+$/).test(editForm.postal_code.trim())) errs.postal_code = true;
-
+    const errs = validateClienteForm(editForm);
     if (Object.keys(errs).length > 0) {
       setEditErrors(errs);
       sileo.error({ title: t('clients.editValidationTitle'), description: t('clients.editValidationDesc') });
@@ -661,14 +669,24 @@ export default function ClientesPage() {
           <h2 className="text-xl font-semibold">{t('clients.detailTitle')}</h2>
           <div className="flex items-center gap-2">
             {selected && (
-              <button
-                onClick={openEdit}
-                className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-sm"
-                type="button"
-                data-testid="cliente-edit-btn"
-              >
-                {t('common.edit')}
-              </button>
+              <>
+                <button
+                  onClick={() => setDeleteConfirmOpen(true)}
+                  className="px-3 py-1.5 rounded-lg border border-red-300 bg-white hover:bg-red-50 text-red-700 text-sm"
+                  type="button"
+                  data-testid="cliente-delete-btn"
+                >
+                  {t('clients.deleteBtn')}
+                </button>
+                <button
+                  onClick={openEdit}
+                  className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-sm"
+                  type="button"
+                  data-testid="cliente-edit-btn"
+                >
+                  {t('common.edit')}
+                </button>
+              </>
             )}
             <button onClick={closeDetail} className="text-gray-500 hover:text-gray-700" type="button">
               {t('common.close')}
@@ -874,6 +892,19 @@ export default function ClientesPage() {
           </div>
         )}
       </ModalCenter>
+
+      {/* Modal confirmar eliminar cliente */}
+      <ConfirmDeleteModal
+        isOpen={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        title={t('clients.deleteTitle')}
+        message={t('clients.deleteConfirm', { name: selected ? `${selected.name} ${selected.surnames}` : '' })}
+        onConfirm={deleteCliente}
+        loading={deleteLoading}
+        confirmTestId="cliente-delete-confirm-btn"
+        confirmLabel={deleteLoading ? t('common.saving') : t('clients.deleteBtn')}
+        cancelLabel={t('common.cancel')}
+      />
 
       {/* Modal editar cliente */}
       <ModalCenter isOpen={editOpen} onClose={closeEdit} maxWidth="max-w-lg">

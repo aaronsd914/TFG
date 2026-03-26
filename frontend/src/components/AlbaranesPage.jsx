@@ -4,6 +4,8 @@ import { sileo } from 'sileo';
 import { useTranslation } from 'react-i18next';
 
 import { API_URL } from '../config.js';
+import ConfirmDeleteModal from './ConfirmDeleteModal.jsx';
+import ModalCenter from './ModalCenter.jsx';
 
 // ===== Helpers =====
 function useDebouncedValue(value, delay = 200) {
@@ -13,20 +15,6 @@ function useDebouncedValue(value, delay = 200) {
     return () => clearTimeout(id);
   }, [value, delay]);
   return debounced;
-}
-
-function ModalCenter({ isOpen, onClose, children, maxWidth = 'max-w-3xl' }) {
-  if (!isOpen) return null;
-  return (
-    <div className="fixed inset-0 z-40">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="absolute inset-0 flex items-center justify-center p-4">
-        <div className={`w-full ${maxWidth} bg-white rounded-2xl shadow-2xl p-6 overflow-y-auto max-h-[90vh]`}>
-          {children}
-        </div>
-      </div>
-    </div>
-  );
 }
 
 function Chip({ label, onRemove }) {
@@ -63,10 +51,10 @@ function formatDate(d) {
 }
 
 const ESTADO_META = {
-  FIANZA:      { label: 'Fianza',     className: 'bg-amber-50 text-amber-800 border-amber-200' },
-  ALMACEN:     { label: 'Almacén',    className: 'bg-sky-50 text-sky-800 border-sky-200' },
-  TRANSPORTE:  { label: 'Ruta',       className: 'bg-violet-50 text-violet-800 border-violet-200' },
-  ENTREGADO:   { label: 'Entregado',  className: 'bg-green-50 text-green-800 border-green-200' },
+  FIANZA:    { label: 'Fianza',    className: 'bg-amber-50 text-amber-800 border-amber-200' },
+  ALMACEN:   { label: 'Almacén',   className: 'bg-sky-50 text-sky-800 border-sky-200' },
+  RUTA:      { label: 'Ruta',      className: 'bg-violet-50 text-violet-800 border-violet-200' },
+  ENTREGADO: { label: 'Entregado', className: 'bg-green-50 text-green-800 border-green-200' },
 };
 
 // ===== Página =====
@@ -77,7 +65,7 @@ export default function AlbaranesPage() {
   const stateLabel = (key) => ({
     FIANZA: t('albaranes.stateFianza'),
     ALMACEN: t('albaranes.stateAlmacen'),
-    TRANSPORTE: t('albaranes.stateRuta'),
+    RUTA: t('albaranes.stateRuta'),
     ENTREGADO: t('albaranes.stateEntregado'),
   })[key] || key;
 
@@ -125,6 +113,14 @@ export default function AlbaranesPage() {
 
   // ✅ ID pendiente para abrir desde Clientes
   const [pendingOpenId, setPendingOpenId] = useState(null);
+
+  // paginación
+  const [pageSize, setPageSize] = useState(25);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // eliminar albarán
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // ✅ Ir a detalle del cliente en ClientesPage
   function goToCliente(clienteId) {
@@ -199,7 +195,7 @@ export default function AlbaranesPage() {
     const m = new Map();
     products.forEach((p) => m.set(p.id, p));
     return m;
-  }, [clientes]);
+  }, [products]);
 
   const domains = useMemo(() => {
     const set = new Set();
@@ -338,6 +334,7 @@ export default function AlbaranesPage() {
     setDateFrom('');
     setDateTo('');
     setTotalRange([defaultMinTotal, defaultMaxTotal]);
+    setCurrentPage(1);
   }
 
   async function openDetail(a) {
@@ -458,7 +455,15 @@ export default function AlbaranesPage() {
 
   function updateLineField(idx, field, value) {
     setLinesForm((prev) =>
-      prev.map((row, i) => (i === idx ? { ...row, [field]: value } : row))
+      prev.map((row, i) => {
+        if (i !== idx) return row;
+        const next = { ...row, [field]: value };
+        if (field === 'product_id') {
+          const prod = productsById.get(Number(value));
+          if (prod?.price !== undefined) next.unit_price = prod.price;
+        }
+        return next;
+      })
     );
   }
 
@@ -469,12 +474,37 @@ export default function AlbaranesPage() {
   function addLine() {
     setLinesForm((prev) => [
       ...prev,
-      { _key: `line-new-${Date.now()}-${prev.length}`, product_id: products[0]?.id ?? '', quantity: 1, unit_price: 0 },
+      { _key: `line-new-${Date.now()}-${prev.length}`, product_id: products[0]?.id ?? '', quantity: 1, unit_price: products[0]?.price ?? 0 },
     ]);
+  }
+
+  async function deleteAlbaran() {
+    if (!selected) return;
+    setDeleteLoading(true);
+    try {
+      const res = await fetch(`${API_URL}albaranes/delete/${selected.id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setAlbaranes((prev) => prev.filter((a) => a.id !== selected.id));
+      setDeleteConfirmOpen(false);
+      closeDetail();
+      sileo.success({ title: t('albaranes.deleteSuccess') });
+    } catch (e) {
+      sileo.error({ title: t('albaranes.deleteError'), description: e?.message });
+    } finally {
+      setDeleteLoading(false);
+    }
   }
 
   async function saveLinesEdit() {
     if (!selected) return;
+    if (linesForm.length === 0) {
+      sileo.error({ title: t('albaranes.linesValidationError'), description: t('albaranes.linesCannotBeEmpty') });
+      return;
+    }
+    if (linesForm.some((r) => !Number(r.product_id) || Number(r.quantity) <= 0)) {
+      sileo.error({ title: t('albaranes.linesValidationError'), description: t('albaranes.linesInvalidFields') });
+      return;
+    }
     setLinesSaving(true);
     setLinesError(null);
     try {
@@ -537,6 +567,17 @@ export default function AlbaranesPage() {
     window.addEventListener('open-albaran', handler);
     return () => window.removeEventListener('open-albaran', handler);
   }, []);
+
+  // Reset to page 1 whenever filters/sort change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [q, sort, selectedDomains, selectedEstados, dateFrom, dateTo, totalRange]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const paginated = useMemo(
+    () => filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [filtered, currentPage, pageSize]
+  );
 
   return (
     <>
@@ -631,7 +672,7 @@ export default function AlbaranesPage() {
 
               {!loading && !error && filtered.length === 0 && <li className="p-6 text-gray-500">{t('albaranes.noResults')}</li>}
 
-              {filtered.map((a) => {
+              {paginated.map((a) => {
                 const cli = clientesById.get(a.customer_id);
                 const meta = ESTADO_META[a.status] || { label: a.status, className: 'bg-gray-100 text-gray-700 border-gray-300' };
                 return (
@@ -664,6 +705,43 @@ export default function AlbaranesPage() {
             </ul>
           </div>
         </div>
+
+        {/* Paginación */}
+        {!loading && !error && filtered.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-2 mt-4 px-1">
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-gray-600">{t('albaranes.pageSizeLabel')}</span>
+              <select
+                value={pageSize}
+                onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
+                className="border border-gray-300 rounded-lg px-2 py-1 text-sm"
+                data-testid="alb-page-size-select"
+              >
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <span>{t('albaranes.paginationInfo', { from: Math.min((currentPage - 1) * pageSize + 1, filtered.length), to: Math.min(currentPage * pageSize, filtered.length), total: filtered.length })}</span>
+              <button
+                type="button"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40"
+                aria-label="Página anterior"
+              >‹</button>
+              <span>{currentPage}/{totalPages}</span>
+              <button
+                type="button"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage >= totalPages}
+                className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40"
+                aria-label="Página siguiente"
+              >›</button>
+            </div>
+          </div>
+        )}
 
         {/* Modal filtros */}
         <ModalCenter isOpen={filtersOpen} onClose={() => setFiltersOpen(false)} maxWidth="max-w-lg">
@@ -783,7 +861,7 @@ export default function AlbaranesPage() {
           <div className="mt-8 flex items-center justify-between">
             <button
               onClick={clearAll}
-              className="px-4 py-2 rounded-xl bg-gray-200 text-gray-900 hover:bg-gray-300"
+              className="px-4 py-2 rounded-xl bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600"
               type="button"
             >
               {t('albaranes.clearFilters')}
@@ -804,14 +882,24 @@ export default function AlbaranesPage() {
             <h2 className="text-xl font-semibold">{t('albaranes.detailTitle')}</h2>
             <div className="flex items-center gap-2">
               {selected && (
-                <button
-                  onClick={openEdit}
-                  className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-sm"
-                  type="button"
-                  data-testid="albaran-edit-btn"
-                >
-                  {t('common.edit')}
-                </button>
+                <>
+                  <button
+                    onClick={() => setDeleteConfirmOpen(true)}
+                    className="px-3 py-1.5 rounded-lg border border-red-300 bg-white hover:bg-red-50 text-red-700 text-sm"
+                    type="button"
+                    data-testid="albaran-delete-btn"
+                  >
+                    {t('albaranes.deleteBtn')}
+                  </button>
+                  <button
+                    onClick={openEdit}
+                    className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-sm"
+                    type="button"
+                    data-testid="albaran-edit-btn"
+                  >
+                    {t('common.edit')}
+                  </button>
+                </>
               )}
               <button onClick={closeDetail} className="text-gray-500 hover:text-gray-700" type="button">
                 {t('common.close')}
@@ -886,16 +974,7 @@ export default function AlbaranesPage() {
               <div className="bg-white border border-gray-200 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-semibold">{t('albaranes.linesTitle')}</h3>
-                  {!linesEditing ? (
-                    <button
-                      type="button"
-                      onClick={openLinesEdit}
-                      className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-sm"
-                      data-testid="lines-edit-btn"
-                    >
-                      {t('albaranes.linesEditBtn')}
-                    </button>
-                  ) : (
+                  {linesEditing ? (
                     <div className="flex gap-2">
                       <button
                         type="button"
@@ -916,6 +995,15 @@ export default function AlbaranesPage() {
                         {linesSaving ? t('common.saving') : t('albaranes.linesEditSave')}
                       </button>
                     </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={openLinesEdit}
+                      className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-sm"
+                      data-testid="lines-edit-btn"
+                    >
+                      {t('albaranes.linesEditBtn')}
+                    </button>
                   )}
                 </div>
                 {detailError && <p className="text-red-600 mb-2">Error: {detailError}</p>}
@@ -1083,6 +1171,19 @@ export default function AlbaranesPage() {
             </div>
           )}
         </ModalCenter>
+
+        {/* Modal confirmar eliminar albarán */}
+        <ConfirmDeleteModal
+          isOpen={deleteConfirmOpen}
+          onClose={() => setDeleteConfirmOpen(false)}
+          title={t('albaranes.deleteTitle')}
+          message={t('albaranes.deleteConfirm', { id: selected?.id })}
+          onConfirm={deleteAlbaran}
+          loading={deleteLoading}
+          confirmTestId="albaran-delete-confirm-btn"
+          confirmLabel={deleteLoading ? t('common.saving') : t('albaranes.deleteBtn')}
+          cancelLabel={t('common.cancel')}
+        />
 
         {/* Modal editar albarán */}
         <ModalCenter isOpen={editOpen} onClose={closeEdit} maxWidth="max-w-lg">

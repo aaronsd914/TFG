@@ -541,3 +541,22 @@ def orders_in_route(db: Annotated[Session, Depends(get_db)]):
         .order_by(DeliveryNoteDB.date.asc(), DeliveryNoteDB.id.asc())
         .all()
     )
+
+
+@router.delete(
+    "/albaranes/delete/{delivery_note_id}",
+    responses={404: {"description": "Not found"}},
+)
+def delete_delivery_note(
+    delivery_note_id: int,
+    db: Annotated[Session, Depends(get_db)],
+):
+    """Deletes a delivery note and all its line items (cascade)."""
+    albaran = (
+        db.query(DeliveryNoteDB).filter(DeliveryNoteDB.id == delivery_note_id).first()
+    )
+    if not albaran:
+        raise HTTPException(404, "Albaran no encontrado")
+    db.delete(albaran)
+    db.commit()
+    return {"ok": True}

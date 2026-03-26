@@ -240,3 +240,21 @@ class TestEnviarEmailAlbaran:
     def test_enviar_email_albaran_inexistente(self, client):
         r = client.post("/api/albaranes/9999/send-email")
         assert r.status_code == 404
+
+
+class TestEliminarAlbaran:
+    def test_eliminar_ok(self, client, cliente_fixture, producto):
+        aid = crear_albaran(client, cliente_fixture["id"], producto["id"]).json()["id"]
+        r = client.delete(f"/api/albaranes/delete/{aid}")
+        assert r.status_code == 200
+        assert r.json() == {"ok": True}
+
+    def test_eliminar_inexistente_devuelve_404(self, client):
+        r = client.delete("/api/albaranes/delete/9999")
+        assert r.status_code == 404
+
+    def test_eliminar_borra_de_listado(self, client, cliente_fixture, producto):
+        aid = crear_albaran(client, cliente_fixture["id"], producto["id"]).json()["id"]
+        client.delete(f"/api/albaranes/delete/{aid}")
+        listado = client.get("/api/albaranes/get").json()
+        assert all(a["id"] != aid for a in listado)
