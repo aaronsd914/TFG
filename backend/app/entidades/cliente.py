@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
 from backend.app.database import Base
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from typing import Optional
 
 
@@ -56,7 +56,7 @@ class CustomerCreate(BaseModel):
     name: str
     surnames: str
     dni: Optional[str] = None
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None
     phone1: Optional[str] = None
     phone2: Optional[str] = None
     street: Optional[str] = None
