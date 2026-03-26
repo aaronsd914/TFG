@@ -228,3 +228,15 @@ class TestActualizarLineas:
             json={"items": [{"product_id": producto["id"], "quantity": 1, "unit_price": 5.0}]},
         )
         assert r.status_code == 404
+
+
+class TestEnviarEmailAlbaran:
+    def test_enviar_email_ok(self, client, cliente_fixture, producto):
+        aid = crear_albaran(client, cliente_fixture["id"], producto["id"]).json()["id"]
+        r = client.post(f"/api/albaranes/{aid}/send-email")
+        assert r.status_code == 200
+        assert r.json() == {"detail": "Email en cola"}
+
+    def test_enviar_email_albaran_inexistente(self, client):
+        r = client.post("/api/albaranes/9999/send-email")
+        assert r.status_code == 404
