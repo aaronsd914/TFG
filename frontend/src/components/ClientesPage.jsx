@@ -387,19 +387,19 @@ export default function ClientesPage() {
     // Validación campos obligatorios
     const errs = {};
     const REQUIRED = ['name', 'surnames', 'dni', 'phone1', 'street', 'house_number', 'city', 'postal_code', 'email'];
-    REQUIRED.forEach((k) => { if (!(editForm[k] || '').trim()) errs[k] = true; });
+    REQUIRED.forEach((k) => { if (!editForm[k]?.trim()) errs[k] = true; });
     // Validar formato DNI
-    if (editForm.dni && editForm.dni.trim() && !(/^([XYZxyz]\d{7}[A-Za-z]|\d{8}[A-Za-z])$/).test(editForm.dni.trim())) errs.dni = true;
+    if (editForm.dni?.trim() && !(/^([XYZxyz]\d{7}[A-Za-z]|\d{8}[A-Za-z])$/).test(editForm.dni.trim())) errs.dni = true;
     // Validar email si se rellena
-    if (editForm.email && editForm.email.trim()) {
+    if (editForm.email?.trim()) {
       const parts = editForm.email.trim().split('@');
       if (!(parts.length === 2 && parts[0].length > 0 && parts[1].includes('.') && !editForm.email.includes(' '))) errs.email = true;
     }
     // Validar teléfonos
-    if (editForm.phone1 && editForm.phone1.trim() && !(/^\d+$/).test(editForm.phone1.trim())) errs.phone1 = true;
-    if (editForm.phone2 && editForm.phone2.trim() && !(/^\d+$/).test(editForm.phone2.trim())) errs.phone2 = true;
+    if (editForm.phone1?.trim() && !(/^\d+$/).test(editForm.phone1.trim())) errs.phone1 = true;
+    if (editForm.phone2?.trim() && !(/^\d+$/).test(editForm.phone2.trim())) errs.phone2 = true;
     // Validar código postal
-    if (editForm.postal_code && editForm.postal_code.trim() && !(/^\d+$/).test(editForm.postal_code.trim())) errs.postal_code = true;
+    if (editForm.postal_code?.trim() && !(/^\d+$/).test(editForm.postal_code.trim())) errs.postal_code = true;
 
     if (Object.keys(errs).length > 0) {
       setEditErrors(errs);
