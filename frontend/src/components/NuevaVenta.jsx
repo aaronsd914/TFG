@@ -330,8 +330,11 @@ export default function NuevaVenta() {
     const nextErrors = {};
     const missingFields = [];
     const formatIssues = [];
-    const mark = (key) => { if (!nextErrors[key]) nextErrors[key] = true; };
-    const markFormat = (key, msg) => { if (!nextErrors[key]) nextErrors[key] = true; formatIssues.push(msg); };
+    const mark = (key) => { if (!nextErrors[key]) { nextErrors[key] = true; } };
+    const markFormat = (key, msg) => {
+      if (!nextErrors[key]) { nextErrors[key] = true; }
+      formatIssues.push(msg);
+    };
 
     if (items.length === 0) mark('items');
 
@@ -466,7 +469,7 @@ export default function NuevaVenta() {
         setCodigoPostal('');
       }
 
-      // ✅ Notificación Sileo con icono (correo)
+      // ✅ Notificación de éxito
       try {
         const albId = body?.id ? `#${body.id}` : '';
         sileo.success({
@@ -492,7 +495,8 @@ export default function NuevaVenta() {
             document.body.appendChild(link);
             link.click();
             link.remove();
-            URL.revokeObjectURL(url);
+            // revoke after a short delay so the browser has time to start the download
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
           } else {
             try {
               sileo.error({ title: t('newSale.toastPdfError'), description: t('newSale.toastPdfErrorDesc') });

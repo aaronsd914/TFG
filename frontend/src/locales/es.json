@@ -382,7 +382,7 @@
     "toastFormError": "⚠️ Revisa el formulario",
     "toastCreateError": "❌ No se pudo crear el albarán",
     "toastCreated": "✅ Albarán creado {{id}}",
-    "toastCreatedDesc": "El albarán se ha guardado. Si el cliente tiene email, recibirá el PDF por correo.",
+    "toastCreatedDesc": "El albarán se ha guardado y el PDF se está descargando.",
     "toastPdfError": "⚠️ No se pudo descargar el PDF",
     "toastPdfErrorDesc": "El albarán se ha creado correctamente, pero el PDF no pudo descargarse. Inténtalo de nuevo desde la lista de albaranes.",
     "toastNetworkError": "🌐 Error de red",
