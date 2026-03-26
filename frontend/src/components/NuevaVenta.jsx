@@ -330,8 +330,11 @@ export default function NuevaVenta() {
     const nextErrors = {};
     const missingFields = [];
     const formatIssues = [];
-    const mark = (key) => { if (!nextErrors[key]) nextErrors[key] = true; };
-    const markFormat = (key, msg) => { if (!nextErrors[key]) nextErrors[key] = true; formatIssues.push(msg); };
+    const mark = (key) => { if (!nextErrors[key]) { nextErrors[key] = true; } };
+    const markFormat = (key, msg) => {
+      if (!nextErrors[key]) { nextErrors[key] = true; }
+      formatIssues.push(msg);
+    };
 
     if (items.length === 0) mark('items');
 
