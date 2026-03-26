@@ -50,6 +50,19 @@ def go_to_clientes(driver):
     )
 
 
+def _buscar_cliente(driver, nombre):
+    """Escribe en el buscador para filtrar la lista por nombre (bypassea paginación)."""
+    wait = WebDriverWait(driver, 10)
+    search_input = wait.until(
+        EC.presence_of_element_located(
+            (By.CSS_SELECTOR, "input[type='text'], input[type='search'], input:not([type='password']):not([type='submit'])")
+        )
+    )
+    search_input.clear()
+    search_input.send_keys(nombre)
+    time.sleep(1)  # esperar debounce
+
+
 def test_clientes_pagina_carga(logged_in_browser):
     """La pÃ¡gina /clientes carga y su URL es correcta."""
     logged_in_browser.get(f"{BASE_URL}/clientes")
@@ -118,6 +131,8 @@ def test_clientes_crear_nuevo_cliente(logged_in_browser):
     # Verificar que el cliente aparece en la lista del navegador
     logged_in_browser.get(f"{BASE_URL}/clientes")
     wait = WebDriverWait(logged_in_browser, 15)
+    # Buscar el cliente en el buscador para bypassar la paginación
+    _buscar_cliente(logged_in_browser, CLIENT_NAME)
     wait.until(
         EC.presence_of_element_located(
             (By.XPATH, f"//*[contains(normalize-space(.), '{CLIENT_NAME}')]")
@@ -132,6 +147,8 @@ def test_clientes_abrir_modal_detalle(logged_in_browser):
     logged_in_browser.get(f"{BASE_URL}/clientes")
     wait = WebDriverWait(logged_in_browser, 15)
     time.sleep(1)
+    # Filtrar por nombre para bypassar la paginación
+    _buscar_cliente(logged_in_browser, CLIENT_NAME)
     # Usar selector especÃ­fico para el <li> con cursor-pointer que contiene el nombre
     cliente_el = wait.until(
         EC.element_to_be_clickable(
@@ -152,6 +169,8 @@ def test_clientes_modal_tiene_tabs(logged_in_browser):
     logged_in_browser.get(f"{BASE_URL}/clientes")
     wait = WebDriverWait(logged_in_browser, 15)
     time.sleep(1)
+    # Filtrar por nombre para bypassar la paginación
+    _buscar_cliente(logged_in_browser, CLIENT_NAME)
     cliente_el = wait.until(
         EC.element_to_be_clickable(
             (By.XPATH, f"//li[contains(@class,'cursor-pointer') and contains(normalize-space(.), '{CLIENT_NAME}')]")
@@ -205,6 +224,8 @@ def test_clientes_boton_editar_visible_en_detalle(logged_in_browser):
         logged_in_browser.get(f"{BASE_URL}/clientes")
         wait = WebDriverWait(logged_in_browser, 15)
         time.sleep(1)
+        # Filtrar por nombre para bypassar la paginación
+        _buscar_cliente(logged_in_browser, "SELENIUM_EDIT")
         cliente_el = wait.until(
             EC.element_to_be_clickable(
                 (By.XPATH, "//li[contains(@class,'cursor-pointer') and contains(normalize-space(.), 'SELENIUM_EDIT')]")
@@ -244,6 +265,8 @@ def test_clientes_modal_edicion_se_abre(logged_in_browser):
         logged_in_browser.get(f"{BASE_URL}/clientes")
         wait = WebDriverWait(logged_in_browser, 15)
         time.sleep(1)
+        # Filtrar por nombre para bypassar la paginación
+        _buscar_cliente(logged_in_browser, "SELENIUM_EDIT2")
         cliente_el = wait.until(
             EC.element_to_be_clickable(
                 (By.XPATH, "//li[contains(@class,'cursor-pointer') and contains(normalize-space(.), 'SELENIUM_EDIT2')]")

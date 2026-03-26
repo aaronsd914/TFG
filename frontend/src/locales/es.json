@@ -177,7 +177,9 @@
     "editHouseNumber": "Número",
     "editFloorEntrance": "Piso/Entrada",
     "editCity": "Ciudad",
-    "editPostalCode": "Código postal"
+    "editPostalCode": "Código postal",
+    "pageSizeLabel": "Por página",
+    "paginationInfo": "{{from}}–{{to}} de {{total}}"
   },
   "products": {
     "title": "Productos",

@@ -115,7 +115,14 @@ export default function ClientesPage() {
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersError, setOrdersError] = useState(null);
   const [orders, setOrders] = useState([]);
-  const [expanded, setExpanded] = useState({}); // { [albaranId]: { open, loading, error, lineas } }
+  const [expanded, setExpanded] = useState({}); // { [albaranId]: { open, loading, error, items } }
+
+  // paginación
+  const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // validación edición
+  const [editErrors, setEditErrors] = useState({});
 
   // ✅ ID pendiente para abrir detalle (desde Albaranes)
   const [pendingOpenClienteId, setPendingOpenClienteId] = useState(null);
@@ -212,6 +219,9 @@ export default function ClientesPage() {
 
   // Aplicación de buscador + filtros + orden
 
+  // Reset página si cambia búsqueda/filtros
+  useEffect(() => { setCurrentPage(1); }, [q, idRange, selectedDomains, sort]);
+
   const filtered = useMemo(() => {
     let list = [...data];
 
@@ -251,6 +261,10 @@ export default function ClientesPage() {
 
     return list;
   }, [data, q, idRange, selectedDomains, sort]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const clampedPage = Math.min(currentPage, totalPages);
+  const paginated = filtered.slice((clampedPage - 1) * pageSize, clampedPage * pageSize);
 
   // Chips de filtros activos
   const activeChips = [
@@ -344,6 +358,7 @@ export default function ClientesPage() {
       postal_code: selected.postal_code || '',
     });
     setEditError(null);
+    setEditErrors({});
     setEditOpen(true);
   }
 
@@ -351,10 +366,35 @@ export default function ClientesPage() {
     setEditOpen(false);
     setEditForm({});
     setEditError(null);
+    setEditErrors({});
   }
 
   async function saveEdit() {
     if (!selected) return;
+
+    // Validación campos obligatorios
+    const errs = {};
+    const REQUIRED = ['name', 'surnames', 'dni', 'phone1', 'street', 'house_number', 'city', 'postal_code'];
+    REQUIRED.forEach((k) => { if (!(editForm[k] || '').trim()) errs[k] = true; });
+    // Validar formato DNI
+    if (editForm.dni && editForm.dni.trim() && !(/^([XYZxyz]\d{7}[A-Za-z]|\d{8}[A-Za-z])$/).test(editForm.dni.trim())) errs.dni = true;
+    // Validar email si se rellena
+    if (editForm.email && editForm.email.trim()) {
+      const parts = editForm.email.trim().split('@');
+      if (!(parts.length === 2 && parts[0].length > 0 && parts[1].includes('.') && !editForm.email.includes(' '))) errs.email = true;
+    }
+    // Validar teléfonos
+    if (editForm.phone1 && editForm.phone1.trim() && !(/^\d+$/).test(editForm.phone1.trim())) errs.phone1 = true;
+    if (editForm.phone2 && editForm.phone2.trim() && !(/^\d+$/).test(editForm.phone2.trim())) errs.phone2 = true;
+    // Validar código postal
+    if (editForm.postal_code && editForm.postal_code.trim() && !(/^\d+$/).test(editForm.postal_code.trim())) errs.postal_code = true;
+
+    if (Object.keys(errs).length > 0) {
+      setEditErrors(errs);
+      return;
+    }
+    setEditErrors({});
+
     setEditSaving(true);
     setEditError(null);
     try {
@@ -403,7 +443,7 @@ export default function ClientesPage() {
       const res = await fetch(`${API_URL}albaranes/get/${id}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const full = await res.json();
-      setExpanded((prev) => ({ ...prev, [id]: { ...prev[id], open: true, loading: false, lineas: full.lineas || [] } }));
+      setExpanded((prev) => ({ ...prev, [id]: { ...prev[id], open: true, loading: false, items: full.items || [] } }));
     } catch (e) {
       setExpanded((prev) => ({ ...prev, [id]: { ...prev[id], open: true, loading: false, error: e.message } }));
       toastError('Error cargando líneas del albarán', e);
@@ -484,10 +524,10 @@ export default function ClientesPage() {
               </li>
             )}
             {!loading && !error && filtered.length === 0 && <li className="p-6 text-gray-500">{t('clients.noResults')}</li>}
-            {filtered.map((c) => (
+            {paginated.map((c) => (
               <li
                 key={c.id}
-                className="grid grid-cols-12 px-4 py-3 border-t hover:bg-gray-50 cursor-pointer transition-colors"
+                className="grid grid-cols-12 px-4 py-5 border-t hover:bg-gray-50 cursor-pointer transition-colors"
                 onClick={() => openDetail(c)}
               >
                 <div className="col-span-4">{c.name} {c.surnames}</div>
@@ -499,6 +539,53 @@ export default function ClientesPage() {
           </ul>
         </div>
       </div>
+
+      {/* Controles de paginación */}
+      {!loading && !error && filtered.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 mt-3 text-sm text-gray-600">
+          <div className="flex items-center gap-2">
+            <span>{t('clients.pageSizeLabel')}:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
+              className="border border-gray-300 rounded-lg px-2 py-1"
+              data-testid="page-size-select"
+            >
+              {[10, 25, 50, 100].map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setCurrentPage(1)}
+              disabled={clampedPage === 1}
+              className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+            >«</button>
+            <button
+              type="button"
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={clampedPage === 1}
+              className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+            >‹</button>
+            <span className="px-3">{clampedPage} / {totalPages}</span>
+            <button
+              type="button"
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={clampedPage === totalPages}
+              className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+            >›</button>
+            <button
+              type="button"
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={clampedPage === totalPages}
+              className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+            >»</button>
+          </div>
+          <span>{t('clients.paginationInfo', { from: (clampedPage - 1) * pageSize + 1, to: Math.min(clampedPage * pageSize, filtered.length), total: filtered.length })}</span>
+        </div>
+      )}
 
       {/* Modal de filtros */}
       <ModalCenter isOpen={filtersOpen} onClose={() => setFiltersOpen(false)} maxWidth="max-w-lg">
@@ -679,7 +766,7 @@ export default function ClientesPage() {
                               const isOpen = !!expanded[alb.id]?.open;
                               const isLoading = !!expanded[alb.id]?.loading;
                               const err = expanded[alb.id]?.error;
-                              const lineas = expanded[alb.id]?.lineas || [];
+                              const lineas = expanded[alb.id]?.items || [];
                               const meta =
                                 ESTADO_META[alb.status] || { label: alb.status, className: 'bg-gray-100 text-gray-700 border-gray-300' };
 
@@ -748,7 +835,7 @@ export default function ClientesPage() {
                                                   {lineas.map((ln) => (
                                                     <tr key={ln.id} className="border-b">
                                                       <td className="p-2">#{ln.id}</td>
-                                                      <td className="p-2">{ln.producto_id}</td>
+                                                      <td className="p-2">#{ln.product_id}</td>
                                                       <td className="p-2">{ln.quantity}</td>
                                                       <td className="p-2">{formatEUR(ln.unit_price)}</td>
                                                       <td className="p-2">{formatEUR(ln.quantity * ln.unit_price)}</td>
@@ -788,105 +875,32 @@ export default function ClientesPage() {
 
         <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">{t('clients.editName')}</label>
-              <input
-                type="text"
-                value={editForm.name || ''}
-                onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">{t('clients.editSurnames')}</label>
-              <input
-                type="text"
-                value={editForm.surnames || ''}
-                onChange={(e) => setEditForm((f) => ({ ...f, surnames: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">{t('clients.editDni')}</label>
-              <input
-                type="text"
-                value={editForm.dni || ''}
-                onChange={(e) => setEditForm((f) => ({ ...f, dni: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">{t('clients.editEmail')}</label>
-              <input
-                type="email"
-                value={editForm.email || ''}
-                onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">{t('clients.editPhone1')}</label>
-              <input
-                type="text"
-                value={editForm.phone1 || ''}
-                onChange={(e) => setEditForm((f) => ({ ...f, phone1: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">{t('clients.editPhone2')}</label>
-              <input
-                type="text"
-                value={editForm.phone2 || ''}
-                onChange={(e) => setEditForm((f) => ({ ...f, phone2: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">{t('clients.editStreet')}</label>
-              <input
-                type="text"
-                value={editForm.street || ''}
-                onChange={(e) => setEditForm((f) => ({ ...f, street: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">{t('clients.editHouseNumber')}</label>
-              <input
-                type="text"
-                value={editForm.house_number || ''}
-                onChange={(e) => setEditForm((f) => ({ ...f, house_number: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">{t('clients.editFloorEntrance')}</label>
-              <input
-                type="text"
-                value={editForm.floor_entrance || ''}
-                onChange={(e) => setEditForm((f) => ({ ...f, floor_entrance: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">{t('clients.editCity')}</label>
-              <input
-                type="text"
-                value={editForm.city || ''}
-                onChange={(e) => setEditForm((f) => ({ ...f, city: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">{t('clients.editPostalCode')}</label>
-              <input
-                type="text"
-                value={editForm.postal_code || ''}
-                onChange={(e) => setEditForm((f) => ({ ...f, postal_code: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              />
-            </div>
+            {[{key:'name',label:t('clients.editName'),req:true,type:'text'},
+              {key:'surnames',label:t('clients.editSurnames'),req:true,type:'text'},
+              {key:'dni',label:t('clients.editDni'),req:true,type:'text'},
+              {key:'email',label:t('clients.editEmail'),req:false,type:'email'},
+              {key:'phone1',label:t('clients.editPhone1'),req:true,type:'text'},
+              {key:'phone2',label:t('clients.editPhone2'),req:false,type:'text'},
+              {key:'street',label:t('clients.editStreet'),req:true,type:'text'},
+              {key:'house_number',label:t('clients.editHouseNumber'),req:true,type:'text'},
+              {key:'floor_entrance',label:t('clients.editFloorEntrance'),req:false,type:'text'},
+              {key:'city',label:t('clients.editCity'),req:true,type:'text'},
+              {key:'postal_code',label:t('clients.editPostalCode'),req:true,type:'text'},
+            ].map(({key, label, req, type}) => (
+              <div key={key}>
+                <label className="block text-sm font-medium mb-1">
+                  {label}{req && <span className="text-red-500 ml-0.5">*</span>}
+                </label>
+                <input
+                  type={type}
+                  value={editForm[key] || ''}
+                  onChange={(e) => { setEditForm((f) => ({ ...f, [key]: e.target.value })); setEditErrors((err) => { const c = {...err}; delete c[key]; return c; }); }}
+                  className={`w-full rounded-lg px-3 py-2 border ${
+                    editErrors[key] ? 'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100' : 'border-gray-300 focus:border-gray-400 focus:ring-2 focus:ring-gray-200'
+                  }`}
+                />
+              </div>
+            ))}
           </div>
 
           {editError && <p className="text-red-600 text-sm">{editError}</p>}
@@ -895,7 +909,7 @@ export default function ClientesPage() {
         <div className="mt-6 flex justify-end gap-3">
           <button
             onClick={closeEdit}
-            className="px-4 py-2 rounded-xl bg-gray-200 text-gray-900 hover:bg-gray-300"
+            className="px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600"
             type="button"
             disabled={editSaving}
           >
