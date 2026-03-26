@@ -167,6 +167,8 @@
     "editTitle": "Editar cliente",
     "editSuccess": "Cliente actualizado correctamente.",
     "editError": "No se pudo actualizar el cliente.",
+    "editValidationTitle": "Campos incompletos",
+    "editValidationDesc": "Revisa los campos marcados en rojo.",
     "editName": "Nombre",
     "editSurnames": "Apellidos",
     "editDni": "DNI",

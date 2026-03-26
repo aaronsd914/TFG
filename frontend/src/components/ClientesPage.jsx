@@ -124,6 +124,9 @@ export default function ClientesPage() {
   // validación edición
   const [editErrors, setEditErrors] = useState({});
 
+  // mapa id→nombre de productos (para mostrar en líneas de albarán)
+  const [productMap, setProductMap] = useState({});
+
   // ✅ ID pendiente para abrir detalle (desde Albaranes)
   const [pendingOpenClienteId, setPendingOpenClienteId] = useState(null);
 
@@ -145,21 +148,30 @@ export default function ClientesPage() {
     } catch {}
   }
 
-  // Carga inicial de clientes
+  // Carga inicial de clientes + productos
   useEffect(() => {
     (async () => {
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch(`${API_URL}clientes/get`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = await res.json();
+        const [resClientes, resProductos] = await Promise.all([
+          fetch(`${API_URL}clientes/get`),
+          fetch(`${API_URL}productos/get`),
+        ]);
+        if (!resClientes.ok) throw new Error(`HTTP ${resClientes.status}`);
+        const json = await resClientes.json();
         setData(json || []);
         if (json?.length) {
           const ids = json.map((c) => c.id);
           setIdRange([Math.min(...ids), Math.max(...ids)]);
         } else {
           setIdRange([0, 999999]);
+        }
+        if (resProductos.ok) {
+          const prods = await resProductos.json();
+          const map = {};
+          (prods || []).forEach((p) => { map[p.id] = p.name; });
+          setProductMap(map);
         }
       } catch (e) {
         setError(e.message);
@@ -374,7 +386,7 @@ export default function ClientesPage() {
 
     // Validación campos obligatorios
     const errs = {};
-    const REQUIRED = ['name', 'surnames', 'dni', 'phone1', 'street', 'house_number', 'city', 'postal_code'];
+    const REQUIRED = ['name', 'surnames', 'dni', 'phone1', 'street', 'house_number', 'city', 'postal_code', 'email'];
     REQUIRED.forEach((k) => { if (!(editForm[k] || '').trim()) errs[k] = true; });
     // Validar formato DNI
     if (editForm.dni && editForm.dni.trim() && !(/^([XYZxyz]\d{7}[A-Za-z]|\d{8}[A-Za-z])$/).test(editForm.dni.trim())) errs.dni = true;
@@ -391,6 +403,7 @@ export default function ClientesPage() {
 
     if (Object.keys(errs).length > 0) {
       setEditErrors(errs);
+      sileo.error({ title: t('clients.editValidationTitle'), description: t('clients.editValidationDesc') });
       return;
     }
     setEditErrors({});
@@ -633,7 +646,7 @@ export default function ClientesPage() {
         </section>
 
         <div className="mt-8 flex items-center justify-between">
-          <button onClick={clearAll} className="px-4 py-2 rounded-xl bg-gray-200 text-gray-900 hover:bg-gray-300" type="button">
+          <button onClick={clearAll} className="px-4 py-2 rounded-xl bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600" type="button">
             {t('clients.clearFilters')}
           </button>
           <button onClick={() => setFiltersOpen(false)} className="px-4 py-2 rounded-xl btn-accent" type="button">
@@ -817,8 +830,7 @@ export default function ClientesPage() {
                                               <table className="w-full border-collapse">
                                                 <thead>
                                                   <tr className="text-left border-b bg-gray-50">
-                                                    <th className="p-2 w-28">{t('clients.colLineId')}</th>
-                                                    <th className="p-2 w-28">{t('clients.colProduct')}</th>
+                                                    <th className="p-2">{t('clients.colProduct')}</th>
                                                     <th className="p-2 w-24">{t('clients.colQty')}</th>
                                                     <th className="p-2 w-28">{t('clients.colUnitPrice')}</th>
                                                     <th className="p-2 w-28">{t('clients.colSubtotal')}</th>
@@ -834,8 +846,7 @@ export default function ClientesPage() {
                                                   )}
                                                   {lineas.map((ln) => (
                                                     <tr key={ln.id} className="border-b">
-                                                      <td className="p-2">#{ln.id}</td>
-                                                      <td className="p-2">#{ln.product_id}</td>
+                                                      <td className="p-2">{productMap[ln.product_id] || `#${ln.product_id}`}</td>
                                                       <td className="p-2">{ln.quantity}</td>
                                                       <td className="p-2">{formatEUR(ln.unit_price)}</td>
                                                       <td className="p-2">{formatEUR(ln.quantity * ln.unit_price)}</td>
@@ -878,7 +889,7 @@ export default function ClientesPage() {
             {[{key:'name',label:t('clients.editName'),req:true,type:'text'},
               {key:'surnames',label:t('clients.editSurnames'),req:true,type:'text'},
               {key:'dni',label:t('clients.editDni'),req:true,type:'text'},
-              {key:'email',label:t('clients.editEmail'),req:false,type:'email'},
+              {key:'email',label:t('clients.editEmail'),req:true,type:'email'},
               {key:'phone1',label:t('clients.editPhone1'),req:true,type:'text'},
               {key:'phone2',label:t('clients.editPhone2'),req:false,type:'text'},
               {key:'street',label:t('clients.editStreet'),req:true,type:'text'},

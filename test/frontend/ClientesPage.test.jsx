@@ -97,6 +97,9 @@ describe('ClientesPage – modal de edición', () => {
       if (/albaranes\/get$/.test(url)) {
         return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
       }
+      if (/productos\/get$/.test(url)) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+      }
       return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
     });
   });
@@ -144,6 +147,9 @@ describe('ClientesPage – modal de edición', () => {
         return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
       }
       if (/albaranes\/get$/.test(url)) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+      }
+      if (/productos\/get$/.test(url)) {
         return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
       }
       return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
@@ -218,6 +224,7 @@ describe('ClientesPage – modal de edición', () => {
       if (url.includes(`clientes/get/${CLIENTE.id}`)) return Promise.resolve({ ok: true, json: () => Promise.resolve({ ...CLIENTE }) });
       if (url.includes('albaranes/by-cliente')) return Promise.resolve({ ok: true, json: () => Promise.resolve([ALB]) });
       if (url.includes(`albaranes/get/${ALB.id}`)) return Promise.resolve({ ok: true, json: () => Promise.resolve(ALB) });
+      if (/productos\/get$/.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve([{ id: 5, name: 'Producto Test', description: '', price: 10, supplier_id: 1 }]) });
       return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
     });
 
@@ -244,7 +251,33 @@ describe('ClientesPage – modal de edición', () => {
 
     await waitFor(() => {
       expect(screen.getByText('25.00 €')).toBeInTheDocument();
+      expect(screen.getByText('Producto Test')).toBeInTheDocument();
     });
+    // Los IDs de línea y producto no deben aparecer como texto en las celdas
+    expect(screen.queryByText('#1')).not.toBeInTheDocument();
+    expect(screen.queryByText('#5')).not.toBeInTheDocument();
+  });
+
+  it('muestra toast de sileo al guardar con campos vacíos', async () => {
+    const { sileo } = await import('sileo');
+
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText('ana@test.com')).toBeInTheDocument());
+    await act(async () => { fireEvent.click(screen.getByText('ana@test.com')); });
+    await waitFor(() => expect(screen.getByTestId('cliente-edit-btn')).toBeInTheDocument());
+    await act(async () => { fireEvent.click(screen.getByTestId('cliente-edit-btn')); });
+    await waitFor(() => expect(screen.getByTestId('cliente-edit-save-btn')).toBeInTheDocument());
+
+    // Borrar el campo nombre para forzar error de validación
+    const saveBtn = screen.getByTestId('cliente-edit-save-btn');
+    const editModal = saveBtn.closest('.fixed') ?? document;
+    const nameInput = editModal.querySelectorAll('input[type="text"]')[0];
+    await act(async () => { fireEvent.change(nameInput, { target: { value: '' } }); });
+    await act(async () => { fireEvent.click(screen.getByTestId('cliente-edit-save-btn')); });
+
+    expect(sileo.error).toHaveBeenCalled();
+    expect(screen.getByTestId('cliente-edit-save-btn')).toBeInTheDocument();
   });
 });
 
