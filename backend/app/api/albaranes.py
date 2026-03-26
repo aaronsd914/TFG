@@ -498,7 +498,16 @@ def download_delivery_note_pdf(
             }
         )
 
-    pdf_bytes = generate_delivery_note_pdf(delivery_note, customer, enriched_lines)
+    store_name = get_cfg(db, "tienda_nombre")
+    logo_base64 = get_cfg(db, "logo_empresa") or None
+
+    pdf_bytes = generate_delivery_note_pdf(
+        delivery_note,
+        customer,
+        enriched_lines,
+        tienda_nombre=store_name,
+        logo_base64=logo_base64,
+    )
 
     customer_name = ""
     if customer:
