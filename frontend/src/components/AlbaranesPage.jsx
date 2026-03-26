@@ -4,6 +4,7 @@ import { sileo } from 'sileo';
 import { useTranslation } from 'react-i18next';
 
 import { API_URL } from '../config.js';
+import ConfirmDeleteModal from './ConfirmDeleteModal.jsx';
 
 // ===== Helpers =====
 function useDebouncedValue(value, delay = 200) {
@@ -986,16 +987,7 @@ export default function AlbaranesPage() {
               <div className="bg-white border border-gray-200 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-semibold">{t('albaranes.linesTitle')}</h3>
-                  {!linesEditing ? (
-                    <button
-                      type="button"
-                      onClick={openLinesEdit}
-                      className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-sm"
-                      data-testid="lines-edit-btn"
-                    >
-                      {t('albaranes.linesEditBtn')}
-                    </button>
-                  ) : (
+                  {linesEditing ? (
                     <div className="flex gap-2">
                       <button
                         type="button"
@@ -1016,6 +1008,15 @@ export default function AlbaranesPage() {
                         {linesSaving ? t('common.saving') : t('albaranes.linesEditSave')}
                       </button>
                     </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={openLinesEdit}
+                      className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-sm"
+                      data-testid="lines-edit-btn"
+                    >
+                      {t('albaranes.linesEditBtn')}
+                    </button>
                   )}
                 </div>
                 {detailError && <p className="text-red-600 mb-2">Error: {detailError}</p>}
@@ -1185,29 +1186,17 @@ export default function AlbaranesPage() {
         </ModalCenter>
 
         {/* Modal confirmar eliminar albarán */}
-        <ModalCenter isOpen={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)} maxWidth="max-w-sm">
-          <h2 className="text-lg font-semibold mb-3">{t('albaranes.deleteTitle')}</h2>
-          <p className="text-gray-700 mb-6">{t('albaranes.deleteConfirm', { id: selected?.id })}</p>
-          <div className="flex justify-end gap-3">
-            <button
-              onClick={() => setDeleteConfirmOpen(false)}
-              className="px-4 py-2 rounded-xl bg-gray-200 text-gray-900 hover:bg-gray-300"
-              type="button"
-              disabled={deleteLoading}
-            >
-              {t('common.cancel')}
-            </button>
-            <button
-              onClick={deleteAlbaran}
-              className="px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
-              type="button"
-              disabled={deleteLoading}
-              data-testid="albaran-delete-confirm-btn"
-            >
-              {deleteLoading ? t('common.saving') : t('albaranes.deleteBtn')}
-            </button>
-          </div>
-        </ModalCenter>
+        <ConfirmDeleteModal
+          isOpen={deleteConfirmOpen}
+          onClose={() => setDeleteConfirmOpen(false)}
+          title={t('albaranes.deleteTitle')}
+          message={t('albaranes.deleteConfirm', { id: selected?.id })}
+          onConfirm={deleteAlbaran}
+          loading={deleteLoading}
+          confirmTestId="albaran-delete-confirm-btn"
+          confirmLabel={deleteLoading ? t('common.saving') : t('albaranes.deleteBtn')}
+          cancelLabel={t('common.cancel')}
+        />
 
         {/* Modal editar albarán */}
         <ModalCenter isOpen={editOpen} onClose={closeEdit} maxWidth="max-w-lg">
