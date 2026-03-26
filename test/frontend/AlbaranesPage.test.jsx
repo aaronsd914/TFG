@@ -367,3 +367,54 @@ describe('AlbaranesPage – filtro de estado', () => {
     expect(screen.queryByText('RUTA')).not.toBeInTheDocument();
   });
 });
+
+describe('AlbaranesPage – eliminar albarán', () => {
+  beforeEach(() => {
+    fetch.mockImplementation((url) => {
+      if (/albaranes\/get$/.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve([ALBARAN]) });
+      if (/clientes\/get$/.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve([CLIENTE]) });
+      if (/productos\/get$/.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+      if (url.includes(`albaranes/get/${ALBARAN.id}`)) return Promise.resolve({ ok: true, json: () => Promise.resolve({ ...ALBARAN }) });
+      if (url.includes(`clientes/get/${CLIENTE.id}`)) return Promise.resolve({ ok: true, json: () => Promise.resolve({ ...CLIENTE }) });
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+    });
+  });
+
+  it('muestra el botón Eliminar al abrir el detalle', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#1')).toBeInTheDocument());
+    await act(async () => { fireEvent.click(screen.getByText('#1')); });
+    await waitFor(() => expect(screen.getByTestId('albaran-delete-btn')).toBeInTheDocument());
+  });
+
+  it('abre el modal de confirmación al pulsar Eliminar', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#1')).toBeInTheDocument());
+    await act(async () => { fireEvent.click(screen.getByText('#1')); });
+    await waitFor(() => expect(screen.getByTestId('albaran-delete-btn')).toBeInTheDocument());
+    await act(async () => { fireEvent.click(screen.getByTestId('albaran-delete-btn')); });
+    await waitFor(() => expect(screen.getByTestId('albaran-delete-confirm-btn')).toBeInTheDocument());
+  });
+
+  it('elimina el albarán y cierra el modal tras confirmar', async () => {
+    fetch.mockImplementation((url, opts) => {
+      if (opts?.method === 'DELETE') return Promise.resolve({ ok: true, json: () => Promise.resolve({ ok: true }) });
+      if (/albaranes\/get$/.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve([ALBARAN]) });
+      if (/clientes\/get$/.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve([CLIENTE]) });
+      if (/productos\/get$/.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+      if (url.includes(`albaranes/get/${ALBARAN.id}`)) return Promise.resolve({ ok: true, json: () => Promise.resolve({ ...ALBARAN }) });
+      if (url.includes(`clientes/get/${CLIENTE.id}`)) return Promise.resolve({ ok: true, json: () => Promise.resolve({ ...CLIENTE }) });
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+    });
+
+    renderPage();
+    await waitFor(() => expect(screen.getByText('#1')).toBeInTheDocument());
+    await act(async () => { fireEvent.click(screen.getByText('#1')); });
+    await waitFor(() => expect(screen.getByTestId('albaran-delete-btn')).toBeInTheDocument());
+    await act(async () => { fireEvent.click(screen.getByTestId('albaran-delete-btn')); });
+    await waitFor(() => expect(screen.getByTestId('albaran-delete-confirm-btn')).toBeInTheDocument());
+    await act(async () => { fireEvent.click(screen.getByTestId('albaran-delete-confirm-btn')); });
+
+    await waitFor(() => expect(screen.queryByTestId('albaran-delete-confirm-btn')).not.toBeInTheDocument());
+  });
+});

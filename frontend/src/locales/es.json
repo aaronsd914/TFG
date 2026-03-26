@@ -181,7 +181,12 @@
     "editCity": "Ciudad",
     "editPostalCode": "Código postal",
     "pageSizeLabel": "Por página",
-    "paginationInfo": "{{from}}–{{to}} de {{total}}"
+    "paginationInfo": "{{from}}–{{to}} de {{total}}",
+    "deleteBtn": "Eliminar",
+    "deleteTitle": "Eliminar cliente",
+    "deleteConfirm": "¿Seguro que quieres eliminar a {{name}}? Esta acción no se puede deshacer.",
+    "deleteSuccess": "Cliente eliminado correctamente.",
+    "deleteError": "No se pudo eliminar el cliente."
   },
   "products": {
     "title": "Productos",
@@ -333,10 +338,15 @@
     "linesEditSuccess": "Líneas actualizadas correctamente.",
     "linesEditError": "No se pudieron actualizar las líneas.",
     "linesValidationError": "Error en líneas",
-    "linesCannotBeEmpty": "No se pueden guardar sin líneas.",
+    "linesCannotBeEmpty": "Un albarán no puede quedarse sin productos.",
     "linesInvalidFields": "Revisa que cada línea tenga producto y cantidad.",
     "pageSizeLabel": "Por página",
-    "paginationInfo": "{{from}}–{{to}} de {{total}}"
+    "paginationInfo": "{{from}}–{{to}} de {{total}}",
+    "deleteBtn": "Eliminar",
+    "deleteTitle": "Eliminar albarán",
+    "deleteConfirm": "¿Seguro que quieres eliminar el albarán #{{id}}? Esta acción no se puede deshacer.",
+    "deleteSuccess": "Albarán eliminado correctamente.",
+    "deleteError": "No se pudo eliminar el albarán."
   },
   "newSale": {
     "title": "Nueva venta",

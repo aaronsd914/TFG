@@ -130,6 +130,10 @@ export default function AlbaranesPage() {
   const [pageSize, setPageSize] = useState(25);
   const [currentPage, setCurrentPage] = useState(1);
 
+  // eliminar albarán
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
   // ✅ Ir a detalle del cliente en ClientesPage
   function goToCliente(clienteId) {
     if (!clienteId) return;
@@ -482,8 +486,25 @@ export default function AlbaranesPage() {
   function addLine() {
     setLinesForm((prev) => [
       ...prev,
-      { _key: `line-new-${Date.now()}-${prev.length}`, product_id: products[0]?.id ?? '', quantity: 1, unit_price: 0 },
+      { _key: `line-new-${Date.now()}-${prev.length}`, product_id: products[0]?.id ?? '', quantity: 1, unit_price: products[0]?.price ?? 0 },
     ]);
+  }
+
+  async function deleteAlbaran() {
+    if (!selected) return;
+    setDeleteLoading(true);
+    try {
+      const res = await fetch(`${API_URL}albaranes/delete/${selected.id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setAlbaranes((prev) => prev.filter((a) => a.id !== selected.id));
+      setDeleteConfirmOpen(false);
+      closeDetail();
+      sileo.success({ title: t('albaranes.deleteSuccess') });
+    } catch (e) {
+      sileo.error({ title: t('albaranes.deleteError'), description: e?.message });
+    } finally {
+      setDeleteLoading(false);
+    }
   }
 
   async function saveLinesEdit() {
@@ -873,14 +894,24 @@ export default function AlbaranesPage() {
             <h2 className="text-xl font-semibold">{t('albaranes.detailTitle')}</h2>
             <div className="flex items-center gap-2">
               {selected && (
-                <button
-                  onClick={openEdit}
-                  className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-sm"
-                  type="button"
-                  data-testid="albaran-edit-btn"
-                >
-                  {t('common.edit')}
-                </button>
+                <>
+                  <button
+                    onClick={() => setDeleteConfirmOpen(true)}
+                    className="px-3 py-1.5 rounded-lg border border-red-300 bg-white hover:bg-red-50 text-red-700 text-sm"
+                    type="button"
+                    data-testid="albaran-delete-btn"
+                  >
+                    {t('albaranes.deleteBtn')}
+                  </button>
+                  <button
+                    onClick={openEdit}
+                    className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-sm"
+                    type="button"
+                    data-testid="albaran-edit-btn"
+                  >
+                    {t('common.edit')}
+                  </button>
+                </>
               )}
               <button onClick={closeDetail} className="text-gray-500 hover:text-gray-700" type="button">
                 {t('common.close')}
@@ -1151,6 +1182,31 @@ export default function AlbaranesPage() {
               )}
             </div>
           )}
+        </ModalCenter>
+
+        {/* Modal confirmar eliminar albarán */}
+        <ModalCenter isOpen={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)} maxWidth="max-w-sm">
+          <h2 className="text-lg font-semibold mb-3">{t('albaranes.deleteTitle')}</h2>
+          <p className="text-gray-700 mb-6">{t('albaranes.deleteConfirm', { id: selected?.id })}</p>
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={() => setDeleteConfirmOpen(false)}
+              className="px-4 py-2 rounded-xl bg-gray-200 text-gray-900 hover:bg-gray-300"
+              type="button"
+              disabled={deleteLoading}
+            >
+              {t('common.cancel')}
+            </button>
+            <button
+              onClick={deleteAlbaran}
+              className="px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+              type="button"
+              disabled={deleteLoading}
+              data-testid="albaran-delete-confirm-btn"
+            >
+              {deleteLoading ? t('common.saving') : t('albaranes.deleteBtn')}
+            </button>
+          </div>
         </ModalCenter>
 
         {/* Modal editar albarán */}

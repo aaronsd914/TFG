@@ -181,7 +181,12 @@
     "editCity": "City",
     "editPostalCode": "Post code",
     "pageSizeLabel": "Per page",
-    "paginationInfo": "{{from}}–{{to}} of {{total}}"
+    "paginationInfo": "{{from}}–{{to}} of {{total}}",
+    "deleteBtn": "Delete",
+    "deleteTitle": "Delete client",
+    "deleteConfirm": "Are you sure you want to delete {{name}}? This action cannot be undone.",
+    "deleteSuccess": "Client deleted successfully.",
+    "deleteError": "Could not delete the client."
   },
   "products": {
     "title": "Products",
@@ -333,10 +338,15 @@
     "linesEditSuccess": "Lines updated successfully.",
     "linesEditError": "Could not update the lines.",
     "linesValidationError": "Invalid lines",
-    "linesCannotBeEmpty": "Cannot save without lines.",
+    "linesCannotBeEmpty": "A delivery note cannot be left without products.",
     "linesInvalidFields": "Check that each line has a product and quantity.",
     "pageSizeLabel": "Per page",
-    "paginationInfo": "{{from}}–{{to}} of {{total}}"
+    "paginationInfo": "{{from}}–{{to}} of {{total}}",
+    "deleteBtn": "Delete",
+    "deleteTitle": "Delete delivery note",
+    "deleteConfirm": "Are you sure you want to delete delivery note #{{id}}? This action cannot be undone.",
+    "deleteSuccess": "Delivery note deleted successfully.",
+    "deleteError": "Could not delete the delivery note."
   },
   "newSale": {
     "title": "New sale",

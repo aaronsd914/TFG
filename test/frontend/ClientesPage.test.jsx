@@ -341,3 +341,47 @@ describe('ClientesPage – paginación', () => {
     expect(screen.queryByText('Cliente001 Test')).not.toBeInTheDocument();
   });
 });
+
+describe('ClientesPage – eliminar cliente', () => {
+  beforeEach(() => {
+    fetch.mockImplementation((url) => {
+      if (/clientes\/get$/.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve([CLIENTE]) });
+      if (/productos\/get$/.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+    });
+  });
+
+  it('muestra el botón Eliminar al abrir el detalle del cliente', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Ana García')).toBeInTheDocument());
+    await act(async () => { fireEvent.click(screen.getByText('Ana García')); });
+    await waitFor(() => expect(screen.getByTestId('cliente-delete-btn')).toBeInTheDocument());
+  });
+
+  it('abre el modal de confirmación al pulsar Eliminar', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Ana García')).toBeInTheDocument());
+    await act(async () => { fireEvent.click(screen.getByText('Ana García')); });
+    await waitFor(() => expect(screen.getByTestId('cliente-delete-btn')).toBeInTheDocument());
+    await act(async () => { fireEvent.click(screen.getByTestId('cliente-delete-btn')); });
+    await waitFor(() => expect(screen.getByTestId('cliente-delete-confirm-btn')).toBeInTheDocument());
+  });
+
+  it('elimina el cliente y cierra el modal tras confirmar', async () => {
+    fetch.mockImplementation((url, opts) => {
+      if (opts?.method === 'DELETE') return Promise.resolve({ ok: true, json: () => Promise.resolve({ ok: true }) });
+      if (/clientes\/get$/.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve([CLIENTE]) });
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+    });
+
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Ana García')).toBeInTheDocument());
+    await act(async () => { fireEvent.click(screen.getByText('Ana García')); });
+    await waitFor(() => expect(screen.getByTestId('cliente-delete-btn')).toBeInTheDocument());
+    await act(async () => { fireEvent.click(screen.getByTestId('cliente-delete-btn')); });
+    await waitFor(() => expect(screen.getByTestId('cliente-delete-confirm-btn')).toBeInTheDocument());
+    await act(async () => { fireEvent.click(screen.getByTestId('cliente-delete-confirm-btn')); });
+
+    await waitFor(() => expect(screen.queryByTestId('cliente-delete-confirm-btn')).not.toBeInTheDocument());
+  });
+});
