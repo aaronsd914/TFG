@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import ModalCenter from './ModalCenter.jsx';
 
 export default function ConfirmDeleteModal({ isOpen, onClose, title, message, onConfirm, loading, confirmTestId, confirmLabel, cancelLabel }) {
@@ -27,3 +28,15 @@ export default function ConfirmDeleteModal({ isOpen, onClose, title, message, on
     </ModalCenter>
   );
 }
+
+ConfirmDeleteModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  title: PropTypes.string.isRequired,
+  message: PropTypes.string.isRequired,
+  onConfirm: PropTypes.func.isRequired,
+  loading: PropTypes.bool,
+  confirmTestId: PropTypes.string,
+  confirmLabel: PropTypes.string.isRequired,
+  cancelLabel: PropTypes.string.isRequired,
+};
