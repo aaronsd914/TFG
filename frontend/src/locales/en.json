@@ -167,6 +167,8 @@
     "editTitle": "Edit client",
     "editSuccess": "Client updated successfully.",
     "editError": "Could not update the client.",
+    "editValidationTitle": "Incomplete fields",
+    "editValidationDesc": "Check the fields highlighted in red.",
     "editName": "Name",
     "editSurnames": "Surnames",
     "editDni": "ID No.",

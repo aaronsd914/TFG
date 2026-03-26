@@ -163,6 +163,8 @@ const _i18nTranslations = {
   'clients.orderZA': 'Nombre Z→A',
   'clients.noDomains': 'Sin dominios',
   'clients.loadError': 'Error al cargar clientes',
+  'clients.editValidationTitle': 'Campos incompletos',
+  'clients.editValidationDesc': 'Revisa los campos marcados en rojo.',
   // products
   'products.title': 'Productos',
   'products.loading': 'Cargando productos…',
