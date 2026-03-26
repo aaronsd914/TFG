@@ -478,35 +478,36 @@ export default function NuevaVenta() {
         });
       } catch {}
 
-      // ✅ Descargar PDF del albarán
+      // ✅ Descargar PDF y enviar email en paralelo e independientemente
       if (body?.id) {
-        try {
-          const pdfRes = await fetch(`${API_URL}albaranes/${body.id}/pdf`);
-          if (pdfRes.ok) {
-            const blob = await pdfRes.blob();
-            const today = new Date().toISOString().slice(0, 10);
-            const clientName = (useExisting && selectedClient)
-              ? `_${selectedClient.name}_${selectedClient.surnames}`.replace(/\s+/g, '_')
-              : '';
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `${today}_delivery_note_${body.id}${clientName}.pdf`;
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            // revoke after a short delay so the browser has time to start the download
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
-          } else {
-            try {
-              sileo.error({ title: t('newSale.toastPdfError'), description: t('newSale.toastPdfErrorDesc') });
-            } catch {}
-          }
-        } catch {
+        // 1) Descargar PDF
+        (async () => {
           try {
-            sileo.error({ title: t('newSale.toastPdfError'), description: t('newSale.toastPdfErrorDesc') });
-          } catch {}
-        }
+            const pdfRes = await fetch(`${API_URL}albaranes/${body.id}/pdf`);
+            if (pdfRes.ok) {
+              const blob = await pdfRes.blob();
+              const today = new Date().toISOString().slice(0, 10);
+              const clientName = (useExisting && selectedClient)
+                ? `_${selectedClient.name}_${selectedClient.surnames}`.replace(/\s+/g, '_')
+                : '';
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = `${today}_delivery_note_${body.id}${clientName}.pdf`;
+              document.body.appendChild(link);
+              link.click();
+              link.remove();
+              setTimeout(() => URL.revokeObjectURL(url), 1000);
+            } else {
+              try { sileo.error({ title: t('newSale.toastPdfError'), description: t('newSale.toastPdfErrorDesc') }); } catch {}
+            }
+          } catch {
+            try { sileo.error({ title: t('newSale.toastPdfError'), description: t('newSale.toastPdfErrorDesc') }); } catch {}
+          }
+        })();
+
+        // 2) Enviar email al cliente (independiente del PDF)
+        fetch(`${API_URL}albaranes/${body.id}/send-email`, { method: 'POST' }).catch(() => {});
       }
     } catch (e) {
       try {

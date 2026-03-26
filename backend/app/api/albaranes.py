@@ -225,13 +225,11 @@ def _build_delivery_note_lines(
 )
 def create_delivery_note(
     payload: DeliveryNoteCreateFull,
-    background_tasks: BackgroundTasks,
     db: Annotated[Session, Depends(get_db)],
 ):
     """
     Creates a full delivery note: customer (new or existing), order lines and
-    deposit movement (30% of total by default). Sends the PDF by email to the
-    customer in the background.
+    deposit movement (30% of total by default).
     """
     customer_id = _resolve_customer_id(db, payload)
 
@@ -272,9 +270,26 @@ def create_delivery_note(
         db.add(mov)
         db.commit()
 
-    background_tasks.add_task(_send_delivery_note_email_task, delivery_note.id)
-
     return delivery_note
+
+
+@router.post(
+    "/albaranes/{delivery_note_id}/send-email",
+    responses={404: {"description": "Not found"}},
+)
+def send_delivery_note_email(
+    delivery_note_id: int,
+    background_tasks: BackgroundTasks,
+    db: Annotated[Session, Depends(get_db)],
+):
+    """Queues the delivery-note email as an independent background task."""
+    delivery_note = (
+        db.query(DeliveryNoteDB).filter(DeliveryNoteDB.id == delivery_note_id).first()
+    )
+    if not delivery_note:
+        raise HTTPException(404, "Albaran no encontrado")
+    background_tasks.add_task(_send_delivery_note_email_task, delivery_note.id)
+    return {"detail": "Email en cola"}
 
 
 @router.get("/albaranes/get", response_model=List[DeliveryNote])
