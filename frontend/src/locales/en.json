@@ -331,7 +331,12 @@
     "linesEditSave": "Save lines",
     "linesEditAddRow": "Add line",
     "linesEditSuccess": "Lines updated successfully.",
-    "linesEditError": "Could not update the lines."
+    "linesEditError": "Could not update the lines.",
+    "linesValidationError": "Invalid lines",
+    "linesCannotBeEmpty": "Cannot save without lines.",
+    "linesInvalidFields": "Check that each line has a product and quantity.",
+    "pageSizeLabel": "Per page",
+    "paginationInfo": "{{from}}–{{to}} of {{total}}"
   },
   "newSale": {
     "title": "New sale",

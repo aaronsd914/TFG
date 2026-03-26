@@ -63,10 +63,10 @@ function formatDate(d) {
 }
 
 const ESTADO_META = {
-  FIANZA:      { label: 'Fianza',     className: 'bg-amber-50 text-amber-800 border-amber-200' },
-  ALMACEN:     { label: 'Almacén',    className: 'bg-sky-50 text-sky-800 border-sky-200' },
-  TRANSPORTE:  { label: 'Ruta',       className: 'bg-violet-50 text-violet-800 border-violet-200' },
-  ENTREGADO:   { label: 'Entregado',  className: 'bg-green-50 text-green-800 border-green-200' },
+  FIANZA:    { label: 'Fianza',    className: 'bg-amber-50 text-amber-800 border-amber-200' },
+  ALMACEN:   { label: 'Almacén',   className: 'bg-sky-50 text-sky-800 border-sky-200' },
+  RUTA:      { label: 'Ruta',      className: 'bg-violet-50 text-violet-800 border-violet-200' },
+  ENTREGADO: { label: 'Entregado', className: 'bg-green-50 text-green-800 border-green-200' },
 };
 
 // ===== Página =====
@@ -77,7 +77,7 @@ export default function AlbaranesPage() {
   const stateLabel = (key) => ({
     FIANZA: t('albaranes.stateFianza'),
     ALMACEN: t('albaranes.stateAlmacen'),
-    TRANSPORTE: t('albaranes.stateRuta'),
+    RUTA: t('albaranes.stateRuta'),
     ENTREGADO: t('albaranes.stateEntregado'),
   })[key] || key;
 
@@ -125,6 +125,10 @@ export default function AlbaranesPage() {
 
   // ✅ ID pendiente para abrir desde Clientes
   const [pendingOpenId, setPendingOpenId] = useState(null);
+
+  // paginación
+  const [pageSize, setPageSize] = useState(25);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // ✅ Ir a detalle del cliente en ClientesPage
   function goToCliente(clienteId) {
@@ -199,7 +203,7 @@ export default function AlbaranesPage() {
     const m = new Map();
     products.forEach((p) => m.set(p.id, p));
     return m;
-  }, [clientes]);
+  }, [products]);
 
   const domains = useMemo(() => {
     const set = new Set();
@@ -338,6 +342,7 @@ export default function AlbaranesPage() {
     setDateFrom('');
     setDateTo('');
     setTotalRange([defaultMinTotal, defaultMaxTotal]);
+    setCurrentPage(1);
   }
 
   async function openDetail(a) {
@@ -458,7 +463,15 @@ export default function AlbaranesPage() {
 
   function updateLineField(idx, field, value) {
     setLinesForm((prev) =>
-      prev.map((row, i) => (i === idx ? { ...row, [field]: value } : row))
+      prev.map((row, i) => {
+        if (i !== idx) return row;
+        const next = { ...row, [field]: value };
+        if (field === 'product_id') {
+          const prod = productsById.get(Number(value));
+          if (prod?.price !== undefined) next.unit_price = prod.price;
+        }
+        return next;
+      })
     );
   }
 
@@ -475,6 +488,14 @@ export default function AlbaranesPage() {
 
   async function saveLinesEdit() {
     if (!selected) return;
+    if (linesForm.length === 0) {
+      sileo.error({ title: t('albaranes.linesValidationError'), description: t('albaranes.linesCannotBeEmpty') });
+      return;
+    }
+    if (linesForm.some((r) => !Number(r.product_id) || Number(r.quantity) <= 0)) {
+      sileo.error({ title: t('albaranes.linesValidationError'), description: t('albaranes.linesInvalidFields') });
+      return;
+    }
     setLinesSaving(true);
     setLinesError(null);
     try {
@@ -537,6 +558,17 @@ export default function AlbaranesPage() {
     window.addEventListener('open-albaran', handler);
     return () => window.removeEventListener('open-albaran', handler);
   }, []);
+
+  // Reset to page 1 whenever filters/sort change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [q, sort, selectedDomains, selectedEstados, dateFrom, dateTo, totalRange]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const paginated = useMemo(
+    () => filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [filtered, currentPage, pageSize]
+  );
 
   return (
     <>
@@ -631,7 +663,7 @@ export default function AlbaranesPage() {
 
               {!loading && !error && filtered.length === 0 && <li className="p-6 text-gray-500">{t('albaranes.noResults')}</li>}
 
-              {filtered.map((a) => {
+              {paginated.map((a) => {
                 const cli = clientesById.get(a.customer_id);
                 const meta = ESTADO_META[a.status] || { label: a.status, className: 'bg-gray-100 text-gray-700 border-gray-300' };
                 return (
@@ -664,6 +696,43 @@ export default function AlbaranesPage() {
             </ul>
           </div>
         </div>
+
+        {/* Paginación */}
+        {!loading && !error && filtered.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-2 mt-4 px-1">
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-gray-600">{t('albaranes.pageSizeLabel')}</span>
+              <select
+                value={pageSize}
+                onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
+                className="border border-gray-300 rounded-lg px-2 py-1 text-sm"
+                data-testid="alb-page-size-select"
+              >
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <span>{t('albaranes.paginationInfo', { from: Math.min((currentPage - 1) * pageSize + 1, filtered.length), to: Math.min(currentPage * pageSize, filtered.length), total: filtered.length })}</span>
+              <button
+                type="button"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40"
+                aria-label="Página anterior"
+              >‹</button>
+              <span>{currentPage}/{totalPages}</span>
+              <button
+                type="button"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage >= totalPages}
+                className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40"
+                aria-label="Página siguiente"
+              >›</button>
+            </div>
+          </div>
+        )}
 
         {/* Modal filtros */}
         <ModalCenter isOpen={filtersOpen} onClose={() => setFiltersOpen(false)} maxWidth="max-w-lg">
@@ -783,7 +852,7 @@ export default function AlbaranesPage() {
           <div className="mt-8 flex items-center justify-between">
             <button
               onClick={clearAll}
-              className="px-4 py-2 rounded-xl bg-gray-200 text-gray-900 hover:bg-gray-300"
+              className="px-4 py-2 rounded-xl bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600"
               type="button"
             >
               {t('albaranes.clearFilters')}

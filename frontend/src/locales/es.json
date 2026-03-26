@@ -331,7 +331,12 @@
     "linesEditSave": "Guardar líneas",
     "linesEditAddRow": "Añadir línea",
     "linesEditSuccess": "Líneas actualizadas correctamente.",
-    "linesEditError": "No se pudieron actualizar las líneas."
+    "linesEditError": "No se pudieron actualizar las líneas.",
+    "linesValidationError": "Error en líneas",
+    "linesCannotBeEmpty": "No se pueden guardar sin líneas.",
+    "linesInvalidFields": "Revisa que cada línea tenga producto y cantidad.",
+    "pageSizeLabel": "Por página",
+    "paginationInfo": "{{from}}–{{to}} de {{total}}"
   },
   "newSale": {
     "title": "Nueva venta",
