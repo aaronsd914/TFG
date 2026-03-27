@@ -268,6 +268,15 @@ def create_delivery_note(
             type="INGRESO",
         )
         db.add(mov)
+        # Persist the deposit amount on the delivery note
+        delivery_note.fianza_pagada = (
+            float(deposit_amount) if payload.register_deposit else 0.0
+        )
+        db.commit()
+    else:
+        delivery_note.fianza_pagada = (
+            float(existing.amount) if payload.register_deposit else 0.0
+        )
         db.commit()
 
     return delivery_note
@@ -511,7 +520,12 @@ def download_delivery_note_pdf(
 
     customer_name = ""
     if customer:
-        customer_name = f"_{customer.name}_{customer.surnames}".replace(" ", "_")
+        import unicodedata
+
+        raw = f"_{customer.name}_{customer.surnames}".replace(" ", "_")
+        customer_name = (
+            unicodedata.normalize("NFKD", raw).encode("ascii", "ignore").decode("ascii")
+        )
     filename = f"albaran_{delivery_note.id}{customer_name}.pdf"
 
     return StreamingResponse(

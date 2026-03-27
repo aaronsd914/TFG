@@ -67,4 +67,40 @@ describe('TransportePage', () => {
     await act(async () => { renderPage(); });
     expect(document.body).toBeTruthy();
   });
+
+  it('no muestra las pestañas de Almacén/En ruta en la cabecera', async () => {
+    await act(async () => { renderPage(); });
+    // AnimatedTabs with almacen/ruta tabs were removed; only the h1 heading should appear
+    const headings = screen.getAllByRole('heading');
+    // There should be exactly one heading (the page title), no tab controls
+    expect(headings.length).toBeGreaterThanOrEqual(1);
+    // The header area should not contain animated tab buttons for almacen/ruta switching
+    expect(screen.queryByRole('tab', { name: /almac/i })).toBeNull();
+    expect(screen.queryByRole('tab', { name: /en ruta/i })).toBeNull();
+  });
+
+  it('no muestra el botón Entregar en las tarjetas de En ruta sin camión', async () => {
+    // Set up rutas response with one albaran sin camion
+    fetch.mockReset();
+    fetch
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) }) // almacen empty
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          camiones: [],
+          sin_camion: [{ id: 1, date: '2026-01-01', total: 100, status: 'RUTA', customer_id: 1, items: [] }],
+        }),
+      })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([{ id: 1, name: 'Juan', surnames: 'Test' }]) });
+
+    await act(async () => { renderPage(); });
+
+    await waitFor(() => {
+      // The "Almacén" (return to warehouse) button should exist for sin_camion cards
+      // but "Entregar" (deliver) button should NOT be present
+      const buttons = screen.queryAllByRole('button');
+      const entregar = buttons.filter(b => /entregar/i.test(b.textContent));
+      expect(entregar).toHaveLength(0);
+    });
+  });
 });

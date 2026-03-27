@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sileo } from 'sileo';
-import { AnimatedTabs } from './ui/AnimatedTabs.jsx';
 
 import { API_URL } from '../config.js';
 const LS_KEY = 'tfg_transportes_camiones_extra';
@@ -111,7 +110,6 @@ export default function TransportePage() {
 
   const [dragging, setDragging] = useState(null);
   const [overZone, setOverZone] = useState(null);
-  const [activeTab, setActiveTab] = useState('almacen');
 
   useEffect(() => {
     try {
@@ -606,14 +604,6 @@ export default function TransportePage() {
       <div className="p-3 md:p-6 space-y-6">
         <div className="flex items-center justify-between gap-3">
           <h1 className="text-2xl font-semibold">{t('transport.title')}</h1>
-          <AnimatedTabs
-            tabs={[
-              { value: 'almacen', label: t('transport.tabWarehouse', { n: almacenFiltrado.length }) },
-              { value: 'ruta', label: t('transport.tabInRoute', { n: pendienteFiltrado.length }) },
-            ]}
-            activeTab={activeTab}
-            onChange={setActiveTab}
-          />
         </div>
 
         <div className="bg-white border border-gray-200 rounded-2xl p-4">
@@ -646,9 +636,7 @@ export default function TransportePage() {
         <div className="flex gap-4 overflow-x-auto pb-2">
         {/* ALMACÉN */}
         <div
-          className={`min-w-[320px] max-w-[360px] flex-shrink-0 rounded-2xl border overflow-hidden bg-gray-50 transition-all duration-200 ${
-            activeTab === 'ruta' ? 'hidden md:flex md:flex-col' : 'flex flex-col'
-          } ${
+          className={`min-w-[320px] max-w-[360px] flex-shrink-0 rounded-2xl border overflow-hidden bg-gray-50 transition-all duration-200 flex flex-col ${
             overZone === 'almacen' ? 'border-black ring-2 ring-black/20' : 'border-gray-200'
           }`}
           onDragOver={allowDrop('almacen')}
@@ -688,9 +676,7 @@ export default function TransportePage() {
 
         {/* PENDIENTE (sin camión) */}
         <div
-          className={`min-w-[320px] max-w-[360px] flex-shrink-0 rounded-2xl border overflow-hidden bg-gray-50 transition-all duration-200 ${
-            activeTab === 'almacen' ? 'hidden md:flex md:flex-col' : 'flex flex-col'
-          } ${
+          className={`min-w-[320px] max-w-[360px] flex-shrink-0 rounded-2xl border overflow-hidden bg-gray-50 transition-all duration-200 flex flex-col ${
             overZone === 'pendiente' ? 'border-black ring-2 ring-black/20' : 'border-gray-200'
           }`}
           onDragOver={allowDrop('pendiente')}
@@ -713,13 +699,6 @@ export default function TransportePage() {
                 onDragEnd={onDragEndCard}
               >
                 <div className="flex gap-2">
-                  <button
-                    className="flex-1 px-3 py-2 rounded-lg border btn-accent disabled:opacity-50 text-sm"
-                    onClick={() => marcarEntregado(a.id)}
-                    disabled={processing}
-                  >
-                    {t('transport.delivered')}
-                  </button>
                   <button
                     className="flex-1 px-3 py-2 rounded-lg border hover:bg-white/60 disabled:opacity-50 text-sm"
                     onClick={() => volverAlmacen(a.id)}
@@ -744,9 +723,7 @@ export default function TransportePage() {
           return (
             <div
               key={cid}
-              className={`min-w-[320px] max-w-[360px] flex-shrink-0 rounded-2xl border overflow-hidden transition-all duration-200 ${
-                activeTab === 'almacen' ? 'hidden md:flex md:flex-col' : 'flex flex-col'
-              } ${st.box} ${
+              className={`min-w-[320px] max-w-[360px] flex-shrink-0 rounded-2xl border overflow-hidden transition-all duration-200 flex flex-col ${st.box} ${
                 overZone === zoneKey ? 'border-black ring-2 ring-black/20' : st.border
               }`}
               onDragOver={allowDrop(zoneKey)}

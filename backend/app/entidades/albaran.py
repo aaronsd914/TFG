@@ -21,6 +21,7 @@ class DeliveryNoteDB(Base):
     description = Column("descripcion", String)
     total = Column(Float, default=0.0)
     status = Column("estado", String, default="FIANZA", nullable=False)
+    fianza_pagada = Column(Float, default=0.0, nullable=True)
 
     customer_id = Column("cliente_id", Integer, ForeignKey("clientes.id"))
     customer = relationship("CustomerDB", back_populates="delivery_notes")
@@ -55,6 +56,7 @@ class DeliveryNote(BaseModel):
     total: float
     customer_id: int
     status: DeliveryNoteStatus
+    fianza_pagada: float = 0.0
     items: List[DeliveryNoteItem] = []
 
     class Config:
