@@ -250,6 +250,11 @@ const _i18nTranslations = {
   'movements.balanceSummary': 'Balance',
   'movements.pageSizeLabel': 'Mostrar:',
   'movements.paginationInfo': '{{from}}-{{to}} de {{total}}',
+  'movements.typeLabel': 'Tipo',
+  'movements.formDate': 'Fecha',
+  'movements.formConcept': 'Concepto',
+  'movements.formAmount': 'Cantidad (€)',
+  'movements.conceptPlaceholder': 'Concepto',
   // albaranes
   'albaranes.title': 'Albaranes',
   'albaranes.loading': 'Cargando albaranes…',

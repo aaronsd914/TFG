@@ -347,7 +347,7 @@ export default function MovimientosPage() {
         <form onSubmit={addMovimiento} className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">
-              Fecha <span className="text-red-600">*</span>
+              {t('movements.formDate')} <span className="text-red-600">*</span>
             </label>
             <input
               type="date"
@@ -359,11 +359,11 @@ export default function MovimientosPage() {
 
           <div>
             <label className="block text-sm font-medium mb-1">
-              Concepto <span className="text-red-600">*</span>
+              {t('movements.formConcept')} <span className="text-red-600">*</span>
             </label>
             <input
               type="text"
-              placeholder="Concepto"
+              placeholder={t('movements.conceptPlaceholder')}
               value={concepto}
               onChange={(e) => { setConcepto(e.target.value); setConceptoErr(false); }}
               className={`w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 ${conceptoErr ? 'border-red-500 focus:ring-red-300' : 'focus:ring-gray-300'}`}
@@ -372,7 +372,7 @@ export default function MovimientosPage() {
 
           <div>
             <label className="block text-sm font-medium mb-1">
-              Cantidad (€) <span className="text-red-600">*</span>
+              {t('movements.formAmount')} <span className="text-red-600">*</span>
             </label>
             <input
               type="number"
@@ -387,7 +387,7 @@ export default function MovimientosPage() {
 
           <div>
             <label className="block text-sm font-medium mb-1">
-              Tipo <span className="text-red-600">*</span>
+              {t('movements.typeLabel')} <span className="text-red-600">*</span>
             </label>
             <div className="flex rounded-xl border border-gray-300 overflow-hidden">
               <button

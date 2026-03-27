@@ -266,7 +266,7 @@ export default function TransportePage() {
     }
   }
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   useEffect(() => { fetchAll(); }, []);
 
   async function asignarA(camion_id, albaran_id) {
@@ -588,7 +588,7 @@ export default function TransportePage() {
         box: 'bg-white',
         header: 'bg-gray-100',
         border: 'border-gray-200',
-        badge: 'Vacío',
+        badge: t('transport.emptyBadge'),
         badgeClass: 'bg-gray-100 border-gray-200 text-gray-700',
       };
     }
@@ -597,7 +597,7 @@ export default function TransportePage() {
         box: 'bg-green-50',
         header: 'bg-green-100',
         border: 'border-green-200',
-        badge: 'Aceptada',
+        badge: t('transport.accepted'),
         badgeClass: 'bg-green-100 border-green-200 text-green-800',
       };
     }
