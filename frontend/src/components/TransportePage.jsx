@@ -156,6 +156,25 @@ export default function TransportePage() {
     try { localStorage.setItem(LS_KEY_ACCEPTED, JSON.stringify(camionesAceptados)); } catch { /* ignore */ }
   }, [camionesAceptados]);
 
+  // When rutas changes (after any fetchAll), drop trucks and accepted flags
+  // for trucks that no longer have RUTA albarans on the server.
+  useEffect(() => {
+    const serverSet = new Set((rutas.camiones || []).map(c => Number(c.camion_id)));
+    setCamionesExtra(prev => {
+      if (!prev || prev.length === 0) return prev;
+      const next = prev.filter(cid => serverSet.has(cid));
+      return next.length === prev.length ? prev : next;
+    });
+    setCamionesAceptados(prev => {
+      if (!prev) return prev;
+      const keys = Object.keys(prev);
+      if (keys.every(k => serverSet.has(Number(k)))) return prev;
+      const copy = { ...prev };
+      keys.forEach(k => { if (!serverSet.has(Number(k))) delete copy[k]; });
+      return copy;
+    });
+  }, [rutas]);
+
   const clientesMap = useMemo(() => {
     const m = new Map();
     (clientes || []).forEach(c => m.set(c.id, c));
@@ -222,27 +241,18 @@ export default function TransportePage() {
       setRutas(rut);
       setClientes(cli);
 
-      // Sync camionesExtra with server: add new trucks, remove empty ones
+      // Persist newly-seen truck IDs so empty trucks remain visible until removed below
       try {
         const idsServer = (rut?.camiones || []).map(x => Number(x.camion_id)).filter(Boolean);
-        const idsServerSet = new Set(idsServer);
-        setCamionesExtra(prev => {
-          const merged = new Set([...(prev || []), ...idsServer]);
-          return Array.from(merged)
-            .map(Number)
-            .filter(n => Number.isInteger(n) && n > 0)
-            .filter(cid => idsServerSet.has(cid))
-            .filter(cid => !(camionesOcultos || []).includes(cid))
-            .sort((a, b) => a - b);
-        });
-        setCamionesAceptados(prev => {
-          if (!prev) return prev;
-          const copy = { ...prev };
-          Object.keys(copy).forEach(k => {
-            if (!idsServerSet.has(Number(k))) delete copy[k];
+        if (idsServer.length) {
+          setCamionesExtra(prev => {
+            const merged = new Set([...(prev || []), ...idsServer]);
+            return Array.from(merged)
+              .map(Number)
+              .filter(n => Number.isInteger(n) && n > 0)
+              .sort((a, b) => a - b);
           });
-          return copy;
-        });
+        }
       } catch { /* ignore */ }
     } catch (e) {
       setErr(e.message);
