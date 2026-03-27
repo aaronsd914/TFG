@@ -604,7 +604,7 @@
   "incidencias": {
     "title": "Incidents",
     "subtitle": "Delivered delivery notes with reported incidents.",
-    "searchPlaceholder": "Search by description, delivery note or client…",
+    "searchPlaceholder": "Search by delivery note or client…",
     "createBtn": "New incident",
     "createTitle": "Register incident",
     "createDesc": "Select a delivered delivery note and describe the problem.",
@@ -621,12 +621,20 @@
     "noEntregados": "No delivered delivery notes available.",
     "errorNoAlbaran": "Select a delivery note.",
     "errorNoDesc": "Description cannot be empty.",
+    "errorRequired": "Please complete all required fields.",
+    "albSearchPlaceholder": "Search by number or client name…",
     "loadError": "Could not load incidents.",
     "noResults": "No incidents registered.",
     "colId": "ID",
     "colDate": "Date",
     "colAlbaran": "Delivery note",
     "colClient": "Client",
-    "colDesc": "Description"
+    "colDesc": "Description",
+    "detailTitle": "Incident detail",
+    "sectionIncidencia": "Incident",
+    "sectionCliente": "Client",
+    "sectionAlbaran": "Delivery note",
+    "goToAlbaran": "View delivery note →",
+    "goToCliente": "View client →"
   }
 }

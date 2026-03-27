@@ -604,7 +604,7 @@
   "incidencias": {
     "title": "Incidencias",
     "subtitle": "Albaranes entregados con incidencias reportadas.",
-    "searchPlaceholder": "Buscar por descripción, albarán o cliente…",
+    "searchPlaceholder": "Buscar por albarán o cliente…",
     "createBtn": "Nueva incidencia",
     "createTitle": "Registrar incidencia",
     "createDesc": "Selecciona un albarán entregado e indica la descripción del problema.",
@@ -621,12 +621,20 @@
     "noEntregados": "No hay albaranes en estado Entregado.",
     "errorNoAlbaran": "Selecciona un albarán.",
     "errorNoDesc": "La descripción no puede estar vacía.",
+    "errorRequired": "Completa todos los campos obligatorios.",
+    "albSearchPlaceholder": "Busca por número o nombre de cliente…",
     "loadError": "No se pudieron cargar las incidencias.",
     "noResults": "No hay incidencias registradas.",
     "colId": "ID",
     "colDate": "Fecha",
     "colAlbaran": "Albarán",
     "colClient": "Cliente",
-    "colDesc": "Descripción"
+    "colDesc": "Descripción",
+    "detailTitle": "Detalle de incidencia",
+    "sectionIncidencia": "Incidencia",
+    "sectionCliente": "Cliente",
+    "sectionAlbaran": "Albarán",
+    "goToAlbaran": "Ver albarán →",
+    "goToCliente": "Ver cliente →"
   }
 }
