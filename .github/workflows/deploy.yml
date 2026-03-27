@@ -3,7 +3,7 @@ name: Deploy — Vercel + Railway
 on:
   workflow_dispatch:
   push:
-    branches: [main, master]
+    branches: [main, master, new-features]
     paths-ignore:
       - '**.md'
       - 'memoria/**'
