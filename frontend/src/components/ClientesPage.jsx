@@ -672,7 +672,7 @@ export default function ClientesPage() {
               <>
                 <button
                   onClick={() => setDeleteConfirmOpen(true)}
-                  className="px-3 py-1.5 rounded-lg border border-red-300 bg-white hover:bg-red-50 text-red-700 text-sm"
+                  className="px-3 py-1.5 rounded-lg border border-red-300 bg-white hover:bg-red-50 text-red-700 text-sm dark:bg-gray-700 dark:border-red-500 dark:text-red-400 dark:hover:bg-red-900/30"
                   type="button"
                   data-testid="cliente-delete-btn"
                 >
