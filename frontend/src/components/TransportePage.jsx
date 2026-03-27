@@ -222,19 +222,27 @@ export default function TransportePage() {
       setRutas(rut);
       setClientes(cli);
 
-      // ✅ Persistimos camiones “vistos” (para que no desaparezcan cuando queden vacíos)
+      // Sync camionesExtra with server: add new trucks, remove empty ones
       try {
         const idsServer = (rut?.camiones || []).map(x => Number(x.camion_id)).filter(Boolean);
-        if (idsServer.length) {
-          setCamionesExtra(prev => {
-            const merged = new Set([...(prev || []), ...idsServer]);
-            const filtered = Array.from(merged)
-              .map(Number)
-              .filter(n => Number.isInteger(n) && n > 0)
-              .filter(cid => !(camionesOcultos || []).includes(cid));
-            return filtered.sort((a, b) => a - b);
+        const idsServerSet = new Set(idsServer);
+        setCamionesExtra(prev => {
+          const merged = new Set([...(prev || []), ...idsServer]);
+          return Array.from(merged)
+            .map(Number)
+            .filter(n => Number.isInteger(n) && n > 0)
+            .filter(cid => idsServerSet.has(cid))
+            .filter(cid => !(camionesOcultos || []).includes(cid))
+            .sort((a, b) => a - b);
+        });
+        setCamionesAceptados(prev => {
+          if (!prev) return prev;
+          const copy = { ...prev };
+          Object.keys(copy).forEach(k => {
+            if (!idsServerSet.has(Number(k))) delete copy[k];
           });
-        }
+          return copy;
+        });
       } catch { /* ignore */ }
     } catch (e) {
       setErr(e.message);
