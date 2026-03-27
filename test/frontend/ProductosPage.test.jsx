@@ -172,3 +172,75 @@ describe('ProductosPage â€” modal crear producto', () => {
     });
   });
 });
+
+
+describe('ProductosPage – modal borrar producto', () => {
+  const mockProducto = { id: 99, name: 'Mesa Test', price: 150, supplier_id: null };
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+    localStorage.clear();
+    fetch
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([mockProducto]) }) // productos
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) });             // proveedores
+  });
+
+  async function openDeleteModal() {
+    await act(async () => { renderPage(); });
+    // Switch to Gestión tab
+    await waitFor(() => screen.getByRole('button', { name: /gestión/i }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /gestión/i }));
+    });
+    // Select the product in the left-panel list
+    await waitFor(() => screen.getByRole('button', { name: /mesa test/i }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /mesa test/i }));
+    });
+    // Click the Eliminar button in the editor panel to open the modal
+    await waitFor(() => screen.getAllByRole('button', { name: /eliminar/i }));
+    await act(async () => {
+      fireEvent.click(screen.getAllByRole('button', { name: /eliminar/i })[0]);
+    });
+    // Wait for the confirmation modal title
+    await waitFor(() => screen.getByText(/confirmar eliminación/i));
+  }
+
+  it('el modal muestra el id y nombre del producto, no "undefined"', async () => {
+    await openDeleteModal();
+    expect(document.body.textContent).toContain('#99');
+    expect(document.body.textContent).toContain('Mesa Test');
+    expect(document.body.textContent).not.toContain('undefined');
+  });
+
+  it('cancelar cierra el modal de borrado sin llamar a la API', async () => {
+    await openDeleteModal();
+    const callsBefore = fetch.mock.calls.length;
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /cancelar/i }));
+    });
+    await waitFor(() => {
+      expect(screen.queryByText(/confirmar eliminación/i)).not.toBeInTheDocument();
+    });
+    expect(fetch.mock.calls.length).toBe(callsBefore); // no extra API call
+  });
+
+  it('confirmar borrado llama al endpoint DELETE y cierra el modal', async () => {
+    fetch.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({}) });
+    await openDeleteModal();
+    // The modal's confirm button is the last "Eliminar" in the DOM
+    const eliminarBtns = screen.getAllByRole('button', { name: /eliminar/i });
+    await act(async () => {
+      fireEvent.click(eliminarBtns[eliminarBtns.length - 1]);
+    });
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('productos/delete/99'),
+        expect.objectContaining({ method: 'DELETE' }),
+      );
+    });
+    await waitFor(() => {
+      expect(screen.queryByText(/confirmar eliminación/i)).not.toBeInTheDocument();
+    });
+  });
+});

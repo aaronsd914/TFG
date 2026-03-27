@@ -536,7 +536,7 @@ export default function ProductosPage() {
       if (selectedId === id) setSelectedId(null);
 
       try {
-        sileo.success({ title: '🗑️ Producto eliminado', description: `Se ha eliminado “${deleteTarget.name}”.` });
+        sileo.success({ title: '🗑️ Producto eliminado', description: `Se ha eliminado “${deleteTarget.nombre}”.` });
       } catch {}
 
       setDeleteModalOpen(false);
@@ -1192,7 +1192,7 @@ export default function ProductosPage() {
             <div className="space-y-3">
               <div className="text-gray-800">
                 {t('products.deleteConfirmText')}{' '}
-                <b>{deleteTarget ? `#${deleteTarget.id} · ${deleteTarget.name}` : t('products.thisProduct')}</b>?
+                <b>{deleteTarget ? `#${deleteTarget.id} · ${deleteTarget.nombre}` : t('products.thisProduct')}</b>?
               </div>
 
               <div className="text-sm text-gray-600">{t('products.usedInAlbaranes')}</div>
