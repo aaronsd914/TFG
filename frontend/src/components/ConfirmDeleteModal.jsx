@@ -4,12 +4,12 @@ import ModalCenter from './ModalCenter.jsx';
 export default function ConfirmDeleteModal({ isOpen, onClose, title, message, onConfirm, loading, confirmTestId, confirmLabel, cancelLabel }) {
   return (
     <ModalCenter isOpen={isOpen} onClose={onClose} maxWidth="max-w-sm">
-      <h2 className="text-lg font-semibold mb-3">{title}</h2>
-      <p className="text-gray-700 mb-6">{message}</p>
+      <h2 className="text-lg font-semibold mb-3 dark:text-gray-100">{title}</h2>
+      <p className="text-gray-700 dark:text-gray-300 mb-6">{message}</p>
       <div className="flex justify-end gap-3">
         <button
           onClick={onClose}
-          className="px-4 py-2 rounded-xl bg-gray-200 text-gray-900 hover:bg-gray-300"
+          className="px-4 py-2 rounded-xl bg-gray-200 text-gray-900 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-100 dark:hover:bg-gray-500"
           type="button"
           disabled={loading}
         >
