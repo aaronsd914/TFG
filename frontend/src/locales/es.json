@@ -265,7 +265,7 @@
     "addMovement": "Añadir movimiento",
     "conceptPlaceholder": "Concepto",
     "income": "Ingreso",
-    "expense": "Egreso",
+    "expense": "Gasto",
     "typeLabel": "Tipo",
     "dateFrom": "Desde",
     "dateTo": "Hasta",
@@ -276,8 +276,10 @@
     "colType": "Tipo",
     "colAmount": "Cantidad",
     "ingresosSummary": "Ingresos",
-    "egresosSummary": "Egresos",
-    "balanceSummary": "Balance"
+    "egresosSummary": "Gastos",
+    "balanceSummary": "Balance",
+    "pageSizeLabel": "Mostrar:",
+    "paginationInfo": "{{from}}–{{to}} de {{total}}"
   },
   "albaranes": {
     "title": "Albaranes",

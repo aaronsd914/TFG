@@ -277,7 +277,9 @@
     "colAmount": "Amount",
     "ingresosSummary": "Income",
     "egresosSummary": "Expenses",
-    "balanceSummary": "Balance"
+    "balanceSummary": "Balance",
+    "pageSizeLabel": "Show:",
+    "paginationInfo": "{{from}}–{{to}} of {{total}}"
   },
   "albaranes": {
     "title": "Delivery Notes",

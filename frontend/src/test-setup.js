@@ -241,12 +241,15 @@ const _i18nTranslations = {
   // movements
   'movements.title': 'Movimientos',
   'movements.addMovement': 'Añadir movimiento',
+  'movements.searchPlaceholder': 'Buscar por concepto, tipo, cantidad…',
   'movements.income': 'Ingreso',
-  'movements.expense': 'Egreso',
+  'movements.expense': 'Gasto',
   'movements.noMovements': 'No hay movimientos aún.',
   'movements.ingresosSummary': 'Ingresos',
-  'movements.egresosSummary': 'Egresos',
+  'movements.egresosSummary': 'Gastos',
   'movements.balanceSummary': 'Balance',
+  'movements.pageSizeLabel': 'Mostrar:',
+  'movements.paginationInfo': '{{from}}-{{to}} de {{total}}',
   // albaranes
   'albaranes.title': 'Albaranes',
   'albaranes.loading': 'Cargando albaranes…',
