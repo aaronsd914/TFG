@@ -995,7 +995,7 @@ export default function AlbaranesPage() {
                         type="button"
                         onClick={closeLinesEdit}
                         disabled={linesSaving}
-                        className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-sm"
+                        className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-600"
                         data-testid="lines-cancel-btn"
                       >
                         {t('common.cancel')}
@@ -1250,7 +1250,7 @@ export default function AlbaranesPage() {
           <div className="mt-6 flex justify-end gap-3">
             <button
               onClick={closeEdit}
-              className="px-4 py-2 rounded-xl bg-gray-200 text-gray-900 hover:bg-gray-300"
+              className="px-4 py-2 rounded-xl bg-gray-200 text-gray-900 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-100 dark:hover:bg-gray-500"
               type="button"
               disabled={editSaving}
             >
