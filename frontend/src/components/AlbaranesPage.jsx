@@ -762,9 +762,6 @@ export default function AlbaranesPage() {
         <ModalCenter isOpen={filtersOpen} onClose={() => setFiltersOpen(false)} maxWidth="max-w-lg">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">{t('albaranes.filtersTitle')}</h2>
-            <button onClick={() => setFiltersOpen(false)} className="text-gray-500 hover:text-gray-700" type="button">
-              {t('common.close')}
-            </button>
           </div>
 
           <section className="space-y-6">
@@ -916,9 +913,6 @@ export default function AlbaranesPage() {
                   </button>
                 </>
               )}
-              <button onClick={closeDetail} className="text-gray-500 hover:text-gray-700" type="button">
-                {t('common.close')}
-              </button>
             </div>
           </div>
 
@@ -1204,9 +1198,6 @@ export default function AlbaranesPage() {
         <ModalCenter isOpen={editOpen} onClose={closeEdit} maxWidth="max-w-lg">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">{t('albaranes.editTitle')}</h2>
-            <button onClick={closeEdit} className="text-gray-500 hover:text-gray-700" type="button">
-              {t('common.close')}
-            </button>
           </div>
 
           <div className="space-y-4">
