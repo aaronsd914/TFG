@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import { API_URL } from '../config.js';
 import ConfirmDeleteModal from './ConfirmDeleteModal.jsx';
-import ModalCenter from './ModalCenter.jsx';
+import ModalCenter, { CloseIcon, closeButtonClass } from './ModalCenter.jsx';
 
 // ===== Helpers =====
 function useDebouncedValue(value, delay = 200) {
@@ -889,7 +889,7 @@ export default function AlbaranesPage() {
         </ModalCenter>
 
         {/* ✅ Modal detalle albarán */}
-        <ModalCenter isOpen={detailOpen} onClose={closeDetail} maxWidth="max-w-3xl">
+        <ModalCenter isOpen={detailOpen} onClose={closeDetail} maxWidth="max-w-3xl" showClose={false}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">{t('albaranes.detailTitle')}</h2>
             <div className="flex items-center gap-2">
@@ -913,6 +913,7 @@ export default function AlbaranesPage() {
                   </button>
                 </>
               )}
+              <button type="button" onClick={closeDetail} className={closeButtonClass} aria-label="Cerrar"><CloseIcon /></button>
             </div>
           </div>
 

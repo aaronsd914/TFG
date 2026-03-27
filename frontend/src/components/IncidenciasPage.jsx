@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { sileo } from 'sileo';
 import { API_URL } from '../config.js';
 import ConfirmDeleteModal from './ConfirmDeleteModal.jsx';
-import ModalCenter from './ModalCenter.jsx';
+import ModalCenter, { CloseIcon, closeButtonClass } from './ModalCenter.jsx';
 
 function fmtDate(d) {
   if (!d) return '—';
@@ -393,18 +393,21 @@ export default function IncidenciasPage() {
         const alb = albaranesById.get(detailInc.albaran_id);
         const cli = alb ? clientesById.get(alb.customer_id) : null;
         return (
-          <ModalCenter isOpen onClose={() => setDetailInc(null)} maxWidth="max-w-lg">
+          <ModalCenter isOpen onClose={() => setDetailInc(null)} maxWidth="max-w-lg" showClose={false}>
             <div data-testid="detail-incidencia-modal">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold dark:text-gray-100">{t('incidencias.detailTitle')}</h2>
-                <button
-                  type="button"
-                  onClick={() => setDeleteId(detailInc.id)}
-                  className="px-3 py-1.5 rounded-lg border border-red-300 bg-white hover:bg-red-50 text-red-700 text-sm dark:bg-gray-700 dark:border-red-500 dark:text-red-400 dark:hover:bg-red-900/30"
-                  data-testid="detail-delete-btn"
-                >
-                  {t('common.delete')}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setDeleteId(detailInc.id)}
+                    className="px-3 py-1.5 rounded-lg border border-red-300 bg-white hover:bg-red-50 text-red-700 text-sm dark:bg-gray-700 dark:border-red-500 dark:text-red-400 dark:hover:bg-red-900/30"
+                    data-testid="detail-delete-btn"
+                  >
+                    {t('common.delete')}
+                  </button>
+                  <button type="button" onClick={() => setDetailInc(null)} className={closeButtonClass} aria-label="Cerrar" data-testid="detail-close-btn"><CloseIcon /></button>
+                </div>
               </div>
 
               {/* Incidencia section */}
