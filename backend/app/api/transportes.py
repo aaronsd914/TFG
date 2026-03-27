@@ -369,12 +369,14 @@ def remove_route(body: RemoveRouteBody, db: Annotated[Session, Depends(get_db)])
         ingreso_amount = max(0.0, round(base_total - amount_egreso - total_fianza, 2))
         egreso_prefix = f"Transporte camion {truck_id}"
         ingreso_prefix = f"Ingreso ruta camion {truck_id}"
+        nr = len(remaining)
+        pedidos_str = f"{nr} pedido" if nr == 1 else f"{nr} pedidos"
         db.add(
             MovementDB(
                 date=today,
                 description=(
                     f"{egreso_prefix} (7% recalculado: {base_total:.2f} €"
-                    f" - {len(remaining)} pedidos)"
+                    f" - {pedidos_str})"
                 ),
                 amount=float(amount_egreso),
                 type="EGRESO",
@@ -385,7 +387,7 @@ def remove_route(body: RemoveRouteBody, db: Annotated[Session, Depends(get_db)])
                 date=today,
                 description=(
                     f"{ingreso_prefix} (recalculado: {base_total:.2f} €"
-                    f" - 7% - fianza {total_fianza:.2f} € - {len(remaining)} pedidos)"
+                    f" - 7% - fianza {total_fianza:.2f} € - {pedidos_str})"
                 ),
                 amount=float(ingreso_amount),
                 type="INGRESO",
@@ -470,57 +472,48 @@ def settle_truck(truck_id: int, db: Annotated[Session, Depends(get_db)]):
     egreso_prefix = f"Transporte camion {truck_id}"
     ingreso_prefix = f"Ingreso ruta camion {truck_id}"
     today = date.today()
+    n = len(delivery_notes)
+    pedidos_str = f"{n} pedido" if n == 1 else f"{n} pedidos"
+
+    # Always delete previous movements for this truck and recreate fresh ones.
+    # This avoids reusing stale movements from old routes on the same truck.
+    db.query(MovementDB).filter(
+        MovementDB.type == "EGRESO",
+        MovementDB.description.like(f"{egreso_prefix}%"),
+    ).delete(synchronize_session=False)
+    db.query(MovementDB).filter(
+        MovementDB.type == "INGRESO",
+        MovementDB.description.like(f"{ingreso_prefix}%"),
+    ).delete(synchronize_session=False)
+    db.flush()
 
     # --- EGRESO (7% transporter commission) ---
-    existing_egreso = (
-        db.query(MovementDB)
-        .filter(
-            MovementDB.type == "EGRESO",
-            MovementDB.description.like(f"{egreso_prefix}%"),
-        )
-        .order_by(MovementDB.id.desc())
-        .first()
+    mov = MovementDB(
+        date=today,
+        description=f"{egreso_prefix} (7% de {base_total:.2f} € - {pedidos_str})",
+        amount=float(amount),
+        type="EGRESO",
     )
-
-    if existing_egreso:
-        mov = existing_egreso
-    else:
-        mov = MovementDB(
-            date=today,
-            description=f"{egreso_prefix} (7% de {base_total:.2f} € - {len(delivery_notes)} pedidos)",
-            amount=float(amount),
-            type="EGRESO",
-        )
-        db.add(mov)
-        db.commit()
-        db.refresh(mov)
+    db.add(mov)
+    db.flush()
+    db.refresh(mov)
 
     # --- INGRESO (total - 7% - fianza_pagada) ---
     total_fianza = round(sum(float(a.fianza_pagada or 0) for a in delivery_notes), 2)
     ingreso_amount = max(0.0, round(base_total - amount - total_fianza, 2))
 
-    existing_ingreso = (
-        db.query(MovementDB)
-        .filter(
-            MovementDB.type == "INGRESO",
-            MovementDB.description.like(f"{ingreso_prefix}%"),
+    db.add(
+        MovementDB(
+            date=today,
+            description=(
+                f"{ingreso_prefix} ({base_total:.2f} € - 7% - fianza {total_fianza:.2f} €"
+                f" - {pedidos_str})"
+            ),
+            amount=float(ingreso_amount),
+            type="INGRESO",
         )
-        .first()
     )
-
-    if not existing_ingreso:
-        db.add(
-            MovementDB(
-                date=today,
-                description=(
-                    f"{ingreso_prefix} ({base_total:.2f} € - 7% - fianza {total_fianza:.2f} €"
-                    f" - {len(delivery_notes)} pedidos)"
-                ),
-                amount=float(ingreso_amount),
-                type="INGRESO",
-            )
-        )
-        db.commit()
+    db.commit()
 
     return SettleTruckOut(
         ok=True,
