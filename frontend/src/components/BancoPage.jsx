@@ -210,8 +210,9 @@ export default function BancoPage() {
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
           data-testid="nuevo-cobro-modal"
+          onClick={closeModal}
         >
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-5">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-5" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-xl font-semibold">{t('bank.newChargeTitle')}</h2>
 
             <div className="space-y-3">
