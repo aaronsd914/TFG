@@ -370,29 +370,16 @@ export default function TendenciasPage() {
 
     try {
       const trimmed = (arr) => arr.slice(-12);
-      const contextParts = [];
-      if (avg) {
-        contextParts.push(`Ingresos: ${avg.revenue}€, Pedidos: ${avg.orders}, AOV: ${avg.aov}€, Gasto medio/cliente: ${avg.avg_per_customer}€`);
-      }
-      if (top.length) {
-        contextParts.push(`Top productos: ${top.slice(0, 5).map(p => `${p.name} (${p.revenue}€)`).join(', ')}`);
-      }
-      if (prediction?.forecast?.length) {
-        contextParts.push(`Previsión: ${prediction.forecast.map(f => `${f.month}: ${f.predicted_revenue}€`).join(', ')}`);
-      }
-      const contextMsg = contextParts.length
-        ? { role: "system", content: `Datos actuales del rango ${range.from} → ${range.to}:\n${contextParts.join('\n')}` }
-        : null;
-      const rawMsgs = [...messages, userMsg]
-        .filter((x) => x.role === "user" || x.role === "assistant" || x.role === "system")
-        .map((x) => ({ role: x.role, content: x.content }));
-      const withContext = contextMsg ? [contextMsg, ...rawMsgs] : rawMsgs;
       const chatPayload = {
         mode: "analytics",
         temperature: 0.2,
         date_from: range.from || null,
         date_to: range.to || null,
-        messages: trimmed(withContext),
+        messages: trimmed(
+          [...messages, userMsg]
+            .filter((x) => x.role === "user" || x.role === "assistant")
+            .map((x) => ({ role: x.role, content: x.content }))
+        ),
       };
 
       const res = await fetch(`${API_URL}ai/chat`, {

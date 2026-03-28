@@ -615,10 +615,14 @@ describe('TendenciasPage', () => {
       const chatCall = fetch.mock.calls.find(c => typeof c[0] === 'string' && c[0].includes('ai/chat'));
       expect(chatCall).toBeTruthy();
       const body = JSON.parse(chatCall[1].body);
-      // Should have a system message with context data
-      const systemMsg = body.messages.find(m => m.role === 'system');
-      expect(systemMsg).toBeTruthy();
-      expect(systemMsg.content).toContain('2500');
+      // Backend handles context injection; frontend sends mode + date range
+      expect(body.mode).toBe('analytics');
+      expect(body.date_from).toBeTruthy();
+      expect(body.date_to).toBeTruthy();
+      // Messages should only contain user/assistant roles (no frontend system msg)
+      const userMsg = body.messages.find(m => m.role === 'user');
+      expect(userMsg).toBeTruthy();
+      expect(userMsg.content).toContain('¿Cómo van las ventas?');
     });
   });
 });

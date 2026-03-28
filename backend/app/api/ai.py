@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from typing import Annotated, Optional, Dict, Any, List, Literal
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import json
 import re
 import logging
@@ -228,21 +228,24 @@ def chat(payload: ChatPayload, db: Annotated[Session, Depends(get_db)]):
         m_full = build_metrics(db, dfrom, dto)
         m = _metrics_for_llm(m_full)
 
-        avg = m.get("averages", {})
-        top = (m.get("top_products") or [])[:5]
-        top_txt = (
-            ", ".join(
-                [f"{t.get('name')} ({float(t.get('revenue') or 0):.2f}€)" for t in top]
-            )
-            or "—"
-        )
+        # Previous period for growth/comparison questions
+        days = (dto - dfrom).days + 1
+        prev_to = dfrom - timedelta(days=1)
+        prev_from = prev_to - timedelta(days=days - 1)
+        prev_full = build_metrics(db, prev_from, prev_to)
+        prev_m = _metrics_for_llm(prev_full)
+
         ctx = (
-            "Contexto Tendencias (tienda de muebles):\n"
-            f"- Rango: {m['range']['from']} → {m['range']['to']}\n"
-            f"- Ingresos: {float(avg.get('revenue') or 0):.2f}€ | Pedidos: {int(avg.get('orders') or 0)} | AOV: {float(avg.get('aov') or 0):.2f}€\n"
-            f"- Top productos: {top_txt}\n"
+            "Eres analista de datos retail de una tienda de muebles. "
             "Responde en español, claro y accionable. "
-            "Usa HTML para formatear la respuesta: <strong>, <ul>, <li>, <ol>, <p>, <br>. No uses Markdown."
+            "Usa HTML para formatear la respuesta: <strong>, <ul>, <li>, <ol>, <p>, <br>. No uses Markdown.\n\n"
+            f"PERIODO ACTUAL ({m['range']['from']} → {m['range']['to']}):\n"
+            f"{_json_compact(m)}\n\n"
+            f"PERIODO ANTERIOR ({prev_m['range']['from']} → {prev_m['range']['to']}):\n"
+            f"{_json_compact(prev_m)}\n\n"
+            "Usa TODOS estos datos para responder. "
+            "Compara productos entre periodos para determinar crecimiento. "
+            "No digas que no tienes datos si los tienes arriba."
         )
         msgs = [{"role": "system", "content": ctx}, *msgs]
 
