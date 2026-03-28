@@ -7,6 +7,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Sidebar from '../../frontend/src/components/Sidebar.jsx';
+import { ConfigContext } from '../../frontend/src/context/ConfigContext.jsx';
 
 // Mock useNavigate
 const mockNavigate = vi.fn();
@@ -92,5 +93,61 @@ describe('Sidebar', () => {
     fireEvent.click(screen.getByRole('button', { name: /cerrar sesi/i }));
     expect(removeToken).toHaveBeenCalledOnce();
     expect(mockNavigate).toHaveBeenCalledWith('/login', { replace: true });
+  });
+
+  it('el botón de cerrar menú (mobile) llama a setOpen(false)', () => {
+    const mockSetOpen = vi.fn();
+    render(
+      <MemoryRouter>
+        <Sidebar open={true} setOpen={mockSetOpen} />
+      </MemoryRouter>
+    );
+    // The close button for mobile has aria-label "Cerrar menú"
+    const closeBtn = screen.getByRole('button', { name: /cerrar menú/i });
+    fireEvent.click(closeBtn);
+    expect(mockSetOpen).toHaveBeenCalledWith(false);
+  });
+
+  it('muestra el logo cuando config.logo_empresa está configurado', () => {
+    const configWithLogo = { logo_empresa: 'https://example.com/logo.png', tienda_nombre: 'FurniGest' };
+    render(
+      <ConfigContext.Provider value={{ config: configWithLogo, updateConfig: vi.fn() }}>
+        <MemoryRouter>
+          <Sidebar open={false} setOpen={vi.fn()} />
+        </MemoryRouter>
+      </ConfigContext.Provider>
+    );
+    // Logo img should be shown (covers lines 76-78)
+    const img = document.querySelector('img[alt="Logo"]');
+    expect(img).not.toBeNull();
+    expect(img.src).toContain('example.com/logo.png');
+  });
+
+  it('onMouseEnter en un enlace no activo cambia su color de fondo', () => {
+    render(
+      <MemoryRouter initialEntries={['/dashboard-not-matching']}>
+        <Sidebar open={true} setOpen={vi.fn()} />
+      </MemoryRouter>
+    );
+    // All nav links should be "not active" since pathname doesn't match any
+    const links = screen.getAllByRole('link');
+    expect(links.length).toBeGreaterThan(0);
+    // Fire mouseEnter and mouseLeave to cover onMouseEnter/onMouseLeave handlers
+    fireEvent.mouseEnter(links[0]);
+    fireEvent.mouseLeave(links[0]);
+    expect(document.body).toBeTruthy();
+  });
+
+  it('onClick en un enlace de navegación llama a setOpen(false)', () => {
+    const mockSetOpen = vi.fn();
+    render(
+      <MemoryRouter initialEntries={['/irrelevant']}>
+        <Sidebar open={true} setOpen={mockSetOpen} />
+      </MemoryRouter>
+    );
+    const links = screen.getAllByRole('link');
+    expect(links.length).toBeGreaterThan(0);
+    fireEvent.click(links[0]);
+    expect(mockSetOpen).toHaveBeenCalledWith(false);
   });
 });

@@ -272,6 +272,76 @@ class TestHoltForecast:
         assert fcs[0] >= 0
 
 
+class TestAnalyticsRFMSegments:
+    """Tests for rfm_segments with enough customers to trigger quantile>=4 path."""
+
+    def test_rfm_con_cuatro_clientes(self, client, mocker):
+        """With 4+ customers, quantiles() takes the numpy path (len >= 4)."""
+        mocker.patch(GROQ_PATH, return_value=GROQ_STUB)
+        mocker.patch("backend.app.api.albaranes.send_email_with_pdf", return_value=None)
+        mocker.patch("backend.app.api.albaranes.generate_delivery_note_pdf", return_value=b"")
+        mocker.patch("backend.app.api.albaranes.render", return_value="<html></html>")
+
+        proveedor_r = client.post("/api/proveedores/post", json={"name": "Prov RFM", "contact": "900000000"})
+        prov_id = proveedor_r.json()["id"]
+        prod_r = client.post("/api/productos/post", json={
+            "name": "Prod RFM", "description": "Producto para RFM",
+            "price": 30.0, "supplier_id": prov_id,
+        })
+        prod_id = prod_r.json()["id"]
+
+        for i in range(4):
+            cli_r = client.post("/api/clientes/post", json={
+                "name": f"Cliente{i}", "surnames": f"RFM{i}",
+                "dni": f"9999000{i}Z", "email": f"rfm{i}@test.com",
+            })
+            cli_id = cli_r.json()["id"]
+            client.post("/api/albaranes/post", json={
+                "date": f"2026-0{i+1}-15",
+                "customer_id": cli_id,
+                "items": [{"product_id": prod_id, "quantity": 1, "unit_price": float(50 + i * 10)}],
+                "register_deposit": False,
+            })
+
+        r = client.get("/api/analytics/summary?date_from=2026-01-01&date_to=2026-12-31")
+        assert r.status_code == 200
+        body = r.json()
+        rfm = body.get("metrics", {}).get("rfm", {})
+        assert "by_customer" in rfm
+        assert len(rfm["by_customer"]) >= 4
+
+
+class TestAggregateSalesWeekly:
+    """Unit tests for _aggregate_sales_weekly helper."""
+
+    def test_empty_list_returns_empty(self):
+        from backend.app.api.analytics import _aggregate_sales_weekly
+        assert _aggregate_sales_weekly([]) == []
+
+    def test_aggregates_days_into_weeks(self):
+        from backend.app.api.analytics import _aggregate_sales_weekly
+        sales = [
+            {"date": "2026-01-05", "orders": 2, "revenue": 100.0},
+            {"date": "2026-01-06", "orders": 1, "revenue": 50.0},
+            {"date": "2026-01-12", "orders": 3, "revenue": 200.0},
+        ]
+        result = _aggregate_sales_weekly(sales)
+        assert len(result) == 2  # Two different weeks
+        revenues = [r["revenue"] for r in result]
+        assert 150.0 in revenues
+        assert 200.0 in revenues
+
+    def test_invalid_date_skipped(self):
+        from backend.app.api.analytics import _aggregate_sales_weekly
+        sales = [
+            {"date": "not-a-date", "orders": 1, "revenue": 50.0},
+            {"date": "2026-03-01", "orders": 2, "revenue": 100.0},
+        ]
+        result = _aggregate_sales_weekly(sales)
+        assert len(result) == 1
+        assert result[0]["revenue"] == 100.0
+
+
 class TestNextMonths:
     """Unit tests de _next_months."""
 

@@ -157,10 +157,160 @@ describe('BancoPage — modal de nuevo cobro', () => {
     expect(submitBtn).toBeDisabled();
   });
 
+  it('el botón de submit se habilita cuando se rellena el importe (stripe configurado)', async () => {
+    await act(async () => { renderPage(); });
+    fireEvent.click(screen.getByTestId('nuevo-cobro-btn'));
+
+    const amountInput = screen.getByTestId('cobro-amount-input');
+    fireEvent.change(amountInput, { target: { value: '49.99' } });
+
+    const submitBtn = screen.getByTestId('cobro-submit-btn');
+    expect(submitBtn).not.toBeDisabled();
+  });
+
+  it('el input de descripción actualiza el valor', async () => {
+    await act(async () => { renderPage(); });
+    fireEvent.click(screen.getByTestId('nuevo-cobro-btn'));
+
+    const descInput = screen.getByTestId('cobro-desc-input');
+    fireEvent.change(descInput, { target: { value: 'Pago mensual' } });
+    expect(descInput.value).toBe('Pago mensual');
+  });
+
   it('gestiona errores de red sin romper la UI', async () => {
     fetch.mockReset();
     fetch.mockRejectedValue(new Error('Network Error'));
     await act(async () => { renderPage(); });
     expect(document.body).toBeTruthy();
+  });
+});
+
+describe('BancoPage — retorno Stripe (URL params)', () => {
+  const originalLocation = window.location;
+
+  afterEach(() => {
+    // Restore location after each test
+    Object.defineProperty(window, 'location', {
+      value: originalLocation,
+      writable: true,
+    });
+    vi.clearAllMocks();
+  });
+
+  it('muestra sileo.warning cuando stripe=cancel en la URL', async () => {
+    const { sileo } = await import('sileo');
+    Object.defineProperty(window, 'location', {
+      value: { search: '?stripe=cancel', href: 'http://localhost/banco?stripe=cancel', pathname: '/banco' },
+      writable: true,
+    });
+
+    fetch
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ configured: true, currency: 'eur' }) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) });
+
+    await act(async () => { renderPage(); });
+
+    await waitFor(() => {
+      expect(sileo.warning).toHaveBeenCalled();
+    });
+  });
+
+  it('muestra sileo.success cuando stripe=success sin session_id', async () => {
+    const { sileo } = await import('sileo');
+    Object.defineProperty(window, 'location', {
+      value: { search: '?stripe=success', href: 'http://localhost/banco?stripe=success', pathname: '/banco' },
+      writable: true,
+    });
+
+    fetch
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ configured: true, currency: 'eur' }) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) });
+
+    await act(async () => { renderPage(); });
+
+    await waitFor(() => {
+      expect(sileo.success).toHaveBeenCalled();
+    });
+  });
+
+  it('llama a stripe/confirm cuando stripe=success con session_id', async () => {
+    const { sileo } = await import('sileo');
+    Object.defineProperty(window, 'location', {
+      value: {
+        search: '?stripe=success&session_id=cs_test_abc123',
+        href: 'http://localhost/banco?stripe=success&session_id=cs_test_abc123',
+        pathname: '/banco',
+      },
+      writable: true,
+    });
+
+    fetch
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ configured: true, currency: 'eur' }) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) })
+      // stripe/confirm call (inside sileo.promise → fn())
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ created: true, amount: 49.99, description: 'Test cobro' }),
+      })
+      // reload checkouts after confirm
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) });
+
+    await act(async () => { renderPage(); });
+
+    await waitFor(() => {
+      expect(sileo.promise).toHaveBeenCalled();
+    });
+
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('stripe/confirm'),
+        expect.any(Object),
+      );
+    });
+  });
+});
+
+describe('BancoPage — crear cobro Stripe', () => {
+  beforeEach(() => {
+    Object.defineProperty(window, 'location', {
+      value: { search: '', href: 'http://localhost/banco', pathname: '/banco' },
+      writable: true,
+    });
+    fetch.mockReset();
+    fetch
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ configured: true, currency: 'eur' }) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) });
+  });
+
+  it('crea cobro Stripe al pulsar el botón de envío con importe válido', async () => {
+    const { sileo } = await import('sileo');
+    fetch
+      // stripe/checkout call (inside sileo.promise → fn())
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ url: 'https://checkout.stripe.com/pay/test' }),
+      });
+
+    await act(async () => { renderPage(); });
+    fireEvent.click(screen.getByTestId('nuevo-cobro-btn'));
+
+    const amountInput = screen.getByTestId('cobro-amount-input');
+    fireEvent.change(amountInput, { target: { value: '49.99' } });
+
+    const submitBtn = screen.getByTestId('cobro-submit-btn');
+    expect(submitBtn).not.toBeDisabled();
+
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(sileo.promise).toHaveBeenCalled();
+    });
+
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('stripe/checkout'),
+        expect.any(Object),
+      );
+    });
   });
 });

@@ -258,3 +258,22 @@ class TestEliminarAlbaran:
         client.delete(f"/api/albaranes/delete/{aid}")
         listado = client.get("/api/albaranes/get").json()
         assert all(a["id"] != aid for a in listado)
+
+
+class TestDescargarPdfAlbaran:
+    def test_pdf_ok(self, client, cliente_fixture, producto):
+        aid = crear_albaran(client, cliente_fixture["id"], producto["id"]).json()["id"]
+        r = client.get(f"/api/albaranes/{aid}/pdf")
+        assert r.status_code == 200
+        assert r.headers["content-type"] == "application/pdf"
+
+    def test_pdf_albaran_inexistente_devuelve_404(self, client):
+        r = client.get("/api/albaranes/9999/pdf")
+        assert r.status_code == 404
+
+    def test_pdf_contiene_nombre_cliente(self, client, cliente_fixture, producto):
+        aid = crear_albaran(client, cliente_fixture["id"], producto["id"]).json()["id"]
+        r = client.get(f"/api/albaranes/{aid}/pdf")
+        assert r.status_code == 200
+        assert "Content-Disposition" in r.headers
+        assert str(aid) in r.headers["Content-Disposition"]

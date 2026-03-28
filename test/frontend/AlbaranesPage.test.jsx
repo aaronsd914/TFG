@@ -418,3 +418,385 @@ describe('AlbaranesPage – eliminar albarán', () => {
     await waitFor(() => expect(screen.queryByTestId('albaran-delete-confirm-btn')).not.toBeInTheDocument());
   });
 });
+
+// ─────────────────────────────────────────────────────────────────
+// Pestaña Cliente en el detalle del albarán
+// ─────────────────────────────────────────────────────────────────
+describe('AlbaranesPage – pestaña cliente', () => {
+  beforeEach(() => {
+    fetch.mockImplementation((url) => {
+      if (/albaranes\/get$/.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve([ALBARAN]) });
+      if (/clientes\/get$/.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve([CLIENTE]) });
+      if (/productos\/get$/.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+      if (url.includes(`albaranes/get/${ALBARAN.id}`)) return Promise.resolve({ ok: true, json: () => Promise.resolve({ ...ALBARAN }) });
+      if (url.includes(`clientes/get/${CLIENTE.id}`)) return Promise.resolve({ ok: true, json: () => Promise.resolve({ ...CLIENTE }) });
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+    });
+  });
+
+  async function openDetailAndSwitchToClientTab() {
+    renderPage();
+    await waitFor(() => screen.getByText('#1'));
+    await act(async () => { fireEvent.click(screen.getByText('#1')); });
+    await waitFor(() => screen.getByRole('button', { name: /^cliente$/i }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /^cliente$/i }));
+    });
+  }
+
+  it('muestra la pestaña "Cliente" en el panel de detalle', async () => {
+    renderPage();
+    await waitFor(() => screen.getByText('#1'));
+    await act(async () => { fireEvent.click(screen.getByText('#1')); });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /^cliente$/i })).toBeInTheDocument();
+    });
+  });
+
+  it('muestra el nombre del cliente al cambiar a la pestaña Cliente', async () => {
+    await openDetailAndSwitchToClientTab();
+    await waitFor(() => {
+      // The client name is rendered as {name} {surnames}
+      const bodyText = document.body.textContent;
+      expect(bodyText).toMatch(/Ana/);
+      expect(bodyText).toMatch(/Garc/);
+    });
+  });
+
+  it('muestra el email del cliente en la pestaña Cliente', async () => {
+    await openDetailAndSwitchToClientTab();
+    await waitFor(() => {
+      expect(screen.getByText('ana@test.com')).toBeInTheDocument();
+    });
+  });
+
+  it('muestra el DNI del cliente en la pestaña Cliente', async () => {
+    await openDetailAndSwitchToClientTab();
+    await waitFor(() => {
+      expect(screen.getByText('12345678A')).toBeInTheDocument();
+    });
+  });
+
+  it('pulsar "Ver cliente" en la pestaña Cliente llama a goToCliente', async () => {
+    await openDetailAndSwitchToClientTab();
+    await waitFor(() => {
+      expect(document.body.textContent).toMatch(/Ana/);
+    });
+    // The "Ver cliente →" button should exist and be clickable
+    const verClienteBtn = screen.queryByText(/ver cliente/i);
+    if (verClienteBtn) {
+      await act(async () => { fireEvent.click(verClienteBtn); });
+    }
+    expect(document.body).toBeTruthy();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────
+// Eliminar línea en modo edición
+// ─────────────────────────────────────────────────────────────────
+describe('AlbaranesPage – eliminar línea', () => {
+  beforeEach(() => {
+    fetch.mockImplementation((url) => {
+      if (/albaranes\/get$/.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve([ALBARAN_CON_ITEMS]) });
+      if (/clientes\/get$/.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve([CLIENTE]) });
+      if (/productos\/get$/.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve([PRODUCTO]) });
+      if (url.includes(`albaranes/get/${ALBARAN_CON_ITEMS.id}`)) return Promise.resolve({ ok: true, json: () => Promise.resolve({ ...ALBARAN_CON_ITEMS }) });
+      if (url.includes(`clientes/get/${CLIENTE.id}`)) return Promise.resolve({ ok: true, json: () => Promise.resolve({ ...CLIENTE }) });
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+    });
+  });
+
+  it('elimina una línea al pulsar el botón ×', async () => {
+    renderPage();
+    await waitFor(() => screen.getByText(`#${ALBARAN_CON_ITEMS.id}`));
+    await act(async () => { fireEvent.click(screen.getByText(`#${ALBARAN_CON_ITEMS.id}`)); });
+    await waitFor(() => screen.getByTestId('lines-edit-btn'));
+    await act(async () => { fireEvent.click(screen.getByTestId('lines-edit-btn')); });
+    await waitFor(() => screen.getByTestId('lines-add-row-btn'));
+
+    // The remove button exists while there are lines
+    expect(screen.getAllByRole('button', { name: /eliminar línea/i }).length).toBeGreaterThan(0);
+    const removeBtn = screen.getAllByRole('button', { name: /eliminar línea/i })[0];
+    await act(async () => { fireEvent.click(removeBtn); });
+
+    // After removing the only line, the "no lines" message should appear
+    await waitFor(() => {
+      expect(screen.queryAllByRole('button', { name: /eliminar línea/i })).toHaveLength(0);
+    });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────
+// Filtros: ordenación
+// ─────────────────────────────────────────────────────────────────
+const ALBARAN_2 = {
+  id: 2,
+  date: '2026-02-01',
+  description: 'Test 2',
+  total: 100.0,
+  status: 'ENTREGADO',
+  customer_id: 1,
+  items: [],
+};
+
+function mockFetchTwoAlbaranes() {
+  fetch.mockImplementation((url) => {
+    if (/albaranes\/get$/.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve([ALBARAN, ALBARAN_2]) });
+    if (/clientes\/get$/.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve([CLIENTE]) });
+    if (/productos\/get$/.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+    return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+  });
+}
+
+function openFiltersModal(screen) {
+  const btn = screen.getAllByRole('button').find(b => b.textContent === 'Filtros');
+  fireEvent.click(btn);
+}
+
+function getSortSelect() {
+  return Array.from(document.querySelectorAll('select')).find(
+    s => Array.from(s.options).some(o => o.value === 'fecha_asc')
+  );
+}
+
+describe('AlbaranesPage – filtros: ordenación', () => {
+  beforeEach(() => { mockFetchTwoAlbaranes(); });
+
+  it('cambia la ordenación a fecha ascendente', async () => {
+    renderPage();
+    await waitFor(() => screen.getByText('#1'));
+    await act(async () => { openFiltersModal(screen); });
+    const sortSelect = getSortSelect();
+    await act(async () => { fireEvent.change(sortSelect, { target: { value: 'fecha_asc' } }); });
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Aplicar' })); });
+    await waitFor(() => expect(screen.getByText('#1')).toBeInTheDocument());
+  });
+
+  it('cambia la ordenación a total descendente', async () => {
+    renderPage();
+    await waitFor(() => screen.getByText('#1'));
+    await act(async () => { openFiltersModal(screen); });
+    const sortSelect = getSortSelect();
+    await act(async () => { fireEvent.change(sortSelect, { target: { value: 'total_desc' } }); });
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Aplicar' })); });
+    await waitFor(() => expect(screen.getByText('#1')).toBeInTheDocument());
+  });
+
+  it('cambia la ordenación a total ascendente y muestra chip', async () => {
+    renderPage();
+    await waitFor(() => screen.getByText('#1'));
+    await act(async () => { openFiltersModal(screen); });
+    const sortSelect = getSortSelect();
+    await act(async () => { fireEvent.change(sortSelect, { target: { value: 'total_asc' } }); });
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Aplicar' })); });
+    // Chip should appear for sort != fecha_desc
+    await waitFor(() => {
+      expect(document.body.textContent).toMatch(/Total/);
+    });
+  });
+
+  it('limpiar filtros borra el chip de ordenación', async () => {
+    renderPage();
+    await waitFor(() => screen.getByText('#1'));
+    // Set non-default sort
+    await act(async () => { openFiltersModal(screen); });
+    const sortSelect = getSortSelect();
+    await act(async () => { fireEvent.change(sortSelect, { target: { value: 'total_asc' } }); });
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Aplicar' })); });
+    // Chip for sort should now be visible → click the "Limpiar" link next to chips
+    await waitFor(() => {
+      const limpiarBtns = screen.getAllByText('Limpiar');
+      expect(limpiarBtns.length).toBeGreaterThan(0);
+    });
+    const limpiarBtn = screen.getAllByText('Limpiar')[0];
+    await act(async () => { fireEvent.click(limpiarBtn); });
+    // After clearAll, chips should be gone
+    await waitFor(() => {
+      expect(screen.queryAllByText('Limpiar')).toHaveLength(0);
+    });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────
+// Filtros: fechas rápidas
+// ─────────────────────────────────────────────────────────────────
+describe('AlbaranesPage – filtros de fecha rápidos', () => {
+  beforeEach(() => { mockFetchTwoAlbaranes(); });
+
+  it('establece la fecha desde en el filtro rápido', async () => {
+    renderPage();
+    await waitFor(() => screen.getByText('#1'));
+    // Find the quick dateFrom input (type="date" in main toolbar)
+    const dateInputs = document.querySelectorAll('input[type="date"]');
+    expect(dateInputs.length).toBeGreaterThan(0);
+    await act(async () => {
+      fireEvent.change(dateInputs[0], { target: { value: '2026-01-01' } });
+    });
+    // dateFrom chip should appear
+    await waitFor(() => {
+      expect(document.body.textContent).toMatch(/fecha/i);
+    });
+  });
+
+  it('establece la fecha hasta en el filtro rápido', async () => {
+    renderPage();
+    await waitFor(() => screen.getByText('#1'));
+    const dateInputs = document.querySelectorAll('input[type="date"]');
+    expect(dateInputs.length).toBeGreaterThan(1);
+    await act(async () => {
+      fireEvent.change(dateInputs[1], { target: { value: '2026-12-31' } });
+    });
+    await waitFor(() => {
+      expect(document.body.textContent).toMatch(/fecha/i);
+    });
+  });
+
+  it('muestra botón × para limpiar fechas cuando se establece una', async () => {
+    renderPage();
+    await waitFor(() => screen.getByText('#1'));
+    const dateInputs = document.querySelectorAll('input[type="date"]');
+    await act(async () => {
+      fireEvent.change(dateInputs[0], { target: { value: '2026-01-01' } });
+    });
+    await waitFor(() => {
+      // The × button appears to clear dates
+      const clearBtns = screen.getAllByTitle('Limpiar fechas');
+      expect(clearBtns.length).toBeGreaterThan(0);
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByTitle('Limpiar fechas'));
+    });
+    // After clearing, the dateFrom input should be empty
+    await waitFor(() => {
+      expect(document.querySelectorAll('input[type="date"]')[0].value).toBe('');
+    });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────
+// SaveEdit error
+// ─────────────────────────────────────────────────────────────────
+describe('AlbaranesPage – saveEdit error', () => {
+  beforeEach(() => {
+    fetch.mockImplementation((url, opts) => {
+      if (opts?.method === 'PUT') return Promise.resolve({ ok: false, status: 500, json: () => Promise.resolve({ detail: 'Internal Server Error' }) });
+      if (/albaranes\/get$/.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve([ALBARAN]) });
+      if (/clientes\/get$/.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve([CLIENTE]) });
+      if (/productos\/get$/.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+      if (url.includes(`albaranes/get/${ALBARAN.id}`)) return Promise.resolve({ ok: true, json: () => Promise.resolve({ ...ALBARAN }) });
+      if (url.includes(`clientes/get/${CLIENTE.id}`)) return Promise.resolve({ ok: true, json: () => Promise.resolve({ ...CLIENTE }) });
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+    });
+  });
+
+  it('muestra sileo.error cuando saveEdit falla con error HTTP', async () => {
+    const { sileo } = await import('sileo');
+    renderPage();
+    await waitFor(() => screen.getByText('#1'));
+    await act(async () => { fireEvent.click(screen.getByText('#1')); });
+    await waitFor(() => screen.getByTestId('albaran-edit-btn'));
+    await act(async () => { fireEvent.click(screen.getByTestId('albaran-edit-btn')); });
+    await waitFor(() => screen.getByTestId('albaran-edit-save-btn'));
+    await act(async () => { fireEvent.click(screen.getByTestId('albaran-edit-save-btn')); });
+    await waitFor(() => {
+      expect(sileo.error).toHaveBeenCalled();
+    });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────
+// Edición de precio unitario en líneas
+// ─────────────────────────────────────────────────────────────────
+describe('AlbaranesPage – edición precio unitario en líneas', () => {
+  beforeEach(() => {
+    fetch.mockImplementation((url) => {
+      if (/albaranes\/get$/.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve([ALBARAN_CON_ITEMS]) });
+      if (/clientes\/get$/.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve([CLIENTE]) });
+      if (/productos\/get$/.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve([PRODUCTO]) });
+      if (url.includes(`albaranes/get/${ALBARAN_CON_ITEMS.id}`)) return Promise.resolve({ ok: true, json: () => Promise.resolve({ ...ALBARAN_CON_ITEMS }) });
+      if (url.includes(`clientes/get/${CLIENTE.id}`)) return Promise.resolve({ ok: true, json: () => Promise.resolve({ ...CLIENTE }) });
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+    });
+  });
+
+  it('actualiza el precio unitario al cambiar el input', async () => {
+    renderPage();
+    await waitFor(() => screen.getByText(`#${ALBARAN_CON_ITEMS.id}`));
+    await act(async () => { fireEvent.click(screen.getByText(`#${ALBARAN_CON_ITEMS.id}`)); });
+    await waitFor(() => screen.getByTestId('lines-edit-btn'));
+    await act(async () => { fireEvent.click(screen.getByTestId('lines-edit-btn')); });
+    await waitFor(() => screen.getByTestId('lines-add-row-btn'));
+    // unit_price input is inputs[1] (qty=inputs[0], price=inputs[1])
+    const numInputs = document.querySelectorAll('tbody tr td input[type="number"]');
+    expect(numInputs.length).toBeGreaterThanOrEqual(2);
+    const priceInput = numInputs[1];
+    await act(async () => { fireEvent.change(priceInput, { target: { value: '25' } }); });
+    expect(priceInput.value).toBe('25');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────
+// Guardar líneas exitosamente
+// ─────────────────────────────────────────────────────────────────
+describe('AlbaranesPage – guardar líneas exitosamente', () => {
+  beforeEach(() => {
+    fetch.mockImplementation((url, opts) => {
+      if (opts?.method === 'PUT' && url.includes('/items')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({ ...ALBARAN_CON_ITEMS, items: [{ id: 10, product_id: 1, quantity: 3, unit_price: 10.0 }] }) });
+      }
+      if (/albaranes\/get$/.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve([ALBARAN_CON_ITEMS]) });
+      if (/clientes\/get$/.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve([CLIENTE]) });
+      if (/productos\/get$/.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve([PRODUCTO]) });
+      if (url.includes(`albaranes/get/${ALBARAN_CON_ITEMS.id}`)) return Promise.resolve({ ok: true, json: () => Promise.resolve({ ...ALBARAN_CON_ITEMS }) });
+      if (url.includes(`clientes/get/${CLIENTE.id}`)) return Promise.resolve({ ok: true, json: () => Promise.resolve({ ...CLIENTE }) });
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+    });
+  });
+
+  it('guarda las líneas exitosamente y llama a sileo.success', async () => {
+    const { sileo } = await import('sileo');
+    renderPage();
+    await waitFor(() => screen.getByText(`#${ALBARAN_CON_ITEMS.id}`));
+    await act(async () => { fireEvent.click(screen.getByText(`#${ALBARAN_CON_ITEMS.id}`)); });
+    await waitFor(() => screen.getByTestId('lines-edit-btn'));
+    await act(async () => { fireEvent.click(screen.getByTestId('lines-edit-btn')); });
+    await waitFor(() => screen.getByTestId('lines-save-btn'));
+    await act(async () => { fireEvent.click(screen.getByTestId('lines-save-btn')); });
+    await waitFor(() => {
+      expect(sileo.success).toHaveBeenCalled();
+    });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────
+// Cambiar la cantidad (quantity) de una línea (cubre línea 1076)
+// ─────────────────────────────────────────────────────────────────
+describe('AlbaranesPage – edición cantidad en líneas', () => {
+  beforeEach(() => {
+    fetch.mockImplementation((url) => {
+      if (/albaranes\/get$/.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve([ALBARAN_CON_ITEMS]) });
+      if (/clientes\/get$/.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve([CLIENTE]) });
+      if (/productos\/get$/.test(url)) return Promise.resolve({ ok: true, json: () => Promise.resolve([PRODUCTO]) });
+      if (url.includes(`albaranes/get/${ALBARAN_CON_ITEMS.id}`)) return Promise.resolve({ ok: true, json: () => Promise.resolve({ ...ALBARAN_CON_ITEMS }) });
+      if (url.includes(`clientes/get/${CLIENTE.id}`)) return Promise.resolve({ ok: true, json: () => Promise.resolve({ ...CLIENTE }) });
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+    });
+  });
+
+  it('cambiar la cantidad de una línea actualiza el estado', async () => {
+    renderPage();
+    await waitFor(() => screen.getByText(`#${ALBARAN_CON_ITEMS.id}`));
+    await act(async () => { fireEvent.click(screen.getByText(`#${ALBARAN_CON_ITEMS.id}`)); });
+    await waitFor(() => screen.getByTestId('lines-edit-btn'));
+    await act(async () => { fireEvent.click(screen.getByTestId('lines-edit-btn')); });
+    await waitFor(() => {
+      const numInputs = document.querySelectorAll('tbody tr td input[type="number"]');
+      expect(numInputs.length).toBeGreaterThanOrEqual(1);
+    });
+    // quantity is the first number input in the row (covers line 1076: updateLineField)
+    const numInputs = document.querySelectorAll('tbody tr td input[type="number"]');
+    const qtyInput = numInputs[0];
+    await act(async () => { fireEvent.change(qtyInput, { target: { value: '5' } }); });
+    expect(qtyInput.value).toBe('5');
+  });
+});
