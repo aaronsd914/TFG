@@ -543,45 +543,7 @@ export default function TendenciasPage() {
               </div>
 
               {compareEnabled && (
-                <div className="rounded-2xl border bg-white p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold">{t('trends.comparison')}</h3>
-                  </div>
-
-                  {compareErr && (
-                    <div className="text-red-700 whitespace-pre-wrap">{compareErr}</div>
-                  )}
-                  {!compareErr && delta && (
-                    <>
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b">
-                            <th className="text-left p-2">{t('trends.colMetric')}</th>
-                            <th className="text-right p-2">{t('trends.colCurrent')}</th>
-                            <th className="text-right p-2">{t('trends.colPrev')}</th>
-                            <th className="text-right p-2">Δ</th>
-                            <th className="text-right p-2">%</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <RowDelta label={t('trends.kpiIncome')} d={delta.revenue} money />
-                          <RowDelta label={t('trends.kpiOrders')} d={delta.orders} />
-                          <RowDelta label={t('trends.kpiAOV')} d={delta.aov} money />
-                        </tbody>
-                      </table>
-
-                      {aiCompare && (
-                        <div className="mt-3">
-                          <div className="font-semibold mb-1">{t('trends.aiReading')}</div>
-                          <RenderedMessage content={aiCompare} />
-                        </div>
-                      )}
-                    </>
-                  )}
-                  {!compareErr && !delta && (
-                    <div className="text-sm text-gray-600">{t('trends.noCompareData')}</div>
-                  )}
-                </div>
+                <ComparePanel compareErr={compareErr} delta={delta} aiCompare={aiCompare} />
               )}
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -794,14 +756,62 @@ function RenderedMessage({ content }) {
   );
 }
 
+function ComparePanel({ compareErr, delta, aiCompare }) {
+  const { t } = useTranslation();
+  return (
+    <div className="rounded-2xl border bg-white p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold">{t('trends.comparison')}</h3>
+      </div>
+
+      {compareErr && (
+        <div className="text-red-700 whitespace-pre-wrap">{compareErr}</div>
+      )}
+      {!compareErr && delta && (
+        <>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b">
+                <th className="text-left p-2">{t('trends.colMetric')}</th>
+                <th className="text-right p-2">{t('trends.colCurrent')}</th>
+                <th className="text-right p-2">{t('trends.colPrev')}</th>
+                <th className="text-right p-2">Δ</th>
+                <th className="text-right p-2">%</th>
+              </tr>
+            </thead>
+            <tbody>
+              <RowDelta label={t('trends.kpiIncome')} d={delta.revenue} money />
+              <RowDelta label={t('trends.kpiOrders')} d={delta.orders} />
+              <RowDelta label={t('trends.kpiAOV')} d={delta.aov} money />
+            </tbody>
+          </table>
+
+          {aiCompare && (
+            <div className="mt-3">
+              <div className="font-semibold mb-1">{t('trends.aiReading')}</div>
+              <RenderedMessage content={aiCompare} />
+            </div>
+          )}
+        </>
+      )}
+      {!compareErr && !delta && (
+        <div className="text-sm text-gray-600">{t('trends.noCompareData')}</div>
+      )}
+    </div>
+  );
+}
+
+ComparePanel.propTypes = {
+  compareErr: PropTypes.string,
+  delta: PropTypes.object,
+  aiCompare: PropTypes.string,
+};
+
 function ChartBlock({ chart }) {
   const { t } = useTranslation();
-  const type = (chart?.type ?? "").toLowerCase();
-  const title = chart?.options?.title?.text ?? chart?.title ?? t('trends.chartFallbackTitle');
-
-  // Soportamos config estilo Chart.js: { type, data:{labels,datasets}, options }
-  const data = chart?.data;
-  const options = chart?.options || {};
+  const { type: rawType, title: chartTitle, data, options } = chart || {};
+  const type = (rawType ?? "").toLowerCase();
+  const title = options?.title?.text ?? chartTitle ?? t('trends.chartFallbackTitle');
 
   if (!data || !Array.isArray(data.labels) || !Array.isArray(data.datasets)) {
     return (
@@ -826,11 +836,7 @@ ChartBlock.propTypes = {
     type: PropTypes.string,
     title: PropTypes.string,
     data: PropTypes.object,
-    options: PropTypes.shape({
-      title: PropTypes.shape({
-        text: PropTypes.string,
-      }),
-    }),
+    options: PropTypes.object,
   }),
 };
 

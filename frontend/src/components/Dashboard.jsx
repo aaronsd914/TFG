@@ -429,23 +429,7 @@ export default function Dashboard() {
           </div>
           <div className="bg-white p-4 rounded-xl shadow-sm">
             <h3 className="mb-3 text-base font-semibold">{t('dashboard.topClients')}</h3>
-            {loading && (
-              <div className="h-44 rounded-lg bg-gray-100 animate-pulse" />
-            )}
-            {!loading && topClientes.length === 0 && (
-              <p className="text-sm text-gray-500 py-2">{t('common.noResults')}</p>
-            )}
-            {!loading && topClientes.length > 0 && (
-              <ol className="flex flex-col gap-3 mt-2">
-                {topClientes.map(({ client, total }, i) => (
-                  <li key={client?.id ?? `rank-${i}`} className="flex items-center gap-3">
-                    <span className="w-6 h-6 rounded-full bg-gray-100 text-xs font-bold flex items-center justify-center text-gray-600 shrink-0">{i + 1}</span>
-                    <span className="text-sm text-gray-700 truncate flex-1">{client ? `${client.name} ${client.surnames}` : `Cliente #${i + 1}`}</span>
-                    <span className="text-sm font-semibold tabular-nums shrink-0 text-gray-900">{eur(total)}</span>
-                  </li>
-                ))}
-              </ol>
-            )}
+            <TopClientsList loading={loading} clients={topClientes} />
           </div>
         </div>
       )}
@@ -472,22 +456,7 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {loading && (
-                <tr><td colSpan={4} className="p-3 text-sm text-gray-500">{t('common.loading')}</td></tr>
-              )}
-              {!loading && ultimosMovs.length === 0 && (
-                <tr><td colSpan={4} className="p-3 text-sm text-gray-500">{t('dashboard.noMovements')}</td></tr>
-              )}
-              {!loading && ultimosMovs.map(m => (
-                <Row
-                  key={m.id}
-                  fecha={fmtDate(m.date)}
-                  tipo={m.type === 'INGRESO' ? t('dashboard.incomeType') : t('dashboard.expenseType')}
-                  ingreso={m.type === 'INGRESO'}
-                  desc={m.description}
-                  monto={eur(m.amount)}
-                />
-              ))}
+              <RecentMovementsBody loading={loading} rows={ultimosMovs} />
             </tbody>
           </table>
         </div>
@@ -575,6 +544,57 @@ function IncidenciasBody({ loading, incidencias }) {
 IncidenciasBody.propTypes = {
   loading: PropTypes.bool.isRequired,
   incidencias: PropTypes.array.isRequired,
+};
+
+function RecentMovementsBody({ loading, rows }) {
+  const { t } = useTranslation();
+  if (loading) {
+    return <tr><td colSpan={4} className="p-3 text-sm text-gray-500">{t('common.loading')}</td></tr>;
+  }
+  if (rows.length === 0) {
+    return <tr><td colSpan={4} className="p-3 text-sm text-gray-500">{t('dashboard.noMovements')}</td></tr>;
+  }
+  return rows.map(m => (
+    <Row
+      key={m.id}
+      fecha={fmtDate(m.date)}
+      tipo={m.type === 'INGRESO' ? t('dashboard.incomeType') : t('dashboard.expenseType')}
+      ingreso={m.type === 'INGRESO'}
+      desc={m.description}
+      monto={eur(m.amount)}
+    />
+  ));
+}
+
+RecentMovementsBody.propTypes = {
+  loading: PropTypes.bool.isRequired,
+  rows: PropTypes.array.isRequired,
+};
+
+function TopClientsList({ loading, clients }) {
+  const { t } = useTranslation();
+  if (loading) {
+    return <div className="h-44 rounded-lg bg-gray-100 animate-pulse" />;
+  }
+  if (clients.length === 0) {
+    return <p className="text-sm text-gray-500 py-2">{t('common.noResults')}</p>;
+  }
+  return (
+    <ol className="flex flex-col gap-3 mt-2">
+      {clients.map(({ client, total }, i) => (
+        <li key={client?.id ?? `rank-${i}`} className="flex items-center gap-3">
+          <span className="w-6 h-6 rounded-full bg-gray-100 text-xs font-bold flex items-center justify-center text-gray-600 shrink-0">{i + 1}</span>
+          <span className="text-sm text-gray-700 truncate flex-1">{client ? `${client.name} ${client.surnames}` : `Cliente #${i + 1}`}</span>
+          <span className="text-sm font-semibold tabular-nums shrink-0 text-gray-900">{eur(total)}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+TopClientsList.propTypes = {
+  loading: PropTypes.bool.isRequired,
+  clients: PropTypes.array.isRequired,
 };
 
 function TablaPedidos({ rows, clientesMap }) {

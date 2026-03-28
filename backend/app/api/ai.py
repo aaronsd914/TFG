@@ -1,4 +1,6 @@
 # backend/app/api/ai.py
+from itertools import islice
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -84,8 +86,8 @@ def _aggregate_sales_weekly(sales: list[dict]) -> list[dict]:
 def _metrics_for_chat(metrics: Dict[str, Any]) -> Dict[str, Any]:
     """Lighter version for chat context — keeps token count manageable."""
     avg = metrics.get("averages") or {}
-    top = list(metrics.get("top_products") or [])[:5]
-    pairs = list(metrics.get("basket_pairs") or [])[:5]
+    top = list(islice(metrics.get("top_products") or [], 5))
+    pairs = list(islice(metrics.get("basket_pairs") or [], 5))
     rfm_summary = (metrics.get("rfm") or {}).get("summary", {})
 
     sales = metrics.get("sales_by_day") or []
