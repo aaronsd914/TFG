@@ -45,7 +45,7 @@
 \newcommand{\escuela}{Escuela Técnica Superior\\de Ingeniería Informática}
 \newcommand{\escuelalargo}{Escuela Técnica Superior de Ingeniería Informática}
 \newcommand{\universidad}{Universidad Rey Juan Carlos}
-\newcommand{\fecha}{Junio 2025}
+\newcommand{\fecha}{Junio 2026}
 \newcommand{\grado}{Grado en Ingeniería Informática}
 \newcommand{\curso}{Curso 2024-2025}
 \newcommand{\logoUniversidad}{logoURJC.pdf}
@@ -538,7 +538,6 @@ La tabla~\ref{tab:rf} recoge los dieciocho requisitos funcionales del sistema.
   RF-16 & Perfil y configuración: actualización de contraseña y nombre de usuario; almacén clave-valor para parámetros de la tienda. \\
   RF-17 & Internacionalización: interfaz completa en español e inglés, con cambio de idioma en tiempo de ejecución. \\
   RF-18 & Gestión de incidencias: registro de problemas de entrega vinculados a un albarán; al eliminar la incidencia, el albarán revierte a ENTREGADO. \\
-  RF-19 & Integración bancaria (CaixaBank PSD2): enlace OAuth con Open Banking, consulta de cuentas y estado de conexión, como base para la futura conciliación automática de pagos. \\
   \bottomrule
 \end{longtable}
 
@@ -766,13 +765,12 @@ La tabla~\ref{tab:endpoints} resume los endpoints agrupados por recurso.
     Analíticas     & 4 & Resumen, comparativa, predicción, exportar PDF \\
     IA             & 2 & Pregunta puntual y conversación multi-turno \\
     Stripe         & 4 & Estado, crear sesión, confirmar pago, listar cobros \\
-    Banca (CaixaBank) & 5 & Debug, estado, vincular, callback OAuth, cuentas \\
     Incidencias    & 4 & Listar, obtener, crear, eliminar \\
     Auth           & 3 & Login, obtener perfil, actualizar perfil \\
     Config         & 2 & Obtener y actualizar configuración \\
     Health         & 1 & Sonda de salud \\
     \midrule
-    \textbf{Total} & \textbf{61} & \\
+    \textbf{Total} & \textbf{56} & \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1145,7 +1143,7 @@ La suite de pruebas de FurniGest sigue la \textbf{pirámide de pruebas} de Cohn 
     \filldraw[fill=red!20, draw=red!50!black]
       (2.25,3.5) -- (3.75,3.5) -- (3,5) -- cycle;
 
-    \node at (3,0.9) {\textbf{Unitarias: 439}};
+    \node at (3,0.9) {\textbf{Unitarias: 750}};
     \node at (3,2.6) {\textbf{Integración}};
     \node at (3,4.0) {\textbf{E2E: 107}};
 
@@ -1167,11 +1165,11 @@ La tabla~\ref{tab:cobertura_global} resume la cobertura por nivel.
     \toprule
     \textbf{Nivel} & \textbf{Runner} & \textbf{Tests} & \textbf{Cobertura} \\
     \midrule
-    Unitario backend    & pytest 9       & 210  & $>$ 80\,\% \\
-    Unitario frontend   & Vitest 4       & 229  & $>$ 80\,\% \\
+    Unitario backend    & pytest 9       & 239  & $>$ 80\,\% \\
+    Unitario frontend   & Vitest 4       & 511  & $>$ 80\,\% \\
     End-to-end          & Selenium       & 107  & Flujos completos \\
     \midrule
-    \textbf{Total}      &                & \textbf{546} & \\
+    \textbf{Total}      &                & \textbf{857} & \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1236,18 +1234,17 @@ La tabla~\ref{tab:tests_backend} detalla los ficheros de test del backend.
     test\_proveedores.py   &  9 & CRUD completo \\
     test\_productos.py     & 11 & CRUD + búsqueda + violación FK 409 \\
     test\_movimientos.py   & 12 & CRUD + orden por fecha + tipo inválido 422 \\
-    test\_albaranes.py     & 26 & Crear, listar, fianza auto, estados, movimiento pendiente, PDF, líneas \\
-    test\_analytics.py     & 27 & summary, compare, RFM, cesta, Holt, export/pdf con Groq mockeado \\
-    test\_transportes.py   & 14 & Almacén, rutas, asignar, liquidar \\
+    test\_albaranes.py     & 34 & Crear, listar, fianza auto, estados, movimiento pendiente, PDF, líneas \\
+    test\_analytics.py     & 31 & summary, compare, RFM, cesta, Holt, export/pdf con Groq mockeado \\
+    test\_transportes.py   & 34 & Almacén, rutas, asignar, liquidar \\
     test\_stripe.py        & 10 & Checkout, confirm, list (Stripe mockeado) \\
-    test\_bank.py          &  3 & Debug info, status, link \\
     test\_auth.py          & 16 & Login OK/fail, me GET/PUT, token expirado/manipulado \\
     test\_configuracion.py & 12 & GET defaults, GET/PUT round-trip, key desconocida \\
     test\_emailer.py       &  7 & html\_to\_text, SMTP path, Resend path \\
     test\_resumen\_semanal.py & 39 & \_get/\_set, \_build\_html, \_run condiciones, Groq error, Holt forecast \\
     test\_incidencias.py   & 12 & Crear, listar, eliminar, estado automático \\
     \midrule
-    \textbf{Total}         & \textbf{210} & \\
+    \textbf{Total}         & \textbf{239} & \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1275,17 +1272,31 @@ La tabla~\ref{tab:tests_frontend} detalla los ficheros de test del frontend.
     \toprule
     \textbf{Fichero} & \textbf{Tests} & \textbf{Área cubierta} \\
     \midrule
-    LoginPage.test.jsx          & 18 & Formulario, visibilidad password, login OK/fail, redirect \\
-    auth.test.js                & 13 & saveToken, getToken, removeToken, isTokenValid, login \\
-    fetchInterceptor.test.js    &  9 & Cabecera auth, URLs externas, 401 $\to$ logout \\
-    PersonalizacionPage.test.jsx& 48 & Dark mode, paletas, email, formularios, errores API \\
-    PerfilPage.test.jsx         & 17 & Decode JWT, campos password, submit, validación \\
+    LoginPage.test.jsx           & 18 & Formulario, visibilidad password, login OK/fail, redirect \\
+    auth.test.js                 & 13 & saveToken, getToken, removeToken, isTokenValid, login \\
+    fetchInterceptor.test.js     &  9 & Cabecera auth, URLs externas, 401 $\to$ logout \\
+    PersonalizacionPage.test.jsx & 48 & Dark mode, paletas, email, formularios, errores API \\
     ThemeContext.test.jsx        & 11 & Valores por defecto, localStorage, setIsDark, setPalette \\
-    Sidebar.test.jsx            &  9 & Enlaces nav, clases CSS activas, logout \\
-    App.test.jsx                &  5 & Renderizado root, layout, aside + main \\
-    Resto (11 ficheros)          & 99 & Dashboard, Albaranes, Banco, Clientes, Movimientos, NuevaVenta, Productos, Tendencias, Transporte, Incidencias, i18n \\
+    Sidebar.test.jsx             & 13 & Enlaces nav, clases CSS activas, logout \\
+    App.test.jsx                 &  7 & Renderizado root, layout, aside + main \\
+    Dashboard.test.jsx           & 10 & KPIs, gráficos, datos vacíos, error de red \\
+    AlbaranesPage.test.jsx       & 38 & CRUD, filtros estado, modal, PDF, errores API \\
+    BancoPage.test.jsx           & 43 & Estado Stripe, checkout, confirmación de pago \\
+    ClientesPage.test.jsx        & 33 & CRUD, búsqueda, modales, error de red \\
+    NuevaVenta.test.jsx          & 39 & Flujo completo, búsqueda cliente, confirmación \\
+    ProductosPage.test.jsx       & 28 & CRUD productos + proveedores, pestañas \\
+    Tendencias.test.jsx          & 27 & Gráficos, chat IA, exportar PDF \\
+    TransportePage.test.jsx      & 38 & Asignar camión, liquidar ruta \\
+    IncidenciasPage.test.jsx     & 28 & Listar, crear, eliminar, estados \\
+    i18n.test.jsx                & 14 & Detección idioma, traducciones, cambio de idioma \\
+    api.test.js                  & 29 & Cliente API, construcción de peticiones, errores \\
+    hooks.test.jsx               &  8 & Hooks de estado, efectos, limpieza \\
+    http.test.js                 &  8 & Utilidades HTTP, URL base, cabeceras \\
+    i18n.test.js                 &  9 & Configuración i18n, locale, pluralización \\
+    ModalCenter.test.jsx         &  6 & Renderizado portal, cierre con backdrop \\
+    UIComponents.test.jsx        & 34 & Botones, inputs, badges, modales, controles de formulario \\
     \midrule
-    \textbf{Total}              & \textbf{229} & \\
+    \textbf{Total}               & \textbf{511} & \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1295,7 +1306,7 @@ La tabla~\ref{tab:tests_frontend} detalla los ficheros de test del frontend.
 
 Las pruebas E2E utilizan \textbf{Selenium WebDriver} \cite{selenium} con Chrome en modo \emph{headless}. Las fixtures de pytest proporcionan un navegador con sesión iniciada (\texttt{logged\_in\_browser}, ámbito de sesión) y otro limpio (\texttt{fresh\_driver}, ámbito de módulo). Las pruebas se ejecutan contra la aplicación real (backend en \texttt{localhost:8000}, frontend en \texttt{localhost:5173}).
 
-La tabla~\ref{tab:tests_e2e} lista los 13 ficheros de tests E2E.
+La tabla~\ref{tab:tests_e2e} lista los 12 ficheros de tests E2E.
 
 \begin{table}[H]
   \centering
@@ -1317,7 +1328,6 @@ La tabla~\ref{tab:tests_e2e} lista los 13 ficheros de tests E2E.
     test\_e2e\_banco.py          & Estado Stripe, historial de pagos \\
     test\_e2e\_incidencias.py    & Crear y eliminar incidencia \\
     test\_e2e\_personalizacion.py& Dark mode, paleta, idioma \\
-    test\_e2e\_perfil.py         & Cambiar contraseña \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1538,11 +1548,11 @@ La tabla~\ref{tab:metricas} recoge las métricas de calidad reportadas por Sonar
     Cobertura frontend (Vitest) & $>$ 80\,\% \\
     Bugs detectados             & 0 \\
     Vulnerabilidades            & 0 \\
-    Tests unitarios backend     & 210 \\
-    Tests unitarios frontend    & 229 \\
+    Tests unitarios backend     & 239 \\
+    Tests unitarios frontend    & 511 \\
     Tests E2E (Selenium)        & 107 \\
-    Tests totales               & 546 \\
-    Endpoints REST              & 61 \\
+    Tests totales               & 857 \\
+    Endpoints REST              & 56 \\
     Entidades de dominio        & 11 \\
     Ficheros de workflow CI/CD  & 2 (9 jobs) \\
     \bottomrule
@@ -1650,7 +1660,7 @@ La tabla~\ref{tab:trabajos_futuros} propone líneas de evolución del sistema.
     Módulo de presupuestos        & Generar y enviar presupuestos previos al pedido formal. \\
     Soporte multi-tienda          & Gestionar varias sucursales desde una única instancia. \\
     Pruebas de carga (Locust)     & Validar el rendimiento del sistema bajo concurrencia elevada. \\
-    Conciliación bancaria automática & Madurar la integración con CaixaBank PSD2 para detectar automáticamente cobros recibidos y conciliarlos con albaranes pendientes de pago. \\
+    Conciliación bancaria automática & Implementar integración con Open Banking PSD2 para detectar automáticamente cobros recibidos y conciliarlos con albaranes pendientes de pago. \\
     \bottomrule
   \end{tabularx}
 \end{table}
@@ -1733,7 +1743,6 @@ uvicorn backend.app.main:app --reload
   \item \texttt{stripe\_config.py} --- claves Stripe.
   \item \texttt{ia\_settings.py} --- API key de Groq.
   \item \texttt{settings\_email.py} --- configuración SMTP / Resend.
-  \item \texttt{bank\_settings.py} --- configuración bancaria.
 \end{itemize}
 
 \subsection{Frontend}
@@ -1848,13 +1857,6 @@ Al arrancar por primera vez, \texttt{seed.py} genera: 18 proveedores, 99 product
   GET    & /api/incidencias/get/\{id\} & Obtener una \\
   POST   & /api/incidencias/post & Crear incidencia \\
   DELETE & /api/incidencias/\{id\} & Eliminar (revierte albarán) \\
-  \midrule
-  \multicolumn{3}{l}{\textbf{Banca (CaixaBank PSD2)}} \\
-  GET    & /api/bank/caixa/\_debug   & Info de depuración \\
-  GET    & /api/bank/caixa/status    & Estado de conexión \\
-  POST   & /api/bank/caixa/link      & Iniciar enlace con banco \\
-  GET    & /api/bank/caixa/callback  & Callback OAuth \\
-  GET    & /api/bank/caixa/accounts  & Listar cuentas \\
   \midrule
   \multicolumn{3}{l}{\textbf{Auth}} \\
   POST   & /api/auth/login & Obtener JWT \\
