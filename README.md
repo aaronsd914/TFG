@@ -204,7 +204,7 @@ All charts are rendered with **Chart.js** via `react-chartjs-2` on the *Tendenci
 | Orders over time | **Line** | Daily order count for the selected date range |
 | Top products | **Bar** | Top 10 products by total revenue in the selected period |
 | Period comparison | **Bar** (grouped) | Current period vs. previous period — revenue, order count, average basket, new customers |
-| Order status distribution | **Pie** | Count of orders per state (FIANZA / ALMACEN / RUTA / ENTREGADO) on the Dashboard |
+| Order status distribution | **Pie** | Count of orders per state (FIANZA / ALMACEN / RUTA / ENTREGADO / INCIDENCIA) on the Dashboard |
 
 ---
 
@@ -385,6 +385,7 @@ TFG/
             ├── Tendencias.jsx   # Analytics, AI assistant, PDF export
             ├── TransportePage.jsx  # Logistics / transport module
             ├── BancoPage.jsx    # Stripe payments panel
+            ├── IncidenciasPage.jsx # Incident management
             ├── PerfilPage.jsx   # Change username / password
             └── PersonalizacionPage.jsx # Theme, palette, store identity
 ```
@@ -417,13 +418,13 @@ The frontend login page is available at `/login`. On first run, `seed.py` automa
 
 > **Security note:** Change the default `admin123` password and set `JWT_SECRET_KEY` to a long random string in production (e.g. `openssl rand -hex 32`). The default value is only safe for local development.
 
-#### `backend/app/stripe_config.py` — Payments
+#### `backend/app/stripe_settings.py` — Payments
 
 ```python
 STRIPE_SECRET_KEY      = "sk_test_..."        # Secret key from Stripe Dashboard
 STRIPE_PUBLISHABLE_KEY = "pk_test_..."        # Publishable key (returned to frontend via /api/stripe/status)
-STRIPE_SUCCESS_URL     = "http://localhost:5173/banco?success=true"
-STRIPE_CANCEL_URL      = "http://localhost:5173/banco?cancelled=true"
+STRIPE_SUCCESS_URL     = "http://localhost:5173/banco?stripe=success&session_id={CHECKOUT_SESSION_ID}"
+STRIPE_CANCEL_URL      = "http://localhost:5173/banco?stripe=cancel"
 STRIPE_CURRENCY        = "eur"               # ISO 4217 lowercase
 ```
 
@@ -578,15 +579,6 @@ The API is served at `http://localhost:8000`. All domain endpoints are prefixed 
 | `POST` | `/api/incidencias/post` | Create incident — requires albaran in `ENTREGADO` state; sets it to `INCIDENCIA` |
 | `DELETE` | `/api/incidencias/{id}` | Delete incident and restore albaran to `ENTREGADO` |
 
-#### Bank (Stripe) — `/api/stripe`
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/api/stripe/status` | Stripe configuration status |
-| `POST` | `/api/stripe/create-checkout-session` | Create a Stripe Checkout session |
-| `GET` | `/api/stripe/confirm` | Confirm a completed payment session |
-| `GET` | `/api/stripe/charges` | List all Stripe charges |
-
 #### Health — `/health`
 
 | Method | Path | Description |
@@ -721,9 +713,9 @@ Frontend redirects browser to checkout_url (Stripe-hosted HTTPS page)
     │
     │  Customer enters card → Stripe processes payment
     ▼
-Stripe redirects back to STRIPE_SUCCESS_URL  (→ /banco?success=true)
+Stripe redirects back to STRIPE_SUCCESS_URL  (→ /banco?stripe=success&session_id=...)
     │
-    │  Frontend detects ?success=true in URL
+    │  Frontend detects ?stripe=success in URL
     │  POST /api/stripe/confirm  { session_id }
     ▼
 Backend
@@ -1183,7 +1175,7 @@ Required environment variables / config files:
 
 | File / Variable | Purpose |
 |-----------------|---------|
-| `backend/app/stripe_config.py` | `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_SUCCESS_URL`, `STRIPE_CANCEL_URL`, `STRIPE_CURRENCY` |
+| `backend/app/stripe_settings.py` | `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_SUCCESS_URL`, `STRIPE_CANCEL_URL`, `STRIPE_CURRENCY` |
 | `backend/app/ia_settings.py` | `GROQ_API_KEY`, `GROQ_MODEL`, `GROQ_BASE_URL` |
 | `backend/app/settings_email.py` | `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASSWORD` |
 
@@ -1220,7 +1212,7 @@ docker compose down
 
 The first `docker compose up --build` takes 2–4 minutes depending on download speed. Subsequent startups reuse the cached layers and start in a few seconds.
 
-> **Config files in Docker:** The five Python config files (`ia_settings.py`, `settings_email.py`, `bank_settings.py`, `stripe_config.py`, `stripe_settings.py`) are mounted as read-only volumes from the host into the backend container. You must create these files locally before starting the stack — see [Config-file volume strategy](#config-file-volume-strategy).
+> **Config files in Docker:** The four Python config files (`ia_settings.py`, `settings_email.py`, `stripe_settings.py`, `stripe_config.py`) are mounted as read-only volumes from the host into the backend container. You must create these files locally before starting the stack — see [Config-file volume strategy](#config-file-volume-strategy).
 
 > **Data persistence:** PostgreSQL data is stored in a named Docker volume (`postgres_data`). Running `docker compose down` does **not** delete this volume. To wipe the database completely, run `docker compose down -v`.
 
@@ -1333,17 +1325,16 @@ pytest test/backend/ --cov=backend/app --cov-report=term-missing
 | `test_proveedores.py` | 9 | Full CRUD |
 | `test_productos.py` | 11 | Full CRUD + FK-violation 409 + search |
 | `test_movimientos.py` | 12 | Full CRUD + date ordering + invalid tipo 422 |
-| `test_albaranes.py` | 26 | Create/list/get, fianza auto-calc, custom fianza, state transitions, pending-payment movement, PDF, line items |
-| `test_analytics.py` | 27 | `/summary`, `/compare`, `/predict`, `/export/pdf` with mocked Groq, RFM, basket |
-| `test_transportes.py` | 14 | Almacén listing, route CRUD, assign/unassign, pendiente, liquidate |
+| `test_albaranes.py` | 34 | Create/list/get, fianza auto-calc, custom fianza, state transitions, pending-payment movement, PDF, line items |
+| `test_analytics.py` | 31 | `/summary`, `/compare`, `/predict`, `/export/pdf` with mocked Groq, RFM, basket |
+| `test_transportes.py` | 34 | Almacén listing, route CRUD, assign/unassign, pendiente, liquidate |
 | `test_stripe.py` | 10 | Checkout, confirm, list — all Stripe calls mocked |
-| `test_bank.py` | 3 | Debug info, status (no token), link (mocked HTTP) |
 | `test_auth.py` | 16 | Login OK/fail, `/api/auth/me` GET, all PUT /me branches (password OK, wrong password, username OK, conflict 409, too-short 422), protected endpoint, expired/tampered token |
 | `test_configuracion.py` | 12 | GET defaults, GET/PUT round-trip, unknown key 400, overwrite, `ultima_vez` timestamp |
 | `test_emailer.py` | 7 | `_html_to_text` (empty, strip tags, strip script, entities), `send_email_simple` (SMTP path, Resend path, captures recipient) |
 | `test_resumen_semanal.py` | 39 | `_get`/`_set` round-trips, `_eur` formatting, `_build_html` with/without insight + red balance, `_run` skip conditions + execution + Groq error handling + `ultima_vez` update, `job_resumen_semanal` exception capture |
 | `test_incidencias.py` | 12 | Create, list, get, delete, automatic status revert |
-| **Total** | **210** | |
+| **Total** | **239** | |
 
 > Tests exercise both the original router layer and the new `services/` layer — the service functions are called through the same HTTP endpoints, so the existing test suite validates both layers without requiring new test files.
 
@@ -1370,26 +1361,30 @@ npm run test:watch  # watch mode
 
 | File | Tests | Coverage area |
 |------|-------|---------------|
-| `Sidebar.test.jsx` | 9 | App name, all nav links present, correct `href` values, active/inactive CSS class tokens, logout button, logout calls `removeToken` and redirects |
-| `App.test.jsx` | 5 | Root renders, title present, layout classes, `<main>` and `<aside>` in DOM |
-| `Dashboard.test.jsx` | 7 | Mounts without error, `fetch` called on mount, empty-data grace, network-error resilience, KPI cards |
-| `AlbaranesPage.test.jsx` | 11 | Mounts without error, API called on mount, page heading, state filters, no visible errors, network-error resilience |
-| `BancoPage.test.jsx` | 5 | Mounts without error, calls Stripe status and checkouts endpoints, no visible errors, network-error resilience |
-| `ClientesPage.test.jsx` | 9 | Mounts without error, API called on mount, `<h1>` heading, search input present, empty-list grace, network-error resilience |
-| `MovimientosPage.test.jsx` | 6 | Mounts without error, API called on mount, page heading, monthly summary cards (ingresos/egresos/balance), quick-add form, network-error resilience |
-| `NuevaVenta.test.jsx` | 5 | Mounts without error, "Nueva venta" heading, customer search mode present, checkbox controls, network-error resilience |
-| `ProductosPage.test.jsx` | 13 | Mounts without error, both API calls (productos + proveedores) on mount, `<h1>` heading, "Nuevo producto" button in header, tabs, no visible errors, network-error resilience |
-| `Tendencias.test.jsx` | 8 | Mounts without error, API called on mount, page heading, "Asistente IA" section present, chat welcome message, network-error resilience |
-| `TransportePage.test.jsx` | 6 | Mounts without error, all three initial API calls (almacén/rutas/clientes), page heading, trucks column, network-error resilience |
+| `Sidebar.test.jsx` | 13 | App name, all nav links present, correct `href` values, active/inactive CSS class tokens, logout button, logout calls `removeToken` and redirects |
+| `App.test.jsx` | 7 | Root renders, title present, layout classes, `<main>` and `<aside>` in DOM |
+| `Dashboard.test.jsx` | 10 | Mounts without error, `fetch` called on mount, empty-data grace, network-error resilience, KPI cards |
+| `AlbaranesPage.test.jsx` | 38 | Mounts without error, API called on mount, page heading, state filters, no visible errors, network-error resilience, modal open/close, PDF download |
+| `BancoPage.test.jsx` | 43 | Mounts without error, calls Stripe status and checkouts endpoints, no visible errors, network-error resilience, checkout flow, payment confirmation |
+| `ClientesPage.test.jsx` | 33 | Mounts without error, API called on mount, `<h1>` heading, search input present, empty-list grace, network-error resilience, CRUD modals |
+| `NuevaVenta.test.jsx` | 39 | Mounts without error, "Nueva venta" heading, customer search mode present, checkbox controls, network-error resilience, full checkout flow |
+| `ProductosPage.test.jsx` | 28 | Mounts without error, both API calls (productos + proveedores) on mount, `<h1>` heading, "Nuevo producto" button in header, tabs, no visible errors, network-error resilience |
+| `Tendencias.test.jsx` | 27 | Mounts without error, API called on mount, page heading, "Asistente IA" section present, chat welcome message, network-error resilience |
+| `TransportePage.test.jsx` | 38 | Mounts without error, all three initial API calls (almacén/rutas/clientes), page heading, trucks column, network-error resilience, route assignment |
 | `LoginPage.test.jsx` | 18 | Form renders, type in fields, toggle password visibility, login OK/fail, redirect, error message |
 | `auth.test.js` | 13 | `saveToken`, `getToken`, `removeToken`, `isTokenValid` (expired/tampered/valid/Base64url), `login` fetch call |
 | `fetchInterceptor.test.js` | 9 | Auth header injection, skips external URLs, 401 → `removeToken` + redirect, preserves existing headers |
 | `PersonalizacionPage.test.jsx` | 48 | Renders sections, dark mode toggle, palettes, username/password fields, save buttons, email signature, form submissions, weekly summary config, i18n settings |
-| `PerfilPage.test.jsx` | 17 | Renders sections, JWT username decode, password fields, submit buttons, mismatched-password validation, form submissions (username, password), API error handling |
 | `ThemeContext.test.jsx` | 11 | Default values (isDark, palette), `localStorage` read on init, `setIsDark` updates value + DOM class + persists, `setPalette` updates value + `dataset.palette` + persists |
-| `IncidenciasPage.test.jsx` | 15 | Mounts without error, API called, list incidents, create modal, delete confirmation |
+| `IncidenciasPage.test.jsx` | 28 | Mounts without error, API called, list incidents, create modal, delete confirmation, state transitions |
 | `i18n.test.jsx` | 14 | Language detection, fallback, translation keys, language switching |
-| **Total** | **229** | |
+| `api.test.js` | 29 | API client functions, request building, error handling, response parsing |
+| `hooks.test.jsx` | 8 | Custom React hooks: state management, side effects, cleanup |
+| `http.test.js` | 8 | HTTP utility functions, base URL resolution, header management |
+| `i18n.test.js` | 9 | i18n configuration, locale loading, pluralisation |
+| `ModalCenter.test.jsx` | 6 | Modal rendering, portal mounting, close on backdrop click |
+| `UIComponents.test.jsx` | 34 | Shared UI components: buttons, inputs, badges, modals, form controls |
+| **Total** | **511** | |
 
 **Key isolation strategies:**
 
@@ -1444,20 +1439,19 @@ The backend-tests and frontend-tests jobs run **in parallel** after lint passes.
 | `actions/setup-python@v5` | Installs Python 3.12 with pip cache |
 | `pip install -r requirements.txt` | Installs all backend dependencies |
 | **Create dummy config files** | Generates placeholder `.py` config files (see below) |
-| `pytest --cov` | Runs the 210-test backend suite and produces a coverage XML report |
+| `pytest --cov` | Runs the 239-test backend suite and produces a coverage XML report |
 | `actions/upload-artifact@v4` | Saves `coverage-backend.xml` as a downloadable artifact |
 
 ###### Why dummy config files are needed in CI
 
-Five Python modules are intentionally excluded from Git via `.gitignore` because they contain real API keys and credentials:
+Four Python modules are intentionally excluded from Git via `.gitignore` because they contain real API keys and credentials:
 
 | File | Variables exposed |
 |------|-------------------|
 | `backend/app/settings_email.py` | `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASSWORD`, `EMAIL_FROM`, `EMAIL_SENDER_NAME`, `RESEND_API_KEY`, `RESEND_FROM` |
 | `backend/app/ia_settings.py` | `GROQ_API_KEY`, `GROQ_BASE_URL`, `GROQ_MODEL`, `REQUEST_TIMEOUT` |
-| `backend/app/bank_settings.py` | `CAIXA_CLIENT_ID`, `CAIXA_CLIENT_SECRET`, `HUB_OAUTH_BASE`, … |
-| `backend/app/stripe_config.py` | `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, … |
-| `backend/app/stripe_settings.py` | Same variables re-exported after optional env-override |
+| `backend/app/stripe_settings.py` | `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_SUCCESS_URL`, `STRIPE_CANCEL_URL`, `STRIPE_CURRENCY` |
+| `backend/app/stripe_config.py` | Legacy Stripe config; re-exports values from `stripe_settings.py` |
 
 FastAPI registers all routers at import time, so Python must be able to parse every `from backend.app.settings_email import ...` statement before a single test is collected. If any of these files is absent the entire test run aborts with `ModuleNotFoundError`.
 
@@ -1642,21 +1636,20 @@ Because React Router handles client-side navigation, hard-refreshing any deep li
 
 #### Config-file volume strategy
 
-The five Python config files that hold real secrets are excluded from Git (`.gitignore`) but are required by the running backend container. Docker Compose mounts them directly from the host file system as **read-only volumes**:
+The four Python config files that hold real secrets are excluded from Git (`.gitignore`) but are required by the running backend container. Docker Compose mounts them directly from the host file system as **read-only volumes**:
 
 ```yaml
 backend:
   volumes:
     - ./backend/app/settings_email.py:/app/backend/app/settings_email.py:ro
     - ./backend/app/ia_settings.py:/app/backend/app/ia_settings.py:ro
-    - ./backend/app/bank_settings.py:/app/backend/app/bank_settings.py:ro
     - ./backend/app/stripe_config.py:/app/backend/app/stripe_config.py:ro
     - ./backend/app/stripe_settings.py:/app/backend/app/stripe_settings.py:ro
 ```
 
 This approach keeps secrets off the image layer (they are never baked into `docker build`) while still making them available at runtime without any environment variable injection in the compose file.
 
-> If a config file is missing when `docker compose up` runs, Docker will create an empty **directory** at that path instead of a file, and Python will throw `IsADirectoryError` at import time. Make sure all five files exist on the host before starting the stack.
+> If a config file is missing when `docker compose up` runs, Docker will create an empty **directory** at that path instead of a file, and Python will throw `IsADirectoryError` at import time. Make sure all four files exist on the host before starting the stack.
 
 #### Database URL environment variable
 
@@ -1687,16 +1680,11 @@ GROQ_MODEL=llama-3.1-8b-instant
 GROQ_BASE_URL=https://api.groq.com/openai/v1
 REQUEST_TIMEOUT=60
 
-# Caixa / Hub banking (bank_settings.py)
-CAIXA_CLIENT_ID=...
-CAIXA_CLIENT_SECRET=...
-HUB_OAUTH_BASE=https://...
-
-# Stripe (stripe_config.py / stripe_settings.py)
+# Stripe (stripe_settings.py)
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_PUBLISHABLE_KEY=pk_test_...
-STRIPE_SUCCESS_URL=http://localhost/banco?success=true
-STRIPE_CANCEL_URL=http://localhost/banco?cancelled=true
+STRIPE_SUCCESS_URL=http://localhost/banco?stripe=success&session_id={CHECKOUT_SESSION_ID}
+STRIPE_CANCEL_URL=http://localhost/banco?stripe=cancel
 STRIPE_CURRENCY=eur
 
 # Frontend API base URL (injected at build time via Vite)
