@@ -16,12 +16,14 @@ import {
 import { apiFetch } from '../api/http.js';
 import { useTheme } from '../context/ThemeContext.jsx';
 import PropTypes from 'prop-types';
+import i18n from '../i18n.js';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Title, Tooltip, Legend);
 
 function eur(n) {
   const v = Number(n || 0);
-  return v.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 });
+  const locale = i18n.language === 'en' ? 'en-US' : 'es-ES';
+  return v.toLocaleString(locale, { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 });
 }
 function ymKey(d) {
   const dt = new Date(d);
@@ -33,7 +35,8 @@ function monthLabelShort(index0, months) {
 function fmtDate(d) {
   const dt = new Date(d);
   if (Number.isNaN(dt.getTime())) return 'â€”';
-  return dt.toLocaleDateString('es-ES');
+  const locale = i18n.language === 'en' ? 'en-US' : 'es-ES';
+  return dt.toLocaleDateString(locale);
 }
 
 export default function Dashboard() {
@@ -71,9 +74,10 @@ export default function Dashboard() {
   const clientes    = cliQuery.data   ?? [];
   const incidencias = incQuery.data   ?? [];
 
-  const loading    = movsQuery.isLoading || albQuery.isLoading || cliQuery.isLoading;
-  const refreshing = (movsQuery.isFetching || albQuery.isFetching || cliQuery.isFetching) && !loading;
-  const err        = movsQuery.error?.message || albQuery.error?.message || cliQuery.error?.message || null;
+  const queries    = [movsQuery, albQuery, cliQuery];
+  const loading    = queries.some(q => q.isLoading);
+  const refreshing = queries.some(q => q.isFetching) && !loading;
+  const err        = queries.map(q => q.error?.message).find(Boolean) || null;
   const clientesMap = useMemo(() => {
     const m = new Map();
     (clientes || []).forEach(c => m.set(c.id, c));
@@ -425,21 +429,7 @@ export default function Dashboard() {
           </div>
           <div className="bg-white p-4 rounded-xl shadow-sm">
             <h3 className="mb-3 text-base font-semibold">{t('dashboard.topClients')}</h3>
-            {loading ? (
-              <div className="h-44 rounded-lg bg-gray-100 animate-pulse" />
-            ) : topClientes.length === 0 ? (
-              <p className="text-sm text-gray-500 py-2">{t('common.noResults')}</p>
-            ) : (
-              <ol className="flex flex-col gap-3 mt-2">
-                {topClientes.map(({ client, total }, i) => (
-                  <li key={i} className="flex items-center gap-3">
-                    <span className="w-6 h-6 rounded-full bg-gray-100 text-xs font-bold flex items-center justify-center text-gray-600 shrink-0">{i + 1}</span>
-                    <span className="text-sm text-gray-700 truncate flex-1">{client ? `${client.name} ${client.surnames}` : `Cliente #${i + 1}`}</span>
-                    <span className="text-sm font-semibold tabular-nums shrink-0 text-gray-900">{eur(total)}</span>
-                  </li>
-                ))}
-              </ol>
-            )}
+            <TopClientsList loading={loading} clients={topClientes} />
           </div>
         </div>
       )}
@@ -449,7 +439,7 @@ export default function Dashboard() {
         <div className="flex items-center justify-between gap-3 mb-3">
           <h3 className="text-base font-semibold">{t('dashboard.recentMovements')}</h3>
           <a
-            href="/movimientos"
+            href="/banco"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg btn-accent text-sm font-medium transition-colors"
           >
             {t('dashboard.viewAllMovements')}
@@ -466,22 +456,7 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {loading && (
-                <tr><td colSpan={4} className="p-3 text-sm text-gray-500">{t('common.loading')}</td></tr>
-              )}
-              {!loading && ultimosMovs.length === 0 && (
-                <tr><td colSpan={4} className="p-3 text-sm text-gray-500">{t('dashboard.noMovements')}</td></tr>
-              )}
-              {!loading && ultimosMovs.map(m => (
-                <Row
-                  key={m.id}
-                  fecha={fmtDate(m.date)}
-                  tipo={m.type === 'INGRESO' ? t('dashboard.incomeType') : t('dashboard.expenseType')}
-                  ingreso={m.type === 'INGRESO'}
-                  desc={m.description}
-                  monto={eur(m.amount)}
-                />
-              ))}
+              <RecentMovementsBody loading={loading} rows={ultimosMovs} />
             </tbody>
           </table>
         </div>
@@ -571,6 +546,57 @@ IncidenciasBody.propTypes = {
   incidencias: PropTypes.array.isRequired,
 };
 
+function RecentMovementsBody({ loading, rows }) {
+  const { t } = useTranslation();
+  if (loading) {
+    return <tr><td colSpan={4} className="p-3 text-sm text-gray-500">{t('common.loading')}</td></tr>;
+  }
+  if (rows.length === 0) {
+    return <tr><td colSpan={4} className="p-3 text-sm text-gray-500">{t('dashboard.noMovements')}</td></tr>;
+  }
+  return rows.map(m => (
+    <Row
+      key={m.id}
+      fecha={fmtDate(m.date)}
+      tipo={m.type === 'INGRESO' ? t('dashboard.incomeType') : t('dashboard.expenseType')}
+      ingreso={m.type === 'INGRESO'}
+      desc={m.description}
+      monto={eur(m.amount)}
+    />
+  ));
+}
+
+RecentMovementsBody.propTypes = {
+  loading: PropTypes.bool.isRequired,
+  rows: PropTypes.array.isRequired,
+};
+
+function TopClientsList({ loading, clients }) {
+  const { t } = useTranslation();
+  if (loading) {
+    return <div className="h-44 rounded-lg bg-gray-100 animate-pulse" />;
+  }
+  if (clients.length === 0) {
+    return <p className="text-sm text-gray-500 py-2">{t('common.noResults')}</p>;
+  }
+  return (
+    <ol className="flex flex-col gap-3 mt-2">
+      {clients.map(({ client, total }, i) => (
+        <li key={client?.id ?? `rank-${i}`} className="flex items-center gap-3">
+          <span className="w-6 h-6 rounded-full bg-gray-100 text-xs font-bold flex items-center justify-center text-gray-600 shrink-0">{i + 1}</span>
+          <span className="text-sm text-gray-700 truncate flex-1">{client ? `${client.name} ${client.surnames}` : `Cliente #${i + 1}`}</span>
+          <span className="text-sm font-semibold tabular-nums shrink-0 text-gray-900">{eur(total)}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+TopClientsList.propTypes = {
+  loading: PropTypes.bool.isRequired,
+  clients: PropTypes.array.isRequired,
+};
+
 function TablaPedidos({ rows, clientesMap }) {
   const { t } = useTranslation();
   return (
@@ -596,11 +622,11 @@ function TablaPedidos({ rows, clientesMap }) {
                 key={a.id}
                 className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
                 onClick={() => { try { localStorage.setItem('albaran_open_id', String(a.id)); } catch {} window.location.href = '/albaranes'; }}
-                title={`Ir al albarÃ¡n #${a.id}`}
+                title={t('dashboard.goToAlbaranTitle', { id: a.id })}
               >
                 <td className="p-2">#{a.id}</td>
                 <td className="p-2">{fmtDate(a.date)}</td>
-                <td className="p-2">{c ? `${c.name} ${c.surnames}` : `Cliente #${a.customer_id}`}</td>
+                <td className="p-2">{c ? `${c.name} ${c.surnames}` : t('dashboard.clientFallback', { id: a.customer_id })}</td>
                 <td className="p-2">{c?.dni || 'â€”'}</td>
                 <td className="p-2">{eur(a.total)}</td>
               </tr>
@@ -648,7 +674,7 @@ function StatCard({ title, value, delta, deltaLabel, hint, invertColors = false,
       const progress = Math.min(elapsed / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
       const current = target * eased;
-      setDisplayed(value.replace(numMatch[0], current.toLocaleString('es-ES', { maximumFractionDigits: 2 })));
+      setDisplayed(value.replace(numMatch[0], current.toLocaleString(i18n.language === 'en' ? 'en-US' : 'es-ES', { maximumFractionDigits: 2 })));
       if (progress < 1) requestAnimationFrame(tick);
       else setDisplayed(value);
     };

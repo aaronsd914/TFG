@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from datetime import datetime
 from typing import Annotated, Optional
 
@@ -20,6 +21,23 @@ from backend.app.stripe_settings import (
     STRIPE_SECRET_KEY,
     STRIPE_SUCCESS_URL,
 )
+
+_FRONTEND_URL = os.environ.get("FRONTEND_URL", "").rstrip("/")
+
+
+def _success_url() -> str:
+    if _FRONTEND_URL:
+        return (
+            f"{_FRONTEND_URL}/banco?stripe=success&session_id="
+            + "{CHECKOUT_SESSION_ID}"
+        )
+    return STRIPE_SUCCESS_URL
+
+
+def _cancel_url() -> str:
+    if _FRONTEND_URL:
+        return f"{_FRONTEND_URL}/banco?stripe=cancel"
+    return STRIPE_CANCEL_URL
 
 
 log = logging.getLogger("stripe")
@@ -48,8 +66,8 @@ def stripe_status():
         "currency": STRIPE_CURRENCY,
         # publishable se puede exponer
         "publishable_key": STRIPE_PUBLISHABLE_KEY or None,
-        "success_url": STRIPE_SUCCESS_URL,
-        "cancel_url": STRIPE_CANCEL_URL,
+        "success_url": _success_url(),
+        "cancel_url": _cancel_url(),
     }
 
 
@@ -98,8 +116,8 @@ def create_checkout(payload: CheckoutIn):
                     "quantity": 1,
                 }
             ],
-            success_url=STRIPE_SUCCESS_URL,
-            cancel_url=STRIPE_CANCEL_URL,
+            success_url=_success_url(),
+            cancel_url=_cancel_url(),
             metadata=meta,
         )
     except Exception as e:

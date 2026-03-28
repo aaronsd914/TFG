@@ -41,8 +41,8 @@ describe('Sidebar', () => {
       'Nueva venta',
       'Clientes',
       'Albaranes',
+      'Incidencias',
       'Transporte',
-      'Movimientos',
       'Productos',
       'Banco',
       'Tendencias',
@@ -80,7 +80,7 @@ describe('Sidebar', () => {
   it('tiene exactamente 12 enlaces de navegación', () => {
     renderSidebar();
     const links = screen.getAllByRole('link');
-    expect(links).toHaveLength(12);
+    expect(links).toHaveLength(10);
   });
 
   it('muestra el botón de Cerrar sesión', () => {

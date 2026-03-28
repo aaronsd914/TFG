@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 function getPages(current, total) {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
@@ -16,6 +17,7 @@ function getPages(current, total) {
  * onChange: (newPage: number) => void
  */
 export function Pagination({ page, total, pageSize = 20, onChange }) {
+  const { t } = useTranslation();
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   if (totalPages <= 1) return null;
 
@@ -28,12 +30,12 @@ export function Pagination({ page, total, pageSize = 20, onChange }) {
   const btnDisabled = 'opacity-40 cursor-not-allowed bg-white border-gray-200 text-gray-400';
 
   return (
-    <nav className="flex items-center justify-center gap-1 mt-4 flex-wrap" aria-label="Paginación">
+    <nav className="flex items-center justify-center gap-1 mt-4 flex-wrap" aria-label={t('common.pagination')}>
       <button
         className={`${btn} ${page <= 1 ? btnDisabled : btnNormal}`}
         disabled={page <= 1}
         onClick={() => onChange(page - 1)}
-        aria-label="Anterior"
+        aria-label={t('common.prevPage')}
         type="button"
       >
         ←
@@ -61,7 +63,7 @@ export function Pagination({ page, total, pageSize = 20, onChange }) {
         className={`${btn} ${page >= totalPages ? btnDisabled : btnNormal}`}
         disabled={page >= totalPages}
         onClick={() => onChange(page + 1)}
-        aria-label="Siguiente"
+        aria-label={t('common.nextPage')}
         type="button"
       >
         →

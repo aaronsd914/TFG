@@ -21,8 +21,6 @@ const Tendencias         = lazy(() => import('./components/Tendencias.jsx'));
 const ProductosPage      = lazy(() => import('./components/ProductosPage.jsx'));
 const BancoPage          = lazy(() => import('./components/BancoPage.jsx'));
 const TransportePage     = lazy(() => import('./components/TransportePage.jsx'));
-const MovimientosPage    = lazy(() => import('./components/MovimientosPage.jsx'));
-const PerfilPage         = lazy(() => import('./components/PerfilPage.jsx'));
 const PersonalizacionPage = lazy(() => import('./components/PersonalizacionPage.jsx'));
 const IncidenciasPage    = lazy(() => import('./components/IncidenciasPage.jsx'));
 
@@ -52,11 +50,9 @@ const router = createBrowserRouter([
       { path: 'clientes', element: S(<ClientesPage />) },
       { path: 'albaranes', element: S(<AlbaranesPage />) },
       { path: 'transporte', element: S(<TransportePage />) },
-      { path: 'movimientos', element: S(<MovimientosPage />) },
       { path: 'tendencias', element: S(<Tendencias />) },
       { path: 'productos', element: S(<ProductosPage />) },
       { path: 'banco', element: S(<BancoPage />) },
-      { path: 'perfil', element: S(<PerfilPage />) },
       { path: 'personalizacion', element: S(<PersonalizacionPage />) },
       { path: 'incidencias', element: S(<IncidenciasPage />) },
     ],

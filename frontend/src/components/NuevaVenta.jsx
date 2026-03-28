@@ -187,7 +187,7 @@ export default function NuevaVenta() {
           data = await trySearch.json();
         } else {
           const resAll = await fetch(`${API_URL}clientes/get`);
-          if (!resAll.ok) throw new Error('No se pudo cargar clientes.');
+          if (!resAll.ok) throw new Error(t('newSale.errLoadClients'));
           const all = await resAll.json();
           const q = clientQuery.trim().toLowerCase();
           data = all.filter(
@@ -696,7 +696,7 @@ export default function NuevaVenta() {
                       setClienteDni(e.target.value);
                       clearError('clienteDni');
                     }}
-                    placeholder="00000000X"
+                    placeholder={t('newSale.placeholderDNI')}
                     error={Boolean(errors.clienteDni)}
                   />
 
@@ -754,7 +754,7 @@ export default function NuevaVenta() {
                       setNumeroVivienda(e.target.value);
                       clearError('numeroVivienda');
                     }}
-                    placeholder="12B / s/n"
+                    placeholder={t('newSale.placeholderNumber')}
                     error={Boolean(errors.numeroVivienda)}
                   />
 
@@ -762,7 +762,7 @@ export default function NuevaVenta() {
                     label={t('newSale.fieldFloor')}
                     value={pisoPortal}
                     onChange={(e) => setPisoPortal(e.target.value)}
-                    placeholder="2A"
+                    placeholder={t('newSale.placeholderFloor')}
                   />
                 </div>
 

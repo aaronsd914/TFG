@@ -3,18 +3,21 @@ import { useTranslation } from 'react-i18next';
 import { sileo } from 'sileo';
 
 import { API_URL } from '../config.js';
+import i18n from '../i18n.js';
 const LS_KEY = 'tfg_transportes_camiones_extra';
 const LS_KEY_HIDDEN = 'tfg_transportes_camiones_hidden';
 const LS_KEY_ACCEPTED = 'tfg_transportes_camiones_accepted';
 
 function eur(n) {
   const v = Number(n || 0);
-  return v.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 });
+  const locale = i18n.language === 'en' ? 'en-US' : 'es-ES';
+  return v.toLocaleString(locale, { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 });
 }
 function fmtDate(d) {
   const dt = new Date(d);
   if (Number.isNaN(dt.getTime())) return '—';
-  return dt.toLocaleDateString('es-ES');
+  const locale = i18n.language === 'en' ? 'en-US' : 'es-ES';
+  return dt.toLocaleDateString(locale);
 }
 function sumTotal(albaranes) {
   return Math.round((albaranes || []).reduce((acc, a) => acc + Number(a.total || 0), 0) * 100) / 100;
@@ -65,6 +68,7 @@ function DropZoneHeader({ title, subtitle, right, isOver }) {
 }
 
 function ModalCenter({ isOpen, onClose, children, maxWidth = 'max-w-xl' }) {
+  const { t } = useTranslation();
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-50">
@@ -75,7 +79,7 @@ function ModalCenter({ isOpen, onClose, children, maxWidth = 'max-w-xl' }) {
             type="button"
             onClick={onClose}
             className="absolute top-3 right-3 p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-500 dark:hover:text-gray-300 dark:hover:bg-gray-700"
-            aria-label="Cerrar"
+            aria-label={t('common.close')}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -241,8 +245,8 @@ export default function TransportePage() {
       setErr(e.message);
 
       sileo.error({
-        title: 'Error cargando Transporte',
-        description: e?.message || 'Error desconocido',
+        title: t('transport.loadError'),
+        description: e?.message || t('common.unknownError'),
       });
     } finally {
       setLoading(false);
@@ -263,7 +267,7 @@ export default function TransportePage() {
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
         sileo.error({
-          title: 'No se pudo asignar',
+          title: t('transport.assignError'),
           description: j.detail || res.statusText,
         });
         return;
@@ -274,13 +278,13 @@ export default function TransportePage() {
       await fetchAll();
 
       sileo.success({
-        title: `Asignado al camión ${camion_id}`,
-        description: `Albarán #${albaran_id} añadido a la ruta.`,
+        title: t('transport.assignSuccess', { id: camion_id }),
+        description: t('transport.assignSuccessDesc', { albaran: albaran_id }),
       });
     } catch (e) {
       sileo.error({
-        title: 'Error de red',
-        description: e?.message || 'No se pudo conectar con el servidor.',
+        title: t('common.networkError'),
+        description: e?.message || t('common.networkErrorDesc'),
       });
     } finally {
       setProcessing(false);
@@ -298,7 +302,7 @@ export default function TransportePage() {
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
         sileo.error({
-          title: 'No se pudo volver a Almacén',
+          title: t('transport.returnError'),
           description: j.detail || res.statusText,
         });
         return;
@@ -306,13 +310,13 @@ export default function TransportePage() {
       await fetchAll();
 
       sileo.success({
-        title: 'Devuelto a Almacén',
-        description: `Albarán #${albaran_id} vuelto a ALMACÉN.`,
+        title: t('transport.returnWarehouse'),
+        description: t('transport.returnWarehouseDesc', { albaran: albaran_id }),
       });
     } catch (e) {
       sileo.error({
-        title: 'Error de red',
-        description: e?.message || 'No se pudo conectar con el servidor.',
+        title: t('common.networkError'),
+        description: e?.message || t('common.networkErrorDesc'),
       });
     } finally {
       setProcessing(false);
@@ -330,7 +334,7 @@ export default function TransportePage() {
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
         sileo.error({
-          title: 'No se pudo poner en ruta',
+          title: t('transport.toRouteError'),
           description: j.detail || res.statusText,
         });
         return;
@@ -338,13 +342,13 @@ export default function TransportePage() {
       await fetchAll();
 
       sileo.success({
-        title: 'En ruta',
-        description: `Albarán #${albaran_id} movido a “En ruta (pendiente camión)”.`,
+        title: t('transport.toRouteSuccess'),
+        description: t('transport.toRouteSuccessDesc', { albaran: albaran_id }),
       });
     } catch (e) {
       sileo.error({
-        title: 'Error de red',
-        description: e?.message || 'No se pudo conectar con el servidor.',
+        title: t('common.networkError'),
+        description: e?.message || t('common.networkErrorDesc'),
       });
     } finally {
       setProcessing(false);
@@ -362,7 +366,7 @@ export default function TransportePage() {
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
         sileo.error({
-          title: 'No se pudo marcar como entregado',
+          title: t('transport.deliveredError'),
           description: j.detail || res.statusText,
         });
         return;
@@ -370,13 +374,13 @@ export default function TransportePage() {
       await fetchAll();
 
       sileo.success({
-        title: 'Entregado',
-        description: `Albarán #${id} marcado como ENTREGADO.`,
+        title: t('transport.deliveredSuccess'),
+        description: t('transport.deliveredSuccessDesc', { albaran: id }),
       });
     } catch (e) {
       sileo.error({
-        title: 'Error de red',
-        description: e?.message || 'No se pudo conectar con el servidor.',
+        title: t('common.networkError'),
+        description: e?.message || t('common.networkErrorDesc'),
       });
     } finally {
       setProcessing(false);
@@ -397,12 +401,12 @@ export default function TransportePage() {
       try {
         const j = JSON.parse(txt);
         sileo.error({
-          title: 'No se pudo descargar la factura',
+          title: t('transport.invoiceError'),
           description: j.detail || res.statusText,
         });
       } catch {
         sileo.error({
-          title: 'No se pudo descargar la factura',
+          title: t('transport.invoiceError'),
           description: txt || res.statusText,
         });
       }
@@ -432,13 +436,13 @@ export default function TransportePage() {
       }));
 
       sileo.success({
-        title: `Ruta aceptada (Camión ${camion_id})`,
-        description: `Gasto registrado: ${eur(liq.importe)} (7%) · Factura descargada.`,
+        title: t('transport.acceptSuccess', { id: camion_id }),
+        description: t('transport.acceptSuccessDesc', { amount: eur(liq.importe) }),
       });
     } catch (e) {
       sileo.error({
-        title: 'No se pudo aceptar la ruta',
-        description: e?.message || 'Error desconocido',
+        title: t('transport.acceptError'),
+        description: e?.message || t('common.unknownError'),
       });
     } finally {
       setProcessing(false);
@@ -511,8 +515,8 @@ export default function TransportePage() {
     const n = Number(nuevoCamion);
     if (!Number.isInteger(n) || n <= 0) {
       sileo.warning({
-        title: 'Número inválido',
-        description: 'El camión debe ser un número entero mayor que 0.',
+        title: t('transport.invalidNumber'),
+        description: t('transport.invalidNumberDesc'),
       });
       return;
     }
@@ -526,8 +530,8 @@ export default function TransportePage() {
     setNuevoCamion('');
 
     sileo.success({
-      title: 'Camión añadido',
-      description: `Camión ${n} creado.`,
+      title: t('transport.truckAdded'),
+      description: t('transport.truckAddedDesc', { id: n }),
     });
   }
   function quitarCamion(cid) {
@@ -540,8 +544,8 @@ export default function TransportePage() {
     });
 
     sileo.success({
-      title: 'Camión eliminado',
-      description: `Camión ${cid} eliminado.`,
+      title: t('transport.truckRemoved'),
+      description: t('transport.truckRemovedDesc', { id: cid }),
     });
   }
 

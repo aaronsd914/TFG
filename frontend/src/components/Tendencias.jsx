@@ -1,5 +1,6 @@
 ﻿import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import PropTypes from "prop-types";
 import { sileo } from "sileo";
 import {
   Chart as ChartJS,
@@ -14,12 +15,14 @@ import {
 } from "chart.js";
 import { Bar, Line } from "react-chartjs-2";
 import { API_URL } from '../config.js';
+import i18n from '../i18n.js';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
 
 function eur(n) {
   const v = Number(n || 0);
-  return v.toLocaleString("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 2 });
+  const locale = i18n.language === 'en' ? 'en-US' : 'es-ES';
+  return v.toLocaleString(locale, { style: "currency", currency: "EUR", maximumFractionDigits: 2 });
 }
 function isoDate(d) {
   const dt = new Date(d);
@@ -48,7 +51,7 @@ export default function TendenciasPage() {
 
   // --- Comparativa ---
   const [compareEnabled, setCompareEnabled] = useState(false);
-  const [_compareLoading, setCompareLoading] = useState(false);
+  const [compareLoading, setCompareLoading] = useState(false); // eslint-disable-line no-unused-vars
   const [compareErr, setCompareErr] = useState(null);
   const [compare, setCompare] = useState(null);
   const compareAbortRef = useRef(null);
@@ -56,6 +59,9 @@ export default function TendenciasPage() {
   // --- Predicción ---
   const [prediction, setPrediction] = useState(null);
   const [predLoading, setPredLoading] = useState(false);
+
+  // --- Panel colapsable ---
+  const [rangeOpen, setRangeOpen] = useState(false);
 
   // --- Chat ---
   const [messages, setMessages] = useState(() => [
@@ -80,7 +86,7 @@ export default function TendenciasPage() {
     summaryAbortRef.current = controller;
 
     const toastId = "tendencias-summary";
-    const rangeLabel = `${range.from || "inicio"} → ${range.to || "hoy"}`;
+    const rangeLabel = `${range.from || t('trends.rangeStart')} → ${range.to || t('trends.rangeEnd')}`;
 
     const load = async () => {
       setLoading(true);
@@ -91,8 +97,8 @@ export default function TendenciasPage() {
         sileo.show({
           id: toastId,
           state: "loading",
-          title: "Cargando tendencias…",
-          description: `Rango: ${rangeLabel}`,
+          title: t('trends.loadingToast'),
+          description: t('trends.loadingToastDesc', { range: rangeLabel }),
           duration: null,
         });
       } catch {}
@@ -111,8 +117,8 @@ export default function TendenciasPage() {
         try {
           sileo.success({
             id: toastId,
-            title: "Tendencias actualizadas",
-            description: `Rango: ${rangeLabel}`,
+            title: t('trends.updatedToast'),
+            description: t('trends.loadingToastDesc', { range: rangeLabel }),
             duration: 1400,
           });
         } catch {}
@@ -130,7 +136,7 @@ export default function TendenciasPage() {
         try {
           sileo.error({
             id: toastId,
-            title: "Error cargando tendencias",
+            title: t('trends.errorToast'),
             description: e?.message || String(e),
           });
         } catch {}
@@ -170,7 +176,7 @@ export default function TendenciasPage() {
       compareAbortRef.current = controller;
 
       const toastId = "tendencias-compare";
-      const rangeLabel = `${range.from || "inicio"} → ${range.to || "hoy"}`;
+      const rangeLabel = `${range.from || t('trends.rangeStart')} → ${range.to || t('trends.rangeEnd')}`;
 
       setCompareLoading(true);
       setCompareErr(null);
@@ -180,8 +186,8 @@ export default function TendenciasPage() {
         sileo.show({
           id: toastId,
           state: "loading",
-          title: "Cargando comparativa…",
-          description: `Rango: ${rangeLabel}`,
+          title: t('trends.compareLoadingToast'),
+          description: t('trends.loadingToastDesc', { range: rangeLabel }),
           duration: null,
         });
       } catch {}
@@ -200,8 +206,8 @@ export default function TendenciasPage() {
         try {
           sileo.success({
             id: toastId,
-            title: "Comparativa lista",
-            description: `Rango: ${rangeLabel}`,
+            title: t('trends.compareUpdatedToast'),
+            description: t('trends.loadingToastDesc', { range: rangeLabel }),
             duration: 1400,
           });
         } catch {}
@@ -218,7 +224,7 @@ export default function TendenciasPage() {
         try {
           sileo.error({
             id: toastId,
-            title: "Error cargando comparativa",
+            title: t('trends.compareErrorToast'),
             description: e?.message || String(e),
           });
         } catch {}
@@ -264,9 +270,15 @@ export default function TendenciasPage() {
   const delta = compare?.delta || null;
   const aiCompare = compare?.ai_compare_report || "";
 
+  const fmtDMY = (iso) => {
+    if (!iso) return '';
+    const [y, m, d] = iso.split('-');
+    return `${d}-${m}-${y}`;
+  };
+
   const titleRange = useMemo(() => {
     if (!metrics?.range) return "";
-    return `${metrics.range.from} → ${metrics.range.to}`;
+    return `${fmtDMY(metrics.range.from)} → ${fmtDMY(metrics.range.to)}`;
   }, [metrics?.range]);
 
   const lastDays = (days) => {
@@ -278,12 +290,12 @@ export default function TendenciasPage() {
   };
 
   const exportPdf = async (includeCompare) => {
-    const toastId = "tendencias-export";
+    const toastId = includeCompare ? "tendencias-export-full" : "tendencias-export-basic";
     try {
       sileo.show({
         id: toastId,
         state: "loading",
-        title: includeCompare ? "Generando PDF con comparativa…" : "Generando PDF de tendencias…",
+        title: includeCompare ? t('trends.exportFullLoading') : t('trends.exportBasicLoading'),
         duration: null,
       });
     } catch {}
@@ -312,8 +324,8 @@ export default function TendenciasPage() {
       try {
         sileo.success({
           id: toastId,
-          title: "Descarga iniciada",
-          description: includeCompare ? "PDF con comparativa" : "PDF de tendencias",
+          title: includeCompare ? t('trends.exportFullSuccess') : t('trends.exportBasicSuccess'),
+          description: includeCompare ? t('trends.exportFullDesc') : t('trends.exportBasicDesc'),
           duration: 1600,
         });
       } catch {}
@@ -321,7 +333,7 @@ export default function TendenciasPage() {
       try {
         sileo.error({
           id: toastId,
-          title: "No se pudo exportar",
+          title: includeCompare ? t('trends.exportFullError') : t('trends.exportBasicError'),
           description: e?.message || String(e),
         });
       } catch {}
@@ -349,7 +361,7 @@ export default function TendenciasPage() {
       sileo.show({
         id: toastId,
         state: "loading",
-        title: "IA respondiendo…",
+        title: t('trends.aiRespondingToast'),
         duration: null,
       });
     } catch {}
@@ -368,7 +380,7 @@ export default function TendenciasPage() {
         date_to: range.to || null,
         messages: trimmed(
           [...messages, userMsg]
-            .filter((x) => x.role === "user" || x.role === "assistant" || x.role === "system")
+            .filter((x) => x.role === "user" || x.role === "assistant")
             .map((x) => ({ role: x.role, content: x.content }))
         ),
       };
@@ -383,7 +395,7 @@ export default function TendenciasPage() {
 
       setMessages((m) => [
         ...m,
-        { id: crypto.randomUUID(), role: "assistant", content: json.answer || "(sin respuesta)" },
+        { id: crypto.randomUUID(), role: "assistant", content: json.answer || t('trends.noAnswer') },
       ]);
       ok = true;
     } catch (e2) {
@@ -395,7 +407,7 @@ export default function TendenciasPage() {
       try {
         sileo.error({
           id: toastId,
-          title: "Error en la IA",
+          title: t('trends.aiErrorToast'),
           description: e2?.message || String(e2),
         });
       } catch {}
@@ -412,95 +424,117 @@ export default function TendenciasPage() {
   return (
     <div className="p-3 md:p-6 space-y-4">
       {/* HEADER */}
-      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">{t('trends.title')}</h1>
-          <p className="text-sm text-gray-600">{t('trends.subtitle')}</p>
-        </div>
-
-        <div className="flex flex-wrap items-end gap-2">
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <label className="block text-xs text-gray-600">{t('trends.from')}</label>
-            <input
-              type="date"
-              className="border rounded-2xl px-3 py-2 bg-white"
-              value={range.from}
-              onChange={(e) => setRange((r) => ({ ...r, from: e.target.value }))}
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-gray-600">{t('trends.to')}</label>
-            <input
-              type="date"
-              className="border rounded-2xl px-3 py-2 bg-white"
-              value={range.to}
-              onChange={(e) => setRange((r) => ({ ...r, to: e.target.value }))}
-            />
+            <h1 className="text-2xl font-semibold">{t('trends.title')}</h1>
+            <p className="text-sm text-gray-600">{t('trends.subtitle')}</p>
           </div>
 
-          <button className="text-sm px-3 py-2 rounded-2xl border bg-white hover:bg-gray-50" onClick={() => lastDays(7)}>
-            {t('trends.days7')}
-          </button>
-          <button className="text-sm px-3 py-2 rounded-2xl border bg-white hover:bg-gray-50" onClick={() => lastDays(30)}>
-            {t('trends.days30')}
-          </button>
-          <button className="text-sm px-3 py-2 rounded-2xl border bg-white hover:bg-gray-50" onClick={() => lastDays(90)}>
-            {t('trends.days90')}
-          </button>
-
-          <div className="flex items-center gap-2 ml-2">
-            <input
-              id="compare"
-              type="checkbox"
-              checked={compareEnabled}
-              onChange={(e) => setCompareEnabled(e.target.checked)}
-            />
-            <label htmlFor="compare" className="text-sm text-gray-700">
-              {t('trends.comparePrev')}
-            </label>
-          </div>
-
-          <div className="flex gap-2 ml-2">
+          <div className="flex items-center gap-3">
+            <div className="rounded-2xl border bg-white px-4 py-2" data-testid="range-display">
+              <span className="text-sm text-gray-600">{t('trends.range')}: </span>
+              <span className="text-sm font-semibold">{titleRange || '—'}</span>
+            </div>
             <button
-              onClick={() => exportPdf(true)}
-              title={t('trends.exportTitle')}
+              onClick={() => setRangeOpen((o) => !o)}
               className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-2xl border bg-white hover:bg-gray-50"
+              aria-expanded={rangeOpen}
+              aria-label={t('trends.togglePanel')}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+              <svg xmlns="http://www.w3.org/2000/svg" className={"w-4 h-4 transition-transform " + (rangeOpen ? "rotate-180" : "")} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
               </svg>
-              {t('trends.exportAnalysis')}
-            </button>
-            <button
-              onClick={() => exportPdf(false)}
-              title={t('trends.exportCompTitle')}
-              className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-2xl btn-accent"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
-              </svg>
-              {t('trends.exportWithComparison')}
+              {t('trends.togglePanel')}
             </button>
           </div>
         </div>
+
+        {rangeOpen && (
+          <div className="rounded-2xl border bg-white p-4 flex flex-wrap items-end gap-3" data-testid="range-panel">
+            <div>
+              <label className="block text-xs text-gray-600">{t('trends.from')}</label>
+              <input
+                type="date"
+                className="border rounded-2xl px-3 py-2 bg-white"
+                value={range.from}
+                onChange={(e) => setRange((r) => ({ ...r, from: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-600">{t('trends.to')}</label>
+              <input
+                type="date"
+                className="border rounded-2xl px-3 py-2 bg-white"
+                value={range.to}
+                onChange={(e) => setRange((r) => ({ ...r, to: e.target.value }))}
+              />
+            </div>
+
+            <button className="text-sm px-3 py-2 rounded-2xl border bg-white hover:bg-gray-50" onClick={() => lastDays(7)}>
+              {t('trends.days7')}
+            </button>
+            <button className="text-sm px-3 py-2 rounded-2xl border bg-white hover:bg-gray-50" onClick={() => lastDays(30)}>
+              {t('trends.days30')}
+            </button>
+            <button className="text-sm px-3 py-2 rounded-2xl border bg-white hover:bg-gray-50" onClick={() => lastDays(90)}>
+              {t('trends.days90')}
+            </button>
+
+            <div className="flex items-center gap-3 ml-2">
+              <button
+                role="switch"
+                aria-checked={compareEnabled}
+                onClick={() => setCompareEnabled((v) => !v)}
+                className={"relative inline-flex h-6 w-11 items-center rounded-full transition-colors " + (compareEnabled ? "bg-green-500" : "bg-gray-300")}
+              >
+                <span className={"inline-block h-4 w-4 rounded-full bg-white transition-transform " + (compareEnabled ? "translate-x-6" : "translate-x-1")} />
+              </button>
+              <div className="text-sm">
+                <span className="font-medium text-gray-700">{compareEnabled ? t('trends.compareOn') : t('trends.compareOff')}</span>
+                <span className="block text-xs text-gray-500">{t('trends.compareDesc')}</span>
+              </div>
+            </div>
+
+            <div className="flex gap-2 ml-auto">
+              <button
+                onClick={() => exportPdf(false)}
+                title={t('trends.exportBasicTitle')}
+                className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-2xl border bg-white hover:bg-gray-50"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+                </svg>
+                {t('trends.exportBasic')}
+              </button>
+              <button
+                onClick={() => exportPdf(true)}
+                title={t('trends.exportFullTitle')}
+                className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-2xl btn-accent"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+                </svg>
+                {t('trends.exportFull')}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* BODY */}
       <div className="space-y-4">
-          {loading ? (
+          {loading && (
             <div className="rounded-2xl border bg-white p-4">{t('trends.loading')}</div>
-          ) : err ? (
+          )}
+          {!loading && err && (
             <div className="rounded-2xl border bg-white p-4">
               <div className="text-red-700 font-semibold">{t('trends.error')}</div>
               <div className="text-red-700 whitespace-pre-wrap">{err}</div>
             </div>
-          ) : (
+          )}
+          {!loading && !err && (
             <>
-              <div className="rounded-2xl border bg-white p-4">
-                <div className="text-sm text-gray-600">{t('trends.range')}</div>
-                <div className="text-lg font-semibold">{titleRange}</div>
-              </div>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
                 <KPI label={t('trends.kpiIncome')} value={eur(avg.revenue)} />
                 <KPI label={t('trends.kpiOrders')} value={String(avg.orders)} />
@@ -509,43 +543,7 @@ export default function TendenciasPage() {
               </div>
 
               {compareEnabled && (
-                <div className="rounded-2xl border bg-white p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold">{t('trends.comparison')}</h3>
-                  </div>
-
-                  {compareErr ? (
-                    <div className="text-red-700 whitespace-pre-wrap">{compareErr}</div>
-                  ) : delta ? (
-                    <>
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b">
-                            <th className="text-left p-2">{t('trends.colMetric')}</th>
-                            <th className="text-right p-2">{t('trends.colCurrent')}</th>
-                            <th className="text-right p-2">{t('trends.colPrev')}</th>
-                            <th className="text-right p-2">Δ</th>
-                            <th className="text-right p-2">%</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <RowDelta label={t('trends.kpiIncome')} d={delta.revenue} money />
-                          <RowDelta label={t('trends.kpiOrders')} d={delta.orders} />
-                          <RowDelta label={t('trends.kpiAOV')} d={delta.aov} money />
-                        </tbody>
-                      </table>
-
-                      {aiCompare && (
-                        <div className="mt-3">
-                          <div className="font-semibold mb-1">{t('trends.aiReading')}</div>
-                          <RenderedMessage content={aiCompare} />
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className="text-sm text-gray-600">{t('trends.noCompareData')}</div>
-                  )}
-                </div>
+                <ComparePanel compareErr={compareErr} delta={delta} aiCompare={aiCompare} />
               )}
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -758,14 +756,62 @@ function RenderedMessage({ content }) {
   );
 }
 
+function ComparePanel({ compareErr, delta, aiCompare }) {
+  const { t } = useTranslation();
+  return (
+    <div className="rounded-2xl border bg-white p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold">{t('trends.comparison')}</h3>
+      </div>
+
+      {compareErr && (
+        <div className="text-red-700 whitespace-pre-wrap">{compareErr}</div>
+      )}
+      {!compareErr && delta && (
+        <>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b">
+                <th className="text-left p-2">{t('trends.colMetric')}</th>
+                <th className="text-right p-2">{t('trends.colCurrent')}</th>
+                <th className="text-right p-2">{t('trends.colPrev')}</th>
+                <th className="text-right p-2">Δ</th>
+                <th className="text-right p-2">%</th>
+              </tr>
+            </thead>
+            <tbody>
+              <RowDelta label={t('trends.kpiIncome')} d={delta.revenue} money />
+              <RowDelta label={t('trends.kpiOrders')} d={delta.orders} />
+              <RowDelta label={t('trends.kpiAOV')} d={delta.aov} money />
+            </tbody>
+          </table>
+
+          {aiCompare && (
+            <div className="mt-3">
+              <div className="font-semibold mb-1">{t('trends.aiReading')}</div>
+              <RenderedMessage content={aiCompare} />
+            </div>
+          )}
+        </>
+      )}
+      {!compareErr && !delta && (
+        <div className="text-sm text-gray-600">{t('trends.noCompareData')}</div>
+      )}
+    </div>
+  );
+}
+
+ComparePanel.propTypes = {
+  compareErr: PropTypes.string,
+  delta: PropTypes.object,
+  aiCompare: PropTypes.string,
+};
+
 function ChartBlock({ chart }) {
   const { t } = useTranslation();
-  const type = (chart?.type || "").toLowerCase();
-  const title = chart?.options?.title?.text || chart?.title || "Gráfico";
-
-  // Soportamos config estilo Chart.js: { type, data:{labels,datasets}, options }
-  const data = chart?.data;
-  const options = chart?.options || {};
+  const { type: rawType, title: chartTitle, data, options } = chart || {};
+  const type = (rawType ?? "").toLowerCase();
+  const title = options?.title?.text ?? chartTitle ?? t('trends.chartFallbackTitle');
 
   if (!data || !Array.isArray(data.labels) || !Array.isArray(data.datasets)) {
     return (
@@ -785,6 +831,14 @@ function ChartBlock({ chart }) {
     </div>
   );
 }
+ChartBlock.propTypes = {
+  chart: PropTypes.shape({
+    type: PropTypes.string,
+    title: PropTypes.string,
+    data: PropTypes.object,
+    options: PropTypes.object,
+  }),
+};
 
 function extractCharts(raw) {
   let text = String(raw || "");

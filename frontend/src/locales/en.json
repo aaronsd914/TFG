@@ -14,7 +14,9 @@
     "trends": "Trends",
     "settings": "Settings",
     "incidents": "Incidents",
-    "profile": "Profile"
+    "profile": "Profile",
+    "closeOverlay": "Close sidebar overlay",
+    "openSidebar": "Open sidebar"
   },
   "login": {
     "subtitle": "Management panel",
@@ -60,7 +62,21 @@
     "ready": "Done",
     "search": "Search",
     "edit": "Edit",
-    "confirmDelete": "Confirm deletion"
+    "confirmDelete": "Confirm deletion",
+    "networkError": "Network error",
+    "networkErrorDesc": "Could not connect to the server.",
+    "unknownError": "Unknown error",
+    "unexpectedError": "An unexpected error occurred.",
+    "invalidCredentials": "Invalid credentials",
+    "pagination": "Pagination",
+    "prevPage": "Previous",
+    "nextPage": "Next",
+    "firstPage": "First page",
+    "lastPage": "Last page",
+    "deleteLine": "Delete line",
+    "logo": "Logo",
+    "currentLogo": "Current logo",
+    "remove": "Remove"
   },
   "dashboard": {
     "title": "Dashboard · Store",
@@ -117,7 +133,9 @@
     "noIncidencias": "No active incidents.",
     "viewIncidentsFull": "View all incidents →",
     "topClients": "Top customers",
-    "months": ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+    "months": ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+    "goToAlbaranTitle": "Go to delivery note #{{id}}",
+    "clientFallback": "Client #{{id}}"
   },
   "clients": {
     "title": "Clients",
@@ -164,6 +182,8 @@
     "noLines": "No lines for this delivery note.",
     "registeredCount": "Registered clients:",
     "loadError": "Could not load clients.",
+    "loadDeliveriesError": "Error loading client delivery notes",
+    "loadLinesError": "Error loading delivery note lines",
     "editTitle": "Edit client",
     "editSuccess": "Client updated successfully.",
     "editError": "Could not update the client.",
@@ -269,7 +289,8 @@
     "notifProductDeletedTitle": "🗑️ Product deleted",
     "notifProductDeletedDesc": "\"{{name}}\" has been deleted.",
     "notifDeleteErrorTitle": "⛔ Could not delete",
-    "notifLoadErrorTitle": "❌ Error loading products"
+    "notifLoadErrorTitle": "❌ Error loading products",
+    "priceNegative": "Price (cannot be negative)"
   },
   "movements": {
     "title": "Movements",
@@ -296,7 +317,8 @@
     "egresosSummary": "Expenses",
     "balanceSummary": "Balance",
     "pageSizeLabel": "Show:",
-    "paginationInfo": "{{from}}–{{to}} of {{total}}"
+    "paginationInfo": "{{from}}–{{to}} of {{total}}",
+    "allTypes": "All"
   },
   "albaranes": {
     "title": "Delivery Notes",
@@ -345,6 +367,9 @@
     "noLines": "This delivery note has no lines.",
     "viewClient": "View client →",
     "loadError": "Could not load delivery notes.",
+    "detailLoadError": "Could not load details.",
+    "detailNotAvailable": "Details not available",
+    "detailError": "Error loading details",
     "editTitle": "Edit delivery note",
     "editSuccess": "Delivery note updated successfully.",
     "editError": "Could not update the delivery note.",
@@ -433,7 +458,11 @@
     "errDniFormat": "ID number format is invalid (e.g. 12345678A or X1234567A).",
     "errPhoneFormat": "Phone number can only contain digits.",
     "errPostalFormat": "Post code can only contain numbers.",
-    "errEmailFormat": "Email address format is invalid."
+    "errEmailFormat": "Email address format is invalid.",
+    "errLoadClients": "Could not load clients.",
+    "placeholderDNI": "00000000X",
+    "placeholderNumber": "12B / n/a",
+    "placeholderFloor": "2A"
   },
   "bank": {
     "title": "Bank",
@@ -463,7 +492,9 @@
     "toastCreateError": "Could not create charge",
     "toastRegistered": "Charge registered",
     "toastAlreadyRegistered": "Charge already registered",
-    "toastConfirmError": "Could not confirm payment"
+    "toastConfirmError": "Could not confirm payment",
+    "stripeNoUrl": "Stripe did not return a checkout URL",
+    "movementCreateError": "Could not create movement"
   },
   "profile": {
     "title": "My profile",
@@ -509,13 +540,45 @@
     "uploadLogo": "Upload logo",
     "emailSignature": "Email signature for delivery notes",
     "emailSignatureDesc": "Text appended to the footer of emails sent when delivering a delivery note.",
-    "saveSignature": "Save signature"
+    "saveSignature": "Save signature",
+    "updateError": "Error updating",
+    "passwordMismatch": "New passwords don't match",
+    "passwordUpdated": "Password updated",
+    "passwordUpdatedLogout": "Password updated. Please log in again.",
+    "passwordTooShort": "Password must be at least 8 characters.",
+    "fieldsRequired": "Fill in all fields.",
+    "configSaved": "Configuration saved",
+    "saveError": "Error saving",
+    "fileTooLarge": "File too large",
+    "fileTooLargeDesc": "File is too large (max. 4 MB)",
+    "logoSaved": "Logo saved",
+    "logoSaveError": "Error saving logo",
+    "logoRemoved": "Logo removed",
+    "signatureSaved": "Signature saved",
+    "signaturePlaceholder": "E.g: FurniGest · 10 High Street · Tel: 020 1234 5678",
+    "emailPlaceholder": "you@email.com"
   },
   "trends": {
     "title": "Trends",
     "from": "From",
     "to": "To",
     "comparePrev": "Compare previous period",
+    "compareOn": "Enable",
+    "compareOff": "Disable",
+    "compareDesc": "Comparison with previous period",
+    "togglePanel": "Range options",
+    "exportBasic": "Download basic report",
+    "exportFull": "Download full report",
+    "exportBasicTitle": "Export basic period report as PDF",
+    "exportFullTitle": "Export full report with comparison and forecast as PDF",
+    "exportBasicLoading": "Generating basic report…",
+    "exportFullLoading": "Generating full report…",
+    "exportBasicSuccess": "Basic report downloaded",
+    "exportFullSuccess": "Full report downloaded",
+    "exportBasicDesc": "PDF with the period analysis",
+    "exportFullDesc": "PDF with comparison and sales forecast",
+    "exportBasicError": "Could not download basic report",
+    "exportFullError": "Could not download full report",
     "exportAnalysis": "Export analysis",
     "exportWithComparison": "Export + comparison",
     "exportTitle": "Export the report for the selected period as PDF",
@@ -574,7 +637,20 @@
     "predTableCI": "80% Interval",
     "predMethod": "Model: Holt's double exponential smoothing",
     "predInsufficient": "Insufficient data to calculate a forecast.",
-    "predLoading": "Calculating forecast…"
+    "predLoading": "Calculating forecast…",
+    "loadingToast": "Loading trends…",
+    "loadingToastDesc": "Range: {{range}}",
+    "updatedToast": "Trends updated",
+    "errorToast": "Error loading trends",
+    "compareLoadingToast": "Loading comparison…",
+    "compareUpdatedToast": "Comparison ready",
+    "compareErrorToast": "Error loading comparison",
+    "aiRespondingToast": "AI responding…",
+    "noAnswer": "(no answer)",
+    "aiErrorToast": "AI error",
+    "rangeStart": "start",
+    "rangeEnd": "today",
+    "chartFallbackTitle": "Chart"
   },
   "transport": {
     "title": "Transport",
@@ -618,7 +694,30 @@
     "addBtn": "Add",
     "cannotDelete": "Cannot delete",
     "emptyTruckHint": "Empty the truck first.",
-    "truckNote": "Trucks that appear in routes are also saved, so they don't disappear when empty."
+    "truckNote": "Trucks that appear in routes are also saved, so they don't disappear when empty.",
+    "loadError": "Error loading Transport",
+    "assignError": "Could not assign",
+    "assignSuccess": "Assigned to truck {{id}}",
+    "assignSuccessDesc": "Delivery note #{{albaran}} added to route.",
+    "returnWarehouse": "Returned to Warehouse",
+    "returnWarehouseDesc": "Delivery note #{{albaran}} returned to WAREHOUSE.",
+    "returnError": "Could not return to Warehouse",
+    "toRouteError": "Could not set in route",
+    "toRouteSuccess": "In route",
+    "toRouteSuccessDesc": "Delivery note #{{albaran}} moved to \"In route (pending truck)\".",
+    "deliveredError": "Could not mark as delivered",
+    "deliveredSuccess": "Delivered",
+    "deliveredSuccessDesc": "Delivery note #{{albaran}} marked as DELIVERED.",
+    "invoiceError": "Could not download invoice",
+    "acceptSuccess": "Route accepted (Truck {{id}})",
+    "acceptSuccessDesc": "Expense recorded: {{amount}} (7%) · Invoice downloaded.",
+    "acceptError": "Could not accept route",
+    "invalidNumber": "Invalid number",
+    "invalidNumberDesc": "Truck must be a positive integer.",
+    "truckAdded": "Truck added",
+    "truckAddedDesc": "Truck {{id}} created.",
+    "truckRemoved": "Truck removed",
+    "truckRemovedDesc": "Truck {{id}} removed."
   },
   "incidencias": {
     "title": "Incidents",
@@ -655,5 +754,9 @@
     "sectionAlbaran": "Delivery note",
     "goToAlbaran": "View delivery note →",
     "goToCliente": "View client →"
+  },
+  "notFound": {
+    "message": "Page not found",
+    "goHome": "Go to home"
   }
 }

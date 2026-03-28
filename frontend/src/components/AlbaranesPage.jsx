@@ -170,12 +170,12 @@ export default function AlbaranesPage() {
         setDateFrom('');
         setDateTo('');
       } catch (e) {
-        const msg = e?.message || 'Error desconocido';
+        const msg = e?.message || t('common.unknownError');
         setError(msg);
 
         // ✅ Toast Sileo (error de carga principal)
         sileo.error({
-          title: 'Error cargando albaranes',
+          title: t('albaranes.loadError'),
           description: msg,
         });
       } finally {
@@ -352,22 +352,22 @@ export default function AlbaranesPage() {
       if (resC.ok) setSelectedClient(await resC.json());
 
       if (!resA.ok && !resC.ok) {
-        const msg = 'No se pudo cargar el detalle.';
+        const msg = t('albaranes.detailLoadError');
         setDetailError(msg);
 
         // ✅ Toast Sileo (warning: no se pudo cargar detalle)
         sileo.warning({
-          title: 'Detalle no disponible',
+          title: t('albaranes.detailNotAvailable'),
           description: msg,
         });
       }
     } catch (e) {
-      const msg = e?.message || 'Error desconocido';
+      const msg = e?.message || t('common.unknownError');
       setDetailError(msg);
 
       // ✅ Toast Sileo (error: excepción al cargar detalle)
       sileo.error({
-        title: 'Error cargando el detalle',
+        title: t('albaranes.detailError'),
         description: msg,
       });
     }
@@ -629,7 +629,7 @@ export default function AlbaranesPage() {
               type="button"
               onClick={() => { setDateFrom(''); setDateTo(''); }}
               className="text-sm text-gray-500 hover:text-gray-700 px-2"
-              title="Limpiar fechas"
+              title={t('albaranes.clearDates')}
             >
               ×
             </button>
@@ -729,14 +729,14 @@ export default function AlbaranesPage() {
                 onClick={() => setCurrentPage(1)}
                 disabled={clampedPage === 1}
                 className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
-                aria-label="Primera página"
+                aria-label={t('common.firstPage')}
               >«</button>
               <button
                 type="button"
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={clampedPage === 1}
                 className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
-                aria-label="Página anterior"
+                aria-label={t('common.prevPage')}
               >‹</button>
               <span className="px-3">{clampedPage} / {totalPages}</span>
               <button
@@ -744,14 +744,14 @@ export default function AlbaranesPage() {
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={clampedPage >= totalPages}
                 className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
-                aria-label="Página siguiente"
+                aria-label={t('common.nextPage')}
               >›</button>
               <button
                 type="button"
                 onClick={() => setCurrentPage(totalPages)}
                 disabled={clampedPage >= totalPages}
                 className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
-                aria-label="Última página"
+                aria-label={t('common.lastPage')}
               >»</button>
             </div>
             <span className="text-sm text-gray-600">{t('albaranes.paginationInfo', { from: Math.min((clampedPage - 1) * pageSize + 1, filtered.length), to: Math.min(clampedPage * pageSize, filtered.length), total: filtered.length })}</span>
@@ -913,7 +913,7 @@ export default function AlbaranesPage() {
                   </button>
                 </>
               )}
-              <button type="button" onClick={closeDetail} className={closeButtonClass} aria-label="Cerrar"><CloseIcon /></button>
+              <button type="button" onClick={closeDetail} className={closeButtonClass} aria-label={t('common.close')}><CloseIcon /></button>
             </div>
           </div>
 
@@ -1098,7 +1098,7 @@ export default function AlbaranesPage() {
                                 type="button"
                                 onClick={() => removeLine(idx)}
                                 className="text-red-500 hover:text-red-700 px-1"
-                                aria-label="Eliminar línea"
+                                aria-label={t('common.deleteLine')}
                               >
                                 ×
                               </button>

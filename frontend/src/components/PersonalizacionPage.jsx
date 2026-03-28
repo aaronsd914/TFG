@@ -94,14 +94,16 @@ Field.propTypes = {
 };
 
 
-function SaveBtn({ loading, label = 'Guardar' }) {
+function SaveBtn({ loading, label }) {
+  const { t } = useTranslation();
+  const displayLabel = label || t('common.save');
   return (
     <button
       type="submit"
       disabled={loading}
       className="self-start px-4 py-2 btn-accent rounded-lg text-sm disabled:opacity-50 transition-colors"
     >
-      {loading ? 'Guardando…' : label}
+      {loading ? t('common.saving') : displayLabel}
     </button>
   );
 }
@@ -152,7 +154,7 @@ export default function PersonalizacionPage() {
       removeToken();
       navigate('/login', { replace: true });
     } catch (err) {
-      sileo.error({ title: 'Error', description: err.message || 'Error al actualizar' });
+      sileo.error({ title: t('common.error'), description: err.message || t('settings.updateError') });
     } finally { setULoading(false); }
   }
 
@@ -162,8 +164,14 @@ export default function PersonalizacionPage() {
 
   async function handlePasswordSubmit(e) {
     e.preventDefault();
+    if (!pForm.current_password || !pForm.new_password || !pForm.confirm) {
+      sileo.warning({ title: t('common.warning'), description: t('settings.fieldsRequired') }); return;
+    }
+    if (pForm.new_password.length < 8) {
+      sileo.warning({ title: t('common.warning'), description: t('settings.passwordTooShort') }); return;
+    }
     if (pForm.new_password !== pForm.confirm) {
-      sileo.warning({ title: 'Aviso', description: 'Las contraseñas nuevas no coinciden' }); return;
+      sileo.warning({ title: t('common.warning'), description: t('settings.passwordMismatch') }); return;
     }
     setPLoading(true);
     try {
@@ -172,10 +180,11 @@ export default function PersonalizacionPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ current_password: pForm.current_password, new_password: pForm.new_password }),
       });
-      sileo.success({ title: 'Listo', description: 'Contraseña actualizada' });
-      setPForm({ current_password: '', new_password: '', confirm: '' });
+      sileo.success({ title: t('common.ready'), description: t('settings.passwordUpdatedLogout') });
+      removeToken();
+      navigate('/login', { replace: true });
     } catch (err) {
-      sileo.error({ title: 'Error', description: err.message || 'Error al actualizar' });
+      sileo.error({ title: t('common.error'), description: err.message || t('settings.updateError') });
     } finally { setPLoading(false); }
   }
 
@@ -201,9 +210,9 @@ export default function PersonalizacionPage() {
       await updateConfig('resumen_intervalo_dias', intervalo);
       await updateConfig('resumen_fecha_inicio', fechaInicio);
       await updateConfig('resumen_hora_envio', horaEnvio);
-      sileo.success({ title: 'Listo', description: 'Configuración guardada' });
+      sileo.success({ title: t('common.ready'), description: t('settings.configSaved') });
     } catch (err) {
-      sileo.error({ title: 'Error', description: err.message || 'Error al guardar' });
+      sileo.error({ title: t('common.error'), description: err.message || t('settings.saveError') });
     } finally { setEmailLoading(false); }
   }
 
@@ -213,15 +222,15 @@ export default function PersonalizacionPage() {
     const file = e.target.files[0];
     if (!file) return;
     if (file.size > 4 * 1024 * 1024) {
-      sileo.warning({ title: 'Archivo demasiado grande', description: 'El archivo es demasiado grande (máx. 4 MB)' }); return;
+      sileo.warning({ title: t('settings.fileTooLarge'), description: t('settings.fileTooLargeDesc') }); return;
     }
     const reader = new FileReader();
     reader.onload = async (ev) => {
       try {
         await updateConfig('logo_empresa', ev.target.result);
-        sileo.success({ title: 'Listo', description: 'Logo guardado' });
+        sileo.success({ title: t('common.ready'), description: t('settings.logoSaved') });
       } catch (err) {
-        sileo.error({ title: 'Error', description: err.message || 'Error al guardar el logo' });
+        sileo.error({ title: t('common.error'), description: err.message || t('settings.logoSaveError') });
       }
     };
     reader.readAsDataURL(file);
@@ -230,9 +239,9 @@ export default function PersonalizacionPage() {
   async function handleLogoRemove() {
     try {
       await updateConfig('logo_empresa', '');
-      sileo.success({ title: 'Listo', description: 'Logo eliminado' });
+      sileo.success({ title: t('common.ready'), description: t('settings.logoRemoved') });
     } catch (err) {
-      sileo.error({ title: 'Error', description: err.message || 'Error' });
+      sileo.error({ title: t('common.error'), description: err.message || t('common.error') });
     }
   }
 
@@ -247,9 +256,9 @@ export default function PersonalizacionPage() {
     setFirmaLoading(true);
     try {
       await updateConfig('firma_email', firma);
-      sileo.success({ title: 'Listo', description: 'Firma guardada' });
+      sileo.success({ title: t('common.ready'), description: t('settings.signatureSaved') });
     } catch (err) {
-      sileo.error({ title: 'Error', description: err.message || 'Error al guardar' });
+      sileo.error({ title: t('common.error'), description: err.message || t('settings.saveError') });
     } finally { setFirmaLoading(false); }
   }
 
@@ -279,7 +288,7 @@ export default function PersonalizacionPage() {
 
         <hr className="border-gray-200" />
 
-        <form onSubmit={handlePasswordSubmit} className="flex flex-col gap-3">
+        <form onSubmit={handlePasswordSubmit} noValidate className="flex flex-col gap-3">
           <Field label={t('settings.currentPassword')} type="password" value={pForm.current_password}
             onChange={v => setPForm(f => ({ ...f, current_password: v }))} required />
           <Field label={t('settings.newPasswordFull')} type="password" value={pForm.new_password}
@@ -377,7 +386,7 @@ export default function PersonalizacionPage() {
         <form onSubmit={handleEmailSave} className="flex flex-col gap-3">
           <Field label={t('settings.emailDest')} type="email"
             value={emailDest} onChange={setEmailDest}
-            placeholder="tu@email.com" required />
+            placeholder={t('settings.emailPlaceholder')} required />
 
           {/* Fecha inicio + intervalo */}
           <div className="grid grid-cols-2 gap-3">
@@ -430,7 +439,7 @@ export default function PersonalizacionPage() {
                     className="bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-center"
                   >
                     <div className="text-xs font-semibold text-gray-700">
-                      {d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
+                      {d.toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'es-ES', { day: '2-digit', month: 'short' })}
                     </div>
                     <div className="text-xs text-gray-400">{horaEnvio || '09:00'}</div>
                   </div>
@@ -459,7 +468,7 @@ export default function PersonalizacionPage() {
               <>
                 <img
                   src={config.logo_empresa}
-                  alt="Logo actual"
+                  alt={t('common.currentLogo')}
                   className="h-12 rounded-lg border border-gray-200 object-contain bg-white px-2"
                 />
                 <button
@@ -490,7 +499,7 @@ export default function PersonalizacionPage() {
             value={firma}
             onChange={e => setFirma(e.target.value)}
             rows={3}
-            placeholder="Ej: FurniGest · Calle Mayor 10 · Tel: 666 123 456"
+            placeholder={t('settings.signaturePlaceholder')}
             className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 resize-none"
           />
           <SaveBtn loading={firmaLoading} label={t('settings.saveSignature')} />

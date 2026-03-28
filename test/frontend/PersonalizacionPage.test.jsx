@@ -35,6 +35,7 @@ vi.mock('../../frontend/src/i18n.js', () => ({
   loadLocale: vi.fn(),
 }));
 import { apiFetch } from '../../frontend/src/api/http.js';
+import { removeToken } from '../../frontend/src/api/auth.js';
 
 // Mock sileo
 vi.mock('sileo', () => ({
@@ -513,7 +514,7 @@ describe('PersonalizacionPage — Paleta de color', () => {
 describe('PersonalizacionPage — Mi cuenta éxito/error', () => {
   beforeEach(() => { vi.clearAllMocks(); apiFetch.mockResolvedValue({}); });
 
-  it('muestra mensaje de éxito al cambiar contraseña correctamente', async () => {
+  it('muestra mensaje de éxito al cambiar contraseña y redirige a login', async () => {
     renderPage();
     openSection('Mi cuenta');
     const forms = document.querySelectorAll('form');
@@ -523,13 +524,19 @@ describe('PersonalizacionPage — Mi cuenta éxito/error', () => {
     fireEvent.change(inputs[1], { target: { value: 'nueva12345' } });
     fireEvent.change(inputs[2], { target: { value: 'nueva12345' } });
     fireEvent.submit(pwForm);
-    // Verify the submit was handled (apiFetch called for auth/me)
     await waitFor(() => {
       expect(apiFetch).toHaveBeenCalledWith(
         'auth/me',
         expect.objectContaining({ method: 'PUT' }),
       );
     });
+    await waitFor(() => {
+      expect(sileo.success).toHaveBeenCalledWith(expect.objectContaining({
+        description: expect.stringMatching(/contraseña actualizada/i),
+      }));
+    });
+    expect(removeToken).toHaveBeenCalled();
+    expect(mockNavigate).toHaveBeenCalledWith('/login', { replace: true });
   });
 
   it('muestra error al fallar cambio de usuario', async () => {
@@ -590,7 +597,7 @@ describe('PersonalizacionPage — Identidad edge cases', () => {
     const bigFile = new File(['a'], 'big.png', { type: 'image/png' });
     Object.defineProperty(bigFile, 'size', { value: 4 * 1024 * 1024 + 1, configurable: true });
     fireEvent.change(fileInput, { target: { files: [bigFile] } });
-    expect(sileo.warning).toHaveBeenCalledWith(expect.objectContaining({ description: expect.stringMatching(/demasiado grande/i) }));
+    expect(sileo.warning).toHaveBeenCalledWith(expect.objectContaining({ description: expect.stringMatching(/supera los 4 MB/i) }));
   });
 
   it('muestra el logo existente y el botón Eliminar cuando hay logo', async () => {

@@ -10,7 +10,6 @@ Cubre:
   - La gestión de camiones (añadir/ocultar) está disponible
 """
 import time
-import pytest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -30,7 +29,12 @@ def test_transporte_tabs_presentes(logged_in_browser):
     logged_in_browser.get(f"{BASE_URL}/transporte")
     wait = WebDriverWait(logged_in_browser, 15)
     wait.until(EC.url_contains("/transporte"))
-    time.sleep(0.5)
+    # Esperar a que desaparezca el indicador de carga
+    wait.until(
+        EC.invisibility_of_element_located(
+            (By.XPATH, "//*[contains(text(),'Cargando')]")
+        )
+    )
     body_text = logged_in_browser.find_element(By.TAG_NAME, "body").text
     tabs = ["Almacén", "ruta", "Camión"]
     found_tabs = [t for t in tabs if t.lower() in body_text.lower()]

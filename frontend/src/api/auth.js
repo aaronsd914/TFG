@@ -1,4 +1,5 @@
 import { BASE_URL } from '../config.js';
+import i18n from '../i18n.js';
 
 /**
  * Login: returns { access_token, token_type } or throws on error.
@@ -12,7 +13,7 @@ export async function login(username, password) {
   });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    throw new Error(data.detail || 'Credenciales incorrectas');
+    throw new Error(data.detail || i18n.t('common.invalidCredentials'));
   }
   return res.json();
 }

@@ -1,4 +1,4 @@
-# run_e2e.ps1 - Ejecuta los tests E2E de FurniGest en local
+﻿# run_e2e.ps1 - Ejecuta los tests E2E de FurniGest en local
 # Levanta backend + frontend, espera a que arranquen, corre pytest y limpia.
 #
 # Uso:
@@ -67,14 +67,14 @@ while ($elapsed -lt $MAX_WAIT) {
         try {
             $null = Invoke-WebRequest "http://127.0.0.1:8000/docs" -UseBasicParsing -TimeoutSec 1
             $backendOk = $true
-            Write-Host "  -> backend listo ($elapsed s)" -ForegroundColor Green
+            Write-Host "  -> backend listo ${elapsed}s" -ForegroundColor Green
         } catch {}
     }
     if (-not $frontendOk) {
         try {
             $null = Invoke-WebRequest "http://localhost:5173" -UseBasicParsing -TimeoutSec 1
             $frontendOk = $true
-            Write-Host "  -> frontend listo ($elapsed s)" -ForegroundColor Green
+            Write-Host "  -> frontend listo ${elapsed}s" -ForegroundColor Green
         } catch {}
     }
 

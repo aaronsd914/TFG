@@ -1,9 +1,11 @@
 # backend/app/api/ai.py
+from itertools import islice
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from typing import Annotated, Optional, Dict, Any, List, Literal
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import json
 import re
 import logging
@@ -81,10 +83,30 @@ def _aggregate_sales_weekly(sales: list[dict]) -> list[dict]:
     return out
 
 
+def _metrics_for_chat(metrics: Dict[str, Any]) -> Dict[str, Any]:
+    """Lighter version for chat context — keeps token count manageable."""
+    avg = metrics.get("averages") or {}
+    top = list(islice(metrics.get("top_products") or [], 5))
+    pairs = list(islice(metrics.get("basket_pairs") or [], 5))
+    rfm_summary = (metrics.get("rfm") or {}).get("summary", {})
+
+    sales = metrics.get("sales_by_day") or []
+    sales_compact = {"mode": "weekly", "series": _aggregate_sales_weekly(sales)}
+
+    return {
+        "range": metrics.get("range"),
+        "averages": avg,
+        "sales": sales_compact,
+        "top_products": top,
+        "basket_pairs": pairs,
+        "rfm_summary": rfm_summary,
+    }
+
+
 def _metrics_for_llm(metrics: Dict[str, Any]) -> Dict[str, Any]:
     avg = metrics.get("averages") or {}
-    top = (metrics.get("top_products") or [])[:10]
-    pairs = (metrics.get("basket_pairs") or [])[:10]
+    top = list(metrics.get("top_products") or [])[:10]
+    pairs = list(metrics.get("basket_pairs") or [])[:10]
     rfm_summary = (metrics.get("rfm") or {}).get("summary", {})
 
     sales = metrics.get("sales_by_day") or []
@@ -226,25 +248,35 @@ def chat(payload: ChatPayload, db: Annotated[Session, Depends(get_db)]):
     if payload.mode == "analytics":
         dfrom, dto = daterange_defaults(payload.date_from, payload.date_to)
         m_full = build_metrics(db, dfrom, dto)
-        m = _metrics_for_llm(m_full)
+        m = _metrics_for_chat(m_full)
 
-        avg = m.get("averages", {})
-        top = (m.get("top_products") or [])[:5]
-        top_txt = (
-            ", ".join(
-                [f"{t.get('name')} ({float(t.get('revenue') or 0):.2f}€)" for t in top]
-            )
-            or "—"
-        )
+        # Previous period for growth/comparison questions
+        days = (dto - dfrom).days + 1
+        prev_to = dfrom - timedelta(days=1)
+        prev_from = prev_to - timedelta(days=days - 1)
+        prev_full = build_metrics(db, prev_from, prev_to)
+        prev_m = _metrics_for_chat(prev_full)
+
         ctx = (
-            "Contexto Tendencias (tienda de muebles):\n"
-            f"- Rango: {m['range']['from']} → {m['range']['to']}\n"
-            f"- Ingresos: {float(avg.get('revenue') or 0):.2f}€ | Pedidos: {int(avg.get('orders') or 0)} | AOV: {float(avg.get('aov') or 0):.2f}€\n"
-            f"- Top productos: {top_txt}\n"
+            "Eres analista de datos retail de una tienda de muebles. "
             "Responde en español, claro y accionable. "
-            "Usa HTML para formatear la respuesta: <strong>, <ul>, <li>, <ol>, <p>, <br>. No uses Markdown."
+            "Usa HTML para formatear la respuesta: <strong>, <ul>, <li>, <ol>, <p>, <br>. No uses Markdown.\n\n"
+            f"PERIODO ACTUAL ({m['range']['from']} → {m['range']['to']}):\n"
+            f"{_json_compact(m)}\n\n"
+            f"PERIODO ANTERIOR ({prev_m['range']['from']} → {prev_m['range']['to']}):\n"
+            f"{_json_compact(prev_m)}\n\n"
+            "Usa TODOS estos datos para responder. "
+            "Compara productos entre periodos para determinar crecimiento. "
+            "No digas que no tienes datos si los tienes arriba."
         )
         msgs = [{"role": "system", "content": ctx}, *msgs]
 
-    answer = groq_chat(msgs, temperature=payload.temperature)
+    try:
+        answer = groq_chat(msgs, temperature=payload.temperature)
+    except Exception as e:
+        log.warning("Chat IA error (%s). Devolviendo mensaje amigable.", e)
+        answer = (
+            "Lo siento, no he podido procesar tu pregunta en este momento. "
+            "Inténtalo de nuevo en unos segundos."
+        )
     return {"answer": answer}

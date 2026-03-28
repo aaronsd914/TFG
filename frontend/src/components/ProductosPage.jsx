@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { sileo } from 'sileo';
 import { Pagination } from './ui/Pagination.jsx';
 import { API_URL } from '../config.js';
+import i18n from '../i18n.js';
 
 // ===== Helpers =====
 function useDebouncedValue(value, delay = 200) {
@@ -17,7 +18,8 @@ function useDebouncedValue(value, delay = 200) {
 
 function eur(n) {
   const v = Number(n || 0);
-  return v.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 });
+  const locale = i18n.language === 'en' ? 'en-US' : 'es-ES';
+  return v.toLocaleString(locale, { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 });
 }
 
 function clampNumberInput(v) {
@@ -57,6 +59,7 @@ function Chip({ label, onRemove }) {
 }
 
 function Modal({ open, onClose, title, children, maxWidth = 'max-w-3xl' }) {
+  const { t } = useTranslation();
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50">
@@ -69,7 +72,7 @@ function Modal({ open, onClose, title, children, maxWidth = 'max-w-3xl' }) {
               type="button"
               onClick={onClose}
               className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-              aria-label="Cerrar"
+              aria-label={t('common.close')}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -340,23 +343,23 @@ export default function ProductosPage() {
 
     if (!fNombre.trim()) {
       errors.name = true;
-      missing.push('Nombre');
+      missing.push(t('products.nameLabel'));
     }
 
     const priceNum = Number(fPrecio);
     if (fPrecio === '' || !Number.isFinite(priceNum)) {
       errors.price = true;
-      missing.push('Precio');
+      missing.push(t('products.priceLabel'));
     }
 
     if (!fProveedor) {
       errors.proveedor = true;
-      missing.push('Proveedor');
+      missing.push(t('products.supplierLabel'));
     }
 
     if (!errors.price && Number(priceNum) < 0) {
       errors.price = true;
-      missing.push('Precio (no puede ser negativo)');
+      missing.push(t('products.priceNegative'));
     }
 
     return { ok: missing.length === 0, missing, errors, priceNum };
@@ -368,23 +371,23 @@ export default function ProductosPage() {
 
     if (!editName.trim()) {
       errors.name = true;
-      missing.push('Nombre');
+      missing.push(t('products.nameLabel'));
     }
 
     const priceNum = Number(editPrice);
     if (editPrice === '' || !Number.isFinite(priceNum)) {
       errors.price = true;
-      missing.push('Precio');
+      missing.push(t('products.priceLabel'));
     }
 
     if (!editSupplier) {
       errors.proveedor = true;
-      missing.push('Proveedor');
+      missing.push(t('products.supplierLabel'));
     }
 
     if (!errors.price && Number(priceNum) < 0) {
       errors.price = true;
-      missing.push('Precio (no puede ser negativo)');
+      missing.push(t('products.priceNegative'));
     }
 
     return { ok: missing.length === 0, missing, errors, priceNum };
@@ -701,7 +704,7 @@ export default function ProductosPage() {
                     type="button"
                     onClick={() => setQuery('')}
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                    title="Limpiar"
+                    title={t('common.clear')}
                   >
                     ×
                   </button>
@@ -1004,7 +1007,7 @@ export default function ProductosPage() {
                     type="button"
                     onClick={() => setGestionQuery('')}
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                    title="Limpiar"
+                    title={t('common.clear')}
                   >
                     ×
                   </button>

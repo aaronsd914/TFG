@@ -21,11 +21,9 @@ export default function Sidebar({ open, setOpen }) {
     { icon: '🧾', labelKey: 'sidebar.deliveryNotes',  to: '/albaranes' },
     { icon: '⚠️', labelKey: 'sidebar.incidents',      to: '/incidencias' },
     { icon: '🚚', labelKey: 'sidebar.transport',      to: '/transporte' },
-    { icon: '💳', labelKey: 'sidebar.movements',      to: '/movimientos' },
     { icon: '🧰', labelKey: 'sidebar.products',       to: '/productos' },
     { icon: '🏦', labelKey: 'sidebar.bank',           to: '/banco' },
     { icon: '📊', labelKey: 'sidebar.trends',         to: '/tendencias' },
-    { icon: '👤', labelKey: 'sidebar.profile',        to: '/perfil' },
     { icon: '⚙️', labelKey: 'sidebar.settings',       to: '/personalizacion' },
   ];
 
@@ -55,7 +53,7 @@ export default function Sidebar({ open, setOpen }) {
       {/* Logo / name */}
       <div className="mb-8 flex items-center gap-2">
         {config?.logo_empresa ? (
-          <img src={config.logo_empresa} alt="Logo" className="h-16 max-w-full object-contain rounded" />
+          <img src={config.logo_empresa} alt={t('common.logo')} className="h-16 max-w-full object-contain rounded" />
         ) : (
           <h2 className="text-xl font-semibold text-gray-900">FurniGest</h2>
         )}

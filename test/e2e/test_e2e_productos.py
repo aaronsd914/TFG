@@ -12,7 +12,6 @@ Cubre:
 """
 import os
 import time
-import pytest
 import requests
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -171,7 +170,12 @@ def test_productos_crear_producto(logged_in_browser):
     time.sleep(0.5)
     # Navegar al listado y verificar que el producto aparece
     logged_in_browser.get(f"{BASE_URL}/productos")
-    time.sleep(1)
+    wait = WebDriverWait(logged_in_browser, 15)
+    wait.until(
+        EC.invisibility_of_element_located(
+            (By.XPATH, "//*[contains(text(),'Cargando')]")
+        )
+    )
     body_text = logged_in_browser.find_element(By.TAG_NAME, "body").text
     assert PROD_NAME in body_text, f"El producto '{PROD_NAME}' no aparece después de crearlo"
 
@@ -190,7 +194,18 @@ def test_productos_eliminar_producto_test(logged_in_browser):
         assert del_resp.status_code in (200, 204), f"No se pudo eliminar el producto: {del_resp.text}"
     # Verificar que ya no aparece en la UI (listado)
     logged_in_browser.get(f"{BASE_URL}/productos")
-    WebDriverWait(logged_in_browser, 10).until(EC.url_contains("/productos"))
-    time.sleep(1)
+    wait = WebDriverWait(logged_in_browser, 15)
+    # Asegurar que estamos en la pestaña Listado
+    listado_btn = wait.until(
+        EC.element_to_be_clickable(
+            (By.XPATH, "//button[normalize-space()='Listado' or normalize-space()='List']")
+        )
+    )
+    listado_btn.click()
+    wait.until(
+        EC.invisibility_of_element_located(
+            (By.XPATH, "//*[contains(text(),'Cargando')]")
+        )
+    )
     body_text = logged_in_browser.find_element(By.TAG_NAME, "body").text
     assert PROD_NAME not in body_text, "El producto de test no fue eliminado"

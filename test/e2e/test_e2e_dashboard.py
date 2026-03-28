@@ -8,12 +8,11 @@ Cubre:
   - La barra lateral contiene todos los enlaces de navegación
   - Los enlaces de navegación llevan a la página correcta
 """
-import pytest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-from test.e2e.conftest import BASE_URL, navigate
+from test.e2e.conftest import BASE_URL
 
 SIDEBAR_LINKS = [
     ("Dashboard", "/"),
@@ -21,7 +20,6 @@ SIDEBAR_LINKS = [
     ("Clientes", "/clientes"),
     ("Albaranes", "/albaranes"),
     ("Transporte", "/transporte"),
-    ("Movimientos", "/movimientos"),
     ("Productos", "/productos"),
     ("Banco", "/banco"),
     ("Tendencias", "/tendencias"),
@@ -62,7 +60,7 @@ def test_dashboard_sidebar_todos_los_enlaces(logged_in_browser):
 def test_dashboard_tarjetas_kpi_presentes(logged_in_browser):
     """Las tarjetas de KPI del dashboard muestran métricas clave."""
     logged_in_browser.get(f"{BASE_URL}/")
-    wait = WebDriverWait(logged_in_browser, 15)
+    WebDriverWait(logged_in_browser, 15)
     # Al menos una de las métricas de ingresos o ventas debe aparecer
     kpi_keywords = ["Ingresos", "Egresos", "Ventas", "Almacén", "Pedidos"]
     found = False
@@ -102,20 +100,20 @@ def test_dashboard_navega_a_clientes(logged_in_browser):
     assert "/clientes" in logged_in_browser.current_url
 
 
-def test_dashboard_navega_a_movimientos(logged_in_browser):
-    """Clic en 'Movimientos' de la barra lateral navega a /movimientos."""
+def test_dashboard_navega_a_banco(logged_in_browser):
+    """Clic en 'Banco' de la barra lateral navega a /banco."""
     logged_in_browser.get(f"{BASE_URL}/")
     WebDriverWait(logged_in_browser, 10).until(
         EC.presence_of_element_located((By.TAG_NAME, "nav"))
     )
     link = WebDriverWait(logged_in_browser, 10).until(
         EC.element_to_be_clickable(
-            (By.XPATH, "//nav//a[contains(normalize-space(.), 'Movimientos')]")
+            (By.XPATH, "//nav//a[contains(normalize-space(.), 'Banco')]")
         )
     )
     link.click()
-    WebDriverWait(logged_in_browser, 10).until(EC.url_contains("/movimientos"))
-    assert "/movimientos" in logged_in_browser.current_url
+    WebDriverWait(logged_in_browser, 10).until(EC.url_contains("/banco"))
+    assert "/banco" in logged_in_browser.current_url
 
 
 def test_dashboard_boton_logout_presente(logged_in_browser):
