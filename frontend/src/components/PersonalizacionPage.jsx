@@ -162,6 +162,12 @@ export default function PersonalizacionPage() {
 
   async function handlePasswordSubmit(e) {
     e.preventDefault();
+    if (!pForm.current_password || !pForm.new_password || !pForm.confirm) {
+      sileo.warning({ title: t('common.warning'), description: t('settings.fieldsRequired') }); return;
+    }
+    if (pForm.new_password.length < 8) {
+      sileo.warning({ title: t('common.warning'), description: t('settings.passwordTooShort') }); return;
+    }
     if (pForm.new_password !== pForm.confirm) {
       sileo.warning({ title: t('common.warning'), description: t('settings.passwordMismatch') }); return;
     }
@@ -172,8 +178,9 @@ export default function PersonalizacionPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ current_password: pForm.current_password, new_password: pForm.new_password }),
       });
-      sileo.success({ title: t('common.ready'), description: t('settings.passwordUpdated') });
-      setPForm({ current_password: '', new_password: '', confirm: '' });
+      sileo.success({ title: t('common.ready'), description: t('settings.passwordUpdatedLogout') });
+      removeToken();
+      navigate('/login', { replace: true });
     } catch (err) {
       sileo.error({ title: t('common.error'), description: err.message || t('settings.updateError') });
     } finally { setPLoading(false); }
@@ -279,7 +286,7 @@ export default function PersonalizacionPage() {
 
         <hr className="border-gray-200" />
 
-        <form onSubmit={handlePasswordSubmit} className="flex flex-col gap-3">
+        <form onSubmit={handlePasswordSubmit} noValidate className="flex flex-col gap-3">
           <Field label={t('settings.currentPassword')} type="password" value={pForm.current_password}
             onChange={v => setPForm(f => ({ ...f, current_password: v }))} required />
           <Field label={t('settings.newPasswordFull')} type="password" value={pForm.new_password}
