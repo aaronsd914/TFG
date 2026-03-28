@@ -410,7 +410,7 @@ export default function IncidenciasPage() {
                   >
                     {t('common.delete')}
                   </button>
-                  <button type="button" onClick={() => setDetailInc(null)} className={closeButtonClass} aria-label="Cerrar" data-testid="detail-close-btn"><CloseIcon /></button>
+                  <button type="button" onClick={() => setDetailInc(null)} className={closeButtonClass} aria-label={t('common.close')} data-testid="detail-close-btn"><CloseIcon /></button>
                 </div>
               </div>
 

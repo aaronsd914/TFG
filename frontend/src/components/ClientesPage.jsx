@@ -18,10 +18,11 @@ function useDebouncedValue(value, delay = 200) {
 }
 
 function Chip({ label, onRemove }) {
+  const { t } = useTranslation();
   return (
     <span className="inline-flex items-center gap-2 bg-gray-100 border border-gray-200 px-3 py-1 rounded-full text-sm">
       {label}
-      <button className="text-gray-500 hover:text-gray-700" onClick={onRemove} aria-label={`Quitar ${label}`} type="button">
+      <button className="text-gray-500 hover:text-gray-700" onClick={onRemove} aria-label={`${t('common.remove')} ${label}`} type="button">
         ×
       </button>
     </span>
@@ -143,7 +144,7 @@ export default function ClientesPage() {
         ? errLike
         : errLike?.message
         ? errLike.message
-        : 'Ha ocurrido un error inesperado.';
+        : t('common.unexpectedError');
     try {
       sileo.error({ title, description });
     } catch {}
@@ -182,7 +183,7 @@ export default function ClientesPage() {
         }
       } catch (e) {
         setError(e.message);
-        toastError('Error cargando clientes', e);
+        toastError(t('clients.loadError'), e);
       } finally {
         setLoading(false);
       }
@@ -332,7 +333,7 @@ export default function ClientesPage() {
     } catch (e) {
       setOrders([]);
       setOrdersError(e.message);
-      toastError('Error cargando albaranes del cliente', e);
+      toastError(t('clients.loadDeliveriesError'), e);
     } finally {
       setOrdersLoading(false);
     }
@@ -467,7 +468,7 @@ export default function ClientesPage() {
       setExpanded((prev) => ({ ...prev, [id]: { ...prev[id], open: true, loading: false, items: full.items || [] } }));
     } catch (e) {
       setExpanded((prev) => ({ ...prev, [id]: { ...prev[id], open: true, loading: false, error: e.message } }));
-      toastError('Error cargando líneas del albarán', e);
+      toastError(t('clients.loadLinesError'), e);
     }
   }
 
@@ -685,7 +686,7 @@ export default function ClientesPage() {
                 </button>
               </>
             )}
-            <button type="button" onClick={closeDetail} className={closeButtonClass} aria-label="Cerrar"><CloseIcon /></button>
+            <button type="button" onClick={closeDetail} className={closeButtonClass} aria-label={t('common.close')}><CloseIcon /></button>
           </div>
         </div>
 

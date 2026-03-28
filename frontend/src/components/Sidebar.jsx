@@ -53,7 +53,7 @@ export default function Sidebar({ open, setOpen }) {
       {/* Logo / name */}
       <div className="mb-8 flex items-center gap-2">
         {config?.logo_empresa ? (
-          <img src={config.logo_empresa} alt="Logo" className="h-16 max-w-full object-contain rounded" />
+          <img src={config.logo_empresa} alt={t('common.logo')} className="h-16 max-w-full object-contain rounded" />
         ) : (
           <h2 className="text-xl font-semibold text-gray-900">FurniGest</h2>
         )}

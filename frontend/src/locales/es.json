@@ -60,7 +60,21 @@
     "ready": "Listo",
     "search": "Buscar",
     "edit": "Editar",
-    "confirmDelete": "Confirmar eliminación"
+    "confirmDelete": "Confirmar eliminación",
+    "networkError": "Error de red",
+    "networkErrorDesc": "No se pudo conectar con el servidor.",
+    "unknownError": "Error desconocido",
+    "unexpectedError": "Ha ocurrido un error inesperado.",
+    "invalidCredentials": "Credenciales incorrectas",
+    "pagination": "Paginación",
+    "prevPage": "Anterior",
+    "nextPage": "Siguiente",
+    "firstPage": "Primera página",
+    "lastPage": "Última página",
+    "deleteLine": "Eliminar línea",
+    "logo": "Logo",
+    "currentLogo": "Logo actual",
+    "remove": "Quitar"
   },
   "dashboard": {
     "title": "Dashboard · Tienda",
@@ -164,6 +178,8 @@
     "noLines": "No hay líneas para este albarán.",
     "registeredCount": "Clientes registrados:",
     "loadError": "No se pudieron cargar los clientes.",
+    "loadDeliveriesError": "Error cargando albaranes del cliente",
+    "loadLinesError": "Error cargando líneas del albarán",
     "editTitle": "Editar cliente",
     "editSuccess": "Cliente actualizado correctamente.",
     "editError": "No se pudo actualizar el cliente.",
@@ -345,6 +361,9 @@
     "noLines": "Este albarán no tiene líneas.",
     "viewClient": "Ver cliente →",
     "loadError": "No se pudieron cargar los albaranes.",
+    "detailLoadError": "No se pudo cargar el detalle.",
+    "detailNotAvailable": "Detalle no disponible",
+    "detailError": "Error cargando el detalle",
     "editTitle": "Editar albarán",
     "editSuccess": "Albarán actualizado correctamente.",
     "editError": "No se pudo actualizar el albarán.",
@@ -463,7 +482,9 @@
     "toastCreateError": "No se pudo crear el cobro",
     "toastRegistered": "Cobro registrado",
     "toastAlreadyRegistered": "Cobro ya registrado",
-    "toastConfirmError": "No se pudo confirmar el pago"
+    "toastConfirmError": "No se pudo confirmar el pago",
+    "stripeNoUrl": "Stripe no devolvió URL de checkout",
+    "movementCreateError": "No se pudo crear el movimiento"
   },
   "profile": {
     "title": "Mi perfil",
@@ -509,7 +530,19 @@
     "uploadLogo": "Subir logo",
     "emailSignature": "Firma en emails de albarán",
     "emailSignatureDesc": "Texto que aparece al final de los emails enviados al entregar un albarán.",
-    "saveSignature": "Guardar firma"
+    "saveSignature": "Guardar firma",
+    "updateError": "Error al actualizar",
+    "passwordMismatch": "Las contraseñas nuevas no coinciden",
+    "passwordUpdated": "Contraseña actualizada",
+    "configSaved": "Configuración guardada",
+    "saveError": "Error al guardar",
+    "fileTooLarge": "Archivo demasiado grande",
+    "fileTooLargeDesc": "El archivo es demasiado grande (máx. 4 MB)",
+    "logoSaved": "Logo guardado",
+    "logoSaveError": "Error al guardar el logo",
+    "logoRemoved": "Logo eliminado",
+    "signatureSaved": "Firma guardada",
+    "signaturePlaceholder": "Ej: FurniGest · Calle Mayor 10 · Tel: 666 123 456"
   },
   "trends": {
     "title": "Tendencias",
@@ -590,7 +623,19 @@
     "predTableCI": "Intervalo 80%",
     "predMethod": "Modelo: Suavizado exponencial doble (Holt)",
     "predInsufficient": "Datos insuficientes para calcular una previsión.",
-    "predLoading": "Calculando previsión…"
+    "predLoading": "Calculando previsión…",
+    "loadingToast": "Cargando tendencias…",
+    "loadingToastDesc": "Rango: {{range}}",
+    "updatedToast": "Tendencias actualizadas",
+    "errorToast": "Error cargando tendencias",
+    "compareLoadingToast": "Cargando comparativa…",
+    "compareUpdatedToast": "Comparativa lista",
+    "compareErrorToast": "Error cargando comparativa",
+    "aiRespondingToast": "IA respondiendo…",
+    "noAnswer": "(sin respuesta)",
+    "aiErrorToast": "Error en la IA",
+    "rangeStart": "inicio",
+    "rangeEnd": "hoy"
   },
   "transport": {
     "title": "Transporte",
@@ -634,7 +679,30 @@
     "addBtn": "Añadir",
     "cannotDelete": "No se puede eliminar",
     "emptyTruckHint": "Vacía el camión para poder eliminarlo.",
-    "truckNote": "Los camiones que aparezcan en rutas también se guardan, para que no desaparezcan cuando queden vacíos."
+    "truckNote": "Los camiones que aparezcan en rutas también se guardan, para que no desaparezcan cuando queden vacíos.",
+    "loadError": "Error cargando Transporte",
+    "assignError": "No se pudo asignar",
+    "assignSuccess": "Asignado al camión {{id}}",
+    "assignSuccessDesc": "Albarán #{{albaran}} añadido a la ruta.",
+    "returnWarehouse": "Devuelto a Almacén",
+    "returnWarehouseDesc": "Albarán #{{albaran}} vuelto a ALMACÉN.",
+    "returnError": "No se pudo volver a Almacén",
+    "toRouteError": "No se pudo poner en ruta",
+    "toRouteSuccess": "En ruta",
+    "toRouteSuccessDesc": "Albarán #{{albaran}} movido a \"En ruta (pendiente camión)\".",
+    "deliveredError": "No se pudo marcar como entregado",
+    "deliveredSuccess": "Entregado",
+    "deliveredSuccessDesc": "Albarán #{{albaran}} marcado como ENTREGADO.",
+    "invoiceError": "No se pudo descargar la factura",
+    "acceptSuccess": "Ruta aceptada (Camión {{id}})",
+    "acceptSuccessDesc": "Gasto registrado: {{amount}} (7%) · Factura descargada.",
+    "acceptError": "No se pudo aceptar la ruta",
+    "invalidNumber": "Número inválido",
+    "invalidNumberDesc": "El camión debe ser un número entero mayor que 0.",
+    "truckAdded": "Camión añadido",
+    "truckAddedDesc": "Camión {{id}} creado.",
+    "truckRemoved": "Camión eliminado",
+    "truckRemovedDesc": "Camión {{id}} eliminado."
   },
   "incidencias": {
     "title": "Incidencias",
@@ -671,5 +739,9 @@
     "sectionAlbaran": "Albarán",
     "goToAlbaran": "Ver albarán →",
     "goToCliente": "Ver cliente →"
+  },
+  "notFound": {
+    "message": "Página no encontrada",
+    "goHome": "Volver al inicio"
   }
 }

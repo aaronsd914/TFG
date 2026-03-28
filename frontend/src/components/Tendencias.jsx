@@ -94,8 +94,8 @@ export default function TendenciasPage() {
         sileo.show({
           id: toastId,
           state: "loading",
-          title: "Cargando tendencias…",
-          description: `Rango: ${rangeLabel}`,
+          title: t('trends.loadingToast'),
+          description: t('trends.loadingToastDesc', { range: rangeLabel }),
           duration: null,
         });
       } catch {}
@@ -114,8 +114,8 @@ export default function TendenciasPage() {
         try {
           sileo.success({
             id: toastId,
-            title: "Tendencias actualizadas",
-            description: `Rango: ${rangeLabel}`,
+            title: t('trends.updatedToast'),
+            description: t('trends.loadingToastDesc', { range: rangeLabel }),
             duration: 1400,
           });
         } catch {}
@@ -133,7 +133,7 @@ export default function TendenciasPage() {
         try {
           sileo.error({
             id: toastId,
-            title: "Error cargando tendencias",
+            title: t('trends.errorToast'),
             description: e?.message || String(e),
           });
         } catch {}
@@ -173,7 +173,7 @@ export default function TendenciasPage() {
       compareAbortRef.current = controller;
 
       const toastId = "tendencias-compare";
-      const rangeLabel = `${range.from || "inicio"} → ${range.to || "hoy"}`;
+      const rangeLabel = `${range.from || t('trends.rangeStart')} → ${range.to || t('trends.rangeEnd')}`;
 
       setCompareLoading(true);
       setCompareErr(null);
@@ -183,8 +183,8 @@ export default function TendenciasPage() {
         sileo.show({
           id: toastId,
           state: "loading",
-          title: "Cargando comparativa…",
-          description: `Rango: ${rangeLabel}`,
+          title: t('trends.compareLoadingToast'),
+          description: t('trends.loadingToastDesc', { range: rangeLabel }),
           duration: null,
         });
       } catch {}
@@ -203,8 +203,8 @@ export default function TendenciasPage() {
         try {
           sileo.success({
             id: toastId,
-            title: "Comparativa lista",
-            description: `Rango: ${rangeLabel}`,
+            title: t('trends.compareUpdatedToast'),
+            description: t('trends.loadingToastDesc', { range: rangeLabel }),
             duration: 1400,
           });
         } catch {}
@@ -221,7 +221,7 @@ export default function TendenciasPage() {
         try {
           sileo.error({
             id: toastId,
-            title: "Error cargando comparativa",
+            title: t('trends.compareErrorToast'),
             description: e?.message || String(e),
           });
         } catch {}
@@ -358,7 +358,7 @@ export default function TendenciasPage() {
       sileo.show({
         id: toastId,
         state: "loading",
-        title: "IA respondiendo…",
+        title: t('trends.aiRespondingToast'),
         duration: null,
       });
     } catch {}
@@ -392,7 +392,7 @@ export default function TendenciasPage() {
 
       setMessages((m) => [
         ...m,
-        { id: crypto.randomUUID(), role: "assistant", content: json.answer || "(sin respuesta)" },
+        { id: crypto.randomUUID(), role: "assistant", content: json.answer || t('trends.noAnswer') },
       ]);
       ok = true;
     } catch (e2) {
@@ -404,7 +404,7 @@ export default function TendenciasPage() {
       try {
         sileo.error({
           id: toastId,
-          title: "Error en la IA",
+          title: t('trends.aiErrorToast'),
           description: e2?.message || String(e2),
         });
       } catch {}

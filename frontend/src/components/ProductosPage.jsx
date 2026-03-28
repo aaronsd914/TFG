@@ -57,6 +57,7 @@ function Chip({ label, onRemove }) {
 }
 
 function Modal({ open, onClose, title, children, maxWidth = 'max-w-3xl' }) {
+  const { t } = useTranslation();
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50">
@@ -69,7 +70,7 @@ function Modal({ open, onClose, title, children, maxWidth = 'max-w-3xl' }) {
               type="button"
               onClick={onClose}
               className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-              aria-label="Cerrar"
+              aria-label={t('common.close')}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -701,7 +702,7 @@ export default function ProductosPage() {
                     type="button"
                     onClick={() => setQuery('')}
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                    title="Limpiar"
+                    title={t('common.clear')}
                   >
                     ×
                   </button>
@@ -1004,7 +1005,7 @@ export default function ProductosPage() {
                     type="button"
                     onClick={() => setGestionQuery('')}
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                    title="Limpiar"
+                    title={t('common.clear')}
                   >
                     ×
                   </button>

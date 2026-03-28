@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 
 export const CloseIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -9,6 +10,7 @@ export const CloseIcon = () => (
 export const closeButtonClass = 'p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-500 dark:hover:text-gray-300 dark:hover:bg-gray-700';
 
 export default function ModalCenter({ isOpen, onClose, children, maxWidth = 'max-w-3xl', showClose = true }) {
+  const { t } = useTranslation();
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-40">
@@ -18,7 +20,7 @@ export default function ModalCenter({ isOpen, onClose, children, maxWidth = 'max
         onClick={onClose}
         onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
         tabIndex={-1}
-        aria-label="Cerrar"
+        aria-label={t('common.close')}
       />
       <div className="absolute inset-0 flex items-center justify-center p-4">
         <div className={`relative w-full ${maxWidth} bg-white rounded-2xl shadow-2xl p-6 overflow-y-auto max-h-[90vh]`}>
@@ -27,7 +29,7 @@ export default function ModalCenter({ isOpen, onClose, children, maxWidth = 'max
               type="button"
               onClick={onClose}
               className={`absolute top-3 right-3 ${closeButtonClass}`}
-              aria-label="Cerrar"
+              aria-label={t('common.close')}
             >
               <CloseIcon />
             </button>

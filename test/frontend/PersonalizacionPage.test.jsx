@@ -590,7 +590,7 @@ describe('PersonalizacionPage — Identidad edge cases', () => {
     const bigFile = new File(['a'], 'big.png', { type: 'image/png' });
     Object.defineProperty(bigFile, 'size', { value: 4 * 1024 * 1024 + 1, configurable: true });
     fireEvent.change(fileInput, { target: { files: [bigFile] } });
-    expect(sileo.warning).toHaveBeenCalledWith(expect.objectContaining({ description: expect.stringMatching(/demasiado grande/i) }));
+    expect(sileo.warning).toHaveBeenCalledWith(expect.objectContaining({ description: expect.stringMatching(/supera los 4 MB/i) }));
   });
 
   it('muestra el logo existente y el botón Eliminar cuando hay logo', async () => {

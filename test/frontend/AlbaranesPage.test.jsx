@@ -324,7 +324,7 @@ describe('AlbaranesPage – paginación', () => {
     renderPage();
     await waitFor(() => expect(screen.getByText('#1')).toBeInTheDocument());
 
-    const nextBtn = screen.getByRole('button', { name: /p.gina siguiente/i });
+    const nextBtn = screen.getByRole('button', { name: /siguiente/i });
     await act(async () => { fireEvent.click(nextBtn); });
 
     await waitFor(() => expect(screen.getByText('#26')).toBeInTheDocument());

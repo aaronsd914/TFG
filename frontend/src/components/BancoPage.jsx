@@ -26,10 +26,11 @@ function formatDate(d) {
 }
 
 function Chip({ label, onRemove }) {
+  const { t } = useTranslation();
   return (
     <span className="inline-flex items-center gap-1.5 bg-gray-100 border border-gray-200 px-3 py-1 rounded-full text-sm">
       {label}
-      <button className="text-gray-500 hover:text-gray-700" onClick={onRemove} aria-label={`Quitar ${label}`} type="button">{'×'}</button>
+      <button className="text-gray-500 hover:text-gray-700" onClick={onRemove} aria-label={`${t('common.clear')} ${label}`} type="button">{'\u00d7'}</button>
     </span>
   );
 }
@@ -152,7 +153,7 @@ export default function BancoPage() {
                 title: data.created ? t('bank.toastRegistered') : t('bank.toastAlreadyRegistered'),
                 description: `${eur(data.amount)} · ${data.description || 'Stripe'}`,
               }),
-              error: (e) => ({ title: t('bank.toastConfirmError'), description: e?.message || 'Error desconocido' }),
+              error: (e) => ({ title: t('bank.toastConfirmError'), description: e?.message || t('common.unknownError') }),
             }
           );
           await loadStripeCheckouts();
@@ -191,13 +192,13 @@ export default function BancoPage() {
           });
           const j = await r.json().catch(() => ({}));
           if (!r.ok) throw new Error(j?.detail || `HTTP ${r.status}`);
-          if (!j.url) throw new Error('Stripe no devolvió URL de checkout');
+          if (!j.url) throw new Error(t('bank.stripeNoUrl'));
           return j;
         },
         {
           loading: { title: t('bank.toastCreating') },
           success: { title: t('bank.toastRedirecting') },
-          error: (e) => ({ title: t('bank.toastCreateError'), description: e?.message || 'Error' }),
+          error: (e) => ({ title: t('bank.toastCreateError'), description: e?.message || t('common.error') }),
         }
       );
       window.location.href = data.url;
@@ -241,7 +242,7 @@ export default function BancoPage() {
         body: JSON.stringify(payload),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json?.detail || 'No se pudo crear el movimiento');
+      if (!res.ok) throw new Error(json?.detail || t('bank.movementCreateError'));
 
       setMovs((prev) => [json, ...prev]);
       setConcepto('');
@@ -255,7 +256,7 @@ export default function BancoPage() {
       try {
         sileo.error({
           title: t('bank.toastCreateError'),
-          description: e2?.message || 'Error desconocido',
+          description: e2?.message || t('common.unknownError'),
         });
       } catch { /* ignore */ }
     } finally {
@@ -500,11 +501,11 @@ export default function BancoPage() {
             </select>
           </div>
           <div className="flex items-center gap-1 text-sm text-gray-600">
-            <button type="button" onClick={() => setCurrentPage(1)} disabled={clampedPage === 1} className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50" aria-label="Primera página">«</button>
-            <button type="button" onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={clampedPage === 1} className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50" aria-label="Página anterior">‹</button>
+            <button type="button" onClick={() => setCurrentPage(1)} disabled={clampedPage === 1} className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50" aria-label={t('common.firstPage')}>«</button>
+            <button type="button" onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={clampedPage === 1} className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50" aria-label={t('common.prevPage')}>‹</button>
             <span className="px-3">{clampedPage} / {totalPages}</span>
-            <button type="button" onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={clampedPage >= totalPages} className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50" aria-label="Página siguiente">›</button>
-            <button type="button" onClick={() => setCurrentPage(totalPages)} disabled={clampedPage >= totalPages} className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50" aria-label="Última página">»</button>
+            <button type="button" onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={clampedPage >= totalPages} className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50" aria-label={t('common.nextPage')}>›</button>
+            <button type="button" onClick={() => setCurrentPage(totalPages)} disabled={clampedPage >= totalPages} className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50" aria-label={t('common.lastPage')}>»</button>
           </div>
           <span className="text-sm text-gray-600">
             {t('movements.paginationInfo', { from: Math.min((clampedPage - 1) * pageSize + 1, movsFiltrados.length), to: Math.min(clampedPage * pageSize, movsFiltrados.length), total: movsFiltrados.length })}
@@ -563,7 +564,7 @@ export default function BancoPage() {
             onClick={closeCobroModal}
             onKeyDown={(e) => { if (e.key === 'Escape') closeCobroModal(); }}
             tabIndex={-1}
-            aria-label="Cerrar"
+            aria-label={t('common.close')}
           />
           <div className="absolute inset-0 flex items-center justify-center p-4">
             <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md p-6 space-y-5">
@@ -573,7 +574,7 @@ export default function BancoPage() {
                   type="button"
                   onClick={closeCobroModal}
                   className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-500 dark:hover:text-gray-300 dark:hover:bg-gray-700"
-                  aria-label="Cerrar"
+                  aria-label={t('common.close')}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
