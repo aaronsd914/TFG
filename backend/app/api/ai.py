@@ -81,6 +81,26 @@ def _aggregate_sales_weekly(sales: list[dict]) -> list[dict]:
     return out
 
 
+def _metrics_for_chat(metrics: Dict[str, Any]) -> Dict[str, Any]:
+    """Lighter version for chat context — keeps token count manageable."""
+    avg = metrics.get("averages") or {}
+    top = (metrics.get("top_products") or [])[:5]
+    pairs = (metrics.get("basket_pairs") or [])[:5]
+    rfm_summary = (metrics.get("rfm") or {}).get("summary", {})
+
+    sales = metrics.get("sales_by_day") or []
+    sales_compact = {"mode": "weekly", "series": _aggregate_sales_weekly(sales)}
+
+    return {
+        "range": metrics.get("range"),
+        "averages": avg,
+        "sales": sales_compact,
+        "top_products": top,
+        "basket_pairs": pairs,
+        "rfm_summary": rfm_summary,
+    }
+
+
 def _metrics_for_llm(metrics: Dict[str, Any]) -> Dict[str, Any]:
     avg = metrics.get("averages") or {}
     top = (metrics.get("top_products") or [])[:10]
@@ -226,14 +246,14 @@ def chat(payload: ChatPayload, db: Annotated[Session, Depends(get_db)]):
     if payload.mode == "analytics":
         dfrom, dto = daterange_defaults(payload.date_from, payload.date_to)
         m_full = build_metrics(db, dfrom, dto)
-        m = _metrics_for_llm(m_full)
+        m = _metrics_for_chat(m_full)
 
         # Previous period for growth/comparison questions
         days = (dto - dfrom).days + 1
         prev_to = dfrom - timedelta(days=1)
         prev_from = prev_to - timedelta(days=days - 1)
         prev_full = build_metrics(db, prev_from, prev_to)
-        prev_m = _metrics_for_llm(prev_full)
+        prev_m = _metrics_for_chat(prev_full)
 
         ctx = (
             "Eres analista de datos retail de una tienda de muebles. "
@@ -249,5 +269,12 @@ def chat(payload: ChatPayload, db: Annotated[Session, Depends(get_db)]):
         )
         msgs = [{"role": "system", "content": ctx}, *msgs]
 
-    answer = groq_chat(msgs, temperature=payload.temperature)
+    try:
+        answer = groq_chat(msgs, temperature=payload.temperature)
+    except Exception as e:
+        log.warning("Chat IA error (%s). Devolviendo mensaje amigable.", e)
+        answer = (
+            "Lo siento, no he podido procesar tu pregunta en este momento. "
+            "Inténtalo de nuevo en unos segundos."
+        )
     return {"answer": answer}
