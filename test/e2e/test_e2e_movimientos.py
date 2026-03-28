@@ -88,11 +88,12 @@ def test_movimientos_anadir_ingreso(logged_in_browser):
     if cant_inputs:
         cant_inputs[0].clear()
         cant_inputs[0].send_keys(MOV_CANTIDAD)
-    # Seleccionar tipo INGRESO (ya es el valor por defecto, se confirma explícitamente)
-    from selenium.webdriver.support.ui import Select
-    tipo_selects = logged_in_browser.find_elements(By.CSS_SELECTOR, "select")
-    if tipo_selects:
-        Select(tipo_selects[0]).select_by_visible_text("Ingreso")
+    # Seleccionar tipo INGRESO (botón toggle, ya es el valor por defecto)
+    ingreso_btn = logged_in_browser.find_elements(
+        By.XPATH, "//button[normalize-space(.)='Ingreso']"
+    )
+    if ingreso_btn:
+        ingreso_btn[0].click()
     # Guardar
     submit_btns = logged_in_browser.find_elements(
         By.XPATH, "//button[@type='submit' or contains(normalize-space(.), 'Guardar')]"
@@ -130,10 +131,12 @@ def test_movimientos_anadir_egreso(logged_in_browser):
     if cant_inputs:
         cant_inputs[0].clear()
         cant_inputs[0].send_keys(MOV_CANTIDAD)
-    from selenium.webdriver.support.ui import Select
-    tipo_selects = logged_in_browser.find_elements(By.CSS_SELECTOR, "select")
-    if tipo_selects:
-        Select(tipo_selects[0]).select_by_visible_text("Egreso")
+    # Seleccionar tipo EGRESO (botón toggle)
+    gasto_btn = logged_in_browser.find_elements(
+        By.XPATH, "//button[normalize-space(.)='Gasto']"
+    )
+    if gasto_btn:
+        gasto_btn[0].click()
     submit_btns = logged_in_browser.find_elements(
         By.XPATH, "//button[@type='submit' or contains(normalize-space(.), 'Guardar')]"
     )
