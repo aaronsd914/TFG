@@ -163,6 +163,11 @@ describe('TendenciasPage', () => {
   it('el botón "7 días" cambia el rango y vuelve a llamar la API', async () => {
     fetch.mockImplementation(mockFetchNoPrediction);
     await act(async () => { renderPage(); });
+    // Open the range panel first
+    await waitFor(() => screen.getByRole('button', { name: /opciones de rango/i }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /opciones de rango/i }));
+    });
     await waitFor(() => screen.getByRole('button', { name: /7 días/i }));
 
     const callsBefore = fetch.mock.calls.length;
@@ -177,6 +182,11 @@ describe('TendenciasPage', () => {
   it('el botón "30 días" cambia el rango y el componente sigue cargando', async () => {
     fetch.mockImplementation(mockFetchNoPrediction);
     await act(async () => { renderPage(); });
+    // Open the range panel first
+    await waitFor(() => screen.getByRole('button', { name: /opciones de rango/i }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /opciones de rango/i }));
+    });
     await waitFor(() => screen.getByRole('button', { name: /30 días/i }));
 
     await act(async () => {
@@ -190,6 +200,11 @@ describe('TendenciasPage', () => {
   it('el botón "90 días" cambia el rango y vuelve a llamar la API', async () => {
     fetch.mockImplementation(mockFetchNoPrediction);
     await act(async () => { renderPage(); });
+    // Open the range panel first
+    await waitFor(() => screen.getByRole('button', { name: /opciones de rango/i }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /opciones de rango/i }));
+    });
     await waitFor(() => screen.getByRole('button', { name: /90 días/i }));
 
     const callsBefore = fetch.mock.calls.length;
@@ -201,7 +216,7 @@ describe('TendenciasPage', () => {
     });
   });
 
-  it('activar el checkbox "Comparar" dispara la petición de comparativa', async () => {
+  it('activar el toggle "Comparar" dispara la petición de comparativa', async () => {
     const compareResponse = {
       delta: {
         revenue: { current: 2500, prev: 2000, abs: 500, pct: 25 },
@@ -217,10 +232,15 @@ describe('TendenciasPage', () => {
     });
 
     await act(async () => { renderPage(); });
-    await waitFor(() => screen.getByLabelText(/comparar periodo anterior/i));
+    // Open the range panel first
+    await waitFor(() => screen.getByRole('button', { name: /opciones de rango/i }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /opciones de rango/i }));
+    });
+    await waitFor(() => screen.getByRole('switch'));
 
     await act(async () => {
-      fireEvent.click(screen.getByLabelText(/comparar periodo anterior/i));
+      fireEvent.click(screen.getByRole('switch'));
     });
 
     await waitFor(() => {
@@ -260,7 +280,7 @@ describe('TendenciasPage', () => {
     });
   });
 
-  it('el botón "Exportar análisis" llama a la API de exportación', async () => {
+  it('el botón "Descargar informe básico" llama a la API de exportación', async () => {
     // Mock blob response for PDF export
     fetch.mockImplementation((url) => {
       if (url.includes('export/pdf')) {
@@ -281,10 +301,15 @@ describe('TendenciasPage', () => {
 
     try {
       await act(async () => { renderPage(); });
-      await waitFor(() => screen.getByRole('button', { name: /exportar análisis/i }));
+      // Open the range panel first
+      await waitFor(() => screen.getByRole('button', { name: /opciones de rango/i }));
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /opciones de rango/i }));
+      });
+      await waitFor(() => screen.getByRole('button', { name: /descargar informe básico/i }));
 
       await act(async () => {
-        fireEvent.click(screen.getByRole('button', { name: /exportar análisis/i }));
+        fireEvent.click(screen.getByRole('button', { name: /descargar informe básico/i }));
       });
 
       await waitFor(() => {
@@ -400,8 +425,13 @@ describe('TendenciasPage', () => {
     });
 
     await act(async () => { renderPage(); });
-    await waitFor(() => screen.getByLabelText(/comparar periodo anterior/i));
-    await act(async () => { fireEvent.click(screen.getByLabelText(/comparar periodo anterior/i)); });
+    // Open the range panel and activate compare toggle
+    await waitFor(() => screen.getByRole('button', { name: /opciones de rango/i }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /opciones de rango/i }));
+    });
+    await waitFor(() => screen.getByRole('switch'));
+    await act(async () => { fireEvent.click(screen.getByRole('switch')); });
 
     await waitFor(() => {
       expect(screen.getByText('Comparativa')).toBeInTheDocument();
@@ -425,11 +455,170 @@ describe('TendenciasPage', () => {
     });
 
     await act(async () => { renderPage(); });
-    await waitFor(() => screen.getByLabelText(/comparar periodo anterior/i));
-    await act(async () => { fireEvent.click(screen.getByLabelText(/comparar periodo anterior/i)); });
+    // Open the range panel and activate compare toggle
+    await waitFor(() => screen.getByRole('button', { name: /opciones de rango/i }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /opciones de rango/i }));
+    });
+    await waitFor(() => screen.getByRole('switch'));
+    await act(async () => { fireEvent.click(screen.getByRole('switch')); });
 
     await waitFor(() => {
       expect(screen.getByText('Las ventas han aumentado significativamente este mes.')).toBeInTheDocument();
+    });
+  });
+
+  // --- NEW TESTS: collapsible panel, toggle, date format, distinct toasts, AI context ---
+
+  it('el panel de rango está cerrado por defecto y se abre al pulsar el botón', async () => {
+    fetch.mockImplementation(mockFetchNoPrediction);
+    await act(async () => { renderPage(); });
+    // Panel should not be visible initially
+    expect(screen.queryByTestId('range-panel')).not.toBeInTheDocument();
+
+    await waitFor(() => screen.getByRole('button', { name: /opciones de rango/i }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /opciones de rango/i }));
+    });
+    expect(screen.getByTestId('range-panel')).toBeInTheDocument();
+  });
+
+  it('muestra el rango en formato DD-MM-AAAA', async () => {
+    fetch.mockImplementation(mockFetchNoPrediction);
+    await act(async () => { renderPage(); });
+    await waitFor(() => screen.getByTestId('range-display'));
+    const rangeText = screen.getByTestId('range-display').textContent;
+    // Should contain DD-MM-YYYY format (01-01-2026)
+    expect(rangeText).toMatch(/\d{2}-\d{2}-\d{4}/);
+    expect(rangeText).not.toMatch(/\d{4}-\d{2}-\d{2}/);
+  });
+
+  it('el toggle de comparativa muestra "Desactivar" cuando está activo', async () => {
+    fetch.mockImplementation(mockFetchNoPrediction);
+    await act(async () => { renderPage(); });
+    // Open the range panel
+    await waitFor(() => screen.getByRole('button', { name: /opciones de rango/i }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /opciones de rango/i }));
+    });
+    // Toggle should show "Desactivar" text initially (off)
+    expect(screen.getByText('Desactivar')).toBeInTheDocument();
+    // Click toggle to enable
+    await act(async () => {
+      fireEvent.click(screen.getByRole('switch'));
+    });
+    expect(screen.getByText('Activar')).toBeInTheDocument();
+  });
+
+  it('los botones de exportar muestran los nuevos nombres', async () => {
+    fetch.mockImplementation(mockFetchNoPrediction);
+    await act(async () => { renderPage(); });
+    // Open the range panel
+    await waitFor(() => screen.getByRole('button', { name: /opciones de rango/i }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /opciones de rango/i }));
+    });
+    expect(screen.getByRole('button', { name: /descargar informe básico/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /descargar informe completo/i })).toBeInTheDocument();
+  });
+
+  it('el botón "Descargar informe completo" llama a exportPdf con include_compare=true', async () => {
+    fetch.mockImplementation((url) => {
+      if (url.includes('export/pdf')) {
+        return Promise.resolve({
+          ok: true,
+          blob: () => Promise.resolve(new Blob(['pdf'], { type: 'application/pdf' })),
+        });
+      }
+      if (url.includes('predict')) return Promise.resolve({ ok: true, json: () => Promise.resolve({ historical: [], forecast: [], method: 'insufficient_data', n_months: 3, alpha: 0.3, beta: 0.1 }) });
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(SUMMARY_RESPONSE) });
+    });
+
+    const origCreateObjectURL = window.URL.createObjectURL;
+    const origRevokeObjectURL = window.URL.revokeObjectURL;
+    window.URL.createObjectURL = vi.fn(() => 'blob:mock');
+    window.URL.revokeObjectURL = vi.fn();
+
+    try {
+      await act(async () => { renderPage(); });
+      // Wait for summary to load first
+      await waitFor(() => expect(screen.queryByText(/cargando/i)).not.toBeInTheDocument());
+      await waitFor(() => screen.getByRole('button', { name: /opciones de rango/i }));
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /opciones de rango/i }));
+      });
+      await waitFor(() => screen.getByRole('button', { name: /descargar informe completo/i }));
+
+      fetch.mockClear();
+      fetch.mockImplementation((url) => {
+        if (url.includes('export/pdf')) {
+          return Promise.resolve({
+            ok: true,
+            blob: () => Promise.resolve(new Blob(['pdf'], { type: 'application/pdf' })),
+          });
+        }
+        if (url.includes('predict')) return Promise.resolve({ ok: true, json: () => Promise.resolve({ historical: [], forecast: [], method: 'insufficient_data', n_months: 3, alpha: 0.3, beta: 0.1 }) });
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(SUMMARY_RESPONSE) });
+      });
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /descargar informe completo/i }));
+      });
+
+      await waitFor(() => {
+        const pdfCall = fetch.mock.calls.find(c => typeof c[0] === 'string' && c[0].includes('export/pdf'));
+        expect(pdfCall).toBeTruthy();
+        expect(pdfCall[0]).toContain('include_compare=true');
+      });
+    } finally {
+      window.URL.createObjectURL = origCreateObjectURL;
+      window.URL.revokeObjectURL = origRevokeObjectURL;
+    }
+  });
+
+  it('el chat IA envía contexto de métricas en el payload', async () => {
+    const summaryWithData = {
+      metrics: {
+        range: { from: '2026-01-01', to: '2026-01-31' },
+        averages: { revenue: 2500, orders: 10, aov: 250, avg_per_customer: 125 },
+        sales_by_day: [],
+        top_products: [{ name: 'Silla', revenue: 500, qty: 5, product_id: 1 }],
+        basket_pairs: [],
+        rfm: { summary: {} },
+      },
+      ai_report: 'Informe de prueba.',
+    };
+    fetch.mockImplementation((url, opts) => {
+      if (url.includes('ai/chat')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({ answer: 'Respuesta contexto' }) });
+      }
+      if (url.includes('predict')) return Promise.resolve({ ok: true, json: () => Promise.resolve({ historical: [], forecast: [], method: 'insufficient_data', n_months: 3, alpha: 0.3, beta: 0.1 }) });
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(summaryWithData) });
+    });
+
+    await act(async () => { renderPage(); });
+    // Wait for KPIs to render with the loaded summary data
+    await waitFor(() => {
+      expect(screen.getByText('Pedidos')).toBeInTheDocument();
+    });
+    await waitFor(() => screen.getByRole('button', { name: /asistente ia/i }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /asistente ia/i }));
+    });
+    await waitFor(() => screen.getByPlaceholderText(/pregunta sobre ventas/i));
+
+    const chatInput = screen.getByPlaceholderText(/pregunta sobre ventas/i);
+    fireEvent.change(chatInput, { target: { value: '¿Cómo van las ventas?' } });
+    fireEvent.submit(chatInput.closest('form'));
+
+    await waitFor(() => {
+      const chatCall = fetch.mock.calls.find(c => typeof c[0] === 'string' && c[0].includes('ai/chat'));
+      expect(chatCall).toBeTruthy();
+      const body = JSON.parse(chatCall[1].body);
+      // Should have a system message with context data
+      const systemMsg = body.messages.find(m => m.role === 'system');
+      expect(systemMsg).toBeTruthy();
+      expect(systemMsg.content).toContain('2500');
     });
   });
 });

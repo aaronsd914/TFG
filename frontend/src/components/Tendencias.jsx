@@ -57,6 +57,9 @@ export default function TendenciasPage() {
   const [prediction, setPrediction] = useState(null);
   const [predLoading, setPredLoading] = useState(false);
 
+  // --- Panel colapsable ---
+  const [rangeOpen, setRangeOpen] = useState(false);
+
   // --- Chat ---
   const [messages, setMessages] = useState(() => [
     {
@@ -264,9 +267,15 @@ export default function TendenciasPage() {
   const delta = compare?.delta || null;
   const aiCompare = compare?.ai_compare_report || "";
 
+  const fmtDMY = (iso) => {
+    if (!iso) return '';
+    const [y, m, d] = iso.split('-');
+    return `${d}-${m}-${y}`;
+  };
+
   const titleRange = useMemo(() => {
     if (!metrics?.range) return "";
-    return `${metrics.range.from} → ${metrics.range.to}`;
+    return `${fmtDMY(metrics.range.from)} → ${fmtDMY(metrics.range.to)}`;
   }, [metrics?.range]);
 
   const lastDays = (days) => {
@@ -278,12 +287,12 @@ export default function TendenciasPage() {
   };
 
   const exportPdf = async (includeCompare) => {
-    const toastId = "tendencias-export";
+    const toastId = includeCompare ? "tendencias-export-full" : "tendencias-export-basic";
     try {
       sileo.show({
         id: toastId,
         state: "loading",
-        title: includeCompare ? "Generando PDF con comparativa…" : "Generando PDF de tendencias…",
+        title: includeCompare ? t('trends.exportFullLoading') : t('trends.exportBasicLoading'),
         duration: null,
       });
     } catch {}
@@ -312,8 +321,8 @@ export default function TendenciasPage() {
       try {
         sileo.success({
           id: toastId,
-          title: "Descarga iniciada",
-          description: includeCompare ? "PDF con comparativa" : "PDF de tendencias",
+          title: includeCompare ? t('trends.exportFullSuccess') : t('trends.exportBasicSuccess'),
+          description: includeCompare ? t('trends.exportFullDesc') : t('trends.exportBasicDesc'),
           duration: 1600,
         });
       } catch {}
@@ -321,7 +330,7 @@ export default function TendenciasPage() {
       try {
         sileo.error({
           id: toastId,
-          title: "No se pudo exportar",
+          title: includeCompare ? t('trends.exportFullError') : t('trends.exportBasicError'),
           description: e?.message || String(e),
         });
       } catch {}
@@ -361,16 +370,29 @@ export default function TendenciasPage() {
 
     try {
       const trimmed = (arr) => arr.slice(-12);
+      const contextParts = [];
+      if (avg) {
+        contextParts.push(`Ingresos: ${avg.revenue}€, Pedidos: ${avg.orders}, AOV: ${avg.aov}€, Gasto medio/cliente: ${avg.avg_per_customer}€`);
+      }
+      if (top.length) {
+        contextParts.push(`Top productos: ${top.slice(0, 5).map(p => `${p.name} (${p.revenue}€)`).join(', ')}`);
+      }
+      if (prediction?.forecast?.length) {
+        contextParts.push(`Previsión: ${prediction.forecast.map(f => `${f.month}: ${f.predicted_revenue}€`).join(', ')}`);
+      }
+      const contextMsg = contextParts.length
+        ? { role: "system", content: `Datos actuales del rango ${range.from} → ${range.to}:\n${contextParts.join('\n')}` }
+        : null;
+      const rawMsgs = [...messages, userMsg]
+        .filter((x) => x.role === "user" || x.role === "assistant" || x.role === "system")
+        .map((x) => ({ role: x.role, content: x.content }));
+      const withContext = contextMsg ? [contextMsg, ...rawMsgs] : rawMsgs;
       const chatPayload = {
         mode: "analytics",
         temperature: 0.2,
         date_from: range.from || null,
         date_to: range.to || null,
-        messages: trimmed(
-          [...messages, userMsg]
-            .filter((x) => x.role === "user" || x.role === "assistant" || x.role === "system")
-            .map((x) => ({ role: x.role, content: x.content }))
-        ),
+        messages: trimmed(withContext),
       };
 
       const res = await fetch(`${API_URL}ai/chat`, {
@@ -412,77 +434,102 @@ export default function TendenciasPage() {
   return (
     <div className="p-3 md:p-6 space-y-4">
       {/* HEADER */}
-      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">{t('trends.title')}</h1>
-          <p className="text-sm text-gray-600">{t('trends.subtitle')}</p>
-        </div>
-
-        <div className="flex flex-wrap items-end gap-2">
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <label className="block text-xs text-gray-600">{t('trends.from')}</label>
-            <input
-              type="date"
-              className="border rounded-2xl px-3 py-2 bg-white"
-              value={range.from}
-              onChange={(e) => setRange((r) => ({ ...r, from: e.target.value }))}
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-gray-600">{t('trends.to')}</label>
-            <input
-              type="date"
-              className="border rounded-2xl px-3 py-2 bg-white"
-              value={range.to}
-              onChange={(e) => setRange((r) => ({ ...r, to: e.target.value }))}
-            />
+            <h1 className="text-2xl font-semibold">{t('trends.title')}</h1>
+            <p className="text-sm text-gray-600">{t('trends.subtitle')}</p>
           </div>
 
-          <button className="text-sm px-3 py-2 rounded-2xl border bg-white hover:bg-gray-50" onClick={() => lastDays(7)}>
-            {t('trends.days7')}
-          </button>
-          <button className="text-sm px-3 py-2 rounded-2xl border bg-white hover:bg-gray-50" onClick={() => lastDays(30)}>
-            {t('trends.days30')}
-          </button>
-          <button className="text-sm px-3 py-2 rounded-2xl border bg-white hover:bg-gray-50" onClick={() => lastDays(90)}>
-            {t('trends.days90')}
-          </button>
-
-          <div className="flex items-center gap-2 ml-2">
-            <input
-              id="compare"
-              type="checkbox"
-              checked={compareEnabled}
-              onChange={(e) => setCompareEnabled(e.target.checked)}
-            />
-            <label htmlFor="compare" className="text-sm text-gray-700">
-              {t('trends.comparePrev')}
-            </label>
-          </div>
-
-          <div className="flex gap-2 ml-2">
+          <div className="flex items-center gap-3">
+            <div className="rounded-2xl border bg-white px-4 py-2">
+              <span className="text-sm text-gray-600">{t('trends.range')}: </span>
+              <span className="text-sm font-semibold">{titleRange || '—'}</span>
+            </div>
             <button
-              onClick={() => exportPdf(true)}
-              title={t('trends.exportTitle')}
+              onClick={() => setRangeOpen((o) => !o)}
               className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-2xl border bg-white hover:bg-gray-50"
+              aria-expanded={rangeOpen}
+              aria-label={t('trends.togglePanel')}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+              <svg xmlns="http://www.w3.org/2000/svg" className={"w-4 h-4 transition-transform " + (rangeOpen ? "rotate-180" : "")} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
               </svg>
-              {t('trends.exportAnalysis')}
-            </button>
-            <button
-              onClick={() => exportPdf(false)}
-              title={t('trends.exportCompTitle')}
-              className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-2xl btn-accent"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
-              </svg>
-              {t('trends.exportWithComparison')}
+              {t('trends.togglePanel')}
             </button>
           </div>
         </div>
+
+        {rangeOpen && (
+          <div className="rounded-2xl border bg-white p-4 flex flex-wrap items-end gap-3" data-testid="range-panel">
+            <div>
+              <label className="block text-xs text-gray-600">{t('trends.from')}</label>
+              <input
+                type="date"
+                className="border rounded-2xl px-3 py-2 bg-white"
+                value={range.from}
+                onChange={(e) => setRange((r) => ({ ...r, from: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-600">{t('trends.to')}</label>
+              <input
+                type="date"
+                className="border rounded-2xl px-3 py-2 bg-white"
+                value={range.to}
+                onChange={(e) => setRange((r) => ({ ...r, to: e.target.value }))}
+              />
+            </div>
+
+            <button className="text-sm px-3 py-2 rounded-2xl border bg-white hover:bg-gray-50" onClick={() => lastDays(7)}>
+              {t('trends.days7')}
+            </button>
+            <button className="text-sm px-3 py-2 rounded-2xl border bg-white hover:bg-gray-50" onClick={() => lastDays(30)}>
+              {t('trends.days30')}
+            </button>
+            <button className="text-sm px-3 py-2 rounded-2xl border bg-white hover:bg-gray-50" onClick={() => lastDays(90)}>
+              {t('trends.days90')}
+            </button>
+
+            <div className="flex items-center gap-3 ml-2">
+              <button
+                role="switch"
+                aria-checked={compareEnabled}
+                onClick={() => setCompareEnabled((v) => !v)}
+                className={"relative inline-flex h-6 w-11 items-center rounded-full transition-colors " + (compareEnabled ? "bg-green-500" : "bg-gray-300")}
+              >
+                <span className={"inline-block h-4 w-4 rounded-full bg-white transition-transform " + (compareEnabled ? "translate-x-6" : "translate-x-1")} />
+              </button>
+              <div className="text-sm">
+                <span className="font-medium text-gray-700">{compareEnabled ? t('trends.compareOn') : t('trends.compareOff')}</span>
+                <span className="block text-xs text-gray-500">{t('trends.compareDesc')}</span>
+              </div>
+            </div>
+
+            <div className="flex gap-2 ml-auto">
+              <button
+                onClick={() => exportPdf(false)}
+                title={t('trends.exportBasicTitle')}
+                className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-2xl border bg-white hover:bg-gray-50"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+                </svg>
+                {t('trends.exportBasic')}
+              </button>
+              <button
+                onClick={() => exportPdf(true)}
+                title={t('trends.exportFullTitle')}
+                className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-2xl btn-accent"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+                </svg>
+                {t('trends.exportFull')}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* BODY */}
@@ -498,7 +545,7 @@ export default function TendenciasPage() {
             <>
               <div className="rounded-2xl border bg-white p-4">
                 <div className="text-sm text-gray-600">{t('trends.range')}</div>
-                <div className="text-lg font-semibold">{titleRange}</div>
+                <div className="text-lg font-semibold" data-testid="range-display">{titleRange}</div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
