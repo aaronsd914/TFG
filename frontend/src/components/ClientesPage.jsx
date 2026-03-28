@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import { API_URL } from '../config.js';
 import ConfirmDeleteModal from './ConfirmDeleteModal.jsx';
-import ModalCenter from './ModalCenter.jsx';
+import ModalCenter, { CloseIcon, closeButtonClass } from './ModalCenter.jsx';
 
 // ===== Helpers =====
 function useDebouncedValue(value, delay = 200) {
@@ -612,9 +612,6 @@ export default function ClientesPage() {
       <ModalCenter isOpen={filtersOpen} onClose={() => setFiltersOpen(false)} maxWidth="max-w-lg">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">{t('clients.filtersTitle')}</h2>
-          <button onClick={() => setFiltersOpen(false)} className="text-gray-500 hover:text-gray-700" type="button">
-            {t('common.close')}
-          </button>
         </div>
 
         <section className="space-y-6">
@@ -664,7 +661,7 @@ export default function ClientesPage() {
       </ModalCenter>
 
       {/* Modal Detalle Cliente */}
-      <ModalCenter isOpen={detailOpen} onClose={closeDetail} maxWidth="max-w-4xl">
+      <ModalCenter isOpen={detailOpen} onClose={closeDetail} maxWidth="max-w-4xl" showClose={false}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">{t('clients.detailTitle')}</h2>
           <div className="flex items-center gap-2">
@@ -672,7 +669,7 @@ export default function ClientesPage() {
               <>
                 <button
                   onClick={() => setDeleteConfirmOpen(true)}
-                  className="px-3 py-1.5 rounded-lg border border-red-300 bg-white hover:bg-red-50 text-red-700 text-sm"
+                  className="px-3 py-1.5 rounded-lg border border-red-300 bg-white hover:bg-red-50 text-red-700 text-sm dark:bg-gray-700 dark:border-red-500 dark:text-red-400 dark:hover:bg-red-900/30"
                   type="button"
                   data-testid="cliente-delete-btn"
                 >
@@ -688,9 +685,7 @@ export default function ClientesPage() {
                 </button>
               </>
             )}
-            <button onClick={closeDetail} className="text-gray-500 hover:text-gray-700" type="button">
-              {t('common.close')}
-            </button>
+            <button type="button" onClick={closeDetail} className={closeButtonClass} aria-label="Cerrar"><CloseIcon /></button>
           </div>
         </div>
 
@@ -910,9 +905,6 @@ export default function ClientesPage() {
       <ModalCenter isOpen={editOpen} onClose={closeEdit} maxWidth="max-w-lg">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">{t('clients.editTitle')}</h2>
-          <button onClick={closeEdit} className="text-gray-500 hover:text-gray-700" type="button">
-            {t('common.close')}
-          </button>
         </div>
 
         <div className="space-y-4">

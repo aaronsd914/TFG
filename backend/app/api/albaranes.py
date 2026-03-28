@@ -12,6 +12,7 @@ from backend.app.entidades.linea_albaran import DeliveryNoteLineDB
 from backend.app.entidades.cliente import CustomerDB, CustomerCreate
 from backend.app.entidades.producto import ProductDB
 from backend.app.entidades.movimiento import MovementDB
+from backend.app.entidades.albaran_ruta import DeliveryNoteRouteDB
 from sqlalchemy import func
 
 from backend.app.utils.emailer import send_email_with_pdf
@@ -268,6 +269,15 @@ def create_delivery_note(
             type="INGRESO",
         )
         db.add(mov)
+        # Persist the deposit amount on the delivery note
+        delivery_note.fianza_pagada = (
+            float(deposit_amount) if payload.register_deposit else 0.0
+        )
+        db.commit()
+    else:
+        delivery_note.fianza_pagada = (
+            float(existing.amount) if payload.register_deposit else 0.0
+        )
         db.commit()
 
     return delivery_note
@@ -368,7 +378,15 @@ def update_status(
     )
     remaining = max(0.0, float(delivery_note.total or 0) - float(deposit or 0))
 
-    if remaining > 0:
+    # Skip cobro if the albarán belongs to a truck route — income was already
+    # registered by settle_truck (INGRESO "Ingreso ruta camion X").
+    in_route = (
+        db.query(DeliveryNoteRouteDB)
+        .filter(DeliveryNoteRouteDB.delivery_note_id == delivery_note.id)
+        .first()
+    )
+
+    if remaining > 0 and not in_route:
         mov = MovementDB(
             date=date.today(),
             description=f"Cobro albaran #{delivery_note.id} (pendiente)",
@@ -511,7 +529,12 @@ def download_delivery_note_pdf(
 
     customer_name = ""
     if customer:
-        customer_name = f"_{customer.name}_{customer.surnames}".replace(" ", "_")
+        import unicodedata
+
+        raw = f"_{customer.name}_{customer.surnames}".replace(" ", "_")
+        customer_name = (
+            unicodedata.normalize("NFKD", raw).encode("ascii", "ignore").decode("ascii")
+        )
     filename = f"albaran_{delivery_note.id}{customer_name}.pdf"
 
     return StreamingResponse(

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import { API_URL } from '../config.js';
 import ConfirmDeleteModal from './ConfirmDeleteModal.jsx';
-import ModalCenter from './ModalCenter.jsx';
+import ModalCenter, { CloseIcon, closeButtonClass } from './ModalCenter.jsx';
 
 // ===== Helpers =====
 function useDebouncedValue(value, delay = 200) {
@@ -574,9 +574,10 @@ export default function AlbaranesPage() {
   }, [q, sort, selectedDomains, selectedEstados, dateFrom, dateTo, totalRange]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const clampedPage = Math.min(currentPage, totalPages);
   const paginated = useMemo(
-    () => filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize),
-    [filtered, currentPage, pageSize]
+    () => filtered.slice((clampedPage - 1) * pageSize, clampedPage * pageSize),
+    [filtered, clampedPage, pageSize]
   );
 
   return (
@@ -722,24 +723,38 @@ export default function AlbaranesPage() {
                 <option value={100}>100</option>
               </select>
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <span>{t('albaranes.paginationInfo', { from: Math.min((currentPage - 1) * pageSize + 1, filtered.length), to: Math.min(currentPage * pageSize, filtered.length), total: filtered.length })}</span>
+            <div className="flex items-center gap-1 text-sm text-gray-600">
+              <button
+                type="button"
+                onClick={() => setCurrentPage(1)}
+                disabled={clampedPage === 1}
+                className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+                aria-label="Primera página"
+              >«</button>
               <button
                 type="button"
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40"
+                disabled={clampedPage === 1}
+                className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
                 aria-label="Página anterior"
               >‹</button>
-              <span>{currentPage}/{totalPages}</span>
+              <span className="px-3">{clampedPage} / {totalPages}</span>
               <button
                 type="button"
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage >= totalPages}
-                className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40"
+                disabled={clampedPage >= totalPages}
+                className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
                 aria-label="Página siguiente"
               >›</button>
+              <button
+                type="button"
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={clampedPage >= totalPages}
+                className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+                aria-label="Última página"
+              >»</button>
             </div>
+            <span className="text-sm text-gray-600">{t('albaranes.paginationInfo', { from: Math.min((clampedPage - 1) * pageSize + 1, filtered.length), to: Math.min(clampedPage * pageSize, filtered.length), total: filtered.length })}</span>
           </div>
         )}
 
@@ -747,9 +762,6 @@ export default function AlbaranesPage() {
         <ModalCenter isOpen={filtersOpen} onClose={() => setFiltersOpen(false)} maxWidth="max-w-lg">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">{t('albaranes.filtersTitle')}</h2>
-            <button onClick={() => setFiltersOpen(false)} className="text-gray-500 hover:text-gray-700" type="button">
-              {t('common.close')}
-            </button>
           </div>
 
           <section className="space-y-6">
@@ -877,7 +889,7 @@ export default function AlbaranesPage() {
         </ModalCenter>
 
         {/* ✅ Modal detalle albarán */}
-        <ModalCenter isOpen={detailOpen} onClose={closeDetail} maxWidth="max-w-3xl">
+        <ModalCenter isOpen={detailOpen} onClose={closeDetail} maxWidth="max-w-3xl" showClose={false}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">{t('albaranes.detailTitle')}</h2>
             <div className="flex items-center gap-2">
@@ -885,7 +897,7 @@ export default function AlbaranesPage() {
                 <>
                   <button
                     onClick={() => setDeleteConfirmOpen(true)}
-                    className="px-3 py-1.5 rounded-lg border border-red-300 bg-white hover:bg-red-50 text-red-700 text-sm"
+                    className="px-3 py-1.5 rounded-lg border border-red-300 bg-white hover:bg-red-50 text-red-700 text-sm dark:bg-gray-700 dark:border-red-500 dark:text-red-400 dark:hover:bg-red-900/30"
                     type="button"
                     data-testid="albaran-delete-btn"
                   >
@@ -901,9 +913,7 @@ export default function AlbaranesPage() {
                   </button>
                 </>
               )}
-              <button onClick={closeDetail} className="text-gray-500 hover:text-gray-700" type="button">
-                {t('common.close')}
-              </button>
+              <button type="button" onClick={closeDetail} className={closeButtonClass} aria-label="Cerrar"><CloseIcon /></button>
             </div>
           </div>
 
@@ -980,7 +990,7 @@ export default function AlbaranesPage() {
                         type="button"
                         onClick={closeLinesEdit}
                         disabled={linesSaving}
-                        className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-sm"
+                        className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-600"
                         data-testid="lines-cancel-btn"
                       >
                         {t('common.cancel')}
@@ -1189,9 +1199,6 @@ export default function AlbaranesPage() {
         <ModalCenter isOpen={editOpen} onClose={closeEdit} maxWidth="max-w-lg">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">{t('albaranes.editTitle')}</h2>
-            <button onClick={closeEdit} className="text-gray-500 hover:text-gray-700" type="button">
-              {t('common.close')}
-            </button>
           </div>
 
           <div className="space-y-4">
@@ -1235,7 +1242,7 @@ export default function AlbaranesPage() {
           <div className="mt-6 flex justify-end gap-3">
             <button
               onClick={closeEdit}
-              className="px-4 py-2 rounded-xl bg-gray-200 text-gray-900 hover:bg-gray-300"
+              className="px-4 py-2 rounded-xl bg-gray-200 text-gray-900 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-100 dark:hover:bg-gray-500"
               type="button"
               disabled={editSaving}
             >

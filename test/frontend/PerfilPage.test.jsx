@@ -196,4 +196,24 @@ describe('PerfilPage — Formularios', () => {
       expect(sileo.error).toHaveBeenCalledWith(expect.objectContaining({ description: expect.stringMatching(/error del servidor/i) }));
     });
   });
+
+  it('muestra sileo.error cuando la API falla en cambio de nombre de usuario', async () => {
+    apiFetch.mockRejectedValueOnce(new Error('Usuario ya en uso'));
+    renderPage();
+    const forms = document.querySelectorAll('form');
+    const usernameForm = forms[0];
+    const inputs = usernameForm.querySelectorAll('input');
+
+    await act(async () => {
+      fireEvent.change(inputs[0], { target: { value: 'mipassword' } });
+      fireEvent.change(inputs[1], { target: { value: 'nuevonombre' } });
+      fireEvent.submit(usernameForm);
+    });
+
+    await waitFor(() => {
+      expect(sileo.error).toHaveBeenCalledWith(
+        expect.objectContaining({ description: expect.stringMatching(/usuario ya en uso/i) })
+      );
+    });
+  });
 });

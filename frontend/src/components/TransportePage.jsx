@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sileo } from 'sileo';
-import { AnimatedTabs } from './ui/AnimatedTabs.jsx';
 
 import { API_URL } from '../config.js';
 const LS_KEY = 'tfg_transportes_camiones_extra';
@@ -71,7 +70,17 @@ function ModalCenter({ isOpen, onClose, children, maxWidth = 'max-w-xl' }) {
     <div className="fixed inset-0 z-50">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="absolute inset-0 flex items-center justify-center p-4">
-        <div className={`w-full ${maxWidth} bg-white rounded-2xl shadow-2xl p-6 overflow-y-auto max-h-[90vh]`}>
+        <div className={`relative w-full ${maxWidth} bg-white rounded-2xl shadow-2xl p-6 overflow-y-auto max-h-[90vh]`}>
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute top-3 right-3 p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-500 dark:hover:text-gray-300 dark:hover:bg-gray-700"
+            aria-label="Cerrar"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </button>
           {children}
         </div>
       </div>
@@ -91,50 +100,40 @@ export default function TransportePage() {
 
   const [search, setSearch] = useState('');
 
-  const [camionesExtra, setCamionesExtra] = useState([]);
+  const [camionesExtra, setCamionesExtra] = useState(() => {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) return [];
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) return Array.from(new Set(arr.map(Number).filter(n => Number.isInteger(n) && n > 0))).sort((a, b) => a - b);
+    } catch { /* ignore */ }
+    return [];
+  });
   const [nuevoCamion, setNuevoCamion] = useState('');
-  const [camionesOcultos, setCamionesOcultos] = useState([]);
+  const [camionesOcultos, setCamionesOcultos] = useState(() => {
+    try {
+      const raw = localStorage.getItem(LS_KEY_HIDDEN);
+      if (!raw) return [];
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) return Array.from(new Set(arr.map(Number).filter(n => Number.isInteger(n) && n > 0))).sort((a, b) => a - b);
+    } catch { /* ignore */ }
+    return [];
+  });
 
-  const [camionesAceptados, setCamionesAceptados] = useState({});
+  const [camionesAceptados, setCamionesAceptados] = useState(() => {
+    try {
+      const raw = localStorage.getItem(LS_KEY_ACCEPTED);
+      if (!raw) return {};
+      const obj = JSON.parse(raw);
+      return (obj && typeof obj === 'object') ? obj : {};
+    } catch { /* ignore */ }
+    return {};
+  });
 
   const [camionesModalOpen, setCamionesModalOpen] = useState(false);
 
   const [dragging, setDragging] = useState(null);
   const [overZone, setOverZone] = useState(null);
-  const [activeTab, setActiveTab] = useState('almacen');
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(LS_KEY);
-      if (!raw) return;
-      const arr = JSON.parse(raw);
-      if (Array.isArray(arr)) {
-        const cleaned = arr.map(Number).filter(n => Number.isInteger(n) && n > 0);
-        setCamionesExtra(Array.from(new Set(cleaned)).sort((a, b) => a - b));
-      }
-    } catch { /* ignore */ }
-  }, []);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(LS_KEY_HIDDEN);
-      if (!raw) return;
-      const arr = JSON.parse(raw);
-      if (Array.isArray(arr)) {
-        const cleaned = arr.map(Number).filter(n => Number.isInteger(n) && n > 0);
-        setCamionesOcultos(Array.from(new Set(cleaned)).sort((a, b) => a - b));
-      }
-    } catch { /* ignore */ }
-  }, []);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(LS_KEY_ACCEPTED);
-      if (!raw) return;
-      const obj = JSON.parse(raw);
-      if (obj && typeof obj === 'object') setCamionesAceptados(obj);
-    } catch { /* ignore */ }
-  }, []);
 
   useEffect(() => {
     try { localStorage.setItem(LS_KEY, JSON.stringify(camionesExtra)); } catch { /* ignore */ }
@@ -147,6 +146,17 @@ export default function TransportePage() {
   useEffect(() => {
     try { localStorage.setItem(LS_KEY_ACCEPTED, JSON.stringify(camionesAceptados)); } catch { /* ignore */ }
   }, [camionesAceptados]);
+
+  // When rutas changes (after any fetchAll), drop extra trucks that no longer
+  // have RUTA albarans on the server. Accepted flags are preserved intentionally.
+  useEffect(() => {
+    const serverSet = new Set((rutas.camiones || []).map(c => Number(c.camion_id)));
+    setCamionesExtra(prev => {
+      if (!prev || prev.length === 0) return prev;
+      const next = prev.filter(cid => serverSet.has(cid));
+      return next.length === prev.length ? prev : next;
+    });
+  }, [rutas]);
 
   const clientesMap = useMemo(() => {
     const m = new Map();
@@ -214,17 +224,16 @@ export default function TransportePage() {
       setRutas(rut);
       setClientes(cli);
 
-      // ✅ Persistimos camiones “vistos” (para que no desaparezcan cuando queden vacíos)
+      // Persist newly-seen truck IDs so empty trucks remain visible until removed below
       try {
         const idsServer = (rut?.camiones || []).map(x => Number(x.camion_id)).filter(Boolean);
         if (idsServer.length) {
           setCamionesExtra(prev => {
             const merged = new Set([...(prev || []), ...idsServer]);
-            const filtered = Array.from(merged)
+            return Array.from(merged)
               .map(Number)
               .filter(n => Number.isInteger(n) && n > 0)
-              .filter(cid => !(camionesOcultos || []).includes(cid));
-            return filtered.sort((a, b) => a - b);
+              .sort((a, b) => a - b);
           });
         }
       } catch { /* ignore */ }
@@ -240,7 +249,7 @@ export default function TransportePage() {
     }
   }
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   useEffect(() => { fetchAll(); }, []);
 
   async function asignarA(camion_id, albaran_id) {
@@ -562,7 +571,7 @@ export default function TransportePage() {
         box: 'bg-white',
         header: 'bg-gray-100',
         border: 'border-gray-200',
-        badge: 'Vacío',
+        badge: t('transport.emptyBadge'),
         badgeClass: 'bg-gray-100 border-gray-200 text-gray-700',
       };
     }
@@ -571,7 +580,7 @@ export default function TransportePage() {
         box: 'bg-green-50',
         header: 'bg-green-100',
         border: 'border-green-200',
-        badge: 'Aceptada',
+        badge: t('transport.accepted'),
         badgeClass: 'bg-green-100 border-green-200 text-green-800',
       };
     }
@@ -596,14 +605,6 @@ export default function TransportePage() {
       <div className="p-3 md:p-6 space-y-6">
         <div className="flex items-center justify-between gap-3">
           <h1 className="text-2xl font-semibold">{t('transport.title')}</h1>
-          <AnimatedTabs
-            tabs={[
-              { value: 'almacen', label: t('transport.tabWarehouse', { n: almacenFiltrado.length }) },
-              { value: 'ruta', label: t('transport.tabInRoute', { n: pendienteFiltrado.length }) },
-            ]}
-            activeTab={activeTab}
-            onChange={setActiveTab}
-          />
         </div>
 
         <div className="bg-white border border-gray-200 rounded-2xl p-4">
@@ -636,9 +637,7 @@ export default function TransportePage() {
         <div className="flex gap-4 overflow-x-auto pb-2">
         {/* ALMACÉN */}
         <div
-          className={`min-w-[320px] max-w-[360px] flex-shrink-0 rounded-2xl border overflow-hidden bg-gray-50 transition-all duration-200 ${
-            activeTab === 'ruta' ? 'hidden md:flex md:flex-col' : 'flex flex-col'
-          } ${
+          className={`min-w-[320px] max-w-[360px] flex-shrink-0 rounded-2xl border overflow-hidden bg-gray-50 transition-all duration-200 flex flex-col ${
             overZone === 'almacen' ? 'border-black ring-2 ring-black/20' : 'border-gray-200'
           }`}
           onDragOver={allowDrop('almacen')}
@@ -678,9 +677,7 @@ export default function TransportePage() {
 
         {/* PENDIENTE (sin camión) */}
         <div
-          className={`min-w-[320px] max-w-[360px] flex-shrink-0 rounded-2xl border overflow-hidden bg-gray-50 transition-all duration-200 ${
-            activeTab === 'almacen' ? 'hidden md:flex md:flex-col' : 'flex flex-col'
-          } ${
+          className={`min-w-[320px] max-w-[360px] flex-shrink-0 rounded-2xl border overflow-hidden bg-gray-50 transition-all duration-200 flex flex-col ${
             overZone === 'pendiente' ? 'border-black ring-2 ring-black/20' : 'border-gray-200'
           }`}
           onDragOver={allowDrop('pendiente')}
@@ -703,13 +700,6 @@ export default function TransportePage() {
                 onDragEnd={onDragEndCard}
               >
                 <div className="flex gap-2">
-                  <button
-                    className="flex-1 px-3 py-2 rounded-lg border btn-accent disabled:opacity-50 text-sm"
-                    onClick={() => marcarEntregado(a.id)}
-                    disabled={processing}
-                  >
-                    {t('transport.delivered')}
-                  </button>
                   <button
                     className="flex-1 px-3 py-2 rounded-lg border hover:bg-white/60 disabled:opacity-50 text-sm"
                     onClick={() => volverAlmacen(a.id)}
@@ -734,9 +724,7 @@ export default function TransportePage() {
           return (
             <div
               key={cid}
-              className={`min-w-[320px] max-w-[360px] flex-shrink-0 rounded-2xl border overflow-hidden transition-all duration-200 ${
-                activeTab === 'almacen' ? 'hidden md:flex md:flex-col' : 'flex flex-col'
-              } ${st.box} ${
+              className={`min-w-[320px] max-w-[360px] flex-shrink-0 rounded-2xl border overflow-hidden transition-all duration-200 flex flex-col ${st.box} ${
                 overZone === zoneKey ? 'border-black ring-2 ring-black/20' : st.border
               }`}
               onDragOver={allowDrop(zoneKey)}
@@ -774,6 +762,7 @@ export default function TransportePage() {
                         puedeQuitar ? 'hover:bg-white/60' : 'opacity-40 cursor-not-allowed'
                       }`}
                       onClick={() => {
+                        /* v8 ignore next 7 */
                         if (!puedeQuitar) {
                           sileo.warning({
                             title: t('transport.cannotDelete'),
@@ -831,13 +820,6 @@ export default function TransportePage() {
         <ModalCenter isOpen={camionesModalOpen} onClose={() => setCamionesModalOpen(false)} maxWidth="max-w-lg">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">{t('transport.trucks')}</h2>
-            <button
-              onClick={() => setCamionesModalOpen(false)}
-              className="text-gray-500 hover:text-gray-700"
-              type="button"
-            >
-              {t('transport.closeBtn')}
-            </button>
           </div>
 
           <div className="space-y-4">
@@ -903,6 +885,7 @@ export default function TransportePage() {
                               puedeQuitar ? 'hover:bg-gray-50' : 'opacity-40 cursor-not-allowed'
                             }`}
                             onClick={() => {
+                              /* v8 ignore next 7 */
                               if (!puedeQuitar) {
                                 sileo.warning({
                                   title: t('transport.cannotDelete'),

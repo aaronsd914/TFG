@@ -6,7 +6,7 @@ import { API_URL } from '../config.js';
 
 const TIPO_META = {
   INGRESO: { label: 'Ingreso', className: 'bg-green-100 text-green-800 border-green-300' },
-  EGRESO: { label: 'Egreso', className: 'bg-red-100 text-red-800 border-red-300' },
+  EGRESO: { label: 'Gasto', className: 'bg-red-100 text-red-800 border-red-300' },
 };
 
 function formatEUR(n) {
@@ -22,7 +22,7 @@ function Chip({ label, onRemove }) {
   return (
     <span className="inline-flex items-center gap-1.5 bg-gray-100 border border-gray-200 px-3 py-1 rounded-full text-sm">
       {label}
-      <button className="text-gray-500 hover:text-gray-700" onClick={onRemove} aria-label={`Quitar ${label}`} type="button">Ã—</button>
+      <button className="text-gray-500 hover:text-gray-700" onClick={onRemove} aria-label={`Quitar ${label}`} type="button">{'×'}</button>
     </span>
   );
 }
@@ -33,7 +33,17 @@ function ModalCenter({ isOpen, onClose, children, maxWidth = 'max-w-lg' }) {
     <div className="fixed inset-0 z-40">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="absolute inset-0 flex items-center justify-center p-4">
-        <div className={`w-full ${maxWidth} bg-white rounded-2xl shadow-2xl p-6 overflow-y-auto max-h-[90vh]`}>
+        <div className={`relative w-full ${maxWidth} bg-white rounded-2xl shadow-2xl p-6 overflow-y-auto max-h-[90vh]`}>
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute top-3 right-3 p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-500 dark:hover:text-gray-300 dark:hover:bg-gray-700"
+            aria-label="Cerrar"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </button>
           {children}
         </div>
       </div>
@@ -66,6 +76,8 @@ export default function MovimientosPage() {
   const [fechaErr, setFechaErr] = useState(false);
   const [conceptoErr, setConceptoErr] = useState(false);
   const [cantidadErr, setCantidadErr] = useState(false);
+  const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
   async function fetchMovs() {
     try {
       setLoading(true);
@@ -156,10 +168,19 @@ export default function MovimientosPage() {
       }
 
       if (!query) return true;
-      const hay = `${mv.description || ''} ${mv.type || ''} ${mv.amount || ''}`.toLowerCase();
+      const hay = `${mv.description || ''} ${mv.type || ''} ${mv.amount || ''} ${mv.date || ''}`.toLowerCase();
       return hay.includes(query);
     });
   }, [movs, q, typeFilter, desde, hasta]);
+
+  const totalPages = Math.max(1, Math.ceil(movsFiltrados.length / pageSize));
+  const clampedPage = Math.min(currentPage, totalPages);
+  const paginated = useMemo(
+    () => movsFiltrados.slice((clampedPage - 1) * pageSize, clampedPage * pageSize),
+    [movsFiltrados, clampedPage, pageSize]
+  );
+
+  useEffect(() => { setCurrentPage(1); }, [q, typeFilter, desde, hasta, pageSize]);
 
   // Resumen del mes actual
   const resumen = useMemo(() => {
@@ -237,11 +258,8 @@ export default function MovimientosPage() {
               <button
                 type="button"
                 onClick={() => setFiltersModalOpen(true)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl border text-sm font-medium transition-colors ${activeCount > 0 ? 'btn-accent-tab' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                className="rounded-xl border border-gray-300 px-4 py-2 bg-white hover:bg-gray-50"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 8h10M11 12h2M13 16h-2" />
-                </svg>
                 {t('common.filters')}{activeCount > 0 ? ` (${activeCount})` : ''}
               </button>
             </div>
@@ -264,15 +282,10 @@ export default function MovimientosPage() {
               </div>
             )}
 
-            <div className="text-sm text-gray-500">
-              Mostrando <span className="font-medium text-gray-800">{movsFiltrados.length}</span> movimientos.
-            </div>
-
             {/* Modal filtros */}
             <ModalCenter isOpen={filtersModalOpen} onClose={() => setFiltersModalOpen(false)}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold">{t('common.filters')}</h2>
-                <button onClick={() => setFiltersModalOpen(false)} className="text-gray-500 hover:text-gray-700" type="button">{t('common.close')}</button>
               </div>
 
               <div className="space-y-5">
@@ -307,7 +320,7 @@ export default function MovimientosPage() {
               <div className="mt-8 flex items-center justify-between">
                 <button
                   type="button"
-                  className="px-4 py-2 rounded-xl bg-gray-200 text-gray-900 hover:bg-gray-300"
+                  className="px-4 py-2 rounded-xl bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600"
                   onClick={() => { setTipoFiltro('TODOS'); setDesde(''); setHasta(''); }}
                 >
                   {t('common.clear')}
@@ -329,15 +342,12 @@ export default function MovimientosPage() {
       <ModalCenter isOpen={formModalOpen} onClose={() => { setFormModalOpen(false); setFechaErr(false); setConceptoErr(false); setCantidadErr(false); }}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">{t('movements.addMovement')}</h2>
-          <button onClick={() => setFormModalOpen(false)} className="text-gray-500 hover:text-gray-700" type="button">
-            {t('common.close')}
-          </button>
         </div>
 
         <form onSubmit={addMovimiento} className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">
-              Fecha <span className="text-red-600">*</span>
+              {t('movements.formDate')} <span className="text-red-600">*</span>
             </label>
             <input
               type="date"
@@ -345,26 +355,24 @@ export default function MovimientosPage() {
               onChange={(e) => { setFecha(e.target.value); setFechaErr(false); }}
               className={`w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 ${fechaErr ? 'border-red-500 focus:ring-red-300' : 'focus:ring-gray-300'}`}
             />
-            {fechaErr && <p className="text-red-500 text-xs mt-1">La fecha es obligatoria.</p>}
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1">
-              Concepto <span className="text-red-600">*</span>
+              {t('movements.formConcept')} <span className="text-red-600">*</span>
             </label>
             <input
               type="text"
-              placeholder="Concepto"
+              placeholder={t('movements.conceptPlaceholder')}
               value={concepto}
               onChange={(e) => { setConcepto(e.target.value); setConceptoErr(false); }}
               className={`w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 ${conceptoErr ? 'border-red-500 focus:ring-red-300' : 'focus:ring-gray-300'}`}
             />
-            {conceptoErr && <p className="text-red-500 text-xs mt-1">El concepto es obligatorio.</p>}
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1">
-              Cantidad (€) <span className="text-red-600">*</span>
+              {t('movements.formAmount')} <span className="text-red-600">*</span>
             </label>
             <input
               type="number"
@@ -375,21 +383,28 @@ export default function MovimientosPage() {
               onChange={(e) => { setCantidad(e.target.value); setCantidadErr(false); }}
               className={`w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 ${cantidadErr ? 'border-red-500 focus:ring-red-300' : 'focus:ring-gray-300'}`}
             />
-            {cantidadErr && <p className="text-red-500 text-xs mt-1">Introduce una cantidad vÃ¡lida mayor que 0.</p>}
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1">
-              Tipo <span className="text-red-600">*</span>
+              {t('movements.typeLabel')} <span className="text-red-600">*</span>
             </label>
-            <select
-              value={tipo}
-              onChange={(e) => setTipo(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2"
-            >
-              <option value="INGRESO">{t('movements.income')}</option>
-              <option value="EGRESO">{t('movements.expense')}</option>
-            </select>
+            <div className="flex rounded-xl border border-gray-300 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setTipo('INGRESO')}
+                className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${tipo === 'INGRESO' ? 'btn-accent-tab' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+              >
+                {t('movements.income')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setTipo('EGRESO')}
+                className={`flex-1 px-4 py-2 text-sm font-medium transition-colors border-l border-gray-300 ${tipo === 'EGRESO' ? 'btn-accent-tab' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+              >
+                {t('movements.expense')}
+              </button>
+            </div>
           </div>
 
           <div className="flex justify-end gap-3 pt-2">
@@ -427,7 +442,7 @@ export default function MovimientosPage() {
           {!loading && !err && movs.length === 0 && (
             <li className="p-6 text-gray-500">{t('movements.noMovements')}</li>
           )}
-          {movsFiltrados.map((mv) => {
+          {paginated.map((mv) => {
             const meta = TIPO_META[mv.type] || { className: 'bg-gray-100 text-gray-700 border-gray-300' };
             return (
               <li key={mv.id} className="grid grid-cols-12 px-4 py-3 border-t">
@@ -444,6 +459,58 @@ export default function MovimientosPage() {
         </div>
         </div>
       </div>
+
+      {/* Paginación */}
+      {!loading && !err && movsFiltrados.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-gray-600">{t('movements.pageSizeLabel')}</span>
+            <select
+              value={pageSize}
+              onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
+              className="border border-gray-300 rounded-lg px-2 py-1 text-sm"
+              data-testid="mov-page-size-select"
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+          </div>
+          <div className="flex items-center gap-1 text-sm text-gray-600">
+            <button
+              type="button"
+              onClick={() => setCurrentPage(1)}
+              disabled={clampedPage === 1}
+              className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+              aria-label="Primera p\u00e1gina"
+            >«</button>
+            <button
+              type="button"
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={clampedPage === 1}
+              className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+              aria-label="P\u00e1gina anterior"
+            >‹</button>
+            <span className="px-3">{clampedPage} / {totalPages}</span>
+            <button
+              type="button"
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={clampedPage >= totalPages}
+              className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+              aria-label="P\u00e1gina siguiente"
+            >›</button>
+            <button
+              type="button"
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={clampedPage >= totalPages}
+              className="px-2 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+              aria-label="\u00daltima p\u00e1gina"
+            >»</button>
+          </div>
+          <span className="text-sm text-gray-600">{t('movements.paginationInfo', { from: Math.min((clampedPage - 1) * pageSize + 1, movsFiltrados.length), to: Math.min(clampedPage * pageSize, movsFiltrados.length), total: movsFiltrados.length })}</span>
+        </div>
+      )}
     </div>
   );
 }

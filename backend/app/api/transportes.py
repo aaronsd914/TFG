@@ -309,6 +309,34 @@ def remove_route(body: RemoveRouteBody, db: Annotated[Session, Depends(get_db)])
     if missing:
         raise HTTPException(status_code=404, detail=f"No existen albaranes: {missing}")
 
+    # Discover which trucks owned these albaranes BEFORE removing them
+    route_entries = (
+        db.query(DeliveryNoteRouteDB)
+        .filter(DeliveryNoteRouteDB.delivery_note_id.in_(body.albaran_ids))
+        .all()
+    )
+    truck_ids_affected = {r.truck_id for r in route_entries if r.truck_id is not None}
+
+    # For each affected truck, check if settlement movements exist and delete them
+    trucks_with_movements: set[int] = set()
+    for truck_id in truck_ids_affected:
+        egreso_prefix = f"Transporte camion {truck_id}"
+        ingreso_prefix = f"Ingreso ruta camion {truck_id}"
+        deleted_egreso = (
+            db.query(MovementDB)
+            .filter(
+                MovementDB.type == "EGRESO",
+                MovementDB.description.like(f"{egreso_prefix}%"),
+            )
+            .delete(synchronize_session=False)
+        )
+        db.query(MovementDB).filter(
+            MovementDB.type == "INGRESO",
+            MovementDB.description.like(f"{ingreso_prefix}%"),
+        ).delete(synchronize_session=False)
+        if deleted_egreso:
+            trucks_with_movements.add(truck_id)
+
     for a in delivery_notes:
         a.status = "ALMACEN"
 
@@ -317,6 +345,56 @@ def remove_route(body: RemoveRouteBody, db: Annotated[Session, Depends(get_db)])
     ).delete(synchronize_session=False)
 
     db.commit()
+
+    # Recalculate movements for trucks that had prior settlements and still have albaranes
+    today = date.today()
+    for truck_id in trucks_with_movements:
+        remaining = (
+            db.query(DeliveryNoteDB)
+            .join(
+                DeliveryNoteRouteDB,
+                DeliveryNoteRouteDB.delivery_note_id == DeliveryNoteDB.id,
+            )
+            .filter(
+                DeliveryNoteDB.status == "RUTA",
+                DeliveryNoteRouteDB.truck_id == truck_id,
+            )
+            .all()
+        )
+        if not remaining:
+            continue
+        base_total = round(sum(float(a.total or 0) for a in remaining), 2)
+        amount_egreso = round(base_total * 0.07, 2)
+        total_fianza = round(sum(float(a.fianza_pagada or 0) for a in remaining), 2)
+        ingreso_amount = max(0.0, round(base_total - amount_egreso - total_fianza, 2))
+        egreso_prefix = f"Transporte camion {truck_id}"
+        ingreso_prefix = f"Ingreso ruta camion {truck_id}"
+        nr = len(remaining)
+        pedidos_str = f"{nr} pedido" if nr == 1 else f"{nr} pedidos"
+        db.add(
+            MovementDB(
+                date=today,
+                description=(
+                    f"{egreso_prefix} (7% recalculado: {base_total:.2f} €"
+                    f" - {pedidos_str})"
+                ),
+                amount=float(amount_egreso),
+                type="EGRESO",
+            )
+        )
+        db.add(
+            MovementDB(
+                date=today,
+                description=(
+                    f"{ingreso_prefix} (recalculado: {base_total:.2f} €"
+                    f" - 7% - fianza {total_fianza:.2f} € - {pedidos_str})"
+                ),
+                amount=float(ingreso_amount),
+                type="INGRESO",
+            )
+        )
+        db.commit()
+
     return {"ok": True, "n": len(delivery_notes)}
 
 
@@ -391,32 +469,51 @@ def settle_truck(truck_id: int, db: Annotated[Session, Depends(get_db)]):
     percentage = 0.07
     amount = round(base_total * percentage, 2)
 
-    description_prefix = f"Transporte camion {truck_id}"
+    egreso_prefix = f"Transporte camion {truck_id}"
+    ingreso_prefix = f"Ingreso ruta camion {truck_id}"
     today = date.today()
+    n = len(delivery_notes)
+    pedidos_str = f"{n} pedido" if n == 1 else f"{n} pedidos"
 
-    existing = (
-        db.query(MovementDB)
-        .filter(
-            MovementDB.type == "EGRESO",
-            MovementDB.date == today,
-            MovementDB.description.like(f"{description_prefix}%"),
-        )
-        .order_by(MovementDB.id.desc())
-        .first()
+    # Always delete previous movements for this truck and recreate fresh ones.
+    # This avoids reusing stale movements from old routes on the same truck.
+    db.query(MovementDB).filter(
+        MovementDB.type == "EGRESO",
+        MovementDB.description.like(f"{egreso_prefix}%"),
+    ).delete(synchronize_session=False)
+    db.query(MovementDB).filter(
+        MovementDB.type == "INGRESO",
+        MovementDB.description.like(f"{ingreso_prefix}%"),
+    ).delete(synchronize_session=False)
+    db.flush()
+
+    # --- EGRESO (7% transporter commission) ---
+    mov = MovementDB(
+        date=today,
+        description=f"{egreso_prefix} (7% de {base_total:.2f} € - {pedidos_str})",
+        amount=float(amount),
+        type="EGRESO",
     )
+    db.add(mov)
+    db.flush()
+    db.refresh(mov)
 
-    if existing:
-        mov = existing
-    else:
-        mov = MovementDB(
+    # --- INGRESO (total - 7% - fianza_pagada) ---
+    total_fianza = round(sum(float(a.fianza_pagada or 0) for a in delivery_notes), 2)
+    ingreso_amount = max(0.0, round(base_total - amount - total_fianza, 2))
+
+    db.add(
+        MovementDB(
             date=today,
-            description=f"{description_prefix} (7% de {base_total:.2f} € - {len(delivery_notes)} pedidos)",
-            amount=float(amount),
-            type="EGRESO",
+            description=(
+                f"{ingreso_prefix} ({base_total:.2f} € - 7% - fianza {total_fianza:.2f} €"
+                f" - {pedidos_str})"
+            ),
+            amount=float(ingreso_amount),
+            type="INGRESO",
         )
-        db.add(mov)
-        db.commit()
-        db.refresh(mov)
+    )
+    db.commit()
 
     return SettleTruckOut(
         ok=True,

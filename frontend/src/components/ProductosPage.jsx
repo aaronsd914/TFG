@@ -68,10 +68,12 @@ function Modal({ open, onClose, title, children, maxWidth = 'max-w-3xl' }) {
             <button
               type="button"
               onClick={onClose}
-              className="w-9 h-9 rounded-xl hover:bg-gray-100 flex items-center justify-center text-lg"
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100"
               aria-label="Cerrar"
             >
-              ×
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
             </button>
           </div>
           <div className="p-4">{children}</div>
@@ -112,7 +114,7 @@ export default function ProductosPage() {
   // preferencias persistidas
   const [tab, setTab] = useLocalStorageState('productos.tab', 'listado'); // listado | gestion
   const [groupMode, setGroupMode] = useLocalStorageState('productos.groupMode', 'all'); // all | proveedor
-  const [pageSize, setPageSize] = useLocalStorageState('productos.pageSize', 12);
+  const PAGE_SIZE = 12;
 
   // datos
   const [productos, setProductos] = useState([]);
@@ -192,7 +194,7 @@ export default function ProductosPage() {
     } catch (e) {
       setErr(e.message);
       try {
-        sileo.error({ title: '❌ Error cargando productos', description: e.message });
+        sileo.error({ title: t('products.notifLoadErrorTitle'), description: e.message });
       } catch {}
     } finally {
       setLoading(false);
@@ -205,7 +207,7 @@ export default function ProductosPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [q, provFilter, minPrecio, maxPrecio, sort, pageSize, groupMode]);
+  }, [q, provFilter, minPrecio, maxPrecio, sort, groupMode]);
 
   const precioRangeInvalid = useMemo(() => {
     if (minPrecio === '' || maxPrecio === '') return false;
@@ -275,14 +277,14 @@ export default function ProductosPage() {
   ]);
 
   // ===== MODO ALL (tarjetas + paginación) =====
-  const totalPages = Math.max(1, Math.ceil(filteredBase.length / Number(pageSize || 12)));
+  const totalPages = Math.max(1, Math.ceil(filteredBase.length / PAGE_SIZE));
   const safePage = Math.min(Math.max(1, page), totalPages);
 
   const pageSlice = useMemo(() => {
-    const size = Number(pageSize || 12);
+    const size = PAGE_SIZE;
     const start = (safePage - 1) * size;
     return filteredBase.slice(start, start + size);
-  }, [filteredBase, safePage, pageSize]);
+  }, [filteredBase, safePage]);
 
   // ===== MODO PROVEEDOR =====
   const providerCards = useMemo(() => {
@@ -397,9 +399,11 @@ export default function ProductosPage() {
     setCreateErrors(v.errors);
 
     if (!v.ok) {
-      const msg = `Completa: ${v.missing.join(', ')}.`;
       try {
-        sileo.warning({ title: '⚠️ Faltan campos obligatorios', description: msg });
+        sileo.warning({
+        title: t('products.notifMissingFieldsTitle'),
+        description: t('products.notifMissingFieldsDesc', { fields: v.missing.join(', ') }),
+      });
       } catch {}
       return;
     }
@@ -426,8 +430,12 @@ export default function ProductosPage() {
 
       try {
         sileo.success({
-          title: '📦 Producto creado',
-          description: `“${nuevo.name}” · ${eur(nuevo.price)} · Proveedor: ${supplierName(nuevo.supplier_id)}`,
+          title: t('products.notifProductCreatedTitle'),
+          description: t('products.notifProductCreatedDesc', {
+            name: nuevo.name,
+            price: eur(nuevo.price),
+            supplier: supplierName(nuevo.supplier_id),
+          }),
         });
       } catch {}
 
@@ -440,7 +448,7 @@ export default function ProductosPage() {
       setCreateModalOpen(false);
     } catch (e2) {
       try {
-        sileo.error({ title: '❌ No se pudo crear el producto', description: e2.message });
+        sileo.error({ title: t('products.notifCreateErrorTitle'), description: e2.message });
       } catch {}
     } finally {
       setSaving(false);
@@ -452,7 +460,10 @@ export default function ProductosPage() {
 
     if (!selectedProduct) {
       try {
-        sileo.warning({ title: '⚠️ Selecciona un producto', description: 'Elige un producto de la lista para actualizar.' });
+        sileo.warning({
+      title: t('products.notifSelectProductTitle'),
+      description: t('products.notifSelectProductDesc'),
+    });
       } catch {}
       return;
     }
@@ -461,9 +472,11 @@ export default function ProductosPage() {
     setEditErrors(v.errors);
 
     if (!v.ok) {
-      const msg = `Completa: ${v.missing.join(', ')}.`;
       try {
-        sileo.warning({ title: '⚠️ Faltan campos obligatorios', description: msg });
+        sileo.warning({
+        title: t('products.notifMissingFieldsTitle'),
+        description: t('products.notifMissingFieldsDesc', { fields: v.missing.join(', ') }),
+      });
       } catch {}
       return;
     }
@@ -490,14 +503,17 @@ export default function ProductosPage() {
       setProductos((prev) => prev.map((p) => (p.id === id ? updated : p)));
 
       try {
-        sileo.success({ title: '✏️ Producto actualizado', description: `Cambios guardados en “${updated.name}”.` });
+        sileo.success({
+        title: t('products.notifProductUpdatedTitle'),
+        description: t('products.notifProductUpdatedDesc', { name: updated.name }),
+      });
       } catch {}
 
       setEditTouched(false);
       setEditErrors({});
     } catch (e2) {
       try {
-        sileo.error({ title: '❌ No se pudo actualizar', description: e2.message });
+        sileo.error({ title: t('products.notifUpdateErrorTitle'), description: e2.message });
       } catch {}
     } finally {
       setUpdating(false);
@@ -534,14 +550,14 @@ export default function ProductosPage() {
       if (selectedId === id) setSelectedId(null);
 
       try {
-        sileo.success({ title: '🗑️ Producto eliminado', description: `Se ha eliminado “${deleteTarget.name}”.` });
+        sileo.success({ title: t('products.notifProductDeletedTitle'), description: t('products.notifProductDeletedDesc', { name: deleteTarget.nombre }) });
       } catch {}
 
       setDeleteModalOpen(false);
       setDeleteTarget(null);
     } catch (e2) {
       try {
-        sileo.error({ title: '⛔ No se pudo eliminar', description: e2.message });
+        sileo.error({ title: t('products.notifDeleteErrorTitle'), description: e2.message });
       } catch {}
     } finally {
       setDelBusyId(null);
@@ -782,22 +798,6 @@ export default function ProductosPage() {
                   </select>
                 </div>
 
-                <div className="lg:col-span-4">
-                  <label className="block text-sm mb-1">{t('products.pageSizeLabel')}</label>
-                  <select
-                    value={pageSize}
-                    onChange={(e) => setPageSize(Number(e.target.value))}
-                    className="border rounded-lg px-3 py-2 w-full"
-                    disabled={groupMode !== 'all'}
-                    title={groupMode !== 'all' ? t('products.pageSizeDisabled') : ''}
-                  >
-                    <option value={8}>8 / pág</option>
-                    <option value={12}>12 / pág</option>
-                    <option value={20}>20 / pág</option>
-                    <option value={40}>40 / pág</option>
-                  </select>
-                </div>
-
                 <div className="lg:col-span-6">
                   <label className="block text-sm mb-1">{t('products.minPriceLabel')}</label>
                     <input
@@ -900,15 +900,15 @@ export default function ProductosPage() {
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="text-sm text-gray-600">
                   {t('products.showingRange', {
-                    from: (safePage - 1) * Number(pageSize || 12) + 1,
-                    to: Math.min(safePage * Number(pageSize || 12), filteredBase.length),
+                    from: (safePage - 1) * PAGE_SIZE + 1,
+                    to: Math.min(safePage * PAGE_SIZE, filteredBase.length),
                     total: filteredBase.length,
                   })}
                 </div>
                 <Pagination
                   page={safePage}
                   total={filteredBase.length}
-                  pageSize={Number(pageSize || 12)}
+                  pageSize={PAGE_SIZE}
                   onChange={setPage}
                 />
               </div>
@@ -1190,7 +1190,7 @@ export default function ProductosPage() {
             <div className="space-y-3">
               <div className="text-gray-800">
                 {t('products.deleteConfirmText')}{' '}
-                <b>{deleteTarget ? `#${deleteTarget.id} · ${deleteTarget.name}` : t('products.thisProduct')}</b>?
+                <b>{deleteTarget ? `#${deleteTarget.id} · ${deleteTarget.nombre}` : t('products.thisProduct')}</b>?
               </div>
 
               <div className="text-sm text-gray-600">{t('products.usedInAlbaranes')}</div>
