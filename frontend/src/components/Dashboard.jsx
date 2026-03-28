@@ -449,7 +449,7 @@ export default function Dashboard() {
         <div className="flex items-center justify-between gap-3 mb-3">
           <h3 className="text-base font-semibold">{t('dashboard.recentMovements')}</h3>
           <a
-            href="/movimientos"
+            href="/banco"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg btn-accent text-sm font-medium transition-colors"
           >
             {t('dashboard.viewAllMovements')}

@@ -115,8 +115,8 @@ describe('Sidebar — ARIA y i18n', () => {
 
   it('muestra los ítems de navegación traducidos', () => {
     renderSidebar();
-    ['Dashboard', 'Nueva venta', 'Clientes', 'Albaranes', 'Transporte',
-      'Movimientos', 'Productos', 'Banco', 'Tendencias', 'Configuración']
+    ['Dashboard', 'Nueva venta', 'Clientes', 'Albaranes', 'Incidencias', 'Transporte',
+      'Productos', 'Banco', 'Tendencias', 'Mi perfil', 'Configuración']
       .forEach(label => expect(screen.getByText(label)).toBeInTheDocument());
   });
 });

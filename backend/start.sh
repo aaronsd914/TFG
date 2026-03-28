@@ -40,6 +40,9 @@ STRIPE_CANCEL_URL = "${STRIPE_CANCEL_URL}"
 STRIPE_CURRENCY = "${STRIPE_CURRENCY:-eur}"
 EOF
 
+# Export FRONTEND_URL so stripe_payments.py can build redirect URLs dynamically
+export FRONTEND_URL="${FRONTEND_URL:-}"
+
 echo ">>> Config files generated. Running database migrations..."
 
 # If the DB already has tables (created before Alembic was added) but has no

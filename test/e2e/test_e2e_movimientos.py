@@ -1,5 +1,5 @@
 """
-test_e2e_movimientos.py — Pruebas E2E de la página de Movimientos financieros.
+test_e2e_movimientos.py — Pruebas E2E de la página de Movimientos (ahora en BancoPage).
 
 Cubre:
   - La página carga y muestra el resumen mensual (ingresos/egresos/balance)
@@ -23,16 +23,16 @@ MOV_CANTIDAD = "150.00"
 
 
 def test_movimientos_pagina_carga(logged_in_browser):
-    """La página /movimientos carga correctamente."""
-    logged_in_browser.get(f"{BASE_URL}/movimientos")
-    WebDriverWait(logged_in_browser, 10).until(EC.url_contains("/movimientos"))
-    assert "/movimientos" in logged_in_browser.current_url
+    """La página /banco carga correctamente."""
+    logged_in_browser.get(f"{BASE_URL}/banco")
+    WebDriverWait(logged_in_browser, 10).until(EC.url_contains("/banco"))
+    assert "/banco" in logged_in_browser.current_url
 
 
 def test_movimientos_resumen_mensual_presente(logged_in_browser):
     """El panel de resumen mensual (ingresos, egresos, balance) está visible."""
-    logged_in_browser.get(f"{BASE_URL}/movimientos")
-    WebDriverWait(logged_in_browser, 15).until(EC.url_contains("/movimientos"))
+    logged_in_browser.get(f"{BASE_URL}/banco")
+    WebDriverWait(logged_in_browser, 15).until(EC.url_contains("/banco"))
     time.sleep(1)
     body_text = logged_in_browser.find_element(By.TAG_NAME, "body").text.lower()
     keywords = ["ingreso", "egreso", "balance", "total"]
@@ -42,8 +42,8 @@ def test_movimientos_resumen_mensual_presente(logged_in_browser):
 
 def test_movimientos_lista_seed_data(logged_in_browser):
     """La lista de movimientos tiene datos del seed."""
-    logged_in_browser.get(f"{BASE_URL}/movimientos")
-    WebDriverWait(logged_in_browser, 15).until(EC.url_contains("/movimientos"))
+    logged_in_browser.get(f"{BASE_URL}/banco")
+    WebDriverWait(logged_in_browser, 15).until(EC.url_contains("/banco"))
     time.sleep(1)
     body_text = logged_in_browser.find_element(By.TAG_NAME, "body").text
     assert len(body_text) > 200
@@ -51,7 +51,7 @@ def test_movimientos_lista_seed_data(logged_in_browser):
 
 def test_movimientos_boton_anadir_presente(logged_in_browser):
     """Existe un botón para añadir movimientos."""
-    logged_in_browser.get(f"{BASE_URL}/movimientos")
+    logged_in_browser.get(f"{BASE_URL}/banco")
     wait = WebDriverWait(logged_in_browser, 15)
     btn = wait.until(
         EC.presence_of_element_located(
@@ -63,7 +63,7 @@ def test_movimientos_boton_anadir_presente(logged_in_browser):
 
 def test_movimientos_anadir_ingreso(logged_in_browser):
     """Se puede añadir un movimiento de tipo INGRESO."""
-    logged_in_browser.get(f"{BASE_URL}/movimientos")
+    logged_in_browser.get(f"{BASE_URL}/banco")
     wait = WebDriverWait(logged_in_browser, 15)
     # Abrir modal de añadir
     btn = wait.until(
@@ -101,7 +101,7 @@ def test_movimientos_anadir_ingreso(logged_in_browser):
     if submit_btns:
         submit_btns[-1].click()
     time.sleep(1)
-    logged_in_browser.get(f"{BASE_URL}/movimientos")
+    logged_in_browser.get(f"{BASE_URL}/banco")
     time.sleep(1)
     body_text = logged_in_browser.find_element(By.TAG_NAME, "body").text
     assert MOV_CONCEPTO_ING in body_text, "El movimiento INGRESO no aparece en la lista"
@@ -109,7 +109,7 @@ def test_movimientos_anadir_ingreso(logged_in_browser):
 
 def test_movimientos_anadir_egreso(logged_in_browser):
     """Se puede añadir un movimiento de tipo EGRESO."""
-    logged_in_browser.get(f"{BASE_URL}/movimientos")
+    logged_in_browser.get(f"{BASE_URL}/banco")
     wait = WebDriverWait(logged_in_browser, 15)
     btn = wait.until(
         EC.element_to_be_clickable(
@@ -143,7 +143,7 @@ def test_movimientos_anadir_egreso(logged_in_browser):
     if submit_btns:
         submit_btns[-1].click()
     time.sleep(1)
-    logged_in_browser.get(f"{BASE_URL}/movimientos")
+    logged_in_browser.get(f"{BASE_URL}/banco")
     time.sleep(1)
     body_text = logged_in_browser.find_element(By.TAG_NAME, "body").text
     assert MOV_CONCEPTO_EGR in body_text, "El movimiento EGRESO no aparece en la lista"
@@ -151,7 +151,7 @@ def test_movimientos_anadir_egreso(logged_in_browser):
 
 def test_movimientos_modal_filtros(logged_in_browser):
     """El botón de filtros abre el panel/modal de filtros."""
-    logged_in_browser.get(f"{BASE_URL}/movimientos")
+    logged_in_browser.get(f"{BASE_URL}/banco")
     wait = WebDriverWait(logged_in_browser, 15)
     filter_btn = wait.until(
         EC.element_to_be_clickable(

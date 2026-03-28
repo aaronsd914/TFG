@@ -21,7 +21,6 @@ export default function Sidebar({ open, setOpen }) {
     { icon: '🧾', labelKey: 'sidebar.deliveryNotes',  to: '/albaranes' },
     { icon: '⚠️', labelKey: 'sidebar.incidents',      to: '/incidencias' },
     { icon: '🚚', labelKey: 'sidebar.transport',      to: '/transporte' },
-    { icon: '💳', labelKey: 'sidebar.movements',      to: '/movimientos' },
     { icon: '🧰', labelKey: 'sidebar.products',       to: '/productos' },
     { icon: '🏦', labelKey: 'sidebar.bank',           to: '/banco' },
     { icon: '📊', labelKey: 'sidebar.trends',         to: '/tendencias' },
