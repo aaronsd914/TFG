@@ -84,8 +84,8 @@ def _aggregate_sales_weekly(sales: list[dict]) -> list[dict]:
 def _metrics_for_chat(metrics: Dict[str, Any]) -> Dict[str, Any]:
     """Lighter version for chat context — keeps token count manageable."""
     avg = metrics.get("averages") or {}
-    top = (metrics.get("top_products") or [])[:5]
-    pairs = (metrics.get("basket_pairs") or [])[:5]
+    top = list(metrics.get("top_products") or [])[:5]
+    pairs = list(metrics.get("basket_pairs") or [])[:5]
     rfm_summary = (metrics.get("rfm") or {}).get("summary", {})
 
     sales = metrics.get("sales_by_day") or []
@@ -103,8 +103,8 @@ def _metrics_for_chat(metrics: Dict[str, Any]) -> Dict[str, Any]:
 
 def _metrics_for_llm(metrics: Dict[str, Any]) -> Dict[str, Any]:
     avg = metrics.get("averages") or {}
-    top = (metrics.get("top_products") or [])[:10]
-    pairs = (metrics.get("basket_pairs") or [])[:10]
+    top = list(metrics.get("top_products") or [])[:10]
+    pairs = list(metrics.get("basket_pairs") or [])[:10]
     rfm_summary = (metrics.get("rfm") or {}).get("summary", {})
 
     sales = metrics.get("sales_by_day") or []

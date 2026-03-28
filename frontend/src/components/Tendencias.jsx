@@ -1,5 +1,6 @@
 ﻿import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import PropTypes from "prop-types";
 import { sileo } from "sileo";
 import {
   Chart as ChartJS,
@@ -50,7 +51,7 @@ export default function TendenciasPage() {
 
   // --- Comparativa ---
   const [compareEnabled, setCompareEnabled] = useState(false);
-  const [_compareLoading, setCompareLoading] = useState(false);
+  const [compareLoading, setCompareLoading] = useState(false); // eslint-disable-line no-unused-vars
   const [compareErr, setCompareErr] = useState(null);
   const [compare, setCompare] = useState(null);
   const compareAbortRef = useRef(null);
@@ -791,8 +792,8 @@ function RenderedMessage({ content }) {
 
 function ChartBlock({ chart }) {
   const { t } = useTranslation();
-  const type = (chart?.type || "").toLowerCase();
-  const title = chart?.options?.title?.text || chart?.title || t('trends.chartFallbackTitle');
+  const type = (chart?.type ?? "").toLowerCase();
+  const title = chart?.options?.title?.text ?? chart?.title ?? t('trends.chartFallbackTitle');
 
   // Soportamos config estilo Chart.js: { type, data:{labels,datasets}, options }
   const data = chart?.data;
@@ -816,6 +817,18 @@ function ChartBlock({ chart }) {
     </div>
   );
 }
+ChartBlock.propTypes = {
+  chart: PropTypes.shape({
+    type: PropTypes.string,
+    title: PropTypes.string,
+    data: PropTypes.object,
+    options: PropTypes.shape({
+      title: PropTypes.shape({
+        text: PropTypes.string,
+      }),
+    }),
+  }),
+};
 
 function extractCharts(raw) {
   let text = String(raw || "");

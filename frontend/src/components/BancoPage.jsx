@@ -1,6 +1,7 @@
 // frontend/src/components/BancoPage.jsx
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import PropTypes from 'prop-types';
 import { sileo } from 'sileo';
 import { API_URL } from '../config.js';
 import ModalCenter from './ModalCenter.jsx';
@@ -36,6 +37,10 @@ function Chip({ label, onRemove }) {
     </span>
   );
 }
+Chip.propTypes = {
+  label: PropTypes.string.isRequired,
+  onRemove: PropTypes.func.isRequired,
+};
 
 export default function BancoPage() {
   const { t } = useTranslation();
@@ -58,7 +63,7 @@ export default function BancoPage() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
   const [q, setQ] = useState('');
-  const [typeFilter, setTipoFiltro] = useState('TODOS');
+  const [typeFilter, setTypeFilter] = useState('TODOS');
   const [desde, setDesde] = useState('');
   const [hasta, setHasta] = useState('');
   const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0, 10));
@@ -254,11 +259,11 @@ export default function BancoPage() {
       setConceptoErr(false);
       setCantidadErr(false);
       setFormModalOpen(false);
-    } catch (e2) {
+    } catch (error_) {
       try {
         sileo.error({
           title: t('bank.toastCreateError'),
-          description: e2?.message || t('common.unknownError'),
+          description: error_?.message || t('common.unknownError'),
         });
       } catch { /* ignore */ }
     } finally {
@@ -385,14 +390,14 @@ export default function BancoPage() {
       {activeCount > 0 && (
         <div className="flex flex-wrap items-center gap-2">
           {typeFilter !== 'TODOS' && (
-            <Chip label={`${t('movements.typeLabel')}: ${typeFilter === 'INGRESO' ? t('movements.income') : t('movements.expense')}`} onRemove={() => setTipoFiltro('TODOS')} />
+            <Chip label={`${t('movements.typeLabel')}: ${typeFilter === 'INGRESO' ? t('movements.income') : t('movements.expense')}`} onRemove={() => setTypeFilter('TODOS')} />
           )}
           {desde && <Chip label={`${t('movements.dateFrom')}: ${desde}`} onRemove={() => setDesde('')} />}
           {hasta && <Chip label={`${t('movements.dateTo')}: ${hasta}`} onRemove={() => setHasta('')} />}
           <button
             type="button"
             className="text-sm text-gray-600 underline ml-1 hover:text-gray-900 transition-colors"
-            onClick={() => { setTipoFiltro('TODOS'); setDesde(''); setHasta(''); }}
+            onClick={() => { setTypeFilter('TODOS'); setDesde(''); setHasta(''); }}
           >
             {t('common.clear')}
           </button>
@@ -412,7 +417,7 @@ export default function BancoPage() {
                 <button
                   key={val}
                   type="button"
-                  onClick={() => setTipoFiltro(val)}
+                  onClick={() => setTypeFilter(val)}
                   className={`px-4 py-2 rounded-xl border text-sm font-medium transition-colors ${typeFilter === val ? 'btn-accent-tab' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50'}`}
                 >
                   {lbl}
@@ -435,7 +440,7 @@ export default function BancoPage() {
           <button
             type="button"
             className="px-4 py-2 rounded-xl bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600"
-            onClick={() => { setTipoFiltro('TODOS'); setDesde(''); setHasta(''); }}
+            onClick={() => { setTypeFilter('TODOS'); setDesde(''); setHasta(''); }}
           >
             {t('common.clear')}
           </button>
