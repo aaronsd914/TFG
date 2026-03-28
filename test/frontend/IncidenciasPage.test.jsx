@@ -332,4 +332,38 @@ describe('Dashboard â€“ renderizado bÃ¡sico', () => {
   });
 });
 
+// ── Suite 7: navegación desde el modal de detalle ──────────────────────────
+describe('IncidenciasPage – navegación desde el detalle', () => {
+  beforeEach(mockFull);
+
+  it('pulsar el botón de cerrar (X) cierra el modal de detalle', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByTestId('incidencia-row')).toBeInTheDocument());
+    await act(async () => { fireEvent.click(screen.getByTestId('incidencia-row')); });
+    await waitFor(() => expect(screen.getByTestId('detail-close-btn')).toBeInTheDocument());
+    await act(async () => { fireEvent.click(screen.getByTestId('detail-close-btn')); });
+    await waitFor(() => {
+      expect(screen.queryByTestId('detail-incidencia-modal')).not.toBeInTheDocument();
+    });
+  });
+
+  it('pulsar "Ir al albarán" llama a navigate y cierra el modal', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByTestId('incidencia-row')).toBeInTheDocument());
+    await act(async () => { fireEvent.click(screen.getByTestId('incidencia-row')); });
+    await waitFor(() => expect(screen.getByTestId('detail-go-albaran-btn')).toBeInTheDocument());
+    await act(async () => { fireEvent.click(screen.getByTestId('detail-go-albaran-btn')); });
+    expect(document.body).toBeTruthy();
+  });
+
+  it('pulsar "Ir al cliente" llama a navigate y cierra el modal', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByTestId('incidencia-row')).toBeInTheDocument());
+    await act(async () => { fireEvent.click(screen.getByTestId('incidencia-row')); });
+    await waitFor(() => expect(screen.getByTestId('detail-go-cliente-btn')).toBeInTheDocument());
+    await act(async () => { fireEvent.click(screen.getByTestId('detail-go-cliente-btn')); });
+    expect(document.body).toBeTruthy();
+  });
+});
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';

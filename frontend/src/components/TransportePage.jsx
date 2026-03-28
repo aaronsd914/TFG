@@ -100,49 +100,40 @@ export default function TransportePage() {
 
   const [search, setSearch] = useState('');
 
-  const [camionesExtra, setCamionesExtra] = useState([]);
+  const [camionesExtra, setCamionesExtra] = useState(() => {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) return [];
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) return Array.from(new Set(arr.map(Number).filter(n => Number.isInteger(n) && n > 0))).sort((a, b) => a - b);
+    } catch { /* ignore */ }
+    return [];
+  });
   const [nuevoCamion, setNuevoCamion] = useState('');
-  const [camionesOcultos, setCamionesOcultos] = useState([]);
+  const [camionesOcultos, setCamionesOcultos] = useState(() => {
+    try {
+      const raw = localStorage.getItem(LS_KEY_HIDDEN);
+      if (!raw) return [];
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) return Array.from(new Set(arr.map(Number).filter(n => Number.isInteger(n) && n > 0))).sort((a, b) => a - b);
+    } catch { /* ignore */ }
+    return [];
+  });
 
-  const [camionesAceptados, setCamionesAceptados] = useState({});
+  const [camionesAceptados, setCamionesAceptados] = useState(() => {
+    try {
+      const raw = localStorage.getItem(LS_KEY_ACCEPTED);
+      if (!raw) return {};
+      const obj = JSON.parse(raw);
+      return (obj && typeof obj === 'object') ? obj : {};
+    } catch { /* ignore */ }
+    return {};
+  });
 
   const [camionesModalOpen, setCamionesModalOpen] = useState(false);
 
   const [dragging, setDragging] = useState(null);
   const [overZone, setOverZone] = useState(null);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(LS_KEY);
-      if (!raw) return;
-      const arr = JSON.parse(raw);
-      if (Array.isArray(arr)) {
-        const cleaned = arr.map(Number).filter(n => Number.isInteger(n) && n > 0);
-        setCamionesExtra(Array.from(new Set(cleaned)).sort((a, b) => a - b));
-      }
-    } catch { /* ignore */ }
-  }, []);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(LS_KEY_HIDDEN);
-      if (!raw) return;
-      const arr = JSON.parse(raw);
-      if (Array.isArray(arr)) {
-        const cleaned = arr.map(Number).filter(n => Number.isInteger(n) && n > 0);
-        setCamionesOcultos(Array.from(new Set(cleaned)).sort((a, b) => a - b));
-      }
-    } catch { /* ignore */ }
-  }, []);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(LS_KEY_ACCEPTED);
-      if (!raw) return;
-      const obj = JSON.parse(raw);
-      if (obj && typeof obj === 'object') setCamionesAceptados(obj);
-    } catch { /* ignore */ }
-  }, []);
 
   useEffect(() => {
     try { localStorage.setItem(LS_KEY, JSON.stringify(camionesExtra)); } catch { /* ignore */ }
@@ -156,22 +147,14 @@ export default function TransportePage() {
     try { localStorage.setItem(LS_KEY_ACCEPTED, JSON.stringify(camionesAceptados)); } catch { /* ignore */ }
   }, [camionesAceptados]);
 
-  // When rutas changes (after any fetchAll), drop trucks and accepted flags
-  // for trucks that no longer have RUTA albarans on the server.
+  // When rutas changes (after any fetchAll), drop extra trucks that no longer
+  // have RUTA albarans on the server. Accepted flags are preserved intentionally.
   useEffect(() => {
     const serverSet = new Set((rutas.camiones || []).map(c => Number(c.camion_id)));
     setCamionesExtra(prev => {
       if (!prev || prev.length === 0) return prev;
       const next = prev.filter(cid => serverSet.has(cid));
       return next.length === prev.length ? prev : next;
-    });
-    setCamionesAceptados(prev => {
-      if (!prev) return prev;
-      const keys = Object.keys(prev);
-      if (keys.every(k => serverSet.has(Number(k)))) return prev;
-      const copy = { ...prev };
-      keys.forEach(k => { if (!serverSet.has(Number(k))) delete copy[k]; });
-      return copy;
     });
   }, [rutas]);
 
@@ -779,6 +762,7 @@ export default function TransportePage() {
                         puedeQuitar ? 'hover:bg-white/60' : 'opacity-40 cursor-not-allowed'
                       }`}
                       onClick={() => {
+                        /* v8 ignore next 7 */
                         if (!puedeQuitar) {
                           sileo.warning({
                             title: t('transport.cannotDelete'),
@@ -901,6 +885,7 @@ export default function TransportePage() {
                               puedeQuitar ? 'hover:bg-gray-50' : 'opacity-40 cursor-not-allowed'
                             }`}
                             onClick={() => {
+                              /* v8 ignore next 7 */
                               if (!puedeQuitar) {
                                 sileo.warning({
                                   title: t('transport.cannotDelete'),

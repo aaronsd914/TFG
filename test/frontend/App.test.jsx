@@ -3,7 +3,7 @@
  * Verifica la estructura raíz de la aplicación: Sidebar + Outlet.
  */
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import App from '../../frontend/src/components/App.jsx';
 
@@ -40,5 +40,21 @@ describe('App layout', () => {
   it('el <aside> (sidebar) es visible', () => {
     const { container } = renderApp();
     expect(container.querySelector('aside')).toBeInTheDocument();
+  });
+
+  it('muestra el overlay al pulsar el botón hamburger', () => {
+    renderApp();
+    const hamburger = screen.getByRole('button', { name: /open sidebar/i });
+    fireEvent.click(hamburger);
+    expect(screen.getByLabelText('Close sidebar overlay')).toBeInTheDocument();
+  });
+
+  it('cierra el sidebar al pulsar el overlay', () => {
+    renderApp();
+    const hamburger = screen.getByRole('button', { name: /open sidebar/i });
+    fireEvent.click(hamburger);
+    const overlay = screen.getByLabelText('Close sidebar overlay');
+    fireEvent.click(overlay);
+    expect(screen.queryByLabelText('Close sidebar overlay')).not.toBeInTheDocument();
   });
 });

@@ -255,7 +255,21 @@
     "nameLabel": "Nombre",
     "priceLabel": "Precio",
     "deleting": "Eliminando…",
-    "filterBtn": "Filtros"
+    "filterBtn": "Filtros",
+    "notifMissingFieldsTitle": "⚠️ Faltan campos obligatorios",
+    "notifMissingFieldsDesc": "Completa: {{fields}}.",
+    "notifProductCreatedTitle": "📦 Producto creado",
+    "notifProductCreatedDesc": "\"{{name}}\" · {{price}} · Proveedor: {{supplier}}",
+    "notifCreateErrorTitle": "❌ No se pudo crear el producto",
+    "notifSelectProductTitle": "⚠️ Selecciona un producto",
+    "notifSelectProductDesc": "Elige un producto de la lista para actualizar.",
+    "notifProductUpdatedTitle": "✏️ Producto actualizado",
+    "notifProductUpdatedDesc": "Cambios guardados en \"{{name}}\".",
+    "notifUpdateErrorTitle": "❌ No se pudo actualizar",
+    "notifProductDeletedTitle": "🗑️ Producto eliminado",
+    "notifProductDeletedDesc": "Se ha eliminado \"{{name}}\".",
+    "notifDeleteErrorTitle": "⛔ No se pudo eliminar",
+    "notifLoadErrorTitle": "❌ Error cargando productos"
   },
   "movements": {
     "title": "Movimientos",
