@@ -664,6 +664,19 @@ const _i18nTranslations = {
   'albaranes.detailError': 'Error al cargar detalle',
   'notFound.message': 'La página que buscas no existe.',
   'notFound.goHome': 'Ir al inicio',
+  // i18n batch – dynamic locale + remaining hardcoded strings
+  'sidebar.closeOverlay': 'Cerrar overlay del sidebar',
+  'sidebar.openSidebar': 'Abrir sidebar',
+  'dashboard.goToAlbaranTitle': 'Ir al albarán #{{id}}',
+  'dashboard.clientFallback': 'Cliente #{{id}}',
+  'products.priceNegative': 'Precio (no puede ser negativo)',
+  'movements.allTypes': 'Todos',
+  'newSale.errLoadClients': 'No se pudo cargar clientes.',
+  'newSale.placeholderDNI': '00000000X',
+  'newSale.placeholderNumber': '12B / s/n',
+  'newSale.placeholderFloor': '2A',
+  'settings.emailPlaceholder': 'tu@email.com',
+  'trends.chartFallbackTitle': 'Gráfico',
 };
 
 function _t(key, opts = {}) {

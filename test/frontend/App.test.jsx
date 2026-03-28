@@ -44,17 +44,17 @@ describe('App layout', () => {
 
   it('muestra el overlay al pulsar el botón hamburger', () => {
     renderApp();
-    const hamburger = screen.getByRole('button', { name: /open sidebar/i });
+    const hamburger = screen.getByRole('button', { name: /Abrir sidebar/i });
     fireEvent.click(hamburger);
-    expect(screen.getByLabelText('Close sidebar overlay')).toBeInTheDocument();
+    expect(screen.getByLabelText('Cerrar overlay del sidebar')).toBeInTheDocument();
   });
 
   it('cierra el sidebar al pulsar el overlay', () => {
     renderApp();
-    const hamburger = screen.getByRole('button', { name: /open sidebar/i });
+    const hamburger = screen.getByRole('button', { name: /Abrir sidebar/i });
     fireEvent.click(hamburger);
-    const overlay = screen.getByLabelText('Close sidebar overlay');
+    const overlay = screen.getByLabelText('Cerrar overlay del sidebar');
     fireEvent.click(overlay);
-    expect(screen.queryByLabelText('Close sidebar overlay')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Cerrar overlay del sidebar')).not.toBeInTheDocument();
   });
 });

@@ -14,12 +14,14 @@ import {
 } from "chart.js";
 import { Bar, Line } from "react-chartjs-2";
 import { API_URL } from '../config.js';
+import i18n from '../i18n.js';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
 
 function eur(n) {
   const v = Number(n || 0);
-  return v.toLocaleString("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 2 });
+  const locale = i18n.language === 'en' ? 'en-US' : 'es-ES';
+  return v.toLocaleString(locale, { style: "currency", currency: "EUR", maximumFractionDigits: 2 });
 }
 function isoDate(d) {
   const dt = new Date(d);
@@ -83,7 +85,7 @@ export default function TendenciasPage() {
     summaryAbortRef.current = controller;
 
     const toastId = "tendencias-summary";
-    const rangeLabel = `${range.from || "inicio"} → ${range.to || "hoy"}`;
+    const rangeLabel = `${range.from || t('trends.rangeStart')} → ${range.to || t('trends.rangeEnd')}`;
 
     const load = async () => {
       setLoading(true);
@@ -790,7 +792,7 @@ function RenderedMessage({ content }) {
 function ChartBlock({ chart }) {
   const { t } = useTranslation();
   const type = (chart?.type || "").toLowerCase();
-  const title = chart?.options?.title?.text || chart?.title || "Gráfico";
+  const title = chart?.options?.title?.text || chart?.title || t('trends.chartFallbackTitle');
 
   // Soportamos config estilo Chart.js: { type, data:{labels,datasets}, options }
   const data = chart?.data;

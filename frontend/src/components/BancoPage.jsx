@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { sileo } from 'sileo';
 import { API_URL } from '../config.js';
 import ModalCenter from './ModalCenter.jsx';
+import i18n from '../i18n.js';
 
 const TIPO_META = {
   INGRESO: { className: 'bg-green-100 text-green-800 border-green-300' },
@@ -12,7 +13,8 @@ const TIPO_META = {
 
 function eur(n) {
   const v = Number(n || 0);
-  return v.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 });
+  const locale = i18n.language === 'en' ? 'en-US' : 'es-ES';
+  return v.toLocaleString(locale, { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 });
 }
 
 function formatEUR(n) {
@@ -406,7 +408,7 @@ export default function BancoPage() {
           <div>
             <label className="block text-sm font-medium mb-2">{t('movements.typeLabel')}</label>
             <div className="flex gap-2 flex-wrap">
-              {[['TODOS', 'Todos'], ['INGRESO', t('movements.income')], ['EGRESO', t('movements.expense')]].map(([val, lbl]) => (
+              {[['TODOS', t('movements.allTypes')], ['INGRESO', t('movements.income')], ['EGRESO', t('movements.expense')]].map(([val, lbl]) => (
                 <button
                   key={val}
                   type="button"

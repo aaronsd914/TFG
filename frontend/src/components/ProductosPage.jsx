@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { sileo } from 'sileo';
 import { Pagination } from './ui/Pagination.jsx';
 import { API_URL } from '../config.js';
+import i18n from '../i18n.js';
 
 // ===== Helpers =====
 function useDebouncedValue(value, delay = 200) {
@@ -17,7 +18,8 @@ function useDebouncedValue(value, delay = 200) {
 
 function eur(n) {
   const v = Number(n || 0);
-  return v.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 });
+  const locale = i18n.language === 'en' ? 'en-US' : 'es-ES';
+  return v.toLocaleString(locale, { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 });
 }
 
 function clampNumberInput(v) {
@@ -341,23 +343,23 @@ export default function ProductosPage() {
 
     if (!fNombre.trim()) {
       errors.name = true;
-      missing.push('Nombre');
+      missing.push(t('products.nameLabel'));
     }
 
     const priceNum = Number(fPrecio);
     if (fPrecio === '' || !Number.isFinite(priceNum)) {
       errors.price = true;
-      missing.push('Precio');
+      missing.push(t('products.priceLabel'));
     }
 
     if (!fProveedor) {
       errors.proveedor = true;
-      missing.push('Proveedor');
+      missing.push(t('products.supplierLabel'));
     }
 
     if (!errors.price && Number(priceNum) < 0) {
       errors.price = true;
-      missing.push('Precio (no puede ser negativo)');
+      missing.push(t('products.priceNegative'));
     }
 
     return { ok: missing.length === 0, missing, errors, priceNum };
@@ -369,23 +371,23 @@ export default function ProductosPage() {
 
     if (!editName.trim()) {
       errors.name = true;
-      missing.push('Nombre');
+      missing.push(t('products.nameLabel'));
     }
 
     const priceNum = Number(editPrice);
     if (editPrice === '' || !Number.isFinite(priceNum)) {
       errors.price = true;
-      missing.push('Precio');
+      missing.push(t('products.priceLabel'));
     }
 
     if (!editSupplier) {
       errors.proveedor = true;
-      missing.push('Proveedor');
+      missing.push(t('products.supplierLabel'));
     }
 
     if (!errors.price && Number(priceNum) < 0) {
       errors.price = true;
-      missing.push('Precio (no puede ser negativo)');
+      missing.push(t('products.priceNegative'));
     }
 
     return { ok: missing.length === 0, missing, errors, priceNum };

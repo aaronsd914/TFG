@@ -94,14 +94,16 @@ Field.propTypes = {
 };
 
 
-function SaveBtn({ loading, label = 'Guardar' }) {
+function SaveBtn({ loading, label }) {
+  const { t } = useTranslation();
+  const displayLabel = label || t('common.save');
   return (
     <button
       type="submit"
       disabled={loading}
       className="self-start px-4 py-2 btn-accent rounded-lg text-sm disabled:opacity-50 transition-colors"
     >
-      {loading ? 'Guardando…' : label}
+      {loading ? t('common.saving') : displayLabel}
     </button>
   );
 }
@@ -384,7 +386,7 @@ export default function PersonalizacionPage() {
         <form onSubmit={handleEmailSave} className="flex flex-col gap-3">
           <Field label={t('settings.emailDest')} type="email"
             value={emailDest} onChange={setEmailDest}
-            placeholder="tu@email.com" required />
+            placeholder={t('settings.emailPlaceholder')} required />
 
           {/* Fecha inicio + intervalo */}
           <div className="grid grid-cols-2 gap-3">
@@ -437,7 +439,7 @@ export default function PersonalizacionPage() {
                     className="bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-center"
                   >
                     <div className="text-xs font-semibold text-gray-700">
-                      {d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
+                      {d.toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'es-ES', { day: '2-digit', month: 'short' })}
                     </div>
                     <div className="text-xs text-gray-400">{horaEnvio || '09:00'}</div>
                   </div>

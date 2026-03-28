@@ -1,9 +1,11 @@
 import Sidebar from './Sidebar.jsx';
 import { Outlet } from 'react-router-dom';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ConfigProvider } from '../context/ConfigContext.jsx';
 
 export default function App() {
+  const { t } = useTranslation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
@@ -17,7 +19,7 @@ export default function App() {
           <div
             className="fixed inset-0 bg-black/30 z-20 md:hidden"
             onClick={() => setSidebarOpen(false)}
-            aria-label="Close sidebar overlay"
+            aria-label={t('sidebar.closeOverlay')}
           />
         )}
 
@@ -28,7 +30,7 @@ export default function App() {
               className="p-2 rounded-lg shadow-md"
               style={{ backgroundColor: 'var(--fg-sidebar)' }}
               onClick={() => setSidebarOpen(true)}
-              aria-label="Open sidebar"
+              aria-label={t('sidebar.openSidebar')}
             >
               <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />

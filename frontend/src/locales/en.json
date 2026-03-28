@@ -14,7 +14,9 @@
     "trends": "Trends",
     "settings": "Settings",
     "incidents": "Incidents",
-    "profile": "Profile"
+    "profile": "Profile",
+    "closeOverlay": "Close sidebar overlay",
+    "openSidebar": "Open sidebar"
   },
   "login": {
     "subtitle": "Management panel",
@@ -131,7 +133,9 @@
     "noIncidencias": "No active incidents.",
     "viewIncidentsFull": "View all incidents →",
     "topClients": "Top customers",
-    "months": ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+    "months": ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+    "goToAlbaranTitle": "Go to delivery note #{{id}}",
+    "clientFallback": "Client #{{id}}"
   },
   "clients": {
     "title": "Clients",
@@ -285,7 +289,8 @@
     "notifProductDeletedTitle": "🗑️ Product deleted",
     "notifProductDeletedDesc": "\"{{name}}\" has been deleted.",
     "notifDeleteErrorTitle": "⛔ Could not delete",
-    "notifLoadErrorTitle": "❌ Error loading products"
+    "notifLoadErrorTitle": "❌ Error loading products",
+    "priceNegative": "Price (cannot be negative)"
   },
   "movements": {
     "title": "Movements",
@@ -312,7 +317,8 @@
     "egresosSummary": "Expenses",
     "balanceSummary": "Balance",
     "pageSizeLabel": "Show:",
-    "paginationInfo": "{{from}}–{{to}} of {{total}}"
+    "paginationInfo": "{{from}}–{{to}} of {{total}}",
+    "allTypes": "All"
   },
   "albaranes": {
     "title": "Delivery Notes",
@@ -452,7 +458,11 @@
     "errDniFormat": "ID number format is invalid (e.g. 12345678A or X1234567A).",
     "errPhoneFormat": "Phone number can only contain digits.",
     "errPostalFormat": "Post code can only contain numbers.",
-    "errEmailFormat": "Email address format is invalid."
+    "errEmailFormat": "Email address format is invalid.",
+    "errLoadClients": "Could not load clients.",
+    "placeholderDNI": "00000000X",
+    "placeholderNumber": "12B / n/a",
+    "placeholderFloor": "2A"
   },
   "bank": {
     "title": "Bank",
@@ -545,7 +555,8 @@
     "logoSaveError": "Error saving logo",
     "logoRemoved": "Logo removed",
     "signatureSaved": "Signature saved",
-    "signaturePlaceholder": "E.g: FurniGest · 10 High Street · Tel: 020 1234 5678"
+    "signaturePlaceholder": "E.g: FurniGest · 10 High Street · Tel: 020 1234 5678",
+    "emailPlaceholder": "you@email.com"
   },
   "trends": {
     "title": "Trends",
@@ -638,7 +649,8 @@
     "noAnswer": "(no answer)",
     "aiErrorToast": "AI error",
     "rangeStart": "start",
-    "rangeEnd": "today"
+    "rangeEnd": "today",
+    "chartFallbackTitle": "Chart"
   },
   "transport": {
     "title": "Transport",

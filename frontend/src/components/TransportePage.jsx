@@ -3,18 +3,21 @@ import { useTranslation } from 'react-i18next';
 import { sileo } from 'sileo';
 
 import { API_URL } from '../config.js';
+import i18n from '../i18n.js';
 const LS_KEY = 'tfg_transportes_camiones_extra';
 const LS_KEY_HIDDEN = 'tfg_transportes_camiones_hidden';
 const LS_KEY_ACCEPTED = 'tfg_transportes_camiones_accepted';
 
 function eur(n) {
   const v = Number(n || 0);
-  return v.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 });
+  const locale = i18n.language === 'en' ? 'en-US' : 'es-ES';
+  return v.toLocaleString(locale, { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 });
 }
 function fmtDate(d) {
   const dt = new Date(d);
   if (Number.isNaN(dt.getTime())) return '—';
-  return dt.toLocaleDateString('es-ES');
+  const locale = i18n.language === 'en' ? 'en-US' : 'es-ES';
+  return dt.toLocaleDateString(locale);
 }
 function sumTotal(albaranes) {
   return Math.round((albaranes || []).reduce((acc, a) => acc + Number(a.total || 0), 0) * 100) / 100;

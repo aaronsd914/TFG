@@ -16,12 +16,14 @@ import {
 import { apiFetch } from '../api/http.js';
 import { useTheme } from '../context/ThemeContext.jsx';
 import PropTypes from 'prop-types';
+import i18n from '../i18n.js';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Title, Tooltip, Legend);
 
 function eur(n) {
   const v = Number(n || 0);
-  return v.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 });
+  const locale = i18n.language === 'en' ? 'en-US' : 'es-ES';
+  return v.toLocaleString(locale, { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 });
 }
 function ymKey(d) {
   const dt = new Date(d);
@@ -33,7 +35,8 @@ function monthLabelShort(index0, months) {
 function fmtDate(d) {
   const dt = new Date(d);
   if (Number.isNaN(dt.getTime())) return 'â€”';
-  return dt.toLocaleDateString('es-ES');
+  const locale = i18n.language === 'en' ? 'en-US' : 'es-ES';
+  return dt.toLocaleDateString(locale);
 }
 
 export default function Dashboard() {
@@ -596,11 +599,11 @@ function TablaPedidos({ rows, clientesMap }) {
                 key={a.id}
                 className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
                 onClick={() => { try { localStorage.setItem('albaran_open_id', String(a.id)); } catch {} window.location.href = '/albaranes'; }}
-                title={`Ir al albarÃ¡n #${a.id}`}
+                title={t('dashboard.goToAlbaranTitle', { id: a.id })}
               >
                 <td className="p-2">#{a.id}</td>
                 <td className="p-2">{fmtDate(a.date)}</td>
-                <td className="p-2">{c ? `${c.name} ${c.surnames}` : `Cliente #${a.customer_id}`}</td>
+                <td className="p-2">{c ? `${c.name} ${c.surnames}` : t('dashboard.clientFallback', { id: a.customer_id })}</td>
                 <td className="p-2">{c?.dni || 'â€”'}</td>
                 <td className="p-2">{eur(a.total)}</td>
               </tr>
@@ -648,7 +651,7 @@ function StatCard({ title, value, delta, deltaLabel, hint, invertColors = false,
       const progress = Math.min(elapsed / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
       const current = target * eased;
-      setDisplayed(value.replace(numMatch[0], current.toLocaleString('es-ES', { maximumFractionDigits: 2 })));
+      setDisplayed(value.replace(numMatch[0], current.toLocaleString(i18n.language === 'en' ? 'en-US' : 'es-ES', { maximumFractionDigits: 2 })));
       if (progress < 1) requestAnimationFrame(tick);
       else setDisplayed(value);
     };

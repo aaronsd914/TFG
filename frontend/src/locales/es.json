@@ -14,7 +14,9 @@
     "trends": "Tendencias",
     "settings": "Configuración",
     "incidents": "Incidencias",
-    "profile": "Perfil"
+    "profile": "Perfil",
+    "closeOverlay": "Cerrar menú lateral",
+    "openSidebar": "Abrir menú lateral"
   },
   "login": {
     "subtitle": "Panel de gestión",
@@ -131,7 +133,9 @@
     "noIncidencias": "No hay incidencias activas.",
     "viewIncidentsFull": "Ver todas las incidencias →",
     "topClients": "Top clientes",
-    "months": ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"]
+    "months": ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"],
+    "goToAlbaranTitle": "Ir al albarán #{{id}}",
+    "clientFallback": "Cliente #{{id}}"
   },
   "clients": {
     "title": "Clientes",
@@ -285,7 +289,8 @@
     "notifProductDeletedTitle": "🗑️ Producto eliminado",
     "notifProductDeletedDesc": "Se ha eliminado \"{{name}}\".",
     "notifDeleteErrorTitle": "⛔ No se pudo eliminar",
-    "notifLoadErrorTitle": "❌ Error cargando productos"
+    "notifLoadErrorTitle": "❌ Error cargando productos",
+    "priceNegative": "Precio (no puede ser negativo)"
   },
   "movements": {
     "title": "Movimientos",
@@ -312,7 +317,8 @@
     "egresosSummary": "Gastos",
     "balanceSummary": "Balance",
     "pageSizeLabel": "Mostrar:",
-    "paginationInfo": "{{from}}–{{to}} de {{total}}"
+    "paginationInfo": "{{from}}–{{to}} de {{total}}",
+    "allTypes": "Todos"
   },
   "albaranes": {
     "title": "Albaranes",
@@ -452,7 +458,11 @@
     "errDniFormat": "El DNI no tiene un formato válido (ej: 12345678A o X1234567A).",
     "errPhoneFormat": "El teléfono solo puede contener números.",
     "errPostalFormat": "El código postal solo puede contener números.",
-    "errEmailFormat": "El email no tiene un formato válido."
+    "errEmailFormat": "El email no tiene un formato válido.",
+    "errLoadClients": "No se pudo cargar clientes.",
+    "placeholderDNI": "00000000X",
+    "placeholderNumber": "12B / s/n",
+    "placeholderFloor": "2A"
   },
   "bank": {
     "title": "Banco",
@@ -545,7 +555,8 @@
     "logoSaveError": "Error al guardar el logo",
     "logoRemoved": "Logo eliminado",
     "signatureSaved": "Firma guardada",
-    "signaturePlaceholder": "Ej: FurniGest · Calle Mayor 10 · Tel: 666 123 456"
+    "signaturePlaceholder": "Ej: FurniGest · Calle Mayor 10 · Tel: 666 123 456",
+    "emailPlaceholder": "tu@email.com"
   },
   "trends": {
     "title": "Tendencias",
@@ -638,7 +649,8 @@
     "noAnswer": "(sin respuesta)",
     "aiErrorToast": "Error en la IA",
     "rangeStart": "inicio",
-    "rangeEnd": "hoy"
+    "rangeEnd": "hoy",
+    "chartFallbackTitle": "Gráfico"
   },
   "transport": {
     "title": "Transporte",

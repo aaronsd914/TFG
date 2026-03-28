@@ -5,12 +5,14 @@ import { sileo } from 'sileo';
 import { API_URL } from '../config.js';
 import ConfirmDeleteModal from './ConfirmDeleteModal.jsx';
 import ModalCenter, { CloseIcon, closeButtonClass } from './ModalCenter.jsx';
+import i18n from '../i18n.js';
 
 function fmtDate(d) {
   if (!d) return '—';
   const dt = new Date(d);
   if (Number.isNaN(dt.getTime())) return d;
-  return dt.toLocaleDateString('es-ES');
+  const locale = i18n.language === 'en' ? 'en-US' : 'es-ES';
+  return dt.toLocaleDateString(locale);
 }
 
 export default function IncidenciasPage() {

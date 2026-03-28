@@ -51,11 +51,12 @@ const ESTADO_META = {
 };
 
 function Chevron({ open }) {
+  const { t } = useTranslation();
   return (
     <span
       className="inline-flex items-center justify-center w-7 h-7 rounded-lg border border-gray-200 bg-white text-gray-700"
       aria-hidden="true"
-      title={open ? 'Ocultar líneas' : 'Ver líneas'}
+      title={open ? t('clients.hideLines') : t('clients.showLines')}
     >
       {open ? '▲' : '▼'}
     </span>
