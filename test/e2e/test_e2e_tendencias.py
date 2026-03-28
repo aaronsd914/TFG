@@ -14,7 +14,6 @@ Cubre:
   - La sección de previsión predictiva está presente
 """
 import time
-import pytest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -130,7 +129,14 @@ def test_tendencias_chat_ia_toggle(logged_in_browser):
 def test_tendencias_prevision_presente(logged_in_browser):
     """La sección de previsión predictiva se renderiza en la página de tendencias."""
     logged_in_browser.get(f"{BASE_URL}/tendencias")
-    WebDriverWait(logged_in_browser, 20).until(EC.url_contains("/tendencias"))
+    wait = WebDriverWait(logged_in_browser, 20)
+    wait.until(EC.url_contains("/tendencias"))
+    # Esperar a que desaparezca la carga y aparezca la previsión
+    wait.until(
+        EC.invisibility_of_element_located(
+            (By.XPATH, "//*[contains(text(),'Cargando')]")
+        )
+    )
     time.sleep(3)  # wait for prediction fetch to complete
     body_text = logged_in_browser.find_element(By.TAG_NAME, "body").text.lower()
     # The prediction section title and/or month labels should be visible
@@ -155,10 +161,16 @@ def test_tendencias_toggle_comparativa(logged_in_browser):
 
 def test_tendencias_rango_formato_dd_mm_aaaa(logged_in_browser):
     """El rango se muestra en formato DD-MM-AAAA."""
-    logged_in_browser.get(f"{BASE_URL}/tendencias")
-    WebDriverWait(logged_in_browser, 15).until(EC.url_contains("/tendencias"))
-    time.sleep(2)
+    import re
+    wait = WebDriverWait(logged_in_browser, 20)
+    # Reintentar carga si hay error de red
+    for _ in range(2):
+        logged_in_browser.get(f"{BASE_URL}/tendencias")
+        wait.until(EC.url_contains("/tendencias"))
+        time.sleep(3)
+        body = logged_in_browser.find_element(By.TAG_NAME, "body").text
+        if "Failed to fetch" not in body and "Error" not in body:
+            break
     el = logged_in_browser.find_element(By.CSS_SELECTOR, "[data-testid='range-display']")
     text = el.text
-    import re
     assert re.search(r"\d{2}-\d{2}-\d{4}", text), f"El rango no está en formato DD-MM-AAAA: {text}"

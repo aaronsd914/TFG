@@ -10,7 +10,6 @@ Cubre:
   - El modal de filtros se puede abrir
 """
 import time
-import pytest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -102,7 +101,11 @@ def test_movimientos_anadir_ingreso(logged_in_browser):
         submit_btns[-1].click()
     time.sleep(1)
     logged_in_browser.get(f"{BASE_URL}/banco")
-    time.sleep(1)
+    WebDriverWait(logged_in_browser, 15).until(
+        EC.invisibility_of_element_located(
+            (By.XPATH, "//*[contains(text(),'Cargando')]")
+        )
+    )
     body_text = logged_in_browser.find_element(By.TAG_NAME, "body").text
     assert MOV_CONCEPTO_ING in body_text, "El movimiento INGRESO no aparece en la lista"
 
@@ -144,7 +147,11 @@ def test_movimientos_anadir_egreso(logged_in_browser):
         submit_btns[-1].click()
     time.sleep(1)
     logged_in_browser.get(f"{BASE_URL}/banco")
-    time.sleep(1)
+    WebDriverWait(logged_in_browser, 15).until(
+        EC.invisibility_of_element_located(
+            (By.XPATH, "//*[contains(text(),'Cargando')]")
+        )
+    )
     body_text = logged_in_browser.find_element(By.TAG_NAME, "body").text
     assert MOV_CONCEPTO_EGR in body_text, "El movimiento EGRESO no aparece en la lista"
 

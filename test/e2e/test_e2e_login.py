@@ -17,7 +17,7 @@ from selenium.webdriver.support import expected_conditions as EC
 
 from test.e2e.conftest import BASE_URL, ADMIN_USER, ADMIN_PASS, make_driver, do_login
 
-PROTECTED_ROUTES = ["/", "/clientes", "/productos", "/movimientos",
+PROTECTED_ROUTES = ["/", "/clientes", "/productos",
                     "/albaranes", "/transporte", "/tendencias", "/banco",
                     "/ventas/nueva"]
 
