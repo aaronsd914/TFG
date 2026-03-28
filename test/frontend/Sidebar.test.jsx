@@ -46,7 +46,6 @@ describe('Sidebar', () => {
       'Productos',
       'Banco',
       'Tendencias',
-      'Mi perfil',
       'Configuración',
     ];
     labels.forEach((label) => {
@@ -81,7 +80,7 @@ describe('Sidebar', () => {
   it('tiene exactamente 12 enlaces de navegación', () => {
     renderSidebar();
     const links = screen.getAllByRole('link');
-    expect(links).toHaveLength(11);
+    expect(links).toHaveLength(10);
   });
 
   it('muestra el botón de Cerrar sesión', () => {

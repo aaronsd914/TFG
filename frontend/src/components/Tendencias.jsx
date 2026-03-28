@@ -442,7 +442,7 @@ export default function TendenciasPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="rounded-2xl border bg-white px-4 py-2">
+            <div className="rounded-2xl border bg-white px-4 py-2" data-testid="range-display">
               <span className="text-sm text-gray-600">{t('trends.range')}: </span>
               <span className="text-sm font-semibold">{titleRange || '—'}</span>
             </div>
@@ -543,11 +543,6 @@ export default function TendenciasPage() {
             </div>
           ) : (
             <>
-              <div className="rounded-2xl border bg-white p-4">
-                <div className="text-sm text-gray-600">{t('trends.range')}</div>
-                <div className="text-lg font-semibold" data-testid="range-display">{titleRange}</div>
-              </div>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
                 <KPI label={t('trends.kpiIncome')} value={eur(avg.revenue)} />
                 <KPI label={t('trends.kpiOrders')} value={String(avg.orders)} />
