@@ -524,14 +524,16 @@ export default function TendenciasPage() {
 
       {/* BODY */}
       <div className="space-y-4">
-          {loading ? (
+          {loading && (
             <div className="rounded-2xl border bg-white p-4">{t('trends.loading')}</div>
-          ) : err ? (
+          )}
+          {!loading && err && (
             <div className="rounded-2xl border bg-white p-4">
               <div className="text-red-700 font-semibold">{t('trends.error')}</div>
               <div className="text-red-700 whitespace-pre-wrap">{err}</div>
             </div>
-          ) : (
+          )}
+          {!loading && !err && (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
                 <KPI label={t('trends.kpiIncome')} value={eur(avg.revenue)} />
@@ -546,9 +548,10 @@ export default function TendenciasPage() {
                     <h3 className="font-semibold">{t('trends.comparison')}</h3>
                   </div>
 
-                  {compareErr ? (
+                  {compareErr && (
                     <div className="text-red-700 whitespace-pre-wrap">{compareErr}</div>
-                  ) : delta ? (
+                  )}
+                  {!compareErr && delta && (
                     <>
                       <table className="w-full text-sm">
                         <thead>
@@ -574,7 +577,8 @@ export default function TendenciasPage() {
                         </div>
                       )}
                     </>
-                  ) : (
+                  )}
+                  {!compareErr && !delta && (
                     <div className="text-sm text-gray-600">{t('trends.noCompareData')}</div>
                   )}
                 </div>

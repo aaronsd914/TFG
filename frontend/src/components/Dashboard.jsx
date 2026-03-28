@@ -74,9 +74,10 @@ export default function Dashboard() {
   const clientes    = cliQuery.data   ?? [];
   const incidencias = incQuery.data   ?? [];
 
-  const loading    = movsQuery.isLoading || albQuery.isLoading || cliQuery.isLoading;
-  const refreshing = (movsQuery.isFetching || albQuery.isFetching || cliQuery.isFetching) && !loading;
-  const err        = movsQuery.error?.message || albQuery.error?.message || cliQuery.error?.message || null;
+  const queries    = [movsQuery, albQuery, cliQuery];
+  const loading    = queries.some(q => q.isLoading);
+  const refreshing = queries.some(q => q.isFetching) && !loading;
+  const err        = queries.map(q => q.error?.message).find(Boolean) || null;
   const clientesMap = useMemo(() => {
     const m = new Map();
     (clientes || []).forEach(c => m.set(c.id, c));
