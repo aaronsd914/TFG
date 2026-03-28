@@ -12,11 +12,11 @@ export default function ModalCenter({ isOpen, onClose, children, maxWidth = 'max
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-40">
-      <div
-        className="absolute inset-0 bg-black/40"
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/40 w-full h-full border-none p-0 cursor-default appearance-none"
         onClick={onClose}
         onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
-        role="button"
         tabIndex={-1}
         aria-label="Cerrar"
       />

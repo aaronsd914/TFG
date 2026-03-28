@@ -207,12 +207,17 @@ export default function BancoPage() {
 
       {/* New charge modal */}
       {modalOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          data-testid="nuevo-cobro-modal"
-          onClick={closeModal}
-        >
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-5" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50" data-testid="nuevo-cobro-modal">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/40 w-full h-full border-none p-0 cursor-default appearance-none"
+            onClick={closeModal}
+            onKeyDown={(e) => { if (e.key === 'Escape') closeModal(); }}
+            tabIndex={-1}
+            aria-label="Cerrar"
+          />
+          <div className="absolute inset-0 flex items-center justify-center p-4">
+          <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md p-6 space-y-5">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold">{t('bank.newChargeTitle')}</h2>
               <button
@@ -272,6 +277,7 @@ export default function BancoPage() {
                 {stripeBusy ? t('bank.toastCreating') : t('bank.btnCreateCharge')}
               </button>
             </div>
+          </div>
           </div>
         </div>
       )}

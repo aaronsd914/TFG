@@ -132,7 +132,8 @@ export default function IncidenciasPage() {
 
   function selectAlbaran(alb) {
     const cli = clientesById.get(alb.customer_id);
-    const label = `#${alb.id} — ${cli ? `${cli.name} ${cli.surnames}` : `Cliente #${alb.customer_id}`}`;
+    const clienteLabel = cli ? `${cli.name} ${cli.surnames}` : `Cliente #${alb.customer_id}`;
+    const label = `#${alb.id} — ${clienteLabel}`;
     setCreateForm((f) => ({ ...f, albaran_id: alb.id }));
     setAlbSearch(label);
     setAlbDropOpen(false);
@@ -329,14 +330,17 @@ export default function IncidenciasPage() {
                     >
                       {albSuggestions.map((a) => {
                         const cli = clientesById.get(a.customer_id);
+                        const clienteLabel = cli ? `${cli.name} ${cli.surnames}` : `Cliente #${a.customer_id}`;
                         return (
-                          <li
-                            key={a.id}
-                            onMouseDown={() => selectAlbaran(a)}
-                            className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-100"
-                            data-testid="albaran-suggestion-item"
-                          >
-                            #{a.id} — {cli ? `${cli.name} ${cli.surnames}` : `Cliente #${a.customer_id}`}
+                          <li key={a.id}>
+                            <button
+                              type="button"
+                              onMouseDown={() => selectAlbaran(a)}
+                              className="w-full text-left px-3 py-2 text-sm cursor-pointer bg-transparent border-none hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-100"
+                              data-testid="albaran-suggestion-item"
+                            >
+                              #{a.id} — {clienteLabel}
+                            </button>
                           </li>
                         );
                       })}

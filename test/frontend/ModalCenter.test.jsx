@@ -21,7 +21,7 @@ describe('ModalCenter', () => {
     const onClose = vi.fn();
     render(<ModalCenter isOpen={true} onClose={onClose}>contenido</ModalCenter>);
     // The backdrop is the first role="button" with aria-label "Cerrar" (a div)
-    const backdrop = document.querySelector('div[role="button"][aria-label="Cerrar"]');
+    const backdrop = document.querySelector('button[aria-label="Cerrar"]');
     fireEvent.click(backdrop);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -29,7 +29,7 @@ describe('ModalCenter', () => {
   it('llama a onClose al presionar Escape en el fondo', () => {
     const onClose = vi.fn();
     render(<ModalCenter isOpen={true} onClose={onClose}>contenido</ModalCenter>);
-    const backdrop = document.querySelector('div[role="button"][aria-label="Cerrar"]');
+    const backdrop = document.querySelector('button[aria-label="Cerrar"]');
     fireEvent.keyDown(backdrop, { key: 'Escape' });
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -37,7 +37,7 @@ describe('ModalCenter', () => {
   it('no llama a onClose con teclas distintas a Escape', () => {
     const onClose = vi.fn();
     render(<ModalCenter isOpen={true} onClose={onClose}>contenido</ModalCenter>);
-    const backdrop = document.querySelector('div[role="button"][aria-label="Cerrar"]');
+    const backdrop = document.querySelector('button[aria-label="Cerrar"]');
     fireEvent.keyDown(backdrop, { key: 'Enter' });
     expect(onClose).not.toHaveBeenCalled();
   });
@@ -47,8 +47,8 @@ describe('ModalCenter', () => {
     render(
       <ModalCenter isOpen={true} onClose={onClose} showClose={false}>contenido</ModalCenter>
     );
-    // When showClose=false, the X <button> should not be present
-    const closeButton = document.querySelector('button[aria-label="Cerrar"]');
-    expect(closeButton).toBeNull();
+    // When showClose=false, the X <button> should not be present (only backdrop button remains)
+    const buttons = document.querySelectorAll('button[aria-label="Cerrar"]');
+    expect(buttons.length).toBe(1); // only the backdrop button
   });
 });
