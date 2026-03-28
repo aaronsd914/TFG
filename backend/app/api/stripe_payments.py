@@ -27,7 +27,10 @@ _FRONTEND_URL = os.environ.get("FRONTEND_URL", "").rstrip("/")
 
 def _success_url() -> str:
     if _FRONTEND_URL:
-        return f"{_FRONTEND_URL}/banco?stripe=success&session_id=" + "{CHECKOUT_SESSION_ID}"
+        return (
+            f"{_FRONTEND_URL}/banco?stripe=success&session_id="
+            + "{CHECKOUT_SESSION_ID}"
+        )
     return STRIPE_SUCCESS_URL
 
 
