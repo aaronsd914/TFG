@@ -54,23 +54,35 @@ class TestAnalyticsSummary:
         assert "basket_pairs" in metrics
         assert "rfm" in metrics
 
-    def test_summary_con_albaran(self, client, mocker, cliente_fixture, producto):
-        # Given - neutralizar email/PDF para crear el albaran, luego stub de Groq
-        mocker.patch("backend.app.api.albaranes.send_email_with_pdf", return_value=None)
-        mocker.patch("backend.app.api.albaranes.generate_delivery_note_pdf", return_value=b"")
-        mocker.patch("backend.app.api.albaranes.render", return_value="<html></html>")
-        client.post("/api/albaranes/post", json={
-            "date": "2026-01-15",
-            "customer_id": cliente_fixture["id"],
-            "items": [{"product_id": producto["id"], "quantity": 2, "unit_price": 15.0}],
+    def test_summary_con_albaran(self, client, mocker):
+        # Given - mockear las funciones de cálculo para devolver datos simulados sin BD
+        mock_sales = mocker.patch("backend.app.api.analytics.sales_by_day", return_value=[
+            {"date": "2026-01-15", "orders": 1, "revenue": 30.0}
+        ])
+        mock_top = mocker.patch("backend.app.api.analytics.top_products", return_value=[
+            {"product_id": 1, "name": "Producto Test", "qty": 2, "revenue": 30.0}
+        ])
+        mock_avg = mocker.patch("backend.app.api.analytics.averages", return_value={
+            "revenue": 30.0, "orders": 1, "aov": 30.0, "avg_per_customer": 30.0
+        })
+        mock_basket = mocker.patch("backend.app.api.analytics.basket_pairs", return_value=[])
+        mock_rfm = mocker.patch("backend.app.api.analytics.rfm_segments", return_value={
+            "summary": {"VIP": 1}, "by_customer": [{"cliente_id": 1, "segment": "VIP"}]
         })
         mock_groq = mocker.patch(GROQ_PATH, return_value=GROQ_STUB)
         # When
         r = client.get("/api/analytics/summary")
         # Then
         assert r.status_code == 200
-        assert len(r.json()["metrics"]["top_products"]) >= 1
+        metrics = r.json()["metrics"]
+        assert len(metrics["top_products"]) >= 1
+        assert metrics["rfm"]["summary"]["VIP"] == 1
         mock_groq.assert_called_once()
+        mock_sales.assert_called_once()
+        mock_top.assert_called_once()
+        mock_avg.assert_called_once()
+        mock_basket.assert_called_once()
+        mock_rfm.assert_called_once()
 
 
 class TestAnalyticsCompare:
@@ -277,31 +289,22 @@ class TestAnalyticsRFMSegments:
 
     def test_rfm_con_cuatro_clientes(self, client, mocker):
         """With 4+ customers, quantiles() takes the numpy path (len >= 4)."""
-        mocker.patch(GROQ_PATH, return_value=GROQ_STUB)
-        mocker.patch("backend.app.api.albaranes.send_email_with_pdf", return_value=None)
-        mocker.patch("backend.app.api.albaranes.generate_delivery_note_pdf", return_value=b"")
-        mocker.patch("backend.app.api.albaranes.render", return_value="<html></html>")
-
-        proveedor_r = client.post("/api/proveedores/post", json={"name": "Prov RFM", "contact": "900000000"})
-        prov_id = proveedor_r.json()["id"]
-        prod_r = client.post("/api/productos/post", json={
-            "name": "Prod RFM", "description": "Producto para RFM",
-            "price": 30.0, "supplier_id": prov_id,
+        # Mock rfm_segments to return simulated data with 4 customers
+        mock_rfm = mocker.patch("backend.app.api.analytics.rfm_segments", return_value={
+            "summary": {"VIP": 2, "En crecimiento": 1, "Ocasional": 1},
+            "by_customer": [
+                {"cliente_id": 1, "recency_days": 5, "frequency": 10, "monetary": 500.0, "R": 4, "F": 4, "M": 4, "segment": "VIP"},
+                {"cliente_id": 2, "recency_days": 10, "frequency": 8, "monetary": 400.0, "R": 3, "F": 4, "M": 3, "segment": "VIP"},
+                {"cliente_id": 3, "recency_days": 20, "frequency": 5, "monetary": 250.0, "R": 3, "F": 3, "M": 3, "segment": "En crecimiento"},
+                {"cliente_id": 4, "recency_days": 50, "frequency": 2, "monetary": 100.0, "R": 2, "F": 2, "M": 2, "segment": "Ocasional"},
+            ]
         })
-        prod_id = prod_r.json()["id"]
-
-        for i in range(4):
-            cli_r = client.post("/api/clientes/post", json={
-                "name": f"Cliente{i}", "surnames": f"RFM{i}",
-                "dni": f"9999000{i}Z", "email": f"rfm{i}@test.com",
-            })
-            cli_id = cli_r.json()["id"]
-            client.post("/api/albaranes/post", json={
-                "date": f"2026-0{i+1}-15",
-                "customer_id": cli_id,
-                "items": [{"product_id": prod_id, "quantity": 1, "unit_price": float(50 + i * 10)}],
-                "register_deposit": False,
-            })
+        mocker.patch(GROQ_PATH, return_value=GROQ_STUB)
+        # Mock other functions to avoid DB calls
+        mocker.patch("backend.app.api.analytics.sales_by_day", return_value=[])
+        mocker.patch("backend.app.api.analytics.top_products", return_value=[])
+        mocker.patch("backend.app.api.analytics.averages", return_value={"revenue": 0, "orders": 0, "aov": 0, "avg_per_customer": 0})
+        mocker.patch("backend.app.api.analytics.basket_pairs", return_value=[])
 
         r = client.get("/api/analytics/summary?date_from=2026-01-01&date_to=2026-12-31")
         assert r.status_code == 200
@@ -309,6 +312,7 @@ class TestAnalyticsRFMSegments:
         rfm = body.get("metrics", {}).get("rfm", {})
         assert "by_customer" in rfm
         assert len(rfm["by_customer"]) >= 4
+        mock_rfm.assert_called_once()
 
 
 class TestAggregateSalesWeekly:

@@ -33,9 +33,8 @@ services:
         condition: service_healthy
     volumes:
       # Monta los archivos de config locales (gitignoreados) dentro del contenedor
-      - ./backend/app/settings_email.py:/app/backend/app/settings_email.py:ro
+- ./backend/app/settings_email.py:/app/backend/app/settings_email.py:ro
       - ./backend/app/ia_settings.py:/app/backend/app/ia_settings.py:ro
-      - ./backend/app/bank_settings.py:/app/backend/app/bank_settings.py:ro
       - ./backend/app/stripe_config.py:/app/backend/app/stripe_config.py:ro
       - ./backend/app/stripe_settings.py:/app/backend/app/stripe_settings.py:ro
 

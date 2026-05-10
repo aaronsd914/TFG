@@ -1,6 +1,5 @@
 backend/app/ia_settings.py
 backend/app/settings_email.py
-backend/app/bank_settings.py
 backend/app/stripe_settings.py
 backend/app/stripe_config.py
 memoria/recomendaciones.txt
@@ -9,3 +8,6 @@ memoria/recomendaciones.txt
 frontend/coverage/
 coverage-backend.xml
 .coverage
+
+# Presentation folder
+presentacion/
