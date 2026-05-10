@@ -23,16 +23,20 @@ from backend.app.api import (
 from backend.app.api import configuracion
 from backend.app.utils.resumen_semanal import job_resumen_semanal
 from backend.app.database import Base, engine, SessionLocal
-from backend.app.seed import seed
+from backend.app.seed import _wipe, seed
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
 
-    # Run seed on startup if the database is empty.
-    # The seed is idempotent and will only populate demo data once.
+    reset_database = os.getenv("RESET_DATABASE", "false").lower() in ("1", "true", "yes")
     with SessionLocal() as db:
+        if reset_database:
+            _wipe(db)
+            log.info(
+                "Database reset requested via RESET_DATABASE env; database wiped before seeding."
+            )
         seed(db)
 
     scheduler = BackgroundScheduler(timezone="Europe/Madrid")
