@@ -32,7 +32,11 @@ log = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
 
-    reset_database = os.getenv("RESET_DATABASE", "false").lower() in ("1", "true", "yes")
+    reset_database = os.getenv("RESET_DATABASE", "false").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
     with SessionLocal() as db:
         if reset_database:
             _wipe(db)
