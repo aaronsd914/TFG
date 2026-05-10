@@ -1484,10 +1484,14 @@ def _gen_dni(existing: set) -> str:
 # ---------------------------------------------------------------------------
 def _wipe(db: Session):
     """Elimina todos los datos en el orden correcto (FK) para dejar la BD limpia."""
+    db.query(DeliveryNoteRouteDB).delete()
+    db.query(IncidenciaDB).delete()
     db.query(DeliveryNoteLineDB).delete()
     db.query(DeliveryNoteDB).delete()
     db.query(MovementDB).delete()
     db.query(StripeCheckoutDB).delete()
+    db.query(ConfigDB).delete()
+    db.query(UserDB).delete()
     db.query(ProductDB).delete()
     db.query(CustomerDB).delete()
     db.query(SupplierDB).delete()
@@ -1793,10 +1797,16 @@ def _insert_orders(db: Session, clients: list):
         base[random.randint(0, 149)] += 1
 
     all_movements: list = []
+    ensured_today_order = False
 
     for cli, n_alb in zip(clients, base):
         for _ in range(n_alb):
-            dias_desde_inicio = random.randint(0, delta_days)
+            # Guarantee at least one order on the final seed date (10/05/2026)
+            if not ensured_today_order:
+                dias_desde_inicio = delta_days
+                ensured_today_order = True
+            else:
+                dias_desde_inicio = random.randint(0, delta_days)
             fecha = start + timedelta(days=dias_desde_inicio)
             estado = _pick_estado((today - fecha).days)
 

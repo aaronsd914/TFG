@@ -23,16 +23,27 @@ from backend.app.api import (
 from backend.app.api import configuracion
 from backend.app.utils.resumen_semanal import job_resumen_semanal
 from backend.app.database import Base, engine, SessionLocal
-from backend.app.seed import seed
+from backend.app.seed import _wipe, seed
+
+log = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
 
-    if os.getenv("ENVIRONMENT", "development") != "production":
-        with SessionLocal() as db:
-            seed(db)
+    reset_database = os.getenv("RESET_DATABASE", "false").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    with SessionLocal() as db:
+        if reset_database:
+            _wipe(db)
+            log.info(
+                "Database reset requested via RESET_DATABASE env; database wiped before seeding."
+            )
+        seed(db)
 
     scheduler = BackgroundScheduler(timezone="Europe/Madrid")
     scheduler.add_job(job_resumen_semanal, CronTrigger(minute="*"))
