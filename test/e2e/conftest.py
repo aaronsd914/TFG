@@ -5,6 +5,7 @@ Proporciona:
   - browser:            Instancia Chrome headless de alcance de sesión
   - logged_in_browser:  browser con sesión de admin ya iniciada
   - Captura de pantalla automática al fallar un test
+  - Limpieza de BD después de la sesión
 """
 import os
 import pytest
@@ -13,6 +14,11 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+
+# Importar BD para limpieza
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'backend'))
+from backend.app.database import Base, engine, SessionLocal
 
 BASE_URL = os.environ.get("E2E_BASE_URL", "http://localhost:5173")
 ADMIN_USER = os.environ.get("E2E_USER", "admin")
@@ -84,9 +90,19 @@ def navigate(driver: webdriver.Chrome, path: str) -> None:
     WebDriverWait(driver, 10).until(EC.url_contains(path))
 
 
-# ---------------------------------------------------------------------------
-# Fixtures de alcance de sesión
-# ---------------------------------------------------------------------------
+@pytest.fixture(scope="session", autouse=True)
+def cleanup_db():
+    """Limpia la BD después de todos los tests E2E."""
+    yield
+    # Después de la sesión, limpiar la BD
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    # Ejecutar seed para dejar datos de demo
+    from backend.app.seed import seed
+    db = SessionLocal()
+    seed(db)
+    db.close()
+    print("BD limpiada y reseedada después de tests E2E")
 
 @pytest.fixture(scope="session")
 def browser():

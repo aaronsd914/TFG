@@ -8,3 +8,6 @@ memoria/recomendaciones.txt
 frontend/coverage/
 coverage-backend.xml
 .coverage
+
+# Presentation folder
+presentacion/

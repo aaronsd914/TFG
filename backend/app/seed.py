@@ -12,8 +12,11 @@ from backend.app.entidades.cliente import CustomerDB
 from backend.app.entidades.proveedor import SupplierDB
 from backend.app.entidades.producto import ProductDB
 from backend.app.entidades.albaran import DeliveryNoteDB
+from backend.app.entidades.albaran_ruta import DeliveryNoteRouteDB
 from backend.app.entidades.linea_albaran import DeliveryNoteLineDB
 from backend.app.entidades.movimiento import MovementDB
+from backend.app.entidades.configuracion import ConfigDB
+from backend.app.entidades.incidencia import IncidenciaDB
 from backend.app.entidades.usuario import UserDB
 from backend.app.entidades.stripe_checkout import StripeCheckoutDB
 from passlib.context import CryptContext
@@ -34,6 +37,17 @@ PROVEEDORES = [
     ("Madera Noble Ibérica S.A.", "pedidos@maderannoble.es"),
     ("Dormitorios Premium S.L.", "ventas@dormitoriospremium.es"),
 ]
+
+DEFAULT_CONFIG_VALUES = {
+    "tienda_nombre": "FurniGest",
+    "logo_empresa": "",
+    "firma_email": "",
+    "resumen_email_destino": "",
+    "resumen_intervalo_dias": "7",
+    "resumen_fecha_inicio": "",
+    "resumen_hora_envio": "09:00",
+    "resumen_ultima_vez": "",
+}
 
 # ---------------------------------------------------------------------------
 # Productos – 200 (nombre, descripción, precio, índice proveedor 0-4)
@@ -1770,7 +1784,7 @@ def _gastos_fijos_movements() -> list:
 # ---------------------------------------------------------------------------
 def _insert_orders(db: Session, clients: list):
     products = db.query(ProductDB).all()
-    today = date(2026, 3, 24)
+    today = date(2026, 5, 10)
     start = date(2025, 6, 1)
     delta_days = (today - start).days
 
@@ -1927,6 +1941,58 @@ def _insert_stripe(db: Session):
     db.commit()
 
 
+def _insert_config_defaults(db: Session):
+    existing = {row.key for row in db.query(ConfigDB).all()}
+    for key, value in DEFAULT_CONFIG_VALUES.items():
+        if key not in existing:
+            db.add(ConfigDB(key=key, value=value))
+    db.commit()
+
+
+def _insert_delivery_routes(db: Session):
+    if db.query(DeliveryNoteRouteDB).count() > 0:
+        return
+    route_notes = (
+        db.query(DeliveryNoteDB)
+        .filter(DeliveryNoteDB.status == "RUTA")
+        .order_by(DeliveryNoteDB.id.asc())
+        .limit(12)
+        .all()
+    )
+    for idx, alb in enumerate(route_notes, start=1):
+        db.add(
+            DeliveryNoteRouteDB(
+                delivery_note_id=alb.id,
+                truck_id=(idx % 3) + 1,
+            )
+        )
+    if route_notes:
+        db.commit()
+
+
+def _insert_incidencias(db: Session, n: int = 5):
+    if db.query(IncidenciaDB).count() > 0:
+        return
+    delivered_notes = (
+        db.query(DeliveryNoteDB)
+        .filter(DeliveryNoteDB.status == "ENTREGADO")
+        .order_by(DeliveryNoteDB.id.asc())
+        .limit(n)
+        .all()
+    )
+    for idx, alb in enumerate(delivered_notes, start=1):
+        alb.status = "INCIDENCIA"
+        db.add(
+            IncidenciaDB(
+                albaran_id=alb.id,
+                descripcion=f"Incidencia de ejemplo #{idx} sobre albarán {alb.id}",
+                fecha_creacion=alb.date,
+            )
+        )
+    if delivered_notes:
+        db.commit()
+
+
 # ---------------------------------------------------------------------------
 # Punto de entrada
 # ---------------------------------------------------------------------------
@@ -1945,6 +2011,8 @@ def seed(db: Session):
         db.commit()
         log.info("Usuario admin creado (admin/admin123).")
 
+    _insert_config_defaults(db)
+
     if db.query(SupplierDB).count() > 0:
         log.info("Seed omitido: la base de datos ya contiene datos.")
         return
@@ -1954,9 +2022,11 @@ def seed(db: Session):
     db.flush()
     _insert_orders(db, clients)
     _insert_stripe(db)
+    _insert_delivery_routes(db)
+    _insert_incidencias(db)
     log.info(
         "Seed completado: %d proveedores, %d productos, "
-        "150 clientes, 400 albaranes, movimientos y pagos Stripe generados.",
+        "150 clientes, 400 albaranes, movimientos, pagos Stripe, rutas e incidencias de demostración generados.",
         len(PROVEEDORES),
         len(PRODUCTOS),
     )
