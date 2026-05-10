@@ -1715,6 +1715,21 @@ def _gastos_fijos_movements() -> list:
             date(2026, 2, 8),
         ),
         ("Factura Nordic Home Supplies — pedido Q1 2026", 3200.0, date(2026, 3, 3)),
+        (
+            "Factura Madera Noble Ibérica — pedido primavera 2026",
+            2050.0,
+            date(2026, 4, 7),
+        ),
+        (
+            "Factura Dormitorios Premium S.L. — colección primavera",
+            3100.0,
+            date(2026, 4, 18),
+        ),
+        (
+            "Factura Muebles Rivera S.L. — reposición stock may 2026",
+            4750.0,
+            date(2026, 5, 4),
+        ),
         # Alquiler
         ("Alquiler almacén — jun 2025", 850.0, date(2025, 6, 1)),
         ("Alquiler almacén — jul 2025", 850.0, date(2025, 7, 1)),
@@ -1726,6 +1741,8 @@ def _gastos_fijos_movements() -> list:
         ("Alquiler almacén — ene 2026", 880.0, date(2026, 1, 1)),
         ("Alquiler almacén — feb 2026", 880.0, date(2026, 2, 1)),
         ("Alquiler almacén — mar 2026", 880.0, date(2026, 3, 1)),
+        ("Alquiler almacén — abr 2026", 880.0, date(2026, 4, 1)),
+        ("Alquiler almacén — may 2026", 880.0, date(2026, 5, 1)),
         # Transporte/flota
         ("Gestión flota transporte — jun-ago 2025", 1200.0, date(2025, 8, 31)),
         ("Gestión flota transporte — sep 2025", 420.0, date(2025, 9, 30)),
@@ -1734,30 +1751,39 @@ def _gastos_fijos_movements() -> list:
         ("Gestión flota transporte — dic 2025", 380.0, date(2025, 12, 31)),
         ("Gestión flota transporte — ene 2026", 430.0, date(2026, 1, 31)),
         ("Gestión flota transporte — feb 2026", 415.0, date(2026, 2, 28)),
-        ("Gestión flota transporte — mar 2026", 400.0, date(2026, 3, 20)),
+        ("Gestión flota transporte — mar 2026", 400.0, date(2026, 3, 31)),
+        ("Gestión flota transporte — abr 2026", 425.0, date(2026, 4, 30)),
+        ("Gestión flota transporte — may 2026 (parcial)", 180.0, date(2026, 5, 9)),
         # Suministros
         ("Suministro eléctrico almacén — Q3 2025", 890.0, date(2025, 9, 5)),
         ("Suministro eléctrico almacén — Q4 2025", 950.0, date(2025, 12, 5)),
         ("Suministro eléctrico almacén — ene 2026", 310.0, date(2026, 1, 7)),
         ("Suministro eléctrico almacén — feb 2026", 295.0, date(2026, 2, 7)),
+        ("Suministro eléctrico almacén — mar 2026", 305.0, date(2026, 3, 6)),
+        ("Suministro eléctrico almacén — abr 2026", 280.0, date(2026, 4, 7)),
         # Marketing y servicios
         ("Publicidad online — Google Ads Q3 2025", 600.0, date(2025, 9, 30)),
         ("Publicidad online — Google Ads Q4 2025", 750.0, date(2025, 12, 30)),
         ("Publicidad online — Google Ads Q1 2026", 600.0, date(2026, 3, 15)),
+        ("Publicidad online — Google Ads abr 2026", 250.0, date(2026, 4, 28)),
         ("Seguro responsabilidad civil anual 2025", 780.0, date(2025, 6, 15)),
         ("Seguro responsabilidad civil anual 2026", 810.0, date(2026, 1, 15)),
         ("Servicio mantenimiento web y ERP — Q3 2025", 480.0, date(2025, 9, 30)),
         ("Servicio mantenimiento web y ERP — Q4 2025", 480.0, date(2025, 12, 31)),
         ("Servicio mantenimiento web y ERP — Q1 2026", 500.0, date(2026, 3, 20)),
+        ("Servicio mantenimiento web y ERP — abr 2026", 170.0, date(2026, 4, 22)),
         ("Materiales embalaje — compra Q3 2025", 220.0, date(2025, 7, 20)),
         ("Materiales embalaje — compra Q4 2025", 240.0, date(2025, 10, 18)),
         ("Materiales embalaje — compra Q1 2026", 230.0, date(2026, 2, 12)),
+        ("Materiales embalaje — compra abr 2026", 215.0, date(2026, 4, 15)),
         # Gestoría
         ("Gestoría y asesoría fiscal — Q3 2025", 350.0, date(2025, 9, 15)),
         ("Gestoría y asesoría fiscal — Q4 2025", 350.0, date(2025, 12, 15)),
         ("Gestoría y asesoría fiscal — ene 2026", 350.0, date(2026, 1, 15)),
         ("Gestoría y asesoría fiscal — feb 2026", 350.0, date(2026, 2, 15)),
         ("Gestoría y asesoría fiscal — mar 2026", 350.0, date(2026, 3, 15)),
+        ("Gestoría y asesoría fiscal — abr 2026", 350.0, date(2026, 4, 15)),
+        ("Gestoría y asesoría fiscal — may 2026", 350.0, date(2026, 5, 6)),
     ]
     return [
         MovementDB(date=f, description=desc, amount=float(amt), type="EGRESO")
@@ -1770,7 +1796,7 @@ def _gastos_fijos_movements() -> list:
 # ---------------------------------------------------------------------------
 def _insert_orders(db: Session, clients: list):
     products = db.query(ProductDB).all()
-    today = date(2026, 3, 24)
+    today = date(2026, 5, 10)
     start = date(2025, 6, 1)
     delta_days = (today - start).days
 
@@ -1810,7 +1836,7 @@ def _insert_orders(db: Session, clients: list):
 # Insertar pagos Stripe de demostración
 # ---------------------------------------------------------------------------
 def _insert_stripe(db: Session):
-    """Simula 12 sesiones Stripe completadas a lo largo del periodo."""
+    """Simula 15 sesiones Stripe completadas a lo largo del periodo."""
     stripe_sessions = [
         (
             "cs_test_a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6",
@@ -1884,6 +1910,24 @@ def _insert_stripe(db: Session):
             1750.00,
             "Cama de diseño Venezia King 180 — pago online",
         ),
+        (
+            "cs_test_m3N4o5P6q7R8s9T0u1V2w3X4y5Z6a7B8",
+            "pi_3Qab3ABC013",
+            1150.00,
+            "Armario ropero Formentera 3P — pago online",
+        ),
+        (
+            "cs_test_n4O5p6Q7r8S9t0U1v2W3x4Y5z6A7b8C9",
+            "pi_3Qab4ABC014",
+            720.00,
+            "Sillón masajeador Relax Pro — pago online",
+        ),
+        (
+            "cs_test_o5P6q7R8s9T0u1V2w3X4y5Z6a7B8c9D0",
+            "pi_3Qab5ABC015",
+            1380.00,
+            "Cama nórdica box spring Copenhague — pago online",
+        ),
     ]
 
     stripe_dates = [
@@ -1899,6 +1943,9 @@ def _insert_stripe(db: Session):
         date(2026, 2, 7),
         date(2026, 2, 28),
         date(2026, 3, 10),
+        date(2026, 4, 4),
+        date(2026, 4, 21),
+        date(2026, 5, 6),
     ]
 
     from datetime import datetime as dt
@@ -1930,8 +1977,14 @@ def _insert_stripe(db: Session):
 # ---------------------------------------------------------------------------
 # Punto de entrada
 # ---------------------------------------------------------------------------
-def seed(db: Session):
-    """Inserta los datos de demostración solo si la base de datos está vacía."""
+def seed(db: Session, force: bool = False):
+    """Inserta los datos de demostración.
+
+    Por defecto solo inserta si la base de datos está vacía. Si ``force`` es
+    True, primero elimina todos los datos de negocio (proveedores, productos,
+    clientes, albaranes, movimientos, pagos Stripe) y los vuelve a insertar.
+    El usuario admin nunca se elimina.
+    """
     # Ensure default admin user always exists
     if not db.query(UserDB).filter_by(username="admin").first():
         db.add(
@@ -1945,7 +1998,10 @@ def seed(db: Session):
         db.commit()
         log.info("Usuario admin creado (admin/admin123).")
 
-    if db.query(SupplierDB).count() > 0:
+    if force:
+        log.info("Seed force=True: eliminando datos existentes…")
+        _wipe(db)
+    elif db.query(SupplierDB).count() > 0:
         log.info("Seed omitido: la base de datos ya contiene datos.")
         return
 
@@ -1960,3 +2016,22 @@ def seed(db: Session):
         len(PROVEEDORES),
         len(PRODUCTOS),
     )
+
+
+if __name__ == "__main__":  # pragma: no cover
+    # Permite repoblar la base de datos apuntada por DATABASE_URL ejecutando:
+    #   python -m backend.app.seed [--force]
+    # Sin --force, respeta los datos ya existentes (no inserta nada si la BD
+    # ya tiene proveedores). Con --force, elimina y re-crea los datos demo.
+    import sys
+
+    logging.basicConfig(
+        level=logging.INFO, format="%(levelname)s %(name)s: %(message)s"
+    )
+    force_flag = "--force" in sys.argv
+
+    from backend.app.database import Base, engine, SessionLocal
+
+    Base.metadata.create_all(bind=engine)
+    with SessionLocal() as _db:
+        seed(_db, force=force_flag)
