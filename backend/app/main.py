@@ -30,9 +30,10 @@ from backend.app.seed import seed
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
 
-    if os.getenv("ENVIRONMENT", "development") != "production":
-        with SessionLocal() as db:
-            seed(db)
+    # Run seed on startup if the database is empty.
+    # The seed is idempotent and will only populate demo data once.
+    with SessionLocal() as db:
+        seed(db)
 
     scheduler = BackgroundScheduler(timezone="Europe/Madrid")
     scheduler.add_job(job_resumen_semanal, CronTrigger(minute="*"))
