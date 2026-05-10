@@ -25,6 +25,8 @@ from backend.app.utils.resumen_semanal import job_resumen_semanal
 from backend.app.database import Base, engine, SessionLocal
 from backend.app.seed import _wipe, seed
 
+log = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
