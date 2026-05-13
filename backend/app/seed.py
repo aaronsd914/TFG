@@ -1594,9 +1594,26 @@ def _insert_clients(db: Session, n: int = 150) -> list:
 # ---------------------------------------------------------------------------
 # Helpers para _insert_orders
 # ---------------------------------------------------------------------------
+_INCIDENCIA_DESCRIPCIONES = [
+    "Mueble recibido con arañazos en la superficie frontal",
+    "Falta una pieza del embalaje según el albarán",
+    "Cliente reclama color diferente al pedido",
+    "Daño durante el transporte — pata rota",
+    "Producto equivocado entregado al cliente",
+    "Retraso en la entrega no comunicado al cliente",
+    "Mueble no cabe por la puerta del domicilio",
+    "Tapizado manchado de fábrica",
+    "Tornillería incompleta — imposible montar",
+    "Cliente rechaza la entrega por defecto visible",
+]
+
+
 def _pick_estado(dias_transcurridos: int) -> str:
     """Devuelve un estado de albarán coherente con su antigüedad."""
     r = random.random()
+    if r < 0.06:
+        return "INCIDENCIA"
+    r = (r - 0.06) / 0.94
     if dias_transcurridos > 180:
         if r < 0.75:
             return "ENTREGADO"
@@ -1797,6 +1814,7 @@ def _insert_orders(db: Session, clients: list):
         base[random.randint(0, 149)] += 1
 
     all_movements: list = []
+    incidencias: list = []
     ensured_today_order = False
 
     for cli, n_alb in zip(clients, base):
@@ -1810,6 +1828,10 @@ def _insert_orders(db: Session, clients: list):
             fecha = start + timedelta(days=dias_desde_inicio)
             estado = _pick_estado((today - fecha).days)
 
+            estado_movimientos = estado
+            if estado == "INCIDENCIA":
+                estado_movimientos = random.choice(["FIANZA", "ALMACEN", "RUTA", "ENTREGADO"])
+
             alb = DeliveryNoteDB(
                 date=fecha,
                 description=random.choice(_DESCRIPCIONES_ALBARAN),
@@ -1821,12 +1843,28 @@ def _insert_orders(db: Session, clients: list):
             db.flush()
 
             alb.total = _add_albaran_lines(db, alb, products)
-            all_movements.extend(_albaran_movements(alb, cli, fecha, estado, today))
+            all_movements.extend(
+                _albaran_movements(alb, cli, fecha, estado_movimientos, today)
+            )
+
+            if estado == "INCIDENCIA":
+                fecha_incidencia = min(
+                    fecha + timedelta(days=random.randint(1, 30)), today
+                )
+                incidencias.append(
+                    IncidenciaDB(
+                        albaran_id=alb.id,
+                        descripcion=random.choice(_INCIDENCIA_DESCRIPCIONES),
+                        fecha_creacion=fecha_incidencia,
+                    )
+                )
 
     all_movements.extend(_gastos_fijos_movements())
 
     for mov in all_movements:
         db.add(mov)
+    for inc in incidencias:
+        db.add(inc)
     db.commit()
 
 
@@ -1980,29 +2018,6 @@ def _insert_delivery_routes(db: Session):
         db.commit()
 
 
-def _insert_incidencias(db: Session, n: int = 5):
-    if db.query(IncidenciaDB).count() > 0:
-        return
-    delivered_notes = (
-        db.query(DeliveryNoteDB)
-        .filter(DeliveryNoteDB.status == "ENTREGADO")
-        .order_by(DeliveryNoteDB.id.asc())
-        .limit(n)
-        .all()
-    )
-    for idx, alb in enumerate(delivered_notes, start=1):
-        alb.status = "INCIDENCIA"
-        db.add(
-            IncidenciaDB(
-                albaran_id=alb.id,
-                descripcion=f"Incidencia de ejemplo #{idx} sobre albarán {alb.id}",
-                fecha_creacion=alb.date,
-            )
-        )
-    if delivered_notes:
-        db.commit()
-
-
 # ---------------------------------------------------------------------------
 # Punto de entrada
 # ---------------------------------------------------------------------------
@@ -2033,7 +2048,6 @@ def seed(db: Session):
     _insert_orders(db, clients)
     _insert_stripe(db)
     _insert_delivery_routes(db)
-    _insert_incidencias(db)
     log.info(
         "Seed completado: %d proveedores, %d productos, "
         "150 clientes, 400 albaranes, movimientos, pagos Stripe, rutas e incidencias de demostración generados.",
