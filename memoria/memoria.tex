@@ -236,7 +236,7 @@ El \emph{backend} se ha desarrollado con \textbf{FastAPI} (Python 3.12), \textbf
 
 Entre las funcionalidades avanzadas destacan: un motor de analíticas con segmentación RFM de clientes y análisis de cesta (Market Basket Analysis); un asistente de inteligencia artificial basado en Llama-3 a través de Groq; predicciones de ingresos mediante suavizado exponencial de Holt; integración de pagos con Stripe Checkout; generación automática de PDF con ReportLab; envío de correos electrónicos con adjuntos; e internacionalización completa (ES/EN).
 
-Se ha aplicado una estrategia rigurosa de ingeniería del software: más de 540 pruebas automatizadas (unitarias, de integración y end-to-end), análisis estático con Ruff y ESLint, \emph{quality gate} con SonarCloud, un pipeline de integración y despliegue continuos con GitHub Actions, y contenerización con Docker. El sistema está desplegado en producción en Railway (backend) y Vercel (frontend).
+Se ha aplicado una estrategia rigurosa de ingeniería del software: más de 850 pruebas automatizadas (unitarias, de integración y end-to-end), análisis estático con Ruff y ESLint, \emph{quality gate} con SonarCloud, un pipeline de integración y despliegue continuos con GitHub Actions, y contenerización con Docker. El sistema está desplegado en producción en Railway (backend) y Vercel (frontend).
 
 \mbox{} \bigskip
 
@@ -416,9 +416,9 @@ La tabla~\ref{tab:objetivos} enumera los diez objetivos específicos del proyect
     OBJ-02 & Modelar el ciclo de vida del albarán como una máquina de estados con cinco transiciones y efectos secundarios automáticos. \\
     OBJ-03 & Registrar automáticamente movimientos financieros (ingresos y egresos) ligados a eventos de negocio. \\
     OBJ-04 & Desarrollar un módulo de logística que permita asignar albaranes a camiones, visualizar manifiestos de carga y liquidar rutas. \\
-    OBJ-05 & Construir un motor de analíticas con segmentación RFM de clientes, análisis de cesta y predicción de ingresos (Holt). \\
+    OBJ-05 & Incorporar cobro con tarjeta a través de Stripe Checkout con registro automático del pago como movimiento. \\
     OBJ-06 & Integrar un asistente de inteligencia artificial basado en un LLM (Llama-3 vía Groq) con inyección de métricas en tiempo real. \\
-    OBJ-07 & Incorporar cobro con tarjeta a través de Stripe Checkout con registro automático del pago como movimiento. \\
+    OBJ-07 & Construir un motor de analíticas con segmentación RFM de clientes, análisis de cesta y predicción de ingresos (Holt). \\
     OBJ-08 & Diseñar y ejecutar una suite de pruebas automatizadas que cubra pruebas unitarias, de integración y end-to-end. \\
     OBJ-09 & Configurar un pipeline de integración y despliegue continuos con GitHub Actions y SonarCloud. \\
     OBJ-10 & Desplegar la aplicación en producción en infraestructura cloud (Railway + Vercel). \\
@@ -432,7 +432,7 @@ El desarrollo de FurniGest ha seguido un enfoque \textbf{ágil} \cite{manifiesto
 
 \subsection{Trunk-Based Development}
 
-El modelo de ramificación utilizado es \textbf{Trunk-Based Development} (TBD) \cite{tbd}: \texttt{main} es la única rama de larga duración. Cada funcionalidad se desarrolla en una rama \texttt{feature/*} o \texttt{fix/*} de corta vida y se integra a \texttt{main} mediante una Pull Request. Este modelo se adapta al despliegue continuo: cada \emph{push} ejecuta el linting, y cada Pull Request a \texttt{main} ejecuta el pipeline completo de pruebas, quality gate y despliegue.
+El modelo de ramificación utilizado es \textbf{Trunk-Based Development} (TBD) \cite{tbd}: \texttt{main} es la única rama de larga duración. Cada funcionalidad se desarrolla en una rama \texttt{feature/*} o \texttt{fix/*} de corta vida y se integra a \texttt{main} mediante una Pull Request. Este modelo se adapta al despliegue continuo: cada Pull Request a \texttt{main} ejecuta el pipeline completo de linting, pruebas, quality gate y despliegue.
 
 \begin{figure}[H]
   \centering
@@ -532,7 +532,7 @@ La tabla~\ref{tab:rf} recoge los dieciocho requisitos funcionales del sistema.
   \endhead
   RF-01 & Gestión de clientes: crear, leer, actualizar y eliminar clientes. Búsqueda por DNI y correo electrónico con \emph{upsert} automático. \\
   RF-02 & Gestión de productos y proveedores: CRUD de ambas entidades con relación uno a muchos (un proveedor tiene muchos productos). \\
-  RF-03 & Ciclo de vida del albarán: máquina de cinco estados (FIANZA $\to$ ALMACEN $\to$ RUTA $\to$ ENTREGADO $\to$ INCIDENCIA) con transiciones controladas. \\
+  RF-03 & Ciclo de vida del albarán: máquina de cinco estados (FIANZA $\to$ ALMACEN $\to$ RUTA $\to$ ENTREGADO; ENTREGADO $\leftrightarrow$ INCIDENCIA) con transiciones controladas. \\
   RF-04 & Libro de movimientos financieros: registro y listado de ingresos y egresos, con generación automática al crear albaranes y al entregar pedidos. \\
   RF-05 & Dashboard: pantalla resumen con indicadores clave de rendimiento (ingresos totales, pedidos abiertos, clientes activos) y gráficos interactivos. \\
   RF-06 & Notificación por email: envío automático de correo electrónico con PDF adjunto del albarán al crear un pedido. \\
@@ -1082,7 +1082,7 @@ La tabla~\ref{tab:llm_params} recoge los parámetros del modelo.
 
 \subsection{Enrutamiento y layout}
 
-React Router 7 \cite{reactrouter} define las rutas de la aplicación. El componente \texttt{App.jsx} actúa como \emph{shell}: renderiza la barra lateral (\texttt{Sidebar.jsx}) una sola vez y conmuta el contenido principal mediante \texttt{<Outlet>}. Las doce rutas del sistema (tabla~\ref{tab:rutas}) se registran con \texttt{createBrowserRouter}.
+React Router 7 \cite{reactrouter} define las rutas de la aplicación. El componente \texttt{App.jsx} actúa como \emph{shell}: renderiza la barra lateral (\texttt{Sidebar.jsx}) una sola vez y conmuta el contenido principal mediante \texttt{<Outlet>}. Las once rutas del sistema (tabla~\ref{tab:rutas}) se registran con \texttt{createBrowserRouter}.
 
 \begin{table}[H]
   \centering
@@ -1097,12 +1097,10 @@ React Router 7 \cite{reactrouter} define las rutas de la aplicación. El compone
     \texttt{/clientes}       & ClientesPage     & Tabla de clientes con búsqueda y panel de historial \\
     \texttt{/albaranes}      & AlbaranesPage    & Lista de albaranes con filtro y control de estado \\
     \texttt{/productos}      & ProductosPage    & Productos y proveedores (vista dividida) \\
-    \texttt{/movimientos}    & MovimientosPage  & Libro de movimientos con totales mensuales \\
     \texttt{/tendencias}     & Tendencias       & Analíticas, chat IA, exportación PDF \\
     \texttt{/transporte}     & TransportePage   & Gestión de rutas y camiones \\
     \texttt{/banco}          & BancoPage        & Panel de pagos Stripe \\
     \texttt{/incidencias}    & IncidenciasPage  & Gestión de incidencias de entrega \\
-    \texttt{/perfil}         & PerfilPage       & Cambio de contraseña y nombre de usuario \\
     \texttt{/personalizacion}& PersonalizacionPage & Tema, paleta, logo, idioma, resumen semanal \\
     \bottomrule
   \end{tabular}
@@ -1534,7 +1532,7 @@ La tabla~\ref{tab:metricas} recoge las métricas de calidad reportadas por Sonar
     Cobertura frontend (Vitest) & $>$ 80\,\% \\
     Bugs detectados             & 0 \\
     Vulnerabilidades            & 0 \\
-    Tests unitarios backend     & 239 \\
+    Tests de integración backend & 239 \\
     Tests unitarios frontend    & 511 \\
     Tests E2E (Selenium)        & 107 \\
     Tests totales               & 857 \\
@@ -1548,34 +1546,84 @@ La tabla~\ref{tab:metricas} recoge las métricas de calidad reportadas por Sonar
 
 \section{Capturas de pantalla}
 
-% NOTA: Las capturas deben tomarse del sistema en ejecución y añadirse
-% como ficheros de imagen (.png o .pdf) en el directorio memoria/.
-% A continuación se reserva el espacio con la estructura adecuada.
+Las siguientes figuras muestran las once vistas principales de FurniGest en su entorno de producción.
 
-\textit{Las siguientes capturas de pantalla deben añadirse desde el sistema en ejecución:}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\textwidth]{Login.png}
+  \caption{Pantalla de inicio de sesión.}
+  \label{fig:cap_login}
+\end{figure}
 
-\begin{enumerate}[nosep]
-  \item \textbf{Login:} formulario de inicio de sesión con logo de tienda.
-  \item \textbf{Dashboard:} tarjetas de KPIs, gráfico de ingresos (línea) y distribución de estados (tarta).
-  \item \textbf{Nueva Venta:} asistente paso a paso con búsqueda de cliente y adición de productos.
-  \item \textbf{Clientes:} tabla con búsqueda y panel lateral de historial de pedidos.
-  \item \textbf{Albaranes:} lista filtrable con control de estado inline.
-  \item \textbf{Productos:} vista dividida con productos a la izquierda y proveedores a la derecha.
-  \item \textbf{Movimientos:} libro de ingresos y egresos con totales mensuales.
-  \item \textbf{Tendencias:} gráficos de analíticas, comparativa de períodos, chat IA.
-  \item \textbf{Transporte:} columna de almacén y columnas por camión.
-  \item \textbf{Banco:} panel de pagos Stripe con historial de cobros.
-  \item \textbf{Personalización:} selector de paleta, modo oscuro, idioma.
-  \item \textbf{SonarCloud:} dashboard del quality gate.
-\end{enumerate}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\textwidth]{Dashboard.png}
+  \caption{Dashboard: KPIs principales, gráfico de ingresos y distribución de estados.}
+  \label{fig:cap_dashboard}
+\end{figure}
 
-% Ejemplo de cómo incluir una captura cuando esté disponible:
-% \begin{figure}[H]
-%   \centering
-%   \includegraphics[width=0.85\textwidth]{captura_dashboard.png}
-%   \caption{Pantalla principal (Dashboard) de FurniGest.}
-%   \label{fig:cap_dashboard}
-% \end{figure}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\textwidth]{{Nueva venta}.png}
+  \caption{Nueva Venta: asistente paso a paso con búsqueda de cliente y adición de productos.}
+  \label{fig:cap_nueva_venta}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\textwidth]{Clientes.png}
+  \caption{Clientes: tabla con búsqueda y panel lateral de historial de pedidos.}
+  \label{fig:cap_clientes}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\textwidth]{Albaranes.png}
+  \caption{Albaranes: lista filtrable con control de estado inline.}
+  \label{fig:cap_albaranes}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\textwidth]{Productos.png}
+  \caption{Productos y proveedores: vista dividida.}
+  \label{fig:cap_productos}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\textwidth]{Tendencias.png}
+  \caption{Tendencias: gráficos analíticos, segmentación RFM, predicción y chat IA.}
+  \label{fig:cap_tendencias}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\textwidth]{Transporte.png}
+  \caption{Transporte: columna de almacén y columnas por camión.}
+  \label{fig:cap_transporte}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\textwidth]{Banco.png}
+  \caption{Banco: panel de pagos Stripe con historial de cobros.}
+  \label{fig:cap_banco}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\textwidth]{Incidencias.png}
+  \caption{Incidencias: gestión de incidencias de entrega.}
+  \label{fig:cap_incidencias}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\textwidth]{{Configuración}.png}
+  \caption{Personalización: selector de paleta, modo oscuro e idioma.}
+  \label{fig:cap_personalizacion}
+\end{figure}
 
 
 \section{URLs de producción}
@@ -1590,7 +1638,7 @@ La tabla~\ref{tab:urls} recoge las URLs del sistema desplegado.
     \toprule
     \textbf{Servicio} & \textbf{URL} \\
     \midrule
-    Frontend      & \url{https://tfg-five-drab.vercel.app} \\
+    Frontend      & \url{https://furnigest.com} \\
     Backend API   & \url{https://supportive-nurturing-production-66dc.up.railway.app} \\
     Swagger (docs)& \url{https://supportive-nurturing-production-66dc.up.railway.app/docs} \\
     \bottomrule
@@ -1616,10 +1664,10 @@ Este Trabajo Fin de Grado ha cumplido el objetivo de diseñar, implementar y des
   \item[OBJ-02 (Albarán):] Cumplido. La máquina de cinco estados funciona con transiciones controladas y efectos secundarios automáticos.
   \item[OBJ-03 (Movimientos):] Cumplido. Los movimientos se generan automáticamente al crear albaranes, al entregar pedidos y al liquidar rutas.
   \item[OBJ-04 (Logística):] Cumplido. El módulo de transporte permite asignar albaranes a camiones, visualizar manifiestos y liquidar rutas con factura PDF.
-  \item[OBJ-05 (Analíticas):] Cumplido. El motor implementa segmentación RFM, análisis de cesta y predicción de Holt, todo accesible desde la pantalla de tendencias.
+  \item[OBJ-05 (Stripe):] Cumplido. El flujo de pago con Stripe Checkout funciona con registro automático de ingresos e idempotencia.
   \item[OBJ-06 (IA):] Cumplido. El asistente basado en Llama-3 responde preguntas de negocio y genera gráficos a partir de datos en tiempo real.
-  \item[OBJ-07 (Stripe):] Cumplido. El flujo de pago con Stripe Checkout funciona con registro automático de ingresos e idempotencia.
-  \item[OBJ-08 (Pruebas):] Cumplido. Más de 540 pruebas automatizadas cubren los tres niveles de la pirámide de pruebas.
+  \item[OBJ-07 (Analíticas):] Cumplido. El motor implementa segmentación RFM, análisis de cesta y predicción de Holt, todo accesible desde la pantalla de tendencias.
+  \item[OBJ-08 (Pruebas):] Cumplido. Más de 850 pruebas automatizadas cubren los tres niveles de la pirámide de pruebas.
   \item[OBJ-09 (CI/CD):] Cumplido. Un único workflow de GitHub Actions (con siete jobs) garantiza que cada cambio pasa por pruebas, linting, quality gate y despliegue.
   \item[OBJ-10 (Producción):] Cumplido. El sistema está accesible públicamente en Railway (backend) y Vercel (frontend).
 \end{description}
@@ -1746,7 +1794,7 @@ Los ficheros de configuración se montan como volúmenes read-only. Deben existi
 
 \section{Datos de demostración}
 
-Al arrancar por primera vez, \texttt{seed.py} genera: 18 proveedores, 99 productos, 100 clientes, $\sim$150 albaranes y $\sim$260 movimientos. El seed es idempotente: si ya hay datos, no se ejecuta.
+Al arrancar por primera vez, \texttt{seed.py} genera: 5 proveedores, 200 productos, 150 clientes, 400 albaranes y los movimientos financieros asociados. El seed es idempotente: si ya hay datos, no se ejecuta.
 
 \textbf{Cuenta por defecto:} usuario \texttt{admin}, contraseña \texttt{admin123}. Cambiar en producción.
 
