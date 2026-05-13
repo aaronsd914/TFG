@@ -1830,7 +1830,9 @@ def _insert_orders(db: Session, clients: list):
 
             estado_movimientos = estado
             if estado == "INCIDENCIA":
-                estado_movimientos = random.choice(["FIANZA", "ALMACEN", "RUTA", "ENTREGADO"])
+                estado_movimientos = random.choice(
+                    ["FIANZA", "ALMACEN", "RUTA", "ENTREGADO"]
+                )
 
             alb = DeliveryNoteDB(
                 date=fecha,
