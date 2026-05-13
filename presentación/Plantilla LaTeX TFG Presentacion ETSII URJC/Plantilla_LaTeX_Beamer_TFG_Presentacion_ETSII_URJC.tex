@@ -1,0 +1,475 @@
+
+%\documentclass[xcolor=svgnames,handout,aspectratio=169]{beamer} % proyector ancho (aspecto 16x9)
+\documentclass[xcolor=svgnames,handout]{beamer} % proyector tradicional (aspecto 4x3)
+
+%%%% usa PDFLATEX !!!!!!!!!!!!!!!!!! %%%%
+
+
+
+\mode<presentation>
+{
+  %% THEME %%
+  \usetheme{Frankfurt}
+  %\usecolortheme{beaver}
+
+
+
+\setbeamertemplate{items}[ball]
+\setbeamertemplate{blocks}[rounded][shadow=true]
+\setbeamertemplate{navigation symbols}{} %%% To get rid of navigating icons
+
+
+%\usecolortheme{rose}
+
+
+\usecolortheme[named=Crimson]{structure}
+
+
+
+%\setbeamercolor{palette primary}{bg=lightred,fg=darkred}
+
+
+\setbeamercolor{palette primary}{bg=rojoURJC,fg=white}
+\setbeamercolor{palette secondary}{bg=midred,fg=white}
+\setbeamercolor{palette tertiary}{bg=lightred,fg=darkred}
+
+
+\setbeamercolor*{author in head/foot}{parent=palette tertiary}
+\setbeamercolor*{title in head/foot}{parent=palette secondary}
+\setbeamercolor*{date in head/foot}{parent=palette primary}
+
+% Color de fórmulas. Se puede usar MediumBlue, Crimson, etc.
+% En este documento aparecen en negro
+\setbeamercolor{math text}{fg=Black}
+\setbeamercolor{math text inlined}{parent=math text}
+\setbeamercolor{math text displayed}{parent=math text}
+
+\setbeamercolor{alerted text}{fg=Red}
+
+
+\defbeamertemplate*{footline}{infolines theme}
+{
+  \leavevmode%
+  \hbox{%
+  \begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,center]{author in head/foot}%
+    \usebeamerfont{author in head/foot}\insertshortinstitute
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,center]{title in head/foot}%
+    \usebeamerfont{title in head/foot}\insertshortauthor
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.333333\paperwidth,ht=2.25ex,dp=1ex,right]{date in head/foot}%
+    \usebeamerfont{date in head/foot}\insertshortdate{}\hspace*{2em}
+    \insertframenumber{} / \inserttotalframenumber\hspace*{2ex}
+  \end{beamercolorbox}}%
+  \vskip0pt%
+}
+
+
+
+  %% FONT %%
+  %\usefonttheme{default}
+  %\usefonttheme{professionalfonts}
+  %\usefonttheme{serif}
+  \usefonttheme{structurebold}
+  %\usefonttheme{structureitalicserif}
+  %\usefonttheme{structuresmallcapsserif}
+
+
+%  \setbeamercovered{transparent}
+%  \setbeamercovered{dynamic}
+}
+
+
+\usepackage[spanish]{babel}
+
+%\usepackage[latin1]{inputenc} % Usad en WinEdt/MikTex
+\usepackage[utf8]{inputenc} % Usad en overleaf
+
+\usepackage{graphicx, amsmath}
+
+%\usepackage{paralist}
+
+\usepackage{hyperref}
+\usepackage{multimedia}
+\usepackage{color}
+
+
+\usepackage{pgfpages}
+%\pgfpagesuselayout{2 on 1}[a4paper,border shrink=5mm]
+%\pgfpagesuselayout{4 on 1}[landscape,a4paper,border shrink=5mm]
+
+\definecolor{darkblue}{rgb}{0.15,0.15,0.70}
+%\definecolor{darkred}{rgb}{0.80,0.20,0.20}
+
+
+\definecolor{crimson}{rgb}{0.86,0.08,0.24}
+\definecolor{darkred}{rgb}{0.65,0.17,0.17}
+\definecolor{midred}{rgb}{0.85,0.40,0.40}
+\definecolor{lightred}{rgb}{0.95,0.65,0.65}
+
+\definecolor{rojoURJC}{rgb}{0.796,0,0.09}
+\definecolor{pureblue}{rgb}{0,0,1}
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%% Definiciones básicas %%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\nombreautor}{Nombre Apellido1 Apellido2}
+\newcommand{\nombretutor}{NombreTutor Apellido1 Apellido2}
+\newcommand{\titulotrabajo}{Título del Trabajo de Fin de Grado -- Título del Trabajo de Fin de Grado}
+\newcommand{\escuela}{Escuela Técnica Superior\\de Ingeniería Informática}
+\newcommand{\escuelalargo}{Escuela Técnica Superior de Ingeniería Informática}
+\newcommand{\universidad}{Universidad Rey Juan Carlos}
+\newcommand{\fecha}{XX/XX/20XX}
+\newcommand{\grado}{Grado en XXXXXXXX}
+\newcommand{\gradoabr}{TFG - GII} % Para el Grado en Ingeniería Informática
+\newcommand{\curso}{Curso 20XX-20XX}
+\newcommand{\logoUniversidad}{logoURJC.pdf}
+\newcommand{\logoEscuela}{logo_ETSII_estrecho.jpg}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%% Comandos definidos por el autor %%%%%%%
+
+\newcommand{\traspuesta}{\mbox{\tiny $\mathsf{T}$}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+
+\title{\titulotrabajo}
+\author[\gradoabr]{\footnotesize \textrm{Trabajo fin de grado}}
+\institute[\textsc{\nombreautor}]{\large \textbf{\grado} \\ \bigskip   \bigskip   \begin{footnotesize} \textsf{Autor:} \textit{\nombreautor} \\ \smallskip \textsf{Tutor:} \textit{\nombretutor} \end{footnotesize} \\ \bigskip \bigskip \includegraphics[height=1cm]{\logoEscuela}}
+\date[\fecha]{%\vspace{-0.7cm}
+}
+
+
+
+
+
+\begin{document}
+
+
+\begin{frame}[plain]
+\maketitle
+\end{frame}
+
+
+
+
+
+
+
+
+% Opcionales
+\usebackgroundtemplate{\includegraphics[width=\paperwidth]{logoURJC_marca_agua_U.jpg}}
+\logo{\vspace{-0.2cm} \includegraphics[height=0.5cm,clip=true]{icono_grado_informatica.png}}
+
+
+
+\section*{Contenido}
+
+\begin{frame}
+  \frametitle{Contenido}
+
+  \tableofcontents
+
+\end{frame}
+
+
+
+\section{Objetivos}
+
+\begin{frame}
+  \frametitle{Objetivos del TFG}
+
+  \begin{itemize}
+    \item Objetivos generales \smallskip
+    \begin{itemize}
+      \item Obj 1 \smallskip
+      \item Obj 2 \bigskip
+    \end{itemize}
+    \item Objetivos específicos \smallskip
+    \begin{itemize}
+      \item \alert{Texto alerta} \bigskip
+    \end{itemize}
+  \end{itemize}
+
+\end{frame}
+
+
+
+\subsection{Sub sec 1}
+
+\begin{frame}
+  \frametitle{Objetivos del TFG}
+  \framesubtitle{Usad subsecciones}
+
+  \begin{itemize}
+    \item Objetivos generales \smallskip
+    \begin{itemize}
+      \item Obj 1 \smallskip
+      \item Obj 2 \bigskip
+    \end{itemize}
+    \item Objetivos específicos \smallskip
+    \begin{itemize}
+      \item \alert{Texto alerta} \bigskip
+    \end{itemize}
+  \end{itemize}
+
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Objetivos del TFG}
+
+  \begin{itemize}
+    \item Objetivos generales \smallskip
+    \begin{itemize}
+      \item Obj 1 \smallskip
+      \item Obj 2 \bigskip
+    \end{itemize}
+    \item Objetivos específicos \smallskip
+    \begin{itemize}
+      \item \alert{Texto alerta} \bigskip
+    \end{itemize}
+  \end{itemize}
+
+\end{frame}
+
+\subsection{Sub sec 2}
+
+\begin{frame}
+  \frametitle{Objetivos del TFG}
+
+  \begin{itemize}
+    \item Objetivos generales \smallskip
+    \begin{itemize}
+      \item Obj 1 \smallskip
+      \item Obj 2 \bigskip
+    \end{itemize}
+    \item Objetivos específicos \smallskip
+    \begin{itemize}
+      \item \alert{Texto alerta} \bigskip
+    \end{itemize}
+  \end{itemize}
+
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Objetivos del TFG}
+
+  \begin{itemize}
+    \item Objetivos generales \smallskip
+    \begin{itemize}
+      \item Obj 1 \smallskip
+      \item Obj 2 \bigskip
+    \end{itemize}
+    \item Objetivos específicos \smallskip
+    \begin{itemize}
+      \item \alert{Texto alerta} \bigskip
+    \end{itemize}
+  \end{itemize}
+
+\end{frame}
+
+
+
+\section{Desarrollo}
+
+\begin{frame}
+  \frametitle{Enumeración}
+
+  \begin{enumerate}
+    \item Punto 1 \bigskip
+        \pause
+    \item Punto 2 \bigskip
+        \pause
+    \item Punto 3 \bigskip
+        \pause
+    \item Punto 4 \bigskip
+        \pause
+    \item Punto 5 \bigskip
+  \end{enumerate}
+
+\end{frame}
+
+
+
+\begin{frame}
+  \frametitle{Fórmulas}
+
+Problema de optimización:
+\[
+\begin{array}{cl}
+  \displaystyle \begin{array}{c}\mathrm{minimizar} \\ \mathbf{t} \in \mathbb{R}^{n}, \  \mathbf{p} \in \mathbb{R}^{m} \end{array} & \hspace{-0.2cm} \begin{array}{c} \mathbf{1}^{\traspuesta}\mathbf{t} \\ \mbox{} \end{array}  \\
+  & \vspace{-0.4cm} \\ % línea (fila) en blanco, pero la hacemos estrecha con el comando vspace
+  \mbox{sujeto a} & -\mathbf{t} \preceq  \mathbf{V}\mathbf{p} - \mathbf{x}  \preceq  \mathbf{t},\\
+ \end{array}
+\]
+
+\end{frame}
+
+
+
+\section{Resultados}
+
+
+\usebackgroundtemplate{\includegraphics[width=\paperwidth]{fondo_blanco.jpg}}
+\begin{frame}
+  \frametitle{Ejemplo con minipage}
+
+  \begin{minipage}{0.45\textwidth}
+   \centering
+
+\begin{itemize}
+  \item Teorema de Pitágoras \medskip
+  \item Hipotenusa  \medskip
+  \item Catetos \medskip
+  \item Triángulo rectángulo \medskip
+  \begin{itemize}
+    \item Incluid espacios verticales \smallskip
+    \item Se ha quitado la marca de agua
+  \end{itemize}
+\end{itemize}
+
+  \end{minipage}
+  \hfill
+  \begin{minipage}{0.45\textwidth}
+   \centering
+     \includegraphics[clip=true,width=\textwidth]{triangulos_separados_bb.pdf}\\
+  \end{minipage}
+
+\end{frame}
+
+% Restablecer la marca de agua
+\usebackgroundtemplate{\includegraphics[width=\paperwidth]{logoURJC_marca_agua_U.jpg}}
+
+
+
+
+\begin{frame}
+  \frametitle{Constrained norm minimization problem}
+  \framesubtitle{Exact estimates for one data variable}
+%  \thispagestyle{empty}
+
+
+\[
+  \begin{array}{cl}
+  \displaystyle \begin{array}{c}\mathrm{minimize} \\ \mathbf{p} \in \mathbb{R}^{m} \end{array} & \hspace{-0.2cm} \begin{array}{c} \| \hat{\mathbf{x}} - \mathbf{x} \|, \\ \mbox{} \end{array}  \\[15pt]
+   \mbox{subject to} & \mathbf{v}_{i}^{\traspuesta}\mathbf{p} = x_{i}, \\
+  \end{array}
+\]
+
+\begin{itemize}
+  \item $\mathbf{x}$: Data sample \smallskip
+  \item $\mathbf{p}$: Low-dimensional representation of $\mathbf{x}$  \smallskip
+  \item $\hat{\mathbf{x}} = \mathbf{V}\mathbf{p}$: Estimates of $\mathbf{x}$ \smallskip
+  \item $\hat{x}_{i} = \mathbf{v}_{i}^{\traspuesta}\mathbf{p}$: Estimate of $\mathbf{x}$ for the $i$-th attribute \smallskip
+  \begin{itemize}
+    \item Through orthogonal projections onto $i$-th axis
+  \end{itemize}
+\end{itemize}
+
+
+\end{frame}
+
+
+
+\setbeamercolor{math text}{fg=pureblue}
+\setbeamercolor{math text inlined}{parent=math text}
+\setbeamercolor{math text displayed}{parent=math text}
+
+\begin{frame}
+  \frametitle{Constrained norm minimization problem}
+  \framesubtitle{Exact estimates for one data variable}
+%  \thispagestyle{empty}
+
+
+\[
+  \begin{array}{cl}
+  \displaystyle \begin{array}{c}\mathrm{minimize} \\ \mathbf{p} \in \mathbb{R}^{m} \end{array} & \hspace{-0.2cm} \begin{array}{c} \| \hat{\mathbf{x}} - \mathbf{x} \|, \\ \mbox{} \end{array}  \\[15pt]
+   \mbox{subject to} & \mathbf{v}_{i}^{\traspuesta}\mathbf{p} = x_{i}, \\
+  \end{array}
+\]
+
+\begin{itemize}
+  \item $\mathbf{x}$: Data sample \smallskip
+  \item $\mathbf{p}$: Low-dimensional representation of $\mathbf{x}$  \smallskip
+  \item $\hat{\mathbf{x}} = \mathbf{V}\mathbf{p}$: Estimates of $\mathbf{x}$ \smallskip
+  \item $\hat{x}_{i} = \mathbf{v}_{i}^{\traspuesta}\mathbf{p}$: Estimate of $\mathbf{x}$ for the $i$-th attribute \smallskip
+  \begin{itemize}
+    \item Through orthogonal projections onto $i$-th axis
+  \end{itemize}
+\end{itemize}
+
+
+\end{frame}
+
+\setbeamercolor{math text}{fg=Crimson}
+\setbeamercolor{math text inlined}{parent=math text}
+\setbeamercolor{math text displayed}{parent=math text}
+
+
+\begin{frame}
+  \frametitle{Constrained norm minimization problem}
+  \framesubtitle{Exact estimates for one data variable}
+%  \thispagestyle{empty}
+
+
+\[
+  \begin{array}{cl}
+  \displaystyle \begin{array}{c}\mathrm{minimize} \\ \mathbf{p} \in \mathbb{R}^{m} \end{array} & \hspace{-0.2cm} \begin{array}{c} \| \hat{\mathbf{x}} - \mathbf{x} \|, \\ \mbox{} \end{array}  \\[15pt]
+   \mbox{subject to} & \mathbf{v}_{i}^{\traspuesta}\mathbf{p} = x_{i}, \\
+  \end{array}
+\]
+
+\begin{itemize}
+  \item $\mathbf{x}$: Data sample \smallskip
+  \item $\mathbf{p}$: Low-dimensional representation of $\mathbf{x}$  \smallskip
+  \item $\hat{\mathbf{x}} = \mathbf{V}\mathbf{p}$: Estimates of $\mathbf{x}$ \smallskip
+  \item $\hat{x}_{i} = \mathbf{v}_{i}^{\traspuesta}\mathbf{p}$: Estimate of $\mathbf{x}$ for the $i$-th attribute \smallskip
+  \begin{itemize}
+    \item Through orthogonal projections onto $i$-th axis
+  \end{itemize}
+\end{itemize}
+
+
+\end{frame}
+
+
+
+
+\usebackgroundtemplate{\includegraphics[width=\paperwidth]{fondo_blanco.jpg}}
+
+\begin{frame}[plain]
+
+\begin{center}
+
+  \bigskip  \bigskip
+
+  \begin{Large} \textcolor{crimson}{\textbf{\titulotrabajo}} \end{Large} \bigskip \bigskip
+
+  \begin{footnotesize} \textrm{Trabajo Fin de Grado} \\ \end{footnotesize} \bigskip \bigskip
+
+  \begin{footnotesize} \textbf{\grado} -- \curso \end{footnotesize} \bigskip \bigskip
+
+  \begin{footnotesize} \textsf{Autor:} \textit{\nombreautor} \\ \smallskip
+                        \textsf{Tutor:} \textit{\nombretutor} \end{footnotesize} \bigskip \bigskip
+
+
+  \includegraphics[height=1cm]{logo_ETSII_estrecho.jpg}
+
+\end{center}
+
+\end{frame}
+
+
+
+\end{document}
