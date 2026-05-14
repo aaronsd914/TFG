@@ -52,7 +52,7 @@
 
 > «El corazon del dominio es el **albaran** y su maquina de cinco estados.»
 
-> «Empieza en **FIANZA** — se genera automaticamente un ingreso del 30%. Pasa a **ALMACEN** cuando el mueble llega. Se asigna a un camion y transita a **RUTA**. Al confirmar la entrega pasa a **ENTREGADO** — y se genera el segundo ingreso por el resto pendiente. Desde cualquier estado se puede escalar a **INCIDENCIA**.»
+> «Empieza en **FIANZA** — se genera automaticamente un ingreso del 30%. Pasa a **ALMACEN** cuando el mueble llega. Se asigna a un camion y transita a **RUTA**. Al confirmar la entrega pasa a **ENTREGADO** — y se genera el segundo ingreso por el resto pendiente. Desde **ENTREGADO** se puede registrar una **INCIDENCIA** y volver a ENTREGADO una vez resuelta.»
 
 > «Ademas, al crear un albaran y al asignar un camión, un BackgroundTask genera un PDF y lo envia al cliente por email.»
 
