@@ -387,7 +387,7 @@ Curso 2024–2025 · Junio 2026
 <div class="arch-box" style="border-color:#2E7D32"><div class="layer">Respuesta dual</div><div class="tech" style="color:#2E7D32">Texto natural +<br>JSON → gráfico</div></div>
 </div>
 
-- Respuesta **dual**: texto en lenguaje natural + JSON que Chart.js renderiza como gráfico al vuelo.
+- Respuesta **dual**: texto en lenguaje natural + JSON renderizado como gráfico al vuelo.
 - **Degradación elegante**: si el proveedor LLM cae, el resto de la app funciona sin interrupción.
 
 ---
@@ -425,9 +425,11 @@ Curso 2024–2025 · Junio 2026
 <div class="pipeline">
 <div class="pipe-step"><strong>Lint</strong>Ruff · ESLint</div>
 <div class="pipe-arrow">→</div>
-<div class="pipe-step"><strong>Frontend</strong>Vitest</div>
-<div class="pipe-arrow">→</div>
-<div class="pipe-step"><strong>Backend</strong>pytest</div>
+<div style="display:flex;flex-direction:column;gap:6px;border:2px dashed #aaa;border-radius:6px;padding:6px 8px;position:relative">
+  <div style="position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:white;font-size:11px;color:#888;padding:0 4px;white-space:nowrap">en paralelo</div>
+  <div class="pipe-step"><strong>Frontend</strong>Vitest</div>
+  <div class="pipe-step"><strong>Backend</strong>pytest</div>
+</div>
 <div class="pipe-arrow">→</div>
 <div class="pipe-step"><strong>SonarCloud</strong>Quality Gate</div>
 <div class="pipe-arrow">→</div>
