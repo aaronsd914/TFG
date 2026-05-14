@@ -1088,19 +1088,20 @@ React Router 7 \cite{reactrouter} define las rutas de la aplicación. El compone
   \centering
   \caption{Rutas del frontend.}
   \label{tab:rutas}
-  \begin{tabular}{llp{6.5cm}}
+  \begin{tabular}{ll>{\raggedright\arraybackslash}p{6.5cm}}
     \toprule
     \textbf{Ruta} & \textbf{Componente} & \textbf{Función} \\
     \midrule
-    \texttt{/}               & Dashboard        & KPIs, gráfico de ingresos, distribución de estados \\
-    \texttt{/ventas/nueva}   & NuevaVenta       & Asistente de creación de pedido paso a paso \\
-    \texttt{/clientes}       & ClientesPage     & Tabla de clientes con búsqueda y panel de historial \\
-    \texttt{/albaranes}      & AlbaranesPage    & Lista de albaranes con filtro y control de estado \\
-    \texttt{/productos}      & ProductosPage    & Productos y proveedores (vista dividida) \\
-    \texttt{/tendencias}     & Tendencias       & Analíticas, chat IA, exportación PDF \\
-    \texttt{/transporte}     & TransportePage   & Gestión de rutas y camiones \\
-    \texttt{/banco}          & BancoPage        & Panel de pagos Stripe \\
-    \texttt{/incidencias}    & IncidenciasPage  & Gestión de incidencias de entrega \\
+    \texttt{/login}          & LoginPage           & Autenticación de usuario \\
+    \texttt{/}               & Dashboard           & KPIs, gráfico de ingresos, distribución de estados \\
+    \texttt{/ventas/nueva}   & NuevaVenta          & Asistente de creación de pedido paso a paso \\
+    \texttt{/clientes}       & ClientesPage        & Tabla de clientes con búsqueda y panel de historial \\
+    \texttt{/albaranes}      & AlbaranesPage       & Lista de albaranes con filtro y control de estado \\
+    \texttt{/productos}      & ProductosPage       & Productos y proveedores (vista dividida) \\
+    \texttt{/tendencias}     & Tendencias          & Analíticas, chat IA, exportación PDF \\
+    \texttt{/transporte}     & TransportePage      & Gestión de rutas y camiones \\
+    \texttt{/banco}          & BancoPage           & Panel de pagos Stripe \\
+    \texttt{/incidencias}    & IncidenciasPage     & Gestión de incidencias de entrega \\
     \texttt{/personalizacion}& PersonalizacionPage & Tema, paleta, logo, idioma, resumen semanal \\
     \bottomrule
   \end{tabular}
@@ -1248,42 +1249,43 @@ def setup_db():
 
 La tabla~\ref{tab:tests_frontend} detalla los ficheros de test del frontend.
 
-\begin{table}[H]
-  \centering
-  \caption{Tests unitarios del frontend.}
-  \label{tab:tests_frontend}
-  \begin{tabular}{lcp{6cm}}
-    \toprule
-    \textbf{Fichero} & \textbf{Tests} & \textbf{Área cubierta} \\
-    \midrule
-    LoginPage.test.jsx           & 18 & Formulario, visibilidad password, login OK/fail, redirect \\
-    auth.test.js                 & 13 & saveToken, getToken, removeToken, isTokenValid, login \\
-    fetchInterceptor.test.js     &  9 & Cabecera auth, URLs externas, 401 $\to$ logout \\
-    PersonalizacionPage.test.jsx & 48 & Dark mode, paletas, email, formularios, errores API \\
-    ThemeContext.test.jsx        & 11 & Valores por defecto, localStorage, setIsDark, setPalette \\
-    Sidebar.test.jsx             & 13 & Enlaces nav, clases CSS activas, logout \\
-    App.test.jsx                 &  7 & Renderizado root, layout, aside + main \\
-    Dashboard.test.jsx           & 10 & KPIs, gráficos, datos vacíos, error de red \\
-    AlbaranesPage.test.jsx       & 38 & CRUD, filtros estado, modal, PDF, errores API \\
-    BancoPage.test.jsx           & 43 & Estado Stripe, checkout, confirmación de pago \\
-    ClientesPage.test.jsx        & 33 & CRUD, búsqueda, modales, error de red \\
-    NuevaVenta.test.jsx          & 39 & Flujo completo, búsqueda cliente, confirmación \\
-    ProductosPage.test.jsx       & 28 & CRUD productos + proveedores, pestañas \\
-    Tendencias.test.jsx          & 27 & Gráficos, chat IA, exportar PDF \\
-    TransportePage.test.jsx      & 38 & Asignar camión, liquidar ruta \\
-    IncidenciasPage.test.jsx     & 28 & Listar, crear, eliminar, estados \\
-    i18n.test.jsx                & 14 & Detección idioma, traducciones, cambio de idioma \\
-    api.test.js                  & 29 & Cliente API, construcción de peticiones, errores \\
-    hooks.test.jsx               &  8 & Hooks de estado, efectos, limpieza \\
-    http.test.js                 &  8 & Utilidades HTTP, URL base, cabeceras \\
-    i18n.test.js                 &  9 & Configuración i18n, locale, pluralización \\
-    ModalCenter.test.jsx         &  6 & Renderizado portal, cierre con backdrop \\
-    UIComponents.test.jsx        & 34 & Botones, inputs, badges, modales, controles de formulario \\
-    \midrule
-    \textbf{Total}               & \textbf{511} & \\
-    \bottomrule
-  \end{tabular}
-\end{table}
+\begin{longtable}{l>{\centering\arraybackslash}p{1cm}>{\raggedright\arraybackslash}p{6cm}}
+  \caption{Tests unitarios del frontend.} \label{tab:tests_frontend} \\
+  \toprule
+  \textbf{Fichero} & \textbf{Tests} & \textbf{Área cubierta} \\
+  \midrule
+  \endfirsthead
+  \toprule
+  \textbf{Fichero} & \textbf{Tests} & \textbf{Área cubierta} \\
+  \midrule
+  \endhead
+  LoginPage.test.jsx           & 18 & Formulario, visibilidad password, login OK/fail, redirect \\
+  auth.test.js                 & 13 & saveToken, getToken, removeToken, isTokenValid, login \\
+  fetchInterceptor.test.js     &  9 & Cabecera auth, URLs externas, 401 $\to$ logout \\
+  PersonalizacionPage.test.jsx & 48 & Dark mode, paletas, email, formularios, errores API \\
+  ThemeContext.test.jsx        & 11 & Valores por defecto, localStorage, setIsDark, setPalette \\
+  Sidebar.test.jsx             & 13 & Enlaces nav, clases CSS activas, logout \\
+  App.test.jsx                 &  7 & Renderizado root, layout, aside + main \\
+  Dashboard.test.jsx           & 10 & KPIs, gráficos, datos vacíos, error de red \\
+  AlbaranesPage.test.jsx       & 38 & CRUD, filtros estado, modal, PDF, errores API \\
+  BancoPage.test.jsx           & 43 & Estado Stripe, checkout, confirmación de pago \\
+  ClientesPage.test.jsx        & 33 & CRUD, búsqueda, modales, error de red \\
+  NuevaVenta.test.jsx          & 39 & Flujo completo, búsqueda cliente, confirmación \\
+  ProductosPage.test.jsx       & 28 & CRUD productos + proveedores, pestañas \\
+  Tendencias.test.jsx          & 27 & Gráficos, chat IA, exportar PDF \\
+  TransportePage.test.jsx      & 38 & Asignar camión, liquidar ruta \\
+  IncidenciasPage.test.jsx     & 28 & Listar, crear, eliminar, estados \\
+  i18n.test.jsx                & 14 & Detección idioma, traducciones, cambio de idioma \\
+  api.test.js                  & 29 & Cliente API, construcción de peticiones, errores \\
+  hooks.test.jsx               &  8 & Hooks de estado, efectos, limpieza \\
+  http.test.js                 &  8 & Utilidades HTTP, URL base, cabeceras \\
+  i18n.test.js                 &  9 & Configuración i18n, locale, pluralización \\
+  ModalCenter.test.jsx         &  6 & Renderizado portal, cierre con backdrop \\
+  UIComponents.test.jsx        & 34 & Botones, inputs, badges, modales, controles de formulario \\
+  \midrule
+  \textbf{Total}               & \textbf{511} & \\
+  \bottomrule
+\end{longtable}
 
 
 \section{Pruebas end-to-end}
@@ -1366,6 +1368,7 @@ El fichero principal (\texttt{ci.yml}) implementa el pipeline completo de CI/CD 
 
 \begin{figure}[H]
   \centering
+  \resizebox{\textwidth}{!}{%
   \begin{tikzpicture}[
     pstep/.style={rectangle, draw, rounded corners, minimum width=2.2cm, minimum height=0.8cm, align=center, font=\small},
     >=Stealth
@@ -1385,7 +1388,8 @@ El fichero principal (\texttt{ci.yml}) implementa el pipeline completo de CI/CD 
     \draw[->] (sonar) -- (e2e);
     \draw[->] (e2e) -- (docker);
     \draw[->] (docker) -- (deploy);
-  \end{tikzpicture}
+  \end{tikzpicture}%
+  }
   \caption{Pipeline CI/CD del workflow \texttt{ci.yml}.}
   \label{fig:pipeline}
 \end{figure}
