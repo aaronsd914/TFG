@@ -326,7 +326,7 @@ Curso 2024–2025 · Junio 2026
 <div class="arch-box" style="min-width:0;flex:1;padding:10px 8px;border-color:#2E7D32"><div class="layer">4</div><div class="tech" style="font-size:16px;color:#2E7D32">ENTREGADO</div><div class="sub">Entrega confirmada</div></div>
 </div>
 <div style="text-align:center; margin-top:6px">
-<div style="font-size:14px; color:#666">↓ desde cualquier estado ↓</div>
+<div style="font-size:14px; color:#666">↓ desde ENTREGADO ↓</div>
 <div class="arch-box" style="display:inline-block; padding:8px 28px; border-color:#CB0017; margin-top:4px"><div class="tech" style="font-size:16px; color:#CB0017">INCIDENCIA</div><div class="sub">Reportar problema · revertible</div></div>
 </div>
 
