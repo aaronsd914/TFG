@@ -78,7 +78,7 @@
 
 ## Slide 10 — Pipeline CI/CD (~30 s)
 
-> «Esa suite se ejecuta en un pipeline de GitHub Actions: **1 workflow, 7 jobs**. Lint, tests en paralelo, quality gate de SonarCloud, E2E, build Docker y deploy en Railway y Vercel. Cualquier fallo **bloquea automaticamente la PR**: nada llega a main sin pasar todo el pipeline.»
+> «Esa suite se ejecuta en un pipeline de GitHub Actions: **1 workflow, 7 jobs**. Primero lint, luego los tests de frontend y backend **en paralelo**, despues el quality gate de SonarCloud, E2E, build Docker y deploy en Railway y Vercel. Cualquier fallo **bloquea automaticamente la PR**: nada llega a main sin pasar todo el pipeline.»
 
 ---
 
