@@ -22,29 +22,29 @@
 
 ## Slide 2 — Problema y solucion (~40 s)
 
-> «Las tiendas de muebles son PYMEs que gestionan su dia a dia con hojas de calculo y papel. Tres problemas: **sin trazabilidad** de pedidos, **datos duplicados** y **sin metricas de negocio**.»
+> «Las tiendas de muebles son PYMEs que gestionan su dia a dia con hojas de calculo y papel. Esto cdesemboca en 3 problemas: **no hay trazabilidad** de pedidos, **datos duplicados** y **sin metricas de negocio**. Además, Los ERPs del mercado — Odoo, SAP, Holded — son complejos, caros y genericos. No modelan conceptos clave del mueble como el albaran con fianza o las rutas de camion.»
 
-> «Los ERPs del mercado — Odoo, SAP, Holded — son complejos, caros y genericos. No modelan conceptos clave del mueble como el albaran con fianza o las rutas de camion. De ahi nace **FurniGest**: una aplicacion **a medida** con vocacion de **produccion real**.»
+> « De ahi nace **FurniGest**: una aplicacion **a medida** con vocacion de **produccion real**.»
 
 ---
 
 ## Slide 3 — Objetivos (~35 s)
 
-> «El objetivo general es *disenar, implementar y desplegar en produccion una aplicacion web de gestion integral para una tienda de muebles*.»
+> «El objetivo general es *diseñar, implementar y desplegar en produccion una aplicacion web de gestion integral para una tienda de muebles*.»
 
-> «Se descompone en **diez objetivos especificos**. Los cinco primeros son el nucleo funcional — CRUDs, maquina de estados, movimientos financieros, logistica y Stripe Checkout. Los cinco siguientes son los **diferenciadores**: asistente IA, analiticas de negocio, 857 pruebas, pipeline CI/CD y despliegue en produccion.»
+> «Este objetivo se descompone en **diez objetivos especificos**. Los cinco primeros son el nucleo funcional — CRUDs, maquina de estados, movimientos financieros, logistica y Stripe Checkout. Los cinco siguientes son los **diferenciadores**: asistente IA, analiticas de negocio, 857 pruebas, pipeline CI/CD y despliegue en Railway y Vercel.»
 
 ---
 
 ## Slide 4 — Arquitectura (~25 s)
 
-> «Arquitectura **cliente-servidor de tres capas**: **SPA** en **React 19** con Vite y Tailwind, API REST en **FastAPI** con Python 3.12, y **PostgreSQL 16** con 11 entidades. Comunicacion REST sobre HTTPS, con autenticacion **JWT** y contrasenas hasheadas con **bcrypt**.»
+> «Arquitectura **cliente-servidor de tres capas**: **SPA** en **React 19** con Vite y Tailwind, API REST en **FastAPI** con Python 3.12, y **PostgreSQL 16** con 11 entidades. Comunicacion REST es sobre HTTPS, con autenticacion **JWT** y contraseñas hasheadas con **bcrypt**.»
 
 ---
 
 ## Slide 5 — Stack tecnologico (~25 s)
 
-> «En **backend**: PostgreSQL con SQLAlchemy 2, Groq con Llama-3 para la IA, Stripe Checkout y ReportLab para PDF. En **frontend**: React 19, Chart.js e i18next. En **infraestructura**: Docker Compose, Railway y Vercel, con GitHub Actions y SonarCloud.»
+> «Las librerías y servicios que lo sostienen: en **backend**, SQLAlchemy 2, Groq con Llama-3, Stripe Checkout y ReportLab. En **frontend**, Chart.js e i18next. En **infraestructura**, Docker Compose, Railway, Vercel, GitHub Actions y SonarCloud.»
 
 ---
 
@@ -52,9 +52,9 @@
 
 > «El corazon del dominio es el **albaran** y su maquina de cinco estados.»
 
-> «Empieza en **FIANZA** — se genera automaticamente un ingreso del 30%. Pasa a **ALMACEN** cuando el mueble llega. Se asigna a un camion y transita a **RUTA**. Al confirmar la entrega pasa a **ENTREGADO** — y se genera el segundo ingreso por el resto pendiente. Desde cualquier estado se puede escalar a **INCIDENCIA**.»
+> «Empieza en **FIANZA** — se genera automaticamente un ingreso del 30%. Pasa a **ALMACEN** cuando el mueble llega. Se asigna a un camion y transita a **RUTA**. Al confirmar la entrega pasa a **ENTREGADO** — y se genera el segundo ingreso por el resto pendiente. Desde **ENTREGADO** se puede registrar una **INCIDENCIA** y volver a ENTREGADO una vez resuelta.»
 
-> «Ademas, al crear un albaran, un BackgroundTask genera el PDF y lo envia al cliente por email.»
+> «Ademas, al crear un albaran y al asignar un camión, un BackgroundTask genera un PDF y lo envia al cliente por email.»
 
 ---
 
@@ -66,19 +66,19 @@
 
 ## Slide 8 — Asistente IA (~30 s)
 
-> «El backend inyecta contexto real — RFM, ventas, cesta — y el LLM devuelve una **respuesta dual**: texto en lenguaje natural y un JSON que Chart.js convierte en grafico al vuelo. Sin fine-tuning, solo prompt engineering. Y si Groq cae, la app se **degrada con elegancia**: el resto funciona sin interrupcion.»
+> «El backend inyecta contexto real — RFM, ventas, cesta — y el LLM devuelve una **respuesta dual**: texto en lenguaje natural y un JSON. Y si Groq cae, la app se **degrada con elegancia**: el resto funciona sin interrupcion.»
 
 ---
 
 ## Slide 9 — Estrategia de pruebas (~30 s)
 
-> «Piramide clasica: **511 unitarias** con Vitest, **239 de integracion** con pytest sobre SQLite en memoria, y **107 end-to-end** con Selenium en navegador real. En total, **857 pruebas** y cobertura por encima del 80% en ambas capas.»
+> «Tres niveles: **511 unitarias** con Vitest sobre componentes y hooks del frontend; **239 de integracion** con pytest sobre SQLite en memoria, cubriendo los endpoints REST; y **107 end-to-end** con Selenium en navegador real. En total **857 pruebas**, cobertura superior al 80% en ambas capas, y **cero bugs** reportados por SonarCloud.»
 
 ---
 
 ## Slide 10 — Pipeline CI/CD (~30 s)
 
-> «Esa suite se ejecuta en un pipeline de GitHub Actions: **1 workflow, 7 jobs**. Lint, tests en paralelo, quality gate de SonarCloud, E2E, build Docker y deploy en Railway y Vercel. Cualquier fallo **bloquea automaticamente la PR**: nada llega a main sin pasar todo el pipeline.»
+> «Esa suite se ejecuta en un pipeline de GitHub Actions: **1 workflow, 7 jobs**. Primero lint, luego los tests de frontend y backend **en paralelo**, despues el quality gate de SonarCloud, E2E, build Docker y deploy en Railway y Vercel. Cualquier fallo **bloquea automaticamente la PR**: nada llega a main sin pasar todo el pipeline.»
 
 ---
 
@@ -90,7 +90,7 @@
 
 > «Voy a mostrar la aplicacion **funcionando en produccion real**.»
 
-> *(Login con `user` / `useruser`.)*
+> *(Login con `admin` / `admin123`.)*
 
 > «Esto es el Dashboard: KPIs principales, ingresos del mes, pedidos abiertos, distribucion de albaranes por estado.»
 
@@ -132,13 +132,13 @@
 
 ## Slide 12 — Conclusiones (~50 s)
 
-> «Se han **cumplido los diez objetivos** marcados. Quiero destacar tres cosas:»
+> «Se han **cumplido los diez objetivos** dichos al principio. Quiero destacar tres cosas:»
 
-> «Primero: **esto no es un prototipo**. FurniGest esta desplegado en produccion real, con pagos Stripe, emails y una PostgreSQL con datos operativos.»
+> «Primero: **esto no es un prototipo**. FurniGest esta desplegado en produccion real y con vocacion de seguir mejorando: el objetivo es escuchar el feedback de las personas que lo usan y evolucionar el sistema con cada iteracion.»
 
-> «Segundo: **857 pruebas automatizadas** y un pipeline de 7 jobs que bloquea el merge si falla cualquier paso. SonarCloud reporta **cero bugs y cero vulnerabilidades**.»
+> «Segundo: la **calidad no es opcional**. Cada linea de codigo que llego a main lo hizo con la garantia de haber pasado linting, pruebas en tres niveles, analisis estatico y despliegue automatico. No hay atajos.»
 
-> «Y tercero: se han abordado problemas reales de produccion — Railway bloquea SMTP asi que se integro Resend; la cobertura exigio invertir en tests con cada feature. Esa inversion en **ingenieria del software** es deliberada.»
+> «Y tercero: trabajar en **produccion real** tiene un coste que un prototipo no tiene — restricciones de infraestructura, integraciones que fallan, decisiones que no se pueden deshacer. Enfrentarse a eso desde el primer dia es lo que convierte un proyecto academico en **ingenieria del software** de verdad.»
 
 ---
 
