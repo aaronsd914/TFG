@@ -37,8 +37,7 @@ Thumbs.db
 .claude/worktrees/
 .claude/settings.local.json
 
-# SonarQube
-sonar-project.properties
+# SonarQube (keep sonar-project.properties tracked — CI needs it)
 
 # Misc
 memoria/recomendaciones.txt
