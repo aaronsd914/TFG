@@ -66,7 +66,7 @@
 
 ## Slide 8 — Asistente IA (~30 s)
 
-> «El backend inyecta contexto real — RFM, ventas, cesta — y el LLM devuelve una **respuesta dual**: texto en lenguaje natural y un JSON que Chart.js convierte en grafico al vuelo. Y si Groq cae, la app se **degrada con elegancia**: el resto funciona sin interrupcion.»
+> «El backend inyecta contexto real — RFM, ventas, cesta — y el LLM devuelve una **respuesta dual**: texto en lenguaje natural y un JSON. Y si Groq cae, la app se **degrada con elegancia**: el resto funciona sin interrupcion.»
 
 ---
 
