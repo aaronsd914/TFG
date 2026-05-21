@@ -184,23 +184,19 @@ Curso 2024–2025 · Junio 2026
 ## Problema y solución
 
 <div class="grid-2">
-<div class="stack-col">
-<h4>❌ Las PYMEs del mueble</h4>
-<ul>
-<li><strong>Sin trazabilidad</strong> — pedidos perdidos entre venta y entrega</li>
-<li><strong>Datos duplicados</strong> — el mismo cliente en cinco sitios</li>
-<li><strong>Sin métricas</strong> — sin visibilidad de ventas ni clientes</li>
-<li><strong>ERPs del mercado</strong> — Odoo, SAP, Holded: complejos, caros, genéricos</li>
-</ul>
+<div class="card" style="border-left:5px solid var(--urjc)">
+<h4 style="color:var(--urjc); margin:0 0 12px 0; font-size:20px">&#10060; Las PYMEs del mueble</h4>
+<p style="margin:0 0 8px 0; font-size:16px; color:#1a1a1a"><strong>Sin trazabilidad</strong> — pedidos perdidos entre venta y entrega</p>
+<p style="margin:0 0 8px 0; font-size:16px; color:#1a1a1a"><strong>Datos duplicados</strong> — el mismo cliente en cinco sitios</p>
+<p style="margin:0 0 8px 0; font-size:16px; color:#1a1a1a"><strong>Sin métricas</strong> — sin visibilidad de ventas ni clientes</p>
+<p style="margin:0; font-size:16px; color:#1a1a1a"><strong>ERPs del mercado</strong> — Odoo, SAP, Holded: complejos, caros, genéricos</p>
 </div>
-<div class="stack-col" style="border-left:4px solid #2E7D32">
-<h4 style="color:#2E7D32">✅ FurniGest — a medida</h4>
-<ul>
-<li><strong>Albarán con fianza</strong> — máquina de 5 estados automáticos</li>
-<li><strong>Rutas por camión</strong> — logística y liquidación de transporte</li>
-<li><strong>Producción real</strong> — desplegada y operativa en la nube</li>
-<li><strong>A medida</strong> — no es un prototipo académico</li>
-</ul>
+<div class="card" style="border-left:5px solid #2E7D32">
+<h4 style="color:#2E7D32; margin:0 0 12px 0; font-size:20px">&#9989; FurniGest — a medida</h4>
+<p style="margin:0 0 8px 0; font-size:16px; color:#1a1a1a"><strong>Albarán con fianza</strong> — máquina de 5 estados automáticos</p>
+<p style="margin:0 0 8px 0; font-size:16px; color:#1a1a1a"><strong>Rutas por camión</strong> — logística y liquidación de transporte</p>
+<p style="margin:0 0 8px 0; font-size:16px; color:#1a1a1a"><strong>Producción real</strong> — desplegada y operativa en la nube</p>
+<p style="margin:0; font-size:16px; color:#1a1a1a"><strong>A medida</strong> — no es un prototipo académico</p>
 </div>
 </div>
 
