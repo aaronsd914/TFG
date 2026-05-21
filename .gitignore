@@ -1,13 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+*.egg-info/
+
+# Sensitive config
 backend/app/ia_settings.py
 backend/app/settings_email.py
 backend/app/stripe_settings.py
 backend/app/stripe_config.py
-memoria/recomendaciones.txt
+backend/app/bank_settings.py
+.env
 
-# Coverage reports
+# Coverage & testing
 frontend/coverage/
 coverage-backend.xml
 .coverage
+htmlcov/
+frontend/coverage_output.txt
 
-# Presentation folder
-presentacion/
+# Node
+node_modules/
+
+# IDE & OS
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Claude Code
+.claude/worktrees/
+.claude/settings.local.json
+
+# SonarQube
+sonar-project.properties
+
+# Misc
+memoria/recomendaciones.txt
+*.zip
+*.log
